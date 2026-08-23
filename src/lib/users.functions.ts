@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
 const roleEnum = z.enum(["admin", "moderator", "user"]);
@@ -54,7 +55,7 @@ export const updateUser = createServerFn({ method: "POST" })
     const { id, role, ...fields } = data;
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
-    ) as Parameters<ReturnType<typeof supabase.from<"profiles">>["update"]>[0];
+    ) as Database["public"]["Tables"]["profiles"]["Update"];
 
     const { error } = await supabase
       .from("profiles")
