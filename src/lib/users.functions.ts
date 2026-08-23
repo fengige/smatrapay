@@ -52,12 +52,14 @@ export const updateUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { id, role, ...fields } = data;
-    const patch: Record<string, unknown> = { updated_by: userId };
-    for (const [key, value] of Object.entries(fields)) {
-      if (value !== undefined) patch[key] = value;
-    }
+    const patch = Object.fromEntries(
+      Object.entries(fields).filter(([, value]) => value !== undefined),
+    ) as Parameters<ReturnType<typeof supabase.from<"profiles">>["update"]>[0];
 
-    const { error } = await supabase.from("profiles").update(patch).eq("id", id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ ...patch, updated_by: userId })
+      .eq("id", id);
     if (error) throw new Error(error.message);
 
     if (role) {
