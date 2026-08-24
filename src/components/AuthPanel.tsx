@@ -78,7 +78,12 @@ export function AuthPanel() {
         <div className="orb orb-3" aria-hidden="true" />
 
         <div className="relative z-10 w-full max-w-xl">
-          <img src={logo} alt="SmatraPay" className="h-9 w-auto" />
+          <div className="flex min-w-0 flex-col">
+            <img src={logo} alt="SmatraPay" className="h-7 w-auto self-start" />
+            <p className="mt-2 truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-panel-muted">
+              Secure Portal
+            </p>
+          </div>
 
           <h1 className="mt-14 text-4xl font-bold leading-tight tracking-tight text-panel-foreground lg:text-5xl">
             The payments platform that{" "}

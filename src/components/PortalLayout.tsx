@@ -69,26 +69,26 @@ export function PortalLayout({
   const avatar = initials(identity.name || identity.email || portalName);
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-brand-panel text-panel-foreground">
-      <div className="px-5 pt-5 pb-3">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="SmatraPay" className="h-7 w-auto" />
+    <div className="flex h-full min-h-0 flex-col bg-brand-panel text-panel-foreground">
+      <div className="shrink-0 px-4 pt-4 pb-3 sm:px-5 sm:pt-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <Link to="/" className="flex min-w-0 items-center gap-2">
+            <img src={logo} alt="SmatraPay" className="h-7 w-auto shrink-0" />
           </Link>
           <button
-            className="rounded-md p-1 text-panel-muted lg:hidden"
+            className="shrink-0 rounded-md p-1 text-panel-muted lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
           >
             <X className="size-5" />
           </button>
         </div>
-        <p className="mt-2 text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-panel-muted">
+        <p className="mt-2 truncate text-[0.65rem] font-extrabold uppercase tracking-[0.18em] text-panel-muted sm:tracking-[0.22em]">
           {portalName} Portal
         </p>
       </div>
 
-      <nav className="sidebar-scroll flex-1 space-y-5 px-3 pb-4">
+      <nav className="sidebar-scroll min-h-0 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         {groups.map((group, gi) => (
           <div key={group.heading ?? gi} className="space-y-1">
             {group.heading && (
@@ -166,19 +166,23 @@ export function PortalLayout({
             className="absolute inset-0 bg-black/50"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-64">{sidebar}</div>
+          <div className="absolute inset-y-0 left-0 flex w-[82vw] max-w-72 flex-col">{sidebar}</div>
         </div>
       )}
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/85 px-5 py-3 backdrop-blur">
+        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/85 px-3 py-2.5 backdrop-blur sm:gap-3 sm:px-5 sm:py-3">
           <button
-            className="rounded-lg border border-border p-2 lg:hidden"
+            className="shrink-0 rounded-lg border border-border p-2 lg:hidden"
             onClick={() => setOpen(true)}
             aria-label="Open navigation"
           >
             <Menu className="size-4" />
           </button>
+
+          <p className="min-w-0 flex-1 truncate text-sm font-bold text-foreground sm:hidden">
+            {title}
+          </p>
 
           <label className="hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm text-muted-foreground sm:flex">
             <Search className="size-4 shrink-0" />
@@ -193,7 +197,7 @@ export function PortalLayout({
             </kbd>
           </label>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             {actions}
 
             <button
@@ -210,18 +214,18 @@ export function PortalLayout({
               <Bell className="size-4" />
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
             </button>
-            <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
               {avatar}
             </span>
           </div>
         </header>
 
-        <div className={hideHeading ? "sr-only" : "px-5 pt-5"}>
-          <h1 className="text-lg font-bold tracking-tight text-foreground">{title}</h1>
+        <div className={hideHeading ? "sr-only" : "px-4 pt-4 sm:px-5 sm:pt-5"}>
+          <h1 className="text-base font-bold tracking-tight text-foreground sm:text-lg">{title}</h1>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
 
-        <main className="px-5 pb-8 pt-1">{children}</main>
+        <main className="px-4 pb-8 pt-1 sm:px-5">{children}</main>
       </div>
     </div>
   );
