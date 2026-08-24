@@ -184,10 +184,14 @@ export function PortalLayout({
               aria-label="Search"
               className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
             />
+            <kbd className="ml-1 hidden rounded-md border border-border bg-background px-1.5 py-0.5 text-[0.65rem] font-semibold text-muted-foreground sm:block">
+              ⌘K
+            </kbd>
           </label>
 
           <div className="ml-auto flex items-center gap-2">
             {actions}
+
             <button
               className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
               aria-label="Messages"
