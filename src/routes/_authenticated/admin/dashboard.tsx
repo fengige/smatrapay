@@ -3,14 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
-  ArrowUpRight,
+  Building2,
   ChevronRight,
   Gauge,
   MessageSquare,
   ShieldCheck,
-  Sparkles,
-  UserPlus,
   Users,
+  Zap,
 } from "lucide-react";
 import {
   Bar,
@@ -34,12 +33,12 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
       {
         name: "description",
         content:
-          "SmatraPay admin dashboard: account totals, portal distribution, platform statistics and the newest sign-ups.",
+          "SmatraPay admin dashboard: vendors, meters, pending enquiries, platform statistics and system status.",
       },
       { property: "og:title", content: "Admin dashboard · SmatraPay" },
       {
         property: "og:description",
-        content: "Platform-wide oversight of SmatraPay accounts, portals and account health.",
+        content: "Smart metering & vending program overview for the SmatraPay platform.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -80,24 +79,28 @@ function AdminDashboard() {
       .join("")
       .toUpperCase() || "SA";
 
+  const vendors = data?.byRole?.["vendor"] ?? 0;
+  const meters = 0;
+  const enquiries = 0;
+
   const stats = [
     {
-      label: "Total Accounts",
-      value: fmt(data?.total),
-      icon: Users,
+      label: "Total Vendors",
+      value: fmt(vendors),
+      icon: Building2,
       caption: `${fmt(data?.byStatus?.["active"])} active accounts`,
     },
     {
-      label: "New This Week",
-      value: fmt(data?.newThisWeek),
-      icon: UserPlus,
-      caption: `${fmt(data?.newToday)} joined today`,
+      label: "Total Meters",
+      value: fmt(meters),
+      icon: Gauge,
+      caption: "Registered devices",
     },
     {
-      label: "Staff Accounts",
-      value: fmt(data?.staffCount),
-      icon: ShieldCheck,
-      caption: "Admin, landlord, vendor, agent",
+      label: "Pending Enquiries",
+      value: fmt(enquiries),
+      icon: MessageSquare,
+      caption: "New website leads",
     },
     {
       label: "System Status",
@@ -109,30 +112,43 @@ function AdminDashboard() {
   ];
 
   const quickActions = [
-    { label: "Add User", caption: "Create account", to: "/users", icon: UserPlus },
-    { label: "Directory", caption: "Manage accounts", to: "/users", icon: Users },
-    { label: "Account", caption: "System settings", to: "/users", icon: Gauge },
+    { label: "Add Vendor", caption: "Create account", to: "/users", icon: Building2 },
+    { label: "Meters", caption: "Manage units", to: "/users", icon: Gauge },
+    { label: "Account", caption: "System settings", to: "/users", icon: ShieldCheck },
   ];
 
-  const roleEntries = Object.entries(data?.byRole ?? {}).sort((a, b) => b[1] - a[1]);
-  const chartData = roleEntries.map(([role, count]) => ({
-    name: roleLabel(role),
-    count,
-  }));
+  const chartData = [
+    { name: "Vendors", count: vendors },
+    { name: "Active Vendors", count: data?.byStatus?.["active"] ?? 0 },
+    { name: "Meters", count: meters },
+    { name: "Active Meters", count: meters },
+    { name: "Pending Enquiries", count: enquiries },
+    { name: "Resolved Enquiries", count: 0 },
+  ];
+  const hasChartData = chartData.some((d) => d.count > 0);
+
+  const recentVendors = (data?.recent ?? []).filter((u) => u.role === "vendor").slice(0, 5);
 
   const networkRows = [
-    { label: "Total accounts", value: data?.total, icon: Users },
-    { label: "Active accounts", value: data?.byStatus?.["active"], icon: Activity },
-    { label: "Portals in use", value: roleEntries.length, icon: ShieldCheck },
+    { label: "Total Vendors", value: vendors, icon: Building2 },
+    { label: "Active Meters", value: meters, icon: Gauge },
+    { label: "Total Meters", value: meters, icon: Users },
   ];
 
   return (
     <DashboardShell
       access={access}
       title="Admin dashboard"
-      description="SmatraPay platform overview"
+      description="Smart metering & vending program overview"
       hideHeading
     >
+      {/* Welcome bar */}
+      <div className="mb-4 rounded-xl border border-border bg-card px-4 py-3">
+        <p className="text-sm font-bold text-foreground">
+          Welcome, {identity.name || "Super Admin"}
+        </p>
+      </div>
+
       {/* Hero banner */}
       <section className="relative overflow-hidden rounded-3xl bg-brand-panel px-6 py-7 text-panel-foreground sm:px-8">
         <div className="orb orb-1" aria-hidden />
@@ -140,7 +156,7 @@ function AdminDashboard() {
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Admin Dashboard</h2>
             <p className="mt-1 text-sm font-semibold text-panel-foreground/90">
-              Accounts, portals &amp; platform activity overview
+              Smart metering &amp; vending program overview
             </p>
             <p className="mt-2 text-xs text-panel-muted">{today}</p>
           </div>
@@ -196,21 +212,24 @@ function AdminDashboard() {
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <section className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
           <h2 className="text-base font-bold text-foreground">Platform Statistics</h2>
-          <p className="text-sm text-muted-foreground">Overview of accounts by portal</p>
+          <p className="text-sm text-muted-foreground">Overview of vendors, meters &amp; enquiries</p>
           <div className="mt-5 h-72">
-            {chartData.length === 0 ? (
+            {!hasChartData ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                 No platform data available yet
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
+                <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 24 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis
                     dataKey="name"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    angle={-25}
+                    textAnchor="end"
+                    height={50}
+                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                   />
                   <YAxis
                     allowDecimals={false}
@@ -228,7 +247,7 @@ function AdminDashboard() {
                       fontSize: 12,
                     }}
                   />
-                  <Bar dataKey="count" name="Accounts" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" name="Count" fill="var(--primary)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -238,21 +257,21 @@ function AdminDashboard() {
         <div className="space-y-4">
           <section className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h2 className="text-sm font-bold text-foreground">Recent Accounts</h2>
+              <h2 className="text-sm font-bold text-foreground">Recent Vendors</h2>
               <Link
                 to="/users"
                 className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
               >
-                View All <ArrowUpRight className="size-3" />
+                View All <ChevronRight className="size-3" />
               </Link>
             </div>
             <ul className="mt-3 space-y-3">
-              {(data?.recent ?? []).slice(0, 5).map((u) => (
+              {recentVendors.map((u) => (
                 <li key={u.id} className="flex items-center gap-3">
                   {u.profile_image ? (
                     <img
                       src={u.profile_image}
-                      alt={u.name ?? "User avatar"}
+                      alt={u.name ?? "Vendor avatar"}
                       className="size-8 rounded-full object-cover"
                     />
                   ) : (
@@ -271,9 +290,9 @@ function AdminDashboard() {
                   </span>
                 </li>
               ))}
-              {!isLoading && (data?.recent ?? []).length === 0 && (
-                <li className="py-6 text-center text-sm text-muted-foreground">
-                  No accounts registered yet
+              {recentVendors.length === 0 && (
+                <li className="py-8 text-center text-sm text-muted-foreground">
+                  No vendors registered yet
                 </li>
               )}
             </ul>
@@ -282,8 +301,8 @@ function AdminDashboard() {
           <section className="relative overflow-hidden rounded-2xl bg-brand-panel p-5 text-panel-foreground">
             <div className="relative">
               <h2 className="flex items-center gap-2 text-base font-bold">
-                <Sparkles className="size-4" />
-                Platform Status
+                <Zap className="size-4" />
+                Network Status
               </h2>
               <p className="text-xs text-panel-muted">Registered entities overview</p>
               <ul className="mt-4 space-y-1">
@@ -302,20 +321,9 @@ function AdminDashboard() {
                 to="/users"
                 className="mt-4 flex w-full items-center justify-center rounded-xl bg-background px-4 py-2.5 text-sm font-bold text-foreground transition-opacity hover:opacity-90"
               >
-                Review Accounts
+                Review Fleet
               </Link>
             </div>
-          </section>
-
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="size-4 text-muted-foreground" />
-              <h2 className="text-sm font-bold text-foreground">Monthly growth</h2>
-            </div>
-            <p className="mt-2 text-2xl font-extrabold text-foreground">
-              {fmt(data?.newThisMonth)}
-            </p>
-            <p className="text-xs text-muted-foreground">New accounts in the last 30 days</p>
           </section>
         </div>
       </div>
