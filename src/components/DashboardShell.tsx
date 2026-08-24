@@ -57,7 +57,13 @@ export function DashboardShell({
   }
 
   return (
-    <PortalLayout roles={access.roles} title={title} description={description} actions={actions}>
+    <PortalLayout
+      roles={access.roles}
+      title={title}
+      description={description}
+      actions={actions}
+      hideHeading={hideHeading}
+    >
       {children ?? (
         <div className="grid gap-4 sm:grid-cols-3">
           {["Today", "This week", "This month"].map((label) => (
