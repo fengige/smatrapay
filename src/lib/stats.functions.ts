@@ -47,13 +47,43 @@ export const getAdminStats = createServerFn({ method: "GET" })
         role: roleByUser.get(p.id) ?? "user",
       }));
 
+    const dayMs = 86400000;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const daily = Array.from({ length: 14 }, (_, i) => {
+      const from = startOfToday.getTime() - (13 - i) * dayMs;
+      const to = from + dayMs;
+      const count = profiles.filter((p) => {
+        const t = new Date(p.created_at).getTime();
+        return t >= from && t < to;
+      }).length;
+      return { date: new Date(from).toISOString().slice(0, 10), count };
+    });
+
+    const last7 = since(7);
+    const prev7 = profiles.filter((p) => {
+      const age = now - new Date(p.created_at).getTime();
+      return age >= 7 * dayMs && age < 14 * dayMs;
+    }).length;
+    const growthPct = prev7 === 0 ? (last7 > 0 ? 100 : 0) : ((last7 - prev7) / prev7) * 100;
+
+    const activeShare = profiles.length
+      ? ((byStatus["active"] ?? 0) / profiles.length) * 100
+      : 0;
+
     return {
       total: profiles.length,
       newToday: since(1),
-      newThisWeek: since(7),
+      newThisWeek: last7,
       newThisMonth: since(30),
+      growthPct,
+      activeShare,
+      staffCount: roles.filter((r) => r.role !== "resident" && r.role !== "user").length,
       byStatus,
       byRole,
+      daily,
       recent,
     };
   });
+
