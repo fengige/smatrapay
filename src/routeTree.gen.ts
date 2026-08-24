@@ -12,7 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
+import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
+import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
+import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_authenticated/resident/dashboard'
+import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
+import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,41 +35,136 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminDashboardRoute =
+  AuthenticatedAdminDashboardRouteImport.update({
+    id: '/admin/dashboard',
+    path: '/admin/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAgentDashboardRoute =
+  AuthenticatedAgentDashboardRouteImport.update({
+    id: '/agent/dashboard',
+    path: '/agent/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordDashboardRoute =
+  AuthenticatedLandlordDashboardRouteImport.update({
+    id: '/landlord/dashboard',
+    path: '/landlord/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResidentDashboardRoute =
+  AuthenticatedResidentDashboardRouteImport.update({
+    id: '/resident/dashboard',
+    path: '/resident/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedServiceProviderDashboardRoute =
+  AuthenticatedServiceProviderDashboardRouteImport.update({
+    id: '/service-provider/dashboard',
+    path: '/service-provider/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVendorDashboardRoute =
+  AuthenticatedVendorDashboardRouteImport.update({
+    id: '/vendor/dashboard',
+    path: '/vendor/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
+  '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
+  '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
+  '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
+  '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
+  '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
+  '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/users'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/users'
+    | '/admin/dashboard'
+    | '/agent/dashboard'
+    | '/landlord/dashboard'
+    | '/resident/dashboard'
+    | '/service-provider/dashboard'
+    | '/vendor/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/users'
-  id: '__root__' | '/' | '/_authenticated' | '/auth' | '/_authenticated/users'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/users'
+    | '/admin/dashboard'
+    | '/agent/dashboard'
+    | '/landlord/dashboard'
+    | '/resident/dashboard'
+    | '/service-provider/dashboard'
+    | '/vendor/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/reset-password'
+    | '/_authenticated/users'
+    | '/_authenticated/admin/dashboard'
+    | '/_authenticated/agent/dashboard'
+    | '/_authenticated/landlord/dashboard'
+    | '/_authenticated/resident/dashboard'
+    | '/_authenticated/service-provider/dashboard'
+    | '/_authenticated/vendor/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -88,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/users': {
       id: '/_authenticated/users'
       path: '/users'
@@ -95,15 +204,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/dashboard': {
+      id: '/_authenticated/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AuthenticatedAdminDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agent/dashboard': {
+      id: '/_authenticated/agent/dashboard'
+      path: '/agent/dashboard'
+      fullPath: '/agent/dashboard'
+      preLoaderRoute: typeof AuthenticatedAgentDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/dashboard': {
+      id: '/_authenticated/landlord/dashboard'
+      path: '/landlord/dashboard'
+      fullPath: '/landlord/dashboard'
+      preLoaderRoute: typeof AuthenticatedLandlordDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resident/dashboard': {
+      id: '/_authenticated/resident/dashboard'
+      path: '/resident/dashboard'
+      fullPath: '/resident/dashboard'
+      preLoaderRoute: typeof AuthenticatedResidentDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/service-provider/dashboard': {
+      id: '/_authenticated/service-provider/dashboard'
+      path: '/service-provider/dashboard'
+      fullPath: '/service-provider/dashboard'
+      preLoaderRoute: typeof AuthenticatedServiceProviderDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/dashboard': {
+      id: '/_authenticated/vendor/dashboard'
+      path: '/vendor/dashboard'
+      fullPath: '/vendor/dashboard'
+      preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
+  AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
+  AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
+  AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
+  AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
+  AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
+  AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,
+  AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
+  AuthenticatedResidentDashboardRoute: AuthenticatedResidentDashboardRoute,
+  AuthenticatedServiceProviderDashboardRoute:
+    AuthenticatedServiceProviderDashboardRoute,
+  AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -113,6 +277,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

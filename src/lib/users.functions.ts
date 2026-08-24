@@ -4,7 +4,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
-const roleEnum = z.enum(["admin", "moderator", "user"]);
+const roleEnum = z.enum([
+  "admin",
+  "landlord",
+  "vendor",
+  "agent",
+  "service_provider",
+  "resident",
+  "moderator",
+  "user",
+]);
 
 const profilePatch = z.object({
   id: z.string().uuid(),
