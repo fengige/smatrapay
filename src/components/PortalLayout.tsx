@@ -35,7 +35,7 @@ export function PortalLayout({
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const items = navForRoles(roles);
-  const portalName = roles.length ? roleLabel(roles[0]) : "Portal";
+  const portalName = roles[0] ? roleLabel(roles[0]) : "Portal";
 
   const sidebar = (
     <div className="flex h-full flex-col bg-brand-panel text-panel-foreground">

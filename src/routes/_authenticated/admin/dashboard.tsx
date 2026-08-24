@@ -43,7 +43,7 @@ function AdminDashboard() {
     { label: "Total accounts", value: data?.total, icon: Users },
     { label: "New today", value: data?.newToday, icon: UserPlus },
     { label: "New this week", value: data?.newThisWeek, icon: Activity },
-    { label: "Active accounts", value: data?.byStatus?.active ?? 0, icon: ShieldCheck },
+    { label: "Active accounts", value: data?.byStatus?.["active"] ?? 0, icon: ShieldCheck },
   ];
 
   return (
