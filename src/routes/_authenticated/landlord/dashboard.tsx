@@ -13,7 +13,7 @@ function LandlordDashboard() {
     <DashboardShell
       access={Route.useLoaderData()}
       title="Landlord dashboard"
-      description="Track properties, tenants, rent collection and payouts."
+      description="Track properties, residents, rent collection and payouts."
     />
   );
 }
