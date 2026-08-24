@@ -14,15 +14,18 @@ export function DashboardShell({
   title,
   description,
   actions,
+  hideHeading,
   children,
 }: {
   access: AccessResult;
   title: string;
   description: string;
   actions?: React.ReactNode;
+  hideHeading?: boolean;
   children?: React.ReactNode;
 }) {
   const signOut = usePortalSignOut();
+
 
   if (!access.allowed) {
     const home = dashboardForRoles(access.roles);
@@ -54,7 +57,13 @@ export function DashboardShell({
   }
 
   return (
-    <PortalLayout roles={access.roles} title={title} description={description} actions={actions}>
+    <PortalLayout
+      roles={access.roles}
+      title={title}
+      description={description}
+      actions={actions}
+      hideHeading={hideHeading}
+    >
       {children ?? (
         <div className="grid gap-4 sm:grid-cols-3">
           {["Today", "This week", "This month"].map((label) => (

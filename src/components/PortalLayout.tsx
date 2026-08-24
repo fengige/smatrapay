@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Menu, X } from "lucide-react";
+import { Bell, LogOut, Menu, MessageSquare, Search, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
-import { navForRoles } from "@/lib/portal-nav";
+import { navGroupsForRoles } from "@/lib/portal-nav";
 import { roleLabel } from "@/lib/portals";
 
 export function usePortalSignOut() {
@@ -18,24 +18,55 @@ export function usePortalSignOut() {
   };
 }
 
+function initials(value: string) {
+  const parts = value.trim().split(/[\s@._-]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "U";
+}
+
+export function useSessionIdentity() {
+  const [identity, setIdentity] = useState<{ name: string; email: string }>({
+    name: "",
+    email: "",
+  });
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active || !data.user) return;
+      const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      setIdentity({
+        name: (meta["name"] as string) || (data.user.email ?? "").split("@")[0] || "Account",
+        email: data.user.email ?? "",
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  return identity;
+}
+
 export function PortalLayout({
   roles,
   title,
   description,
   actions,
+  hideHeading,
   children,
 }: {
   roles: string[];
   title: string;
   description?: string;
   actions?: React.ReactNode;
+  hideHeading?: boolean | undefined;
   children: React.ReactNode;
 }) {
   const signOut = usePortalSignOut();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const items = navForRoles(roles);
+  const groups = navGroupsForRoles(roles);
   const portalName = roles[0] ? roleLabel(roles[0]) : "Portal";
+  const identity = useSessionIdentity();
+  const avatar = initials(identity.name || identity.email || portalName);
 
   const sidebar = (
     <div className="flex h-full flex-col bg-brand-panel text-panel-foreground">
@@ -52,35 +83,49 @@ export function PortalLayout({
         </button>
       </div>
 
-      <p className="px-5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-panel-muted">
-        {portalName} portal
-      </p>
-
-      <nav className="mt-3 flex-1 space-y-1 px-3">
-        {items.map((item) => {
-          const active = pathname === item.to;
-          return (
-            <Link
-              key={item.label + item.to}
-              to={item.to}
-              onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
-                active
-                  ? "bg-panel-tile text-panel-foreground"
-                  : "text-panel-muted hover:bg-panel-tile hover:text-panel-foreground"
-              }`}
-            >
-              <item.icon className="size-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+        {groups.map((group, gi) => (
+          <div key={group.heading ?? gi} className="space-y-1">
+            {group.heading && (
+              <p className="px-3 pb-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-panel-muted">
+                {group.heading}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const active = pathname === item.to;
+              return (
+                <Link
+                  key={item.label + item.to}
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    active
+                      ? "bg-panel-tile text-panel-foreground"
+                      : "text-panel-muted hover:bg-panel-tile hover:text-panel-foreground"
+                  }`}
+                >
+                  <item.icon className="size-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
-      <div className="px-3 pb-5">
+      <div className="border-t border-white/10 px-3 py-4">
+        <div className="flex items-center gap-3 rounded-xl px-2 py-2">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
+            {avatar}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{identity.name || "Account"}</p>
+            <p className="truncate text-xs text-panel-muted">{portalName}</p>
+          </div>
+        </div>
         <button
           onClick={signOut}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-panel-muted transition-colors hover:bg-panel-tile hover:text-panel-foreground"
+          className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-panel-muted transition-colors hover:bg-panel-tile hover:text-panel-foreground"
         >
           <LogOut className="size-4" />
           Sign out
@@ -107,7 +152,7 @@ export function PortalLayout({
       )}
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/85 px-5 py-4 backdrop-blur">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/85 px-5 py-3 backdrop-blur">
           <button
             className="rounded-lg border border-border p-2 lg:hidden"
             onClick={() => setOpen(true)}
@@ -115,21 +160,45 @@ export function PortalLayout({
           >
             <Menu className="size-4" />
           </button>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold tracking-tight text-foreground">{title}</h1>
-            {description && (
-              <p className="truncate text-xs text-muted-foreground">{description}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+
+          <label className="hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm text-muted-foreground sm:flex">
+            <Search className="size-4 shrink-0" />
+            <input
+              type="search"
+              placeholder="Search anything…"
+              aria-label="Search"
+              className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+            />
+          </label>
+
+          <div className="ml-auto flex items-center gap-2">
             {actions}
-            <span className="hidden rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground sm:inline">
-              {roles.map(roleLabel).join(" · ") || "Member"}
+            <button
+              className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+              aria-label="Messages"
+            >
+              <MessageSquare className="size-4" />
+              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
+            </button>
+            <button
+              className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+              aria-label="Notifications"
+            >
+              <Bell className="size-4" />
+              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
+            </button>
+            <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              {avatar}
             </span>
           </div>
         </header>
 
-        <main className="px-5 py-7">{children}</main>
+        <div className={hideHeading ? "sr-only" : "px-5 pt-5"}>
+          <h1 className="text-lg font-bold tracking-tight text-foreground">{title}</h1>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+
+        <main className="px-5 pb-8 pt-1">{children}</main>
       </div>
     </div>
   );

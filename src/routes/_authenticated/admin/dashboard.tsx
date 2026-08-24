@@ -3,42 +3,40 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
-  ArrowDownRight,
   ArrowUpRight,
-  CheckCircle2,
+  ChevronRight,
+  Gauge,
+  MessageSquare,
+  ShieldCheck,
   Sparkles,
   UserPlus,
   Users,
-  ShieldCheck,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
+  YAxis,
 } from "recharts";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { getAdminStats } from "@/lib/stats.functions";
 import { DashboardShell } from "@/components/DashboardShell";
+import { useSessionIdentity } from "@/components/PortalLayout";
 import { roleLabel } from "@/lib/portals";
 
 export const Route = createFileRoute("/_authenticated/admin/dashboard")({
   head: () => ({
     meta: [
-      { title: "Admin overview · SmatraPay" },
+      { title: "Admin dashboard · SmatraPay" },
       {
         name: "description",
         content:
-          "SmatraPay admin portal: account growth, portal role distribution, account statuses and the latest sign-ups.",
+          "SmatraPay admin dashboard: account totals, portal distribution, platform statistics and the newest sign-ups.",
       },
-      { property: "og:title", content: "Admin overview · SmatraPay" },
+      { property: "og:title", content: "Admin dashboard · SmatraPay" },
       {
         property: "og:description",
         content: "Platform-wide oversight of SmatraPay accounts, portals and account health.",
@@ -52,33 +50,13 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
   errorComponent: () => <p className="p-8 text-sm">Could not load this dashboard.</p>,
 });
 
-const STATUS_TONE: Record<string, string> = {
-  active: "bg-primary",
-  pending: "bg-accent",
-  inactive: "bg-muted-foreground",
-  suspended: "bg-destructive",
-};
-
 function fmt(n: number | undefined) {
   return typeof n === "number" ? n.toLocaleString() : "—";
 }
 
-function Trend({ value }: { value: number }) {
-  const up = value >= 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${
-        up ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
-      }`}
-    >
-      {up ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-      {Math.abs(Math.round(value))}%
-    </span>
-  );
-}
-
 function AdminDashboard() {
   const access = Route.useLoaderData();
+  const identity = useSessionIdentity();
   const fetchStats = useServerFn(getAdminStats);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-stats"],
@@ -86,338 +64,261 @@ function AdminDashboard() {
     enabled: access.allowed,
   });
 
-  const cards = [
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const avatar =
+    (identity.name || identity.email || "SA")
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "SA";
+
+  const stats = [
     {
-      label: "Total accounts",
-      value: data?.total,
+      label: "Total Accounts",
+      value: fmt(data?.total),
       icon: Users,
-      trend: data?.growthPct ?? 0,
-      caption: "All portals combined",
+      caption: `${fmt(data?.byStatus?.["active"])} active accounts`,
     },
     {
-      label: "New this week",
-      value: data?.newThisWeek,
+      label: "New This Week",
+      value: fmt(data?.newThisWeek),
       icon: UserPlus,
-      trend: data?.growthPct ?? 0,
-      caption: `${fmt(data?.newToday)} today`,
+      caption: `${fmt(data?.newToday)} joined today`,
     },
     {
-      label: "Staff accounts",
-      value: data?.staffCount,
+      label: "Staff Accounts",
+      value: fmt(data?.staffCount),
       icon: ShieldCheck,
-      trend: 0,
       caption: "Admin, landlord, vendor, agent",
     },
     {
-      label: "Active share",
-      value: data ? Math.round(data.activeShare) : undefined,
-      suffix: "%",
+      label: "System Status",
+      value: "Healthy",
+      valueClass: "text-2xl",
       icon: Activity,
-      trend: 0,
-      caption: `${fmt(data?.byStatus?.["active"])} active accounts`,
+      caption: "All services operational",
     },
   ];
 
-  const daily = (data?.daily ?? []).map((d) => ({
-    ...d,
-    label: new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-  }));
-
-  const roleEntries = Object.entries(data?.byRole ?? {}).sort((a, b) => b[1] - a[1]);
-  const pieColors = [
-    "var(--primary)",
-    "var(--accent)",
-    "color-mix(in oklch, var(--primary) 55%, white)",
-    "color-mix(in oklch, var(--accent) 55%, white)",
-    "var(--muted-foreground)",
-    "color-mix(in oklch, var(--primary) 30%, white)",
+  const quickActions = [
+    { label: "Add User", caption: "Create account", to: "/users", icon: UserPlus },
+    { label: "Directory", caption: "Manage accounts", to: "/users", icon: Users },
+    { label: "Account", caption: "System settings", to: "/users", icon: Gauge },
   ];
 
-  const statusEntries = Object.entries(data?.byStatus ?? {}).sort((a, b) => b[1] - a[1]);
-  const statusTotal = Math.max(1, data?.total ?? 1);
+  const roleEntries = Object.entries(data?.byRole ?? {}).sort((a, b) => b[1] - a[1]);
+  const chartData = roleEntries.map(([role, count]) => ({
+    name: roleLabel(role),
+    count,
+  }));
+
+  const networkRows = [
+    { label: "Total accounts", value: data?.total, icon: Users },
+    { label: "Active accounts", value: data?.byStatus?.["active"], icon: Activity },
+    { label: "Portals in use", value: roleEntries.length, icon: ShieldCheck },
+  ];
 
   return (
     <DashboardShell
       access={access}
-      title="Main dashboard"
-      description="Welcome back — here's your SmatraPay platform overview for today"
-      actions={
-        <Link to="/users" className="btn-primary px-4 text-sm">
-          Manage users
-        </Link>
-      }
+      title="Admin dashboard"
+      description="SmatraPay platform overview"
+      hideHeading
     >
-      {/* Insight banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-brand-panel px-5 py-4 text-panel-foreground">
+      {/* Hero banner */}
+      <section className="relative overflow-hidden rounded-3xl bg-brand-panel px-6 py-7 text-panel-foreground sm:px-8">
         <div className="orb orb-1" aria-hidden />
-        <div className="relative flex flex-wrap items-center gap-4">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-panel-tile">
-            <Sparkles className="size-5" />
-          </span>
+        <div className="relative flex items-center gap-6">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">
-              Platform insight: {fmt(data?.newThisMonth)} new accounts in the last 30 days
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Admin Dashboard</h2>
+            <p className="mt-1 text-sm font-semibold text-panel-foreground/90">
+              Accounts, portals &amp; platform activity overview
             </p>
-            <p className="mt-0.5 text-xs text-panel-muted">
-              {fmt(data?.total)} total accounts · {roleEntries.length} portals in use ·{" "}
-              {Math.round(data?.activeShare ?? 0)}% active
-            </p>
+            <p className="mt-2 text-xs text-panel-muted">{today}</p>
           </div>
-          <Link
-            to="/users"
-            className="rounded-xl bg-panel-tile px-4 py-2 text-xs font-bold transition-colors hover:bg-panel-tile/70"
-          >
-            View directory
-          </Link>
+          <span className="hidden size-14 shrink-0 items-center justify-center rounded-full bg-background text-sm font-extrabold text-foreground sm:flex">
+            {avatar}
+          </span>
         </div>
-      </div>
+      </section>
 
-      {/* KPI cards */}
+      {/* Stat cards */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <card.icon className="size-4" />
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-muted-foreground">{s.label}</p>
+              <span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                <s.icon className="size-4" />
               </span>
-              {card.trend !== 0 && <Trend value={card.trend} />}
             </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-foreground">
-              {isLoading ? "—" : `${fmt(card.value)}${card.suffix ?? ""}`}
+            <p
+              className={`mt-3 font-extrabold tracking-tight text-foreground ${
+                s.valueClass ?? "text-3xl"
+              }`}
+            >
+              {isLoading && s.label !== "System Status" ? "—" : s.value}
             </p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{card.label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{card.caption}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{s.caption}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <section className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-bold text-foreground">Sign-ups</h2>
-              <p className="text-xs text-muted-foreground">Last 14 days</p>
-            </div>
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-              {fmt(data?.newThisWeek)} this week
-            </span>
-          </div>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={daily} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="signupFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                  interval="preserveStartEnd"
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    fontSize: 12,
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  name="Sign-ups"
-                  stroke="var(--primary)"
-                  strokeWidth={2.5}
-                  fill="url(#signupFill)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="text-sm font-bold text-foreground">Portal distribution</h2>
-          <div className="mt-2 h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={roleEntries.map(([role, count]) => ({ name: roleLabel(role), value: count }))}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={44}
-                  outerRadius={68}
-                  paddingAngle={2}
-                  stroke="none"
-                >
-                  {roleEntries.map((_, i) => (
-                    <Cell key={i} fill={pieColors[i % pieColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    fontSize: 12,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="mt-3 space-y-2">
-            {roleEntries.map(([role, count], i) => (
-              <li key={role} className="flex items-center gap-2 text-xs font-semibold">
-                <span
-                  className="size-2.5 rounded-full"
-                  style={{ background: pieColors[i % pieColors.length] }}
-                />
-                <span className="flex-1 truncate text-muted-foreground">{roleLabel(role)}</span>
-                <span className="text-foreground">{count}</span>
-              </li>
-            ))}
-            {!isLoading && roleEntries.length === 0 && (
-              <li className="text-sm text-muted-foreground">No roles assigned yet.</li>
-            )}
-          </ul>
-        </section>
-      </div>
-
-      {/* Status + weekly activity */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">Account health</h2>
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[0.7rem] font-bold text-primary">
-              <CheckCircle2 className="size-3" />
-              {Math.round(data?.activeShare ?? 0)}% active
-            </span>
-          </div>
-          <ul className="mt-4 space-y-3">
-            {statusEntries.map(([status, count]) => (
-              <li key={status}>
-                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                  <span className="capitalize">{status}</span>
-                  <span className="text-foreground">{count}</span>
-                </div>
-                <div className="mt-1.5 h-1.5 rounded-full bg-muted">
-                  <div
-                    className={`h-full rounded-full ${STATUS_TONE[status] ?? "bg-primary"}`}
-                    style={{ width: `${Math.min(100, (count / statusTotal) * 100)}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-            {!isLoading && statusEntries.length === 0 && (
-              <li className="text-sm text-muted-foreground">No accounts yet.</li>
-            )}
-          </ul>
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
-          <h2 className="text-sm font-bold text-foreground">Daily activity</h2>
-          <p className="text-xs text-muted-foreground">New accounts per day</p>
-          <div className="mt-4 h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={daily} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                  interval="preserveStartEnd"
-                />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)" }}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    fontSize: 12,
-                  }}
-                />
-                <Bar dataKey="count" name="Sign-ups" fill="var(--accent)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      </div>
-
-      {/* Recent accounts */}
-      <section className="mt-5 rounded-2xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-foreground">Newest accounts</h2>
+      {/* Quick actions */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        {quickActions.map((a) => (
           <Link
-            to="/users"
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            key={a.label}
+            to={a.to}
+            className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-shadow hover:shadow-md"
           >
-            View all <ArrowUpRight className="size-3" />
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
+              <a.icon className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-foreground">{a.label}</span>
+              <span className="block text-xs text-muted-foreground">{a.caption}</span>
+            </span>
+            <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
           </Link>
-        </div>
+        ))}
+      </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="pb-2 pr-4 font-semibold">User</th>
-                <th className="pb-2 pr-4 font-semibold">Portal</th>
-                <th className="pb-2 pr-4 font-semibold">Status</th>
-                <th className="pb-2 font-semibold">Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data?.recent ?? []).map((u) => (
-                <tr key={u.id} className="border-t border-border">
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-3">
-                      {u.profile_image ? (
-                        <img
-                          src={u.profile_image}
-                          alt={u.name ?? "User avatar"}
-                          className="size-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                          {(u.name ?? u.email ?? "?").charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{u.name ?? "—"}</p>
-                        <p className="truncate text-xs text-muted-foreground">{u.email ?? "—"}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">{roleLabel(u.role)}</td>
-                  <td className="py-3 pr-4">
-                    <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold capitalize text-secondary-foreground">
-                      {u.status}
+      {/* Statistics + side column */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <section className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
+          <h2 className="text-base font-bold text-foreground">Platform Statistics</h2>
+          <p className="text-sm text-muted-foreground">Overview of accounts by portal</p>
+          <div className="mt-5 h-72">
+            {chartData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                No platform data available yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tickLine={false}
+                    axisLine={false}
+                    width={28}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)" }}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid var(--border)",
+                      background: "var(--card)",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="count" name="Accounts" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
+
+        <div className="space-y-4">
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-sm font-bold text-foreground">Recent Accounts</h2>
+              <Link
+                to="/users"
+                className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                View All <ArrowUpRight className="size-3" />
+              </Link>
+            </div>
+            <ul className="mt-3 space-y-3">
+              {(data?.recent ?? []).slice(0, 5).map((u) => (
+                <li key={u.id} className="flex items-center gap-3">
+                  {u.profile_image ? (
+                    <img
+                      src={u.profile_image}
+                      alt={u.name ?? "User avatar"}
+                      className="size-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                      {(u.name ?? u.email ?? "?").charAt(0).toUpperCase()}
                     </span>
-                  </td>
-                  <td className="py-3 text-muted-foreground">
-                    {new Date(u.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {u.name ?? u.email ?? "—"}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{roleLabel(u.role)}</p>
+                  </div>
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[0.7rem] font-semibold capitalize text-secondary-foreground">
+                    {u.status}
+                  </span>
+                </li>
               ))}
               {!isLoading && (data?.recent ?? []).length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                    No accounts yet.
-                  </td>
-                </tr>
+                <li className="py-6 text-center text-sm text-muted-foreground">
+                  No accounts registered yet
+                </li>
               )}
-            </tbody>
-          </table>
+            </ul>
+          </section>
+
+          <section className="relative overflow-hidden rounded-2xl bg-brand-panel p-5 text-panel-foreground">
+            <div className="relative">
+              <h2 className="flex items-center gap-2 text-base font-bold">
+                <Sparkles className="size-4" />
+                Platform Status
+              </h2>
+              <p className="text-xs text-panel-muted">Registered entities overview</p>
+              <ul className="mt-4 space-y-1">
+                {networkRows.map((row) => (
+                  <li
+                    key={row.label}
+                    className="flex items-center gap-3 border-b border-white/10 py-2.5 text-sm font-semibold last:border-0"
+                  >
+                    <row.icon className="size-4 text-panel-muted" />
+                    <span className="flex-1">{row.label}</span>
+                    <span>{fmt(row.value)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/users"
+                className="mt-4 flex w-full items-center justify-center rounded-xl bg-background px-4 py-2.5 text-sm font-bold text-foreground transition-opacity hover:opacity-90"
+              >
+                Review Accounts
+              </Link>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="size-4 text-muted-foreground" />
+              <h2 className="text-sm font-bold text-foreground">Monthly growth</h2>
+            </div>
+            <p className="mt-2 text-2xl font-extrabold text-foreground">
+              {fmt(data?.newThisMonth)}
+            </p>
+            <p className="text-xs text-muted-foreground">New accounts in the last 30 days</p>
+          </section>
         </div>
-      </section>
+      </div>
     </DashboardShell>
   );
 }
