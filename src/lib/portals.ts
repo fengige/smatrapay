@@ -47,13 +47,15 @@ export type AppRole =
   | "moderator"
   | "user";
 
-export const RESIDENT_DASHBOARD = "/resident/dashboard";
+export const RESIDENT_DASHBOARD = "/resident/dashboard" as const;
+
+export type DashboardPath = (typeof PORTALS)[number]["dashboard"] | typeof RESIDENT_DASHBOARD;
 
 export function portalById(id: string) {
   return PORTALS.find((p) => p.id === id);
 }
 
-export function dashboardForRoles(roles: string[]): string {
+export function dashboardForRoles(roles: string[]): DashboardPath {
   for (const portal of PORTALS) {
     if (roles.includes(portal.role)) return portal.dashboard;
   }
