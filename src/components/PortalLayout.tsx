@@ -70,17 +70,22 @@ export function PortalLayout({
 
   const sidebar = (
     <div className="flex h-full flex-col bg-brand-panel text-panel-foreground">
-      <div className="flex items-center justify-between px-5 py-5">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="SmatraPay" className="h-7 w-auto" />
-        </Link>
-        <button
-          className="rounded-md p-1 text-panel-muted lg:hidden"
-          onClick={() => setOpen(false)}
-          aria-label="Close navigation"
-        >
-          <X className="size-5" />
-        </button>
+      <div className="px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="SmatraPay" className="h-7 w-auto" />
+          </Link>
+          <button
+            className="rounded-md p-1 text-panel-muted lg:hidden"
+            onClick={() => setOpen(false)}
+            aria-label="Close navigation"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+        <p className="mt-2 text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-panel-muted">
+          {portalName} Portal
+        </p>
       </div>
 
       <nav className="sidebar-scroll flex-1 space-y-5 px-3 pb-4">
