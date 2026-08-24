@@ -57,7 +57,7 @@ export function PortalLayout({
   title: string;
   description?: string;
   actions?: React.ReactNode;
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   children: React.ReactNode;
 }) {
   const signOut = usePortalSignOut();
