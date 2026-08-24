@@ -106,30 +106,16 @@ function UsersPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function signOut() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
-
   const users = (data?.users ?? []) as Row[];
 
   return (
-    <main className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="SmatraPay" className="h-7 w-auto" />
-          <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Users className="size-4 text-primary" /> User directory
-          </span>
-        </div>
-        <button onClick={signOut} className="btn-outline">
-          <LogOut className="size-4" /> Sign out
-        </button>
-      </header>
+    <PortalLayout
+      roles={data?.isAdmin ? ["admin"] : ["user"]}
+      title="User directory"
+      description="Accounts, portals, statuses and profile details."
+    >
+      <div>
 
-      <div className="px-6 py-8">
         {!data?.isAdmin && !isLoading && (
           <p className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
             You're signed in as a standard user, so you only see your own record. An admin can
