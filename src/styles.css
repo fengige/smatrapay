@@ -286,6 +286,26 @@
     pointer-events: none;
   }
 
+  /* Active sidebar item — brand orange accent */
+  .nav-active {
+    position: relative;
+    background-color: color-mix(in oklch, var(--primary) 22%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--primary) 35%, transparent);
+  }
+  .nav-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 3px;
+    border-radius: 9999px;
+    background-color: var(--primary);
+  }
+  .nav-active svg {
+    color: var(--primary);
+  }
+
   /* Custom scrollbar for dark admin sidebar */
   .sidebar-scroll {
     scrollbar-width: thin;
