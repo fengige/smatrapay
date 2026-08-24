@@ -83,7 +83,7 @@ export function PortalLayout({
         </button>
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+      <nav className="sidebar-scroll flex-1 space-y-5 px-3 pb-4">
         {groups.map((group, gi) => (
           <div key={group.heading ?? gi} className="space-y-1">
             {group.heading && (
@@ -123,7 +123,6 @@ export function PortalLayout({
                 </Link>
               );
             })}
-
           </div>
         ))}
       </nav>
