@@ -14,15 +14,18 @@ export function DashboardShell({
   title,
   description,
   actions,
+  hideHeading,
   children,
 }: {
   access: AccessResult;
   title: string;
   description: string;
   actions?: React.ReactNode;
+  hideHeading?: boolean;
   children?: React.ReactNode;
 }) {
   const signOut = usePortalSignOut();
+
 
   if (!access.allowed) {
     const home = dashboardForRoles(access.roles);
