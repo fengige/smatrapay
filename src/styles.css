@@ -327,7 +327,7 @@
     background-clip: padding-box;
   }
   .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in oklch, var(--primary) 75%, transparent);
+    background-color: var(--primary);
   }
   .sidebar-scroll::-webkit-scrollbar-corner {
     background: transparent;
