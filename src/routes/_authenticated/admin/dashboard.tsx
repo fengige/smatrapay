@@ -142,13 +142,6 @@ function AdminDashboard() {
       description="Smart metering & vending program overview"
       hideHeading
     >
-      {/* Welcome bar */}
-      <div className="mb-4 rounded-xl border border-border bg-card px-4 py-3">
-        <p className="text-sm font-bold text-foreground">
-          Welcome, {identity.name || "Super Admin"}
-        </p>
-      </div>
-
       {/* Hero banner */}
       <section className="relative overflow-hidden rounded-3xl bg-brand-panel px-6 py-7 text-panel-foreground sm:px-8">
         <div className="orb orb-1" aria-hidden />
