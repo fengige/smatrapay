@@ -50,12 +50,14 @@ export function PortalLayout({
   title,
   description,
   actions,
+  hideHeading,
   children,
 }: {
   roles: string[];
   title: string;
   description?: string;
   actions?: React.ReactNode;
+  hideHeading?: boolean;
   children: React.ReactNode;
 }) {
   const signOut = usePortalSignOut();
@@ -191,9 +193,9 @@ export function PortalLayout({
           </div>
         </header>
 
-        <div className="px-5 pt-4">
-          <h1 className="sr-only">{title}</h1>
-          {description && <p className="sr-only">{description}</p>}
+        <div className={hideHeading ? "sr-only" : "px-5 pt-5"}>
+          <h1 className="text-lg font-bold tracking-tight text-foreground">{title}</h1>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
 
         <main className="px-5 pb-8 pt-1">{children}</main>
