@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { LogOut, Pencil, Trash2, Users } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { listUsers, updateUser, deleteUser } from "@/lib/users.functions";
-import logo from "@/assets/logo.png";
+import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({
@@ -61,7 +60,6 @@ const roles = [
 ];
 
 function UsersPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listUsers);
   const saveUser = useServerFn(updateUser);
@@ -321,6 +319,6 @@ function UsersPage() {
           </div>
         </div>
       )}
-    </main>
+    </PortalLayout>
   );
 }
