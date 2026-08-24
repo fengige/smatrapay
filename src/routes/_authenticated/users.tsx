@@ -49,7 +49,16 @@ type Row = {
 };
 
 const statuses = ["active", "inactive", "suspended", "pending"];
-const roles = ["admin", "moderator", "user"];
+const roles = [
+  "admin",
+  "landlord",
+  "vendor",
+  "agent",
+  "service_provider",
+  "resident",
+  "moderator",
+  "user",
+];
 
 function UsersPage() {
   const navigate = useNavigate();
