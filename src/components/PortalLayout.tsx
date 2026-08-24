@@ -92,23 +92,38 @@ export function PortalLayout({
               </p>
             )}
             {group.items.map((item) => {
+              const base =
+                "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors";
+              if (!item.to) {
+                return (
+                  <span
+                    key={item.label}
+                    title="Coming soon"
+                    className={`${base} cursor-default text-panel-muted hover:bg-panel-tile/60`}
+                  >
+                    <item.icon className="size-4 shrink-0" />
+                    {item.label}
+                  </span>
+                );
+              }
               const active = pathname === item.to;
               return (
                 <Link
                   key={item.label + item.to}
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  className={`${base} ${
                     active
                       ? "bg-panel-tile text-panel-foreground"
                       : "text-panel-muted hover:bg-panel-tile hover:text-panel-foreground"
                   }`}
                 >
-                  <item.icon className="size-4" />
+                  <item.icon className="size-4 shrink-0" />
                   {item.label}
                 </Link>
               );
             })}
+
           </div>
         ))}
       </nav>
@@ -169,10 +184,14 @@ export function PortalLayout({
               aria-label="Search"
               className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
             />
+            <kbd className="ml-1 hidden rounded-md border border-border bg-background px-1.5 py-0.5 text-[0.65rem] font-semibold text-muted-foreground sm:block">
+              ⌘K
+            </kbd>
           </label>
 
           <div className="ml-auto flex items-center gap-2">
             {actions}
+
             <button
               className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
               aria-label="Messages"
