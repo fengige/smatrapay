@@ -9,7 +9,7 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "Page Rebuilder Pro"
+const SITE_NAME = "SmatraPay"
 const SENDER_DOMAIN = "notify.smatrapay.com"
 const ROOT_DOMAIN = "smatrapay.com"
 const FROM_DOMAIN = "smatrapay.com"

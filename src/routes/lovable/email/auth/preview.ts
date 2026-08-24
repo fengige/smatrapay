@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "Page Rebuilder Pro"
+const SITE_NAME = "SmatraPay"
 const ROOT_DOMAIN = "smatrapay.com"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
