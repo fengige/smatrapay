@@ -221,7 +221,6 @@ function ResidentAuth() {
           ? "SMS sign-in is not switched on yet. Please use Google sign-in for now."
           : raw,
       );
-    }
     } finally {
       setSending(false);
     }
