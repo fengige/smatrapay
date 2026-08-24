@@ -321,7 +321,7 @@
     margin-block: 0.5rem;
   }
   .sidebar-scroll::-webkit-scrollbar-thumb {
-    background-color: color-mix(in oklch, var(--panel-muted) 45%, transparent);
+    background-color: color-mix(in oklch, var(--primary) 55%, transparent);
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: padding-box;
