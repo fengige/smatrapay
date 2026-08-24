@@ -309,7 +309,7 @@
   /* Custom scrollbar for dark admin sidebar */
   .sidebar-scroll {
     scrollbar-width: thin;
-    scrollbar-color: var(--panel-muted) transparent;
+    scrollbar-color: color-mix(in oklch, var(--primary) 60%, transparent) transparent;
     overflow-y: auto;
     overscroll-behavior-y: contain;
   }
