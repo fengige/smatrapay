@@ -119,7 +119,7 @@ export function PortalLayout({
                   onClick={() => setOpen(false)}
                   className={`${base} ${
                     active
-                      ? "bg-panel-tile text-panel-foreground"
+                      ? "nav-active text-panel-foreground"
                       : "text-panel-muted hover:bg-panel-tile hover:text-panel-foreground"
                   }`}
                 >
