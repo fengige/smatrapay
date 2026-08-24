@@ -210,7 +210,17 @@ function ResidentAuth() {
       setOtpSent(true);
       toast.success(`Verification code sent to ${dialCode}${digits}`);
     } catch (err) {
-      toast.error(errorMessage(err, "Could not send the verification code"));
+      const raw = errorMessage(err, "Could not send the verification code");
+      const notEnabled =
+        /phone provider|unsupported phone/i.test(raw) ||
+        (typeof err === "object" &&
+          err !== null &&
+          (err as { code?: string }).code === "phone_provider_disabled");
+      toast.error(
+        notEnabled
+          ? "SMS sign-in is not switched on yet. Please use Google sign-in for now."
+          : raw,
+      );
     } finally {
       setSending(false);
     }
