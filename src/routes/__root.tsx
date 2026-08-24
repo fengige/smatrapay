@@ -134,6 +134,14 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
+  // "Remember me" off: end the session when the browser session ends.
+  useEffect(() => {
+    if (localStorage.getItem("sp_remember") === "0" && !sessionStorage.getItem("sp_active")) {
+      void supabase.auth.signOut();
+    }
+    sessionStorage.setItem("sp_active", "1");
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
