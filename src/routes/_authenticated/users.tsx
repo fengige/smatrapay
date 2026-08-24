@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { LogOut, Pencil, Trash2, Users } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { listUsers, updateUser, deleteUser } from "@/lib/users.functions";
-import logo from "@/assets/logo.png";
+import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({
@@ -61,7 +60,6 @@ const roles = [
 ];
 
 function UsersPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listUsers);
   const saveUser = useServerFn(updateUser);
@@ -106,30 +104,16 @@ function UsersPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function signOut() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
-
   const users = (data?.users ?? []) as Row[];
 
   return (
-    <main className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="SmatraPay" className="h-7 w-auto" />
-          <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Users className="size-4 text-primary" /> User directory
-          </span>
-        </div>
-        <button onClick={signOut} className="btn-outline">
-          <LogOut className="size-4" /> Sign out
-        </button>
-      </header>
+    <PortalLayout
+      roles={data?.isAdmin ? ["admin"] : ["user"]}
+      title="User directory"
+      description="Accounts, portals, statuses and profile details."
+    >
+      <div>
 
-      <div className="px-6 py-8">
         {!data?.isAdmin && !isLoading && (
           <p className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
             You're signed in as a standard user, so you only see your own record. An admin can
@@ -335,6 +319,6 @@ function UsersPage() {
           </div>
         </div>
       )}
-    </main>
+    </PortalLayout>
   );
 }
