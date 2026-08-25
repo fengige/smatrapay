@@ -13,8 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
+import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_authenticated/service-providers'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
@@ -48,14 +52,35 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
+  id: '/landlords',
+  path: '/landlords',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedResidentsRoute = AuthenticatedResidentsRouteImport.update({
   id: '/residents',
   path: '/residents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedServiceProvidersRoute =
+  AuthenticatedServiceProvidersRouteImport.update({
+    id: '/service-providers',
+    path: '/service-providers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminDashboardRoute =
@@ -136,8 +161,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/agents': typeof AuthenticatedAgentsRoute
+  '/landlords': typeof AuthenticatedLandlordsRoute
   '/residents': typeof AuthenticatedResidentsRoute
+  '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
+  '/vendors': typeof AuthenticatedVendorsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
@@ -156,7 +185,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/agents': typeof AuthenticatedAgentsRoute
+  '/landlords': typeof AuthenticatedLandlordsRoute
   '/residents': typeof AuthenticatedResidentsRoute
+  '/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/vendors': typeof AuthenticatedVendorsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
@@ -176,8 +209,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/agents': typeof AuthenticatedAgentsRoute
+  '/_authenticated/landlords': typeof AuthenticatedLandlordsRoute
   '/_authenticated/residents': typeof AuthenticatedResidentsRoute
+  '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
+  '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
@@ -198,8 +235,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/agents'
+    | '/landlords'
     | '/residents'
+    | '/service-providers'
     | '/users'
+    | '/vendors'
     | '/admin/dashboard'
     | '/agent/dashboard'
     | '/landlord/dashboard'
@@ -218,7 +259,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/agents'
+    | '/landlords'
     | '/residents'
+    | '/service-providers'
+    | '/vendors'
     | '/admin/dashboard'
     | '/agent/dashboard'
     | '/landlord/dashboard'
@@ -237,8 +282,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/agents'
+    | '/_authenticated/landlords'
     | '/_authenticated/residents'
+    | '/_authenticated/service-providers'
     | '/_authenticated/users'
+    | '/_authenticated/vendors'
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/landlord/dashboard'
@@ -293,6 +342,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/agents': {
+      id: '/_authenticated/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AuthenticatedAgentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlords': {
+      id: '/_authenticated/landlords'
+      path: '/landlords'
+      fullPath: '/landlords'
+      preLoaderRoute: typeof AuthenticatedLandlordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/residents': {
       id: '/_authenticated/residents'
       path: '/residents'
@@ -300,11 +363,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResidentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/service-providers': {
+      id: '/_authenticated/service-providers'
+      path: '/service-providers'
+      fullPath: '/service-providers'
+      preLoaderRoute: typeof AuthenticatedServiceProvidersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users': {
       id: '/_authenticated/users'
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendors': {
+      id: '/_authenticated/vendors'
+      path: '/vendors'
+      fullPath: '/vendors'
+      preLoaderRoute: typeof AuthenticatedVendorsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/dashboard': {
@@ -430,8 +507,12 @@ const AuthenticatedUsersRouteWithChildren =
   AuthenticatedUsersRoute._addFileChildren(AuthenticatedUsersRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
+  AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRoute
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRoute
+  AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
+  AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
@@ -441,8 +522,12 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
+  AuthenticatedLandlordsRoute: AuthenticatedLandlordsRoute,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRoute,
+  AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
+  AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,
   AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
