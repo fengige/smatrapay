@@ -404,6 +404,64 @@ function UsersPage() {
             </div>
           </div>
 
+          {data?.isAdmin && selectedIds.length > 0 && (
+            <div className="flex flex-col gap-3 border-b border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-medium text-foreground">
+                {selectedIds.length} selected
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent/10 disabled:opacity-50"
+                  disabled={bulkMutation.isPending}
+                  onClick={() => bulkMutation.mutate({ type: "status", value: "active" })}
+                >
+                  Enable
+                </button>
+                <button
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent/10 disabled:opacity-50"
+                  disabled={bulkMutation.isPending}
+                  onClick={() => bulkMutation.mutate({ type: "status", value: "inactive" })}
+                >
+                  Disable
+                </button>
+                <select
+                  aria-label="Change role for selected users"
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm capitalize"
+                  value={bulkRole}
+                  disabled={bulkMutation.isPending}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setBulkRole(value);
+                    if (value) bulkMutation.mutate({ type: "role", value });
+                  }}
+                >
+                  <option value="">Change role…</option>
+                  {roles.map((r) => (
+                    <option key={r} value={r}>
+                      {pretty(r)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="rounded-lg border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  disabled={bulkMutation.isPending}
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedIds.length} user record(s)?`))
+                      bulkMutation.mutate({ type: "delete" });
+                  }}
+                >
+                  Delete
+                </button>
+                <button
+                  className="px-2 text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <p className="p-6 text-sm text-muted-foreground">Loading users…</p>
           ) : (
@@ -411,6 +469,17 @@ function UsersPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
+                    {data?.isAdmin && (
+                      <th className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all users"
+                          className="size-4 accent-primary"
+                          checked={allSelected}
+                          onChange={(e) => toggleAll(e.target.checked)}
+                        />
+                      </th>
+                    )}
                     <th className="px-4 py-3">User</th>
                     <th className="px-4 py-3">Username</th>
                     <th className="px-4 py-3">Phone</th>
@@ -423,7 +492,19 @@ function UsersPage() {
                 <tbody>
                   {filtered.map((u) => (
                     <tr key={u.id} className="border-t border-border hover:bg-muted/30">
+                      {data?.isAdmin && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${u.name ?? u.email ?? "user"}`}
+                            className="size-4 accent-primary"
+                            checked={selectedIds.includes(u.id)}
+                            onChange={(e) => toggleOne(u.id, e.target.checked)}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3">
+
                         <div className="flex items-center gap-3">
                           {u.profile_image ? (
                             <img
