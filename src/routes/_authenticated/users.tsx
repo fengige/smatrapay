@@ -573,7 +573,7 @@ function UsersPage() {
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      <td colSpan={data?.isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                         No users match your filters.
                       </td>
                     </tr>
