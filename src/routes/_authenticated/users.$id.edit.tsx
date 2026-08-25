@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   ALLOWED_IMAGE_TYPES,
