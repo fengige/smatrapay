@@ -11,7 +11,6 @@ import {
   Pencil,
   Phone,
   ShieldCheck,
-  UserRound,
 } from "lucide-react";
 
 import { getUserById } from "@/lib/users.functions";
@@ -281,6 +280,3 @@ function Detail({ label, value, mono }: { label: string; value: string; mono?: b
     </div>
   );
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _icons = UserRound;

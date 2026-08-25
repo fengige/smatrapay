@@ -20,6 +20,7 @@ import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_au
 import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_authenticated/resident/dashboard'
 import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users.index'
+import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -84,6 +85,11 @@ const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedUsersRoute,
 } as any)
+const AuthenticatedUsersIdRoute = AuthenticatedUsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedUsersRoute,
+} as any)
 const AuthenticatedUsersNewRoute = AuthenticatedUsersNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/users/$id': typeof AuthenticatedUsersIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/users/$id': typeof AuthenticatedUsersIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/_authenticated/users/$id': typeof AuthenticatedUsersIdRoute
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/landlord/dashboard'
     | '/resident/dashboard'
     | '/service-provider/dashboard'
+    | '/users/$id'
     | '/users/new'
     | '/vendor/dashboard'
     | '/users/'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/landlord/dashboard'
     | '/resident/dashboard'
     | '/service-provider/dashboard'
+    | '/users/$id'
     | '/users/new'
     | '/vendor/dashboard'
     | '/users'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/resident/dashboard'
     | '/_authenticated/service-provider/dashboard'
+    | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/users/'
@@ -294,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
       parentRoute: typeof AuthenticatedUsersRoute
     }
+    '/_authenticated/users/$id': {
+      id: '/_authenticated/users/$id'
+      path: '/$id'
+      fullPath: '/users/$id'
+      preLoaderRoute: typeof AuthenticatedUsersIdRouteImport
+      parentRoute: typeof AuthenticatedUsersRoute
+    }
     '/_authenticated/users/new': {
       id: '/_authenticated/users/new'
       path: '/new'
@@ -326,11 +345,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedUsersRouteChildren {
+  AuthenticatedUsersIdRoute: typeof AuthenticatedUsersIdRoute
   AuthenticatedUsersNewRoute: typeof AuthenticatedUsersNewRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
 }
 
 const AuthenticatedUsersRouteChildren: AuthenticatedUsersRouteChildren = {
+  AuthenticatedUsersIdRoute: AuthenticatedUsersIdRoute,
   AuthenticatedUsersNewRoute: AuthenticatedUsersNewRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
 }
