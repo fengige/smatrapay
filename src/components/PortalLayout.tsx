@@ -148,9 +148,17 @@ export function PortalLayout({
 
       <div className="border-t border-white/10 px-3 py-4">
         <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
-            {avatar}
-          </span>
+          {identity.profile_image ? (
+            <img
+              src={identity.profile_image}
+              alt={identity.name || "Profile"}
+              className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+            />
+          ) : (
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
+              {avatar}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{identity.name || "Account"}</p>
             <p className="truncate text-xs text-panel-muted">{portalName}</p>
