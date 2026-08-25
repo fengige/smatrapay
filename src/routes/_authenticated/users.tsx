@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Eye,
   Pencil,
@@ -20,7 +22,19 @@ import { toast } from "sonner";
 import { listUsers, updateUser, deleteUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
+const DEFAULT_LIMIT = 10;
+const LIMIT_OPTIONS = [10, 25, 50, 100];
+
+function parseSearch(search: Record<string, unknown>) {
+  const page = Math.max(1, Number(search["page"]) || 1);
+  const limit = LIMIT_OPTIONS.includes(Number(search["limit"]))
+    ? Number(search["limit"])
+    : DEFAULT_LIMIT;
+  return { page, limit };
+}
+
 export const Route = createFileRoute("/_authenticated/users")({
+  validateSearch: parseSearch,
   head: () => ({
     meta: [
       { title: "User Management · SmatraPay" },
@@ -122,7 +136,18 @@ function UsersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkRole, setBulkRole] = useState("");
 
+  const { page: currentPage, limit: pageSize } = Route.useSearch();
+  const navigate = useNavigate({ from: "/users" });
 
+  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+  const setPageSize = (limit: number) => navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
+
+  // Reset to page 1 whenever filters change so results don't disappear.
+  useEffect(() => {
+    setSelectedIds([]);
+    if (currentPage !== 1) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, roleFilter, statusFilter]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
@@ -209,10 +234,19 @@ function UsersPage() {
     });
   }, [users, search, roleFilter, statusFilter]);
 
-  const allSelected = filtered.length > 0 && filtered.every((u) => selectedIds.includes(u.id));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filtered.length);
+  const paginated = useMemo(
+    () => filtered.slice(startIndex, endIndex),
+    [filtered, startIndex, endIndex],
+  );
+
+  const allSelected = paginated.length > 0 && paginated.every((u) => selectedIds.includes(u.id));
 
   function toggleAll(checked: boolean) {
-    setSelectedIds(checked ? filtered.map((u) => u.id) : []);
+    setSelectedIds(checked ? paginated.map((u) => u.id) : []);
   }
 
   function toggleOne(id: string, checked: boolean) {
@@ -490,7 +524,7 @@ function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((u) => (
+                  {paginated.map((u) => (
                     <tr key={u.id} className="border-t border-border hover:bg-muted/30">
                       {data?.isAdmin && (
                         <td className="px-4 py-3">
@@ -571,7 +605,7 @@ function UsersPage() {
                       </td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && (
+                  {paginated.length === 0 && (
                     <tr>
                       <td colSpan={data?.isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                         No users match your filters.
@@ -580,6 +614,54 @@ function UsersPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {filtered.length > 0 && (
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row">
+              <p className="text-sm text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{startIndex + 1}</span>–
+                <span className="font-medium text-foreground">{endIndex}</span> of{" "}
+                <span className="font-medium text-foreground">{filtered.length}</span> users
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span>Rows</span>
+                  <select
+                    aria-label="Rows per page"
+                    className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    {LIMIT_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    aria-label="Previous page"
+                    className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground disabled:opacity-40"
+                    disabled={safePage <= 1}
+                    onClick={() => setPage(safePage - 1)}
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <span className="min-w-[4.5rem] px-2 text-center text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{safePage}</span> / {totalPages}
+                  </span>
+                  <button
+                    aria-label="Next page"
+                    className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground disabled:opacity-40"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setPage(safePage + 1)}
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
