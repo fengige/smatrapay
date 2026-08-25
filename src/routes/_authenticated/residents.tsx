@@ -204,6 +204,14 @@ function ResidentsPage() {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={!filtered.length}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+            >
+              <Download className="size-4" /> Export CSV
+            </button>
           </div>
 
           <div className="overflow-x-auto">
