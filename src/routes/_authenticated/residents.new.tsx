@@ -114,6 +114,8 @@ function NewResidentPage() {
     },
   });
 
+  const isSaving = mutation.isPending;
+
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     // Mark all fields as touched so every error surfaces.
