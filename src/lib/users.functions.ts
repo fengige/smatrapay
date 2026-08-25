@@ -142,3 +142,28 @@ export const createUser = createServerFn({ method: "POST" })
 
     return { ok: true, id };
   });
+
+export const getUserById = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    const { data: profile, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!profile) throw new Error("User not found");
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.id);
+
+    return {
+      user: profile,
+      roles: (roles ?? []).map((r) => r.role as string),
+    };
+  });
