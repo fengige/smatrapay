@@ -539,3 +539,7 @@ function Field({
     </label>
   );
 }
+
+function formatSentAt(date: Date) {
+  return `${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} on ${date.toLocaleDateString()}`;
+}
