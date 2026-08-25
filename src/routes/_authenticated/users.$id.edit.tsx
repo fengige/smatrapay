@@ -2,12 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, AtSign, KeyRound, Phone, Save, ShieldAlert, X } from "lucide-react";
+import { ArrowLeft, AtSign, ImagePlus, KeyRound, Phone, Save, ShieldAlert, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/users/$id/edit")({
   head: () => ({
@@ -62,6 +63,7 @@ type FormState = {
   notes: string;
   role: string;
   status: string;
+  profile_image: string;
 };
 
 const emptyForm: FormState = {
@@ -73,6 +75,7 @@ const emptyForm: FormState = {
   notes: "",
   role: "user",
   status: "active",
+  profile_image: "",
 };
 
 function EditUserPage() {
@@ -127,6 +130,7 @@ function EditUserPage() {
       notes: u.notes ?? "",
       role: data.roles?.[0] ?? "user",
       status: u.status ?? "active",
+      profile_image: u.profile_image ?? "",
     });
   }, [data]);
 
@@ -138,6 +142,39 @@ function EditUserPage() {
       delete next[key];
       return next;
     });
+  };
+
+  const [uploading, setUploading] = useState(false);
+
+  const onPickImage = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: signed, error: signError } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      if (signError || !signed?.signedUrl) throw signError ?? new Error("Could not link image");
+      set("profile_image", signed.signedUrl);
+      toast.success("Profile image uploaded — save to apply");
+    } catch (e) {
+      toast.error((e as Error).message || "Could not upload image");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const mutation = useMutation({
@@ -153,6 +190,7 @@ function EditUserPage() {
           notes: form.notes.trim() || null,
           status: form.status,
           role: form.role,
+          profile_image: form.profile_image.trim() || null,
         },
       } as never),
     onSuccess: async () => {
@@ -251,6 +289,55 @@ function EditUserPage() {
         ) : (
           <div className="grid gap-5 lg:grid-cols-3">
             <div className="space-y-5 lg:col-span-2">
+              <section className="rounded-2xl border border-border bg-card">
+                <header className="border-b border-border px-5 py-4">
+                  <h2 className="text-base font-semibold text-foreground">Profile Image</h2>
+                  <p className="text-xs text-muted-foreground">
+                    PNG or JPG, up to 5MB. Changes apply once you save.
+                  </p>
+                </header>
+                <div className="flex flex-wrap items-center gap-5 p-5">
+                  <div className="size-20 overflow-hidden rounded-full border border-border bg-muted">
+                    {form.profile_image ? (
+                      <img
+                        src={form.profile_image}
+                        alt={form.name ? `${form.name} profile photo` : "Profile photo"}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-lg font-semibold text-muted-foreground">
+                        {(form.name || form.email || "?").slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10">
+                      <ImagePlus className="size-4" />
+                      {uploading ? "Uploading…" : form.profile_image ? "Change image" : "Browse image"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          void onPickImage(e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {form.profile_image ? (
+                      <button
+                        type="button"
+                        onClick={() => set("profile_image", "")}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="size-4" /> Remove
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">
                   <h2 className="text-base font-semibold text-foreground">Personal Information</h2>
