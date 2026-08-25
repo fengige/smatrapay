@@ -402,6 +402,35 @@ function EditUserPage() {
                       Add an email address to enable password resets.
                     </p>
                   )}
+                  {resetMutation.isPending && (
+                    <p role="status" className="mt-2 text-xs text-muted-foreground">
+                      Sending password reset email…
+                    </p>
+                  )}
+                  {!resetMutation.isPending && resetStatus && (
+                    <p
+                      role="status"
+                      className={
+                        resetStatus.ok
+                          ? "mt-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-foreground"
+                          : "mt-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                      }
+                    >
+                      {resetStatus.ok ? (
+                        <>
+                          Reset email sent to{" "}
+                          <span className="font-medium">{resetStatus.email}</span>. Last sent{" "}
+                          {formatSentAt(resetStatus.at)}.
+                        </>
+                      ) : (
+                        <>
+                          Couldn't send reset email: {resetStatus.message} (last attempt{" "}
+                          {formatSentAt(resetStatus.at)})
+                        </>
+                      )}
+                    </p>
+                  )}
+
                 </div>
               </div>
             </section>
