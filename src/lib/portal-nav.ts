@@ -44,7 +44,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       items: [
         { label: "Meter Management", icon: Gauge },
         { label: "Price Management", icon: BadgeDollarSign },
-        { label: "Resident Management", icon: Users },
+        { label: "Resident Management", icon: Users, to: "/residents" },
         { label: "Landlord Management", icon: Building2 },
         { label: "Property Management", icon: Home },
         { label: "Vendor Management", icon: Store },

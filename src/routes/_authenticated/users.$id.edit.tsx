@@ -87,6 +87,9 @@ function EditUserPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [resetStatus, setResetStatus] = useState<
+    { ok: true; email: string; at: Date } | { ok: false; message: string; at: Date } | null
+  >(null);
   const requestReset = useServerFn(sendPasswordReset);
   const resetMutation = useMutation({
     mutationFn: () =>
@@ -97,9 +100,16 @@ function EditUserPage() {
             typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
         },
       } as never),
-    onSuccess: (res: { email?: string }) =>
-      toast.success(`Password reset email sent to ${res?.email ?? "the user"}`),
-    onError: (e: Error) => toast.error(e.message || "Could not send password reset email"),
+    onSuccess: (res: { email?: string }) => {
+      const email = res?.email ?? form.email.trim();
+      setResetStatus({ ok: true, email, at: new Date() });
+      toast.success(`Password reset email sent to ${email || "the user"}`);
+    },
+    onError: (e: Error) => {
+      const message = e.message || "Could not send password reset email";
+      setResetStatus({ ok: false, message, at: new Date() });
+      toast.error(message);
+    },
   });
 
   const { data, isLoading, error } = useQuery({
@@ -392,6 +402,35 @@ function EditUserPage() {
                       Add an email address to enable password resets.
                     </p>
                   )}
+                  {resetMutation.isPending && (
+                    <p role="status" className="mt-2 text-xs text-muted-foreground">
+                      Sending password reset email…
+                    </p>
+                  )}
+                  {!resetMutation.isPending && resetStatus && (
+                    <p
+                      role="status"
+                      className={
+                        resetStatus.ok
+                          ? "mt-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-foreground"
+                          : "mt-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                      }
+                    >
+                      {resetStatus.ok ? (
+                        <>
+                          Reset email sent to{" "}
+                          <span className="font-medium">{resetStatus.email}</span>. Last sent{" "}
+                          {formatSentAt(resetStatus.at)}.
+                        </>
+                      ) : (
+                        <>
+                          Couldn't send reset email: {resetStatus.message} (last attempt{" "}
+                          {formatSentAt(resetStatus.at)})
+                        </>
+                      )}
+                    </p>
+                  )}
+
                 </div>
               </div>
             </section>
@@ -499,4 +538,8 @@ function Field({
       )}
     </label>
   );
+}
+
+function formatSentAt(date: Date) {
+  return `${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} on ${date.toLocaleDateString()}`;
 }

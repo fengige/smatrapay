@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
@@ -46,6 +47,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedResidentsRoute = AuthenticatedResidentsRouteImport.update({
+  id: '/residents',
+  path: '/residents',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   id: '/users',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/residents': typeof AuthenticatedResidentsRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/residents': typeof AuthenticatedResidentsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/residents': typeof AuthenticatedResidentsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/residents'
     | '/users'
     | '/admin/dashboard'
     | '/agent/dashboard'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/residents'
     | '/admin/dashboard'
     | '/agent/dashboard'
     | '/landlord/dashboard'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/residents'
     | '/_authenticated/users'
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/agent/dashboard'
@@ -280,6 +292,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/residents': {
+      id: '/_authenticated/residents'
+      path: '/residents'
+      fullPath: '/residents'
+      preLoaderRoute: typeof AuthenticatedResidentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users': {
       id: '/_authenticated/users'
@@ -411,6 +430,7 @@ const AuthenticatedUsersRouteWithChildren =
   AuthenticatedUsersRoute._addFileChildren(AuthenticatedUsersRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
@@ -421,6 +441,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedResidentsRoute: AuthenticatedResidentsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,
