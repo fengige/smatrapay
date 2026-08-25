@@ -286,6 +286,60 @@ function NewResidentPage() {
 
             <section className="rounded-2xl border border-border bg-card">
               <header className="border-b border-border px-5 py-4">
+                <h2 className="text-base font-semibold text-foreground">Residency Details</h2>
+              </header>
+              <div className="grid gap-4 p-5 sm:grid-cols-2">
+                <Field label="Property" error={errors["property"]} hint="Estate or property the resident belongs to.">
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Riverside Gardens"
+                    value={form.property}
+                    disabled={isSaving}
+                    aria-invalid={!!errors["property"]}
+                    onChange={(e) => set("property", e.target.value)}
+                    onBlur={() => blur("property")}
+                  />
+                </Field>
+                <Field label="Building" error={errors["building"]} hint="Optional block or building name.">
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Block B"
+                    value={form.building}
+                    disabled={isSaving}
+                    aria-invalid={!!errors["building"]}
+                    onChange={(e) => set("building", e.target.value)}
+                    onBlur={() => blur("building")}
+                  />
+                </Field>
+                <Field label="Unit / House Number" error={errors["unit_number"]}>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. B-204"
+                    value={form.unit_number}
+                    disabled={isSaving}
+                    aria-invalid={!!errors["unit_number"]}
+                    onChange={(e) => set("unit_number", e.target.value)}
+                    onBlur={() => blur("unit_number")}
+                  />
+                </Field>
+                <Field label="Move-in Date" error={errors["move_in_date"]}>
+                  <input
+                    type="date"
+                    className={inputClass}
+                    value={form.move_in_date}
+                    disabled={isSaving}
+                    aria-invalid={!!errors["move_in_date"]}
+                    onChange={(e) => set("move_in_date", e.target.value)}
+                    onBlur={() => blur("move_in_date")}
+                  />
+                </Field>
+              </div>
+            </section>
+
+
+
+            <section className="rounded-2xl border border-border bg-card">
+              <header className="border-b border-border px-5 py-4">
                 <h2 className="text-base font-semibold text-foreground">Account Details</h2>
               </header>
               <div className="grid gap-4 p-5 sm:grid-cols-2">
