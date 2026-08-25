@@ -9,7 +9,7 @@ import {
   Check,
   Loader2,
   Phone,
-  Save,
+  Plus,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -176,9 +176,9 @@ function NewResidentPage() {
               {isSaving ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                <Save className="size-4" />
+                <Plus className="size-4" />
               )}
-              {isSaving ? "Saving Resident…" : "Save Resident"}
+              {isSaving ? "Adding Resident…" : "Add Resident"}
             </button>
           </div>
         </div>
