@@ -281,16 +281,16 @@ function UsersPage() {
 
 
   const cards = [
-    { label: "Total Users", value: stats.total, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
+    { label: "Total Admins", value: stats.total, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
     {
-      label: "Active",
+      label: "Active Admins",
       value: stats.active,
       icon: UserCheck,
       tone: "bg-emerald-500/12 text-emerald-600",
     },
-    { label: "Pending", value: stats.pending, icon: UserCog, tone: "bg-amber-500/15 text-amber-600" },
+    { label: "Pending Admins", value: stats.pending, icon: UserCog, tone: "bg-amber-500/15 text-amber-600" },
     {
-      label: "Suspended",
+      label: "Suspended Admins",
       value: stats.suspended,
       icon: ShieldAlert,
       tone: "bg-destructive/12 text-destructive",
