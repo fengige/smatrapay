@@ -41,7 +41,7 @@ export const listUsers = createServerFn({ method: "GET" })
     });
 
     const { data: profiles, error } = await supabase
-      .from("profiles")
+      .from("users")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -64,10 +64,10 @@ export const updateUser = createServerFn({ method: "POST" })
     const { id, role, ...fields } = data;
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
-    ) as Database["public"]["Tables"]["profiles"]["Update"];
+    ) as Database["public"]["Tables"]["users"]["Update"];
 
     const { error } = await supabase
-      .from("profiles")
+      .from("users")
       .update({ ...patch, updated_by: userId })
       .eq("id", id);
     if (error) throw new Error(error.message);
@@ -92,7 +92,7 @@ export const deleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("profiles").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("users").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -133,7 +133,7 @@ export const createUser = createServerFn({ method: "POST" })
     if (error || !created.user) throw new Error(error?.message ?? "Could not create user");
 
     const id = created.user.id;
-    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+    const { error: profileError } = await supabaseAdmin.from("users").upsert({
       id,
       name: data.name,
       email: data.email,

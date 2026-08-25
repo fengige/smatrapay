@@ -24,7 +24,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
     const [rolesResult, profileResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase
-        .from("profiles")
+        .from("users")
         .select("id, name, email, phone, status, profile_image")
         .eq("id", userId)
         .maybeSingle(),
@@ -48,7 +48,7 @@ export const checkRoleAccess = createServerFn({ method: "POST" })
 
     const [rolesResult, profileResult] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("status").eq("id", userId).maybeSingle(),
+      supabase.from("users").select("status").eq("id", userId).maybeSingle(),
     ]);
     if (rolesResult.error) throw new Error(rolesResult.error.message);
 
