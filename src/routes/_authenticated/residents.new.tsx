@@ -61,11 +61,16 @@ function NewResidentPage() {
     password: "",
     username: "",
     phone: "",
+    property: "",
+    building: "",
+    unit_number: "",
+    move_in_date: "",
     bio: "",
     notes: "",
     role: "resident",
     status: "active",
   });
+
 
   const validateField = (key: keyof typeof form) => {
     const partial = createUserSchema.safeParse({ ...form, [key]: form[key] });
