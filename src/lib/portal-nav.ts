@@ -41,25 +41,45 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
   ];
 
   if (roles.includes("admin")) {
-    groups.push({
-      heading: "Management",
-      items: [
-        { label: "Meter Management", icon: Gauge },
-        { label: "Price Management", icon: BadgeDollarSign },
-        { label: "Resident Management", icon: Users, to: "/residents" },
-        { label: "Landlord Management", icon: Building2, to: "/landlords" },
-        { label: "Property Management", icon: Home },
-        { label: "Vendor Management", icon: Store, to: "/vendors" },
-        { label: "Agent Management", icon: UserCheck, to: "/agents" },
-        { label: "Token Management", icon: KeyRound },
-        { label: "Transaction Records", icon: ArrowLeftRight },
-        { label: "Service Provider", icon: Briefcase, to: "/service-providers" },
-        { label: "User Management", to: "/users", icon: UserCircle },
-        { label: "Reports & Analysis", icon: BarChart3 },
-        { label: "Account Settings", icon: Settings },
-        { label: "Configurations", icon: Cog },
-      ],
-    });
+    groups.push(
+      {
+        heading: "TOKENS",
+        items: [
+          { label: "Token Management", icon: KeyRound },
+          { label: "Transaction Management", icon: ArrowLeftRight },
+        ],
+      },
+      {
+        heading: "MANAGEMENT",
+        items: [
+          { label: "Resident Management", icon: Users, to: "/residents" },
+          { label: "Landlord Management", icon: Building2, to: "/landlords" },
+          { label: "Vendor Management", icon: Store, to: "/vendors" },
+          { label: "Agent Management", icon: UserCheck, to: "/agents" },
+          { label: "Service Provider", icon: Briefcase, to: "/service-providers" },
+          { label: "User Management", to: "/users", icon: UserCircle },
+        ],
+      },
+      {
+        heading: "UNITS",
+        items: [
+          { label: "Meter Management", icon: Gauge },
+          { label: "Price Management", icon: BadgeDollarSign },
+          { label: "Property Management", icon: Home },
+        ],
+      },
+      {
+        heading: "REPORTS",
+        items: [{ label: "Reports & Analysis", icon: BarChart3 }],
+      },
+      {
+        heading: "SETTINGS",
+        items: [
+          { label: "Account Settings", icon: Settings },
+          { label: "Configurations", icon: Cog },
+        ],
+      }
+    );
   } else {
     groups.push({
       heading: "Account",
