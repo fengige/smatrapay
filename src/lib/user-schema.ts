@@ -20,6 +20,20 @@ const optionalText = (max: number, label: string) =>
     .optional()
     .or(z.literal(""));
 
+/** Resident-specific residency details, shared by create and edit forms. */
+export const residencyFields = {
+  property: optionalText(120, "Property"),
+  building: optionalText(120, "Building"),
+  unit_number: optionalText(40, "Unit / house number"),
+  move_in_date: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Enter a valid date" })
+    .optional()
+    .or(z.literal("")),
+};
+
+
 export const createUserSchema = z.object({
   name: z
     .string()
