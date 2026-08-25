@@ -99,21 +99,7 @@ export const deleteUser = createServerFn({ method: "POST" })
 
 export const createUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z
-      .object({
-        name: z.string().trim().min(1).max(120),
-        email: z.string().trim().email().max(255),
-        password: z.string().min(6).max(72),
-        username: z.string().trim().max(60).optional().or(z.literal("")),
-        phone: z.string().trim().max(40).optional().or(z.literal("")),
-        bio: z.string().trim().max(1000).optional().or(z.literal("")),
-        notes: z.string().trim().max(2000).optional().or(z.literal("")),
-        status: statusEnum.default("active"),
-        role: roleEnum.default("user"),
-      })
-      .parse(data),
-  )
+  .inputValidator((data: unknown) => createUserSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", {
