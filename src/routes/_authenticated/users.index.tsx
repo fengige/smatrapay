@@ -147,7 +147,7 @@ function UsersPage() {
     setSelectedIds([]);
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, roleFilter, statusFilter]);
+  }, [search, statusFilter]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
