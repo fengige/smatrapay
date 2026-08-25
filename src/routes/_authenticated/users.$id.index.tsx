@@ -106,12 +106,13 @@ function UserProfilePage() {
           </div>
 
           <Link
-            to="/users"
-            search={{ page: 1, limit: 10 }}
+            to="/users/$id/edit"
+            params={{ id }}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
             <Pencil className="size-4" /> Edit User
           </Link>
+
         </div>
 
         {isLoading ? (
