@@ -72,7 +72,7 @@ function NewResidentPage() {
     if (!partial.success) {
       const issues = fieldErrors(partial.error);
       if (issues[key]) {
-        setErrors((prev) => ({ ...prev, [key]: issues[key] }));
+        setErrors((prev) => ({ ...prev, [key]: issues[key] } as Record<string, string>));
         return;
       }
     }
@@ -80,7 +80,7 @@ function NewResidentPage() {
       if (!prev[key]) return prev;
       const next = { ...prev };
       delete next[key];
-      return next;
+      return next as Record<string, string>;
     });
   };
 
