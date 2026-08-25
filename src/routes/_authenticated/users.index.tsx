@@ -582,13 +582,14 @@ function UsersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1">
-                          <button
+                          <Link
+                            to="/users/$id"
+                            params={{ id: u.id }}
                             aria-label="View user"
                             className="rounded-md p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-                            onClick={() => setViewing(u)}
                           >
                             <Eye className="size-4" />
-                          </button>
+                          </Link>
                           <button
                             aria-label="Edit user"
                             className="rounded-md p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground"
