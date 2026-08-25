@@ -9,6 +9,16 @@ import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.function
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_DIMENSION,
+  MIN_IMAGE_DIMENSION,
+  extensionForType,
+  formatBytes,
+  validateProfileImage,
+} from "@/lib/image-upload";
+
 
 export const Route = createFileRoute("/_authenticated/users/$id/edit")({
   head: () => ({
@@ -145,20 +155,21 @@ function EditUserPage() {
   };
 
   const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+
 
   const onPickImage = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
+    setImageError(null);
+    const check = await validateProfileImage(file);
+    if (!check.ok) {
+      setImageError(check.error);
+      toast.error(check.error);
       return;
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = extensionForType(file.type);
       const path = `${id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
@@ -171,11 +182,14 @@ function EditUserPage() {
       set("profile_image", signed.signedUrl);
       toast.success("Profile image uploaded — save to apply");
     } catch (e) {
-      toast.error((e as Error).message || "Could not upload image");
+      const message = (e as Error).message || "Could not upload image. Please try again.";
+      setImageError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
   };
+
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -293,8 +307,11 @@ function EditUserPage() {
                 <header className="border-b border-border px-5 py-4">
                   <h2 className="text-base font-semibold text-foreground">Profile Image</h2>
                   <p className="text-xs text-muted-foreground">
-                    PNG or JPG, up to 5MB. Changes apply once you save.
+                    JPG, PNG or WebP · up to {formatBytes(MAX_IMAGE_BYTES)} · between{" "}
+                    {MIN_IMAGE_DIMENSION}×{MIN_IMAGE_DIMENSION}px and {MAX_IMAGE_DIMENSION}×
+                    {MAX_IMAGE_DIMENSION}px. Changes apply once you save.
                   </p>
+
                 </header>
                 <div className="flex flex-wrap items-center gap-5 p-5">
                   <div className="size-20 overflow-hidden rounded-full border border-border bg-muted">
@@ -316,7 +333,7 @@ function EditUserPage() {
                       {uploading ? "Uploading…" : form.profile_image ? "Change image" : "Browse image"}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={ALLOWED_IMAGE_TYPES.join(",")}
                         className="sr-only"
                         disabled={uploading}
                         onChange={(e) => {
@@ -328,7 +345,10 @@ function EditUserPage() {
                     {form.profile_image ? (
                       <button
                         type="button"
-                        onClick={() => set("profile_image", "")}
+                        onClick={() => {
+                          setImageError(null);
+                          set("profile_image", "");
+                        }}
                         className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="size-4" /> Remove
@@ -336,7 +356,17 @@ function EditUserPage() {
                     ) : null}
                   </div>
                 </div>
+                {imageError ? (
+                  <div
+                    role="alert"
+                    className="mx-5 mb-5 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
+                  >
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                    <span>{imageError}</span>
+                  </div>
+                ) : null}
               </section>
+
 
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">
