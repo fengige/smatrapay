@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Eye,
   Pencil,
@@ -20,7 +22,17 @@ import { toast } from "sonner";
 import { listUsers, updateUser, deleteUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
+const DEFAULT_LIMIT = 10;
+const LIMIT_OPTIONS = [10, 25, 50, 100];
+
+function parseSearch(search: Record<string, unknown>) {
+  const page = Math.max(1, Number(search.page) || 1);
+  const limit = LIMIT_OPTIONS.includes(Number(search.limit)) ? Number(search.limit) : DEFAULT_LIMIT;
+  return { page, limit };
+}
+
 export const Route = createFileRoute("/_authenticated/users")({
+  validateSearch: parseSearch,
   head: () => ({
     meta: [
       { title: "User Management · SmatraPay" },
