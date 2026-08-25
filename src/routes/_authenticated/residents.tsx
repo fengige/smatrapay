@@ -8,6 +8,7 @@ import {
   Download,
   Eye,
   Pencil,
+  Plus,
   Search,
   ShieldAlert,
   UserCheck,
