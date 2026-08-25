@@ -211,3 +211,34 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
 
     return { ok: true, email: profile.email };
   });
+
+export const listUsersByRole = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ role: roleEnum }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Admin access required");
+
+    const { data: roleRows, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("role", data.role);
+    if (rolesError) throw new Error(rolesError.message);
+
+    const ids = (roleRows ?? []).map((r) => r.user_id);
+    if (ids.length === 0) return { users: [] as Array<Record<string, unknown>> };
+
+    const { data: profiles, error } = await supabase
+      .from("users")
+      .select("*")
+      .in("id", ids)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    return { users: (profiles ?? []).map((p) => ({ ...p, role: data.role as string })) };
+  });
