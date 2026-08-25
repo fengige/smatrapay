@@ -366,12 +366,103 @@ function EditUserPage() {
                 <p className="mt-3 text-xs text-muted-foreground">
                   Suspended or inactive accounts cannot sign in to any portal.
                 </p>
+                {(roleChanged || statusChanged) && (
+                  <p className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-foreground">
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-primary" />
+                    Permission changes pending — you'll be asked to confirm before saving.
+                  </p>
+                )}
+
+                <div className="mt-5 border-t border-border pt-5">
+                  <h3 className="text-sm font-semibold text-foreground">Security</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Send this user a secure link to choose a new password.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => resetMutation.mutate()}
+                    disabled={resetMutation.isPending || !form.email.trim()}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+                  >
+                    <KeyRound className="size-4" />
+                    {resetMutation.isPending ? "Sending…" : "Send Password Reset"}
+                  </button>
+                  {!form.email.trim() && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Add an email address to enable password resets.
+                    </p>
+                  )}
+                </div>
               </div>
             </section>
           </div>
         )}
       </form>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm permission change"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+          >
+            <div className="flex items-start gap-3">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <ShieldAlert className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Confirm changes</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You're about to change this account's access. Please review:
+                </p>
+              </div>
+            </div>
+
+            <ul className="mt-4 space-y-2 text-sm">
+              {roleChanged && (
+                <li className="rounded-lg border border-border bg-background px-3 py-2">
+                  <span className="text-muted-foreground">Role: </span>
+                  <span className="font-medium text-foreground">{originalRole}</span>
+                  <span className="text-muted-foreground"> → </span>
+                  <span className="font-semibold text-primary">{form.role}</span>
+                </li>
+              )}
+              {statusChanged && (
+                <li className="rounded-lg border border-border bg-background px-3 py-2">
+                  <span className="text-muted-foreground">Status: </span>
+                  <span className="font-medium text-foreground">{originalStatus}</span>
+                  <span className="text-muted-foreground"> → </span>
+                  <span className="font-semibold text-primary">{form.status}</span>
+                </li>
+              )}
+            </ul>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => {
+                  setConfirmOpen(false);
+                  mutation.mutate();
+                }}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                Confirm & Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PortalLayout>
+
   );
 }
 
