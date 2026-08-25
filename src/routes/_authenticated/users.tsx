@@ -134,7 +134,18 @@ function UsersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkRole, setBulkRole] = useState("");
 
+  const { page: currentPage, limit: pageSize } = Route.useSearch();
+  const navigate = useNavigate({ from: "/users" });
 
+  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+  const setPageSize = (limit: number) => navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
+
+  // Reset to page 1 whenever filters change so results don't disappear.
+  useEffect(() => {
+    setSelectedIds([]);
+    if (currentPage !== 1) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, roleFilter, statusFilter]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
