@@ -41,19 +41,27 @@ export const listUsers = createServerFn({ method: "GET" })
       _role: "admin",
     });
 
+    // Only admin users can access this listing, and it only returns admin accounts.
+    if (!isAdmin) throw new Error("Admin access required");
+
+    const { data: adminRoles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("role", "admin");
+    if (rolesError) throw new Error(rolesError.message);
+
+    const adminIds = (adminRoles ?? []).map((r) => r.user_id);
+
     const { data: profiles, error } = await supabase
       .from("users")
       .select("*")
+      .in("id", adminIds)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-    const roleByUser = new Map<string, string>();
-    for (const r of roles ?? []) roleByUser.set(r.user_id, r.role);
-
     return {
-      isAdmin: Boolean(isAdmin),
-      users: (profiles ?? []).map((p) => ({ ...p, role: roleByUser.get(p.id) ?? "user" })),
+      isAdmin: true,
+      users: (profiles ?? []).map((p) => ({ ...p, role: "admin" as string })),
     };
   });
 

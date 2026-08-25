@@ -130,12 +130,10 @@ function UsersPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [viewing, setViewing] = useState<Row | null>(null);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_COLUMNS);
   const [exportOpen, setExportOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkRole, setBulkRole] = useState("");
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
   const navigate = useNavigate({ from: "/users/" });
@@ -148,7 +146,7 @@ function UsersPage() {
     setSelectedIds([]);
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, roleFilter, statusFilter]);
+  }, [search, statusFilter]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
@@ -189,22 +187,19 @@ function UsersPage() {
   });
 
   const bulkMutation = useMutation({
-    mutationFn: async (action: { type: "status"; value: string } | { type: "role"; value: string } | { type: "delete" }) => {
+    mutationFn: async (action: { type: "status"; value: string } | { type: "delete" }) => {
       for (const id of selectedIds) {
         if (action.type === "delete") {
           await removeUser({ data: { id } });
-        } else if (action.type === "status") {
-          await saveUser({ data: { id, status: action.value as "active" } });
         } else {
-          await saveUser({ data: { id, role: action.value as "user" } });
+          await saveUser({ data: { id, status: action.value as "active" } });
         }
       }
       return selectedIds.length;
     },
     onSuccess: (count) => {
-      toast.success(`Updated ${count} user${count === 1 ? "" : "s"}`);
+      toast.success(`Updated ${count} admin${count === 1 ? "" : "s"}`);
       setSelectedIds([]);
-      setBulkRole("");
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -229,11 +224,10 @@ function UsersPage() {
       const matchesTerm =
         !term ||
         [u.name, u.email, u.username, u.phone].some((v) => (v ?? "").toLowerCase().includes(term));
-      const matchesRole = roleFilter === "all" || u.role === roleFilter;
       const matchesStatus = statusFilter === "all" || u.status === statusFilter;
-      return matchesTerm && matchesRole && matchesStatus;
+      return matchesTerm && matchesStatus;
     });
-  }, [users, search, roleFilter, statusFilter]);
+  }, [users, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -267,8 +261,7 @@ function UsersPage() {
     const csv = [cols.map((c) => escape(c.label)).join(","), ...rows].join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const parts = [
-      "smatrapay-users",
-      roleFilter !== "all" ? roleFilter : null,
+      "smatrapay-admins",
       statusFilter !== "all" ? statusFilter : null,
       search.trim() ? "search" : null,
       new Date().toISOString().slice(0, 10),
@@ -284,16 +277,16 @@ function UsersPage() {
 
 
   const cards = [
-    { label: "Total Users", value: stats.total, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
+    { label: "Total Admins", value: stats.total, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
     {
-      label: "Active",
+      label: "Active Admins",
       value: stats.active,
       icon: UserCheck,
       tone: "bg-emerald-500/12 text-emerald-600",
     },
-    { label: "Pending", value: stats.pending, icon: UserCog, tone: "bg-amber-500/15 text-amber-600" },
+    { label: "Pending Admins", value: stats.pending, icon: UserCog, tone: "bg-amber-500/15 text-amber-600" },
     {
-      label: "Suspended",
+      label: "Suspended Admins",
       value: stats.suspended,
       icon: ShieldAlert,
       tone: "bg-destructive/12 text-destructive",
@@ -381,8 +374,7 @@ function UsersPage() {
       <div className="space-y-5">
         {!data?.isAdmin && !isLoading && (
           <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-            You're signed in as a standard user, so you only see your own record. An admin can
-            promote your account to see everyone.
+            Admin access is required to view this directory.
           </p>
         )}
 
@@ -409,26 +401,19 @@ function UsersPage() {
               <Search className="size-4 text-muted-foreground" />
               <input
                 className="input-field"
-                placeholder="Search by name, email, phone…"
-                aria-label="Search users"
+                placeholder="Search admins by name, email, phone…"
+                aria-label="Search admins"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <select
-                aria-label="Filter by role"
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-              >
-                <option value="all">All Roles</option>
-                {roles.map((r) => (
-                  <option key={r} value={r}>
-                    {pretty(r)}
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Role:
+              </span>
+              <span className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+                Admin
+              </span>
               <select
                 aria-label="Filter by status"
                 className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
@@ -465,29 +450,11 @@ function UsersPage() {
                 >
                   Disable
                 </button>
-                <select
-                  aria-label="Change role for selected users"
-                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm capitalize"
-                  value={bulkRole}
-                  disabled={bulkMutation.isPending}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setBulkRole(value);
-                    if (value) bulkMutation.mutate({ type: "role", value });
-                  }}
-                >
-                  <option value="">Change role…</option>
-                  {roles.map((r) => (
-                    <option key={r} value={r}>
-                      {pretty(r)}
-                    </option>
-                  ))}
-                </select>
                 <button
                   className="rounded-lg border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
                   disabled={bulkMutation.isPending}
                   onClick={() => {
-                    if (confirm(`Delete ${selectedIds.length} user record(s)?`))
+                    if (confirm(`Delete ${selectedIds.length} admin record(s)?`))
                       bulkMutation.mutate({ type: "delete" });
                   }}
                 >
