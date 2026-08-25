@@ -145,6 +145,8 @@ function EditUserPage() {
   };
 
   const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+
 
   const onPickImage = async (file: File | undefined) => {
     if (!file) return;
