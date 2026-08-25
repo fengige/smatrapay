@@ -119,6 +119,8 @@ export const editUserSchema = z.object({
   notes: optionalText(2000, "Notes"),
   role: userRoleEnum,
   status: userStatusEnum,
+  ...residencyFields,
 });
+
 
 export type EditUserInput = z.input<typeof editUserSchema>;
