@@ -58,7 +58,6 @@ type FormState = {
   email: string;
   username: string;
   phone: string;
-  profile_image: string;
   bio: string;
   notes: string;
   role: string;
@@ -70,7 +69,6 @@ const emptyForm: FormState = {
   email: "",
   username: "",
   phone: "",
-  profile_image: "",
   bio: "",
   notes: "",
   role: "user",
@@ -125,7 +123,6 @@ function EditUserPage() {
       email: u.email ?? "",
       username: u.username ?? "",
       phone: u.phone ?? "",
-      profile_image: u.profile_image ?? "",
       bio: u.bio ?? "",
       notes: u.notes ?? "",
       role: data.roles?.[0] ?? "user",
@@ -152,7 +149,6 @@ function EditUserPage() {
           email: form.email.trim() || null,
           username: form.username.trim() || null,
           phone: form.phone.trim() || null,
-          profile_image: form.profile_image.trim() || null,
           bio: form.bio.trim() || null,
           notes: form.notes.trim() || null,
           status: form.status,
@@ -179,7 +175,6 @@ function EditUserPage() {
       email: form.email,
       username: form.username,
       phone: form.phone,
-      profile_image: form.profile_image,
       bio: form.bio,
       notes: form.notes,
       role: form.role,
@@ -300,16 +295,6 @@ function EditUserPage() {
                       onChange={(e) => set("username", e.target.value)}
                     />
                   </Field>
-                  <div className="sm:col-span-2">
-                    <Field label="Profile Image URL" error={errors["profile_image"]}>
-                      <input
-                        className={inputClass}
-                        placeholder="https://…"
-                        value={form.profile_image}
-                        onChange={(e) => set("profile_image", e.target.value)}
-                      />
-                    </Field>
-                  </div>
                 </div>
               </section>
 

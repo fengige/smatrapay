@@ -99,13 +99,6 @@ export const editUserSchema = z.object({
     .regex(/^[+]?[0-9\s()-]*$/, { message: "Enter a valid phone number" })
     .optional()
     .or(z.literal("")),
-  profile_image: z
-    .string()
-    .trim()
-    .max(500, { message: "Profile image URL must be 500 characters or less" })
-    .url({ message: "Enter a valid image URL" })
-    .optional()
-    .or(z.literal("")),
   bio: optionalText(1000, "Bio"),
   notes: optionalText(2000, "Notes"),
   role: userRoleEnum,
