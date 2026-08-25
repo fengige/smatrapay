@@ -166,25 +166,6 @@ function ResidentsPage() {
       description="All resident accounts"
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Resident Management
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Every account with the resident role on SmatraPay
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={exportCsv}
-            disabled={!filtered.length}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
-          >
-            <Download className="size-4" /> Export CSV
-          </button>
-        </div>
-
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Total Residents" value={stats.total} icon={UsersIcon} />
           <StatCard label="Active" value={stats.active} icon={UserCheck} tone="text-emerald-600" />
@@ -223,6 +204,14 @@ function ResidentsPage() {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={!filtered.length}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+            >
+              <Download className="size-4" /> Export CSV
+            </button>
           </div>
 
           <div className="overflow-x-auto">
