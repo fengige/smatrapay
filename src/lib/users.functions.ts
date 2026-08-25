@@ -147,6 +147,11 @@ export const createUser = createServerFn({ method: "POST" })
       bio: data.bio || null,
       notes: data.notes || null,
       status: data.status,
+      property: data.property || null,
+      building: data.building || null,
+      unit_number: data.unit_number || null,
+      move_in_date: data.move_in_date || null,
+
       created_by: userId,
       updated_by: userId,
     });
