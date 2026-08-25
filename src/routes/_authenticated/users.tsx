@@ -232,10 +232,19 @@ function UsersPage() {
     });
   }, [users, search, roleFilter, statusFilter]);
 
-  const allSelected = filtered.length > 0 && filtered.every((u) => selectedIds.includes(u.id));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filtered.length);
+  const paginated = useMemo(
+    () => filtered.slice(startIndex, endIndex),
+    [filtered, startIndex, endIndex],
+  );
+
+  const allSelected = paginated.length > 0 && paginated.every((u) => selectedIds.includes(u.id));
 
   function toggleAll(checked: boolean) {
-    setSelectedIds(checked ? filtered.map((u) => u.id) : []);
+    setSelectedIds(checked ? paginated.map((u) => u.id) : []);
   }
 
   function toggleOne(id: string, checked: boolean) {
