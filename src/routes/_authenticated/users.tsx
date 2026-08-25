@@ -3,16 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import {
+  ChevronDown,
   Download,
   Eye,
   Pencil,
   Search,
   ShieldAlert,
+  SlidersHorizontal,
   Trash2,
   UserCheck,
   UserCog,
   Users as UsersIcon,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { listUsers, updateUser, deleteUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
@@ -80,6 +83,30 @@ function pretty(value: string) {
   return value.replace(/_/g, " ");
 }
 
+function date(value: string | null) {
+  return value ? new Date(value).toLocaleDateString() : "";
+}
+
+const EXPORT_COLUMNS: { key: string; label: string; value: (u: Row) => string }[] = [
+  { key: "name", label: "Full Name", value: (u) => u.name ?? "" },
+  { key: "email", label: "Email Address", value: (u) => u.email ?? "" },
+  { key: "username", label: "Username", value: (u) => u.username ?? "" },
+  { key: "phone", label: "Phone Number", value: (u) => u.phone ?? "" },
+  { key: "role", label: "Portal Role", value: (u) => pretty(u.role) },
+  { key: "status", label: "Account Status", value: (u) => u.status },
+  {
+    key: "email_verified_at",
+    label: "Email Verified",
+    value: (u) => (u.email_verified_at ? "Yes" : "No"),
+  },
+  { key: "bio", label: "Bio", value: (u) => u.bio ?? "" },
+  { key: "notes", label: "Internal Notes", value: (u) => u.notes ?? "" },
+  { key: "created_at", label: "Joined Date", value: (u) => date(u.created_at) },
+  { key: "updated_at", label: "Last Updated", value: (u) => date(u.updated_at) },
+];
+
+const DEFAULT_COLUMNS = ["name", "email", "username", "phone", "role", "status", "created_at"];
+
 function UsersPage() {
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listUsers);
@@ -90,6 +117,12 @@ function UsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_COLUMNS);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkRole, setBulkRole] = useState("");
+
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
@@ -129,7 +162,30 @@ function UsersPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const bulkMutation = useMutation({
+    mutationFn: async (action: { type: "status"; value: string } | { type: "role"; value: string } | { type: "delete" }) => {
+      for (const id of selectedIds) {
+        if (action.type === "delete") {
+          await removeUser({ data: { id } });
+        } else if (action.type === "status") {
+          await saveUser({ data: { id, status: action.value as "active" } });
+        } else {
+          await saveUser({ data: { id, role: action.value as "user" } });
+        }
+      }
+      return selectedIds.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`Updated ${count} user${count === 1 ? "" : "s"}`);
+      setSelectedIds([]);
+      setBulkRole("");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const users = (data?.users ?? []) as Row[];
+
 
   const stats = useMemo(
     () => ({
@@ -153,21 +209,44 @@ function UsersPage() {
     });
   }, [users, search, roleFilter, statusFilter]);
 
+  const allSelected = filtered.length > 0 && filtered.every((u) => selectedIds.includes(u.id));
+
+  function toggleAll(checked: boolean) {
+    setSelectedIds(checked ? filtered.map((u) => u.id) : []);
+  }
+
+  function toggleOne(id: string, checked: boolean) {
+    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
+  }
+
+
+
   function exportCsv() {
-    const header = ["Name", "Email", "Username", "Phone", "Role", "Status", "Joined"];
-    const lines = filtered.map((u) =>
-      [u.name, u.email, u.username, u.phone, u.role, u.status, u.created_at]
-        .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-        .join(","),
-    );
-    const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv" });
+    const cols = EXPORT_COLUMNS.filter((c) => selectedColumns.includes(c.key));
+    if (cols.length === 0) {
+      toast.error("Pick at least one column to export");
+      return;
+    }
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = filtered.map((u) => cols.map((c) => escape(c.value(u))).join(","));
+    const csv = [cols.map((c) => escape(c.label)).join(","), ...rows].join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const parts = [
+      "smatrapay-users",
+      roleFilter !== "all" ? roleFilter : null,
+      statusFilter !== "all" ? statusFilter : null,
+      search.trim() ? "search" : null,
+      new Date().toISOString().slice(0, 10),
+    ].filter(Boolean);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "smatrapay-users.csv";
+    a.download = `${parts.join("-")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} user${filtered.length === 1 ? "" : "s"}`);
   }
+
 
   const cards = [
     { label: "Total Users", value: stats.total, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
@@ -192,13 +271,71 @@ function UsersPage() {
       title="Users"
       description="Manage your platform user directory"
       actions={
-        <button
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
-          onClick={exportCsv}
-        >
-          <Download className="size-4" /> Export CSV
-        </button>
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+              onClick={exportCsv}
+            >
+              <Download className="size-4" /> Export CSV ({filtered.length})
+            </button>
+            <button
+              aria-label="Choose export columns"
+              aria-expanded={exportOpen}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-2 text-sm text-muted-foreground hover:bg-accent/10"
+              onClick={() => setExportOpen((v) => !v)}
+            >
+              <SlidersHorizontal className="size-4" />
+              <ChevronDown className="size-3" />
+            </button>
+          </div>
+
+          {exportOpen && (
+            <div className="absolute right-0 z-40 mt-2 w-64 rounded-xl border border-border bg-background p-3 shadow-lg">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Columns to export
+              </p>
+              <div className="max-h-64 space-y-1 overflow-y-auto">
+                {EXPORT_COLUMNS.map((c) => (
+                  <label
+                    key={c.key}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={selectedColumns.includes(c.key)}
+                      onChange={(e) =>
+                        setSelectedColumns((prev) =>
+                          e.target.checked
+                            ? [...prev, c.key]
+                            : prev.filter((k) => k !== c.key),
+                        )
+                      }
+                    />
+                    {c.label}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2 flex justify-between border-t border-border pt-2 text-xs">
+                <button
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedColumns(EXPORT_COLUMNS.map((c) => c.key))}
+                >
+                  Select all
+                </button>
+                <button
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       }
+
     >
       <div className="space-y-5">
         {!data?.isAdmin && !isLoading && (
@@ -267,6 +404,64 @@ function UsersPage() {
             </div>
           </div>
 
+          {data?.isAdmin && selectedIds.length > 0 && (
+            <div className="flex flex-col gap-3 border-b border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-medium text-foreground">
+                {selectedIds.length} selected
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent/10 disabled:opacity-50"
+                  disabled={bulkMutation.isPending}
+                  onClick={() => bulkMutation.mutate({ type: "status", value: "active" })}
+                >
+                  Enable
+                </button>
+                <button
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent/10 disabled:opacity-50"
+                  disabled={bulkMutation.isPending}
+                  onClick={() => bulkMutation.mutate({ type: "status", value: "inactive" })}
+                >
+                  Disable
+                </button>
+                <select
+                  aria-label="Change role for selected users"
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm capitalize"
+                  value={bulkRole}
+                  disabled={bulkMutation.isPending}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setBulkRole(value);
+                    if (value) bulkMutation.mutate({ type: "role", value });
+                  }}
+                >
+                  <option value="">Change role…</option>
+                  {roles.map((r) => (
+                    <option key={r} value={r}>
+                      {pretty(r)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="rounded-lg border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  disabled={bulkMutation.isPending}
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedIds.length} user record(s)?`))
+                      bulkMutation.mutate({ type: "delete" });
+                  }}
+                >
+                  Delete
+                </button>
+                <button
+                  className="px-2 text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <p className="p-6 text-sm text-muted-foreground">Loading users…</p>
           ) : (
@@ -274,6 +469,17 @@ function UsersPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
+                    {data?.isAdmin && (
+                      <th className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all users"
+                          className="size-4 accent-primary"
+                          checked={allSelected}
+                          onChange={(e) => toggleAll(e.target.checked)}
+                        />
+                      </th>
+                    )}
                     <th className="px-4 py-3">User</th>
                     <th className="px-4 py-3">Username</th>
                     <th className="px-4 py-3">Phone</th>
@@ -286,7 +492,19 @@ function UsersPage() {
                 <tbody>
                   {filtered.map((u) => (
                     <tr key={u.id} className="border-t border-border hover:bg-muted/30">
+                      {data?.isAdmin && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${u.name ?? u.email ?? "user"}`}
+                            className="size-4 accent-primary"
+                            checked={selectedIds.includes(u.id)}
+                            onChange={(e) => toggleOne(u.id, e.target.checked)}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3">
+
                         <div className="flex items-center gap-3">
                           {u.profile_image ? (
                             <img
@@ -355,7 +573,7 @@ function UsersPage() {
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      <td colSpan={data?.isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                         No users match your filters.
                       </td>
                     </tr>
