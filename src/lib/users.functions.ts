@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createUserSchema } from "@/lib/user-schema";
 import type { Database } from "@/integrations/supabase/types";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
