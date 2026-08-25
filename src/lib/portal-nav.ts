@@ -46,7 +46,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         heading: "TOKENS",
         items: [
           { label: "Token Management", icon: KeyRound },
-          { label: "Transaction Management", icon: ArrowLeftRight },
+          { label: "Transaction Records", icon: ArrowLeftRight },
         ],
       },
       {
