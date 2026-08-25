@@ -231,7 +231,6 @@ export const listUsersByRole = createServerFn({ method: "GET" })
     if (rolesError) throw new Error(rolesError.message);
 
     const ids = (roleRows ?? []).map((r) => r.user_id);
-    if (ids.length === 0) return { users: [] as Array<Record<string, unknown>> };
 
     const { data: profiles, error } = await supabase
       .from("users")
