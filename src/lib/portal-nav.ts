@@ -1,20 +1,17 @@
 import {
-  Activity,
+  ArrowLeftRight,
+  BadgeDollarSign,
+  BarChart3,
   Building2,
   Cog,
   Gauge,
   Grid2x2,
+  Home,
   KeyRound,
-  LayoutDashboard,
-  MapPin,
-  MessageSquare,
-  ScrollText,
   Settings,
-  ShieldCheck,
-  SlidersHorizontal,
+  Store,
   UserCircle,
   Users,
-  Webhook,
   type LucideIcon,
 } from "lucide-react";
 import { dashboardForRoles } from "./portals";
@@ -34,46 +31,35 @@ export type NavGroup = {
 /** Sidebar groups per portal. Items without `to` are placeholders. */
 export function navGroupsForRoles(roles: string[]): NavGroup[] {
   const groups: NavGroup[] = [
-    { items: [{ label: "Dashboard", to: dashboardForRoles(roles), icon: Grid2x2 }] },
+    {
+      items: [
+        { label: "Dashboard", to: dashboardForRoles(roles), icon: Grid2x2 },
+      ],
+    },
   ];
 
   if (roles.includes("admin")) {
-    groups.push(
-      {
-        heading: "Management",
-        items: [
-          { label: "Vending Control", icon: Activity },
-          { label: "Vendor Management", icon: Building2 },
-          { label: "Account Approvals", icon: ShieldCheck },
-          { label: "Landlord Management", icon: LayoutDashboard },
-          { label: "Location Hierarchy", icon: MapPin },
-          { label: "Assigned Meters", icon: Users },
-          { label: "Meter Management", icon: Gauge },
-          { label: "Token Management", icon: KeyRound },
-        ],
-      },
-      {
-        heading: "System",
-        items: [
-          { label: "Roles & Permissions", icon: ShieldCheck },
-          { label: "System Logs", icon: ScrollText },
-          { label: "System Configuration", icon: SlidersHorizontal },
-          { label: "Callback Settings", icon: Webhook },
-          { label: "Public Enquiries", icon: MessageSquare },
-        ],
-      },
-      {
-        heading: "Account",
-        items: [
-          { label: "User Management", to: "/users", icon: UserCircle },
-          { label: "Account Settings", icon: Settings },
-        ],
-      },
-    );
+    groups.push({
+      heading: "Management",
+      items: [
+        { label: "Meter Management", icon: Gauge },
+        { label: "Price Management", icon: BadgeDollarSign },
+        { label: "Resident Management", icon: Users },
+        { label: "Landlord Management", icon: Building2 },
+        { label: "Property Management", icon: Home },
+        { label: "Vendor Management", icon: Store },
+        { label: "Token Management", icon: KeyRound },
+        { label: "Transaction Management", icon: ArrowLeftRight },
+        { label: "User Management", to: "/users", icon: UserCircle },
+        { label: "Reports & Analysis", icon: BarChart3 },
+        { label: "Account Settings", icon: Settings },
+        { label: "Configurations", icon: Cog },
+      ],
+    });
   } else {
     groups.push({
       heading: "Account",
-      items: [{ label: "Account Settings", icon: Cog }],
+      items: [{ label: "Account Settings", icon: Settings }],
     });
   }
 
