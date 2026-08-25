@@ -47,6 +47,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           profile_image: string | null
+          profile_image_url: string | null
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string
           updated_by: string | null
@@ -63,6 +64,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           profile_image?: string | null
+          profile_image_url?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
           updated_by?: string | null
@@ -79,6 +81,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           profile_image?: string | null
+          profile_image_url?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
           updated_by?: string | null
