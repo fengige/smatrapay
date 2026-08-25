@@ -24,18 +24,32 @@ function initials(value: string) {
 }
 
 export function useSessionIdentity() {
-  const [identity, setIdentity] = useState<{ name: string; email: string }>({
+  const [identity, setIdentity] = useState<{
+    name: string;
+    email: string;
+    profile_image: string | null;
+  }>({
     name: "",
     email: "",
+    profile_image: null,
   });
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!active || !data.user) return;
       const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      const name =
+        (meta["name"] as string) || (data.user.email ?? "").split("@")[0] || "Account";
+      const { data: profile } = await supabase
+        .from("users")
+        .select("profile_image")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (!active) return;
       setIdentity({
-        name: (meta["name"] as string) || (data.user.email ?? "").split("@")[0] || "Account",
+        name,
         email: data.user.email ?? "",
+        profile_image: profile?.profile_image ?? null,
       });
     });
     return () => {
@@ -134,9 +148,17 @@ export function PortalLayout({
 
       <div className="border-t border-white/10 px-3 py-4">
         <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
-            {avatar}
-          </span>
+          {identity.profile_image ? (
+            <img
+              src={identity.profile_image}
+              alt={identity.name || "Profile"}
+              className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+            />
+          ) : (
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
+              {avatar}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{identity.name || "Account"}</p>
             <p className="truncate text-xs text-panel-muted">{portalName}</p>
@@ -214,9 +236,17 @@ export function PortalLayout({
               <Bell className="size-4" />
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
             </button>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
-              {avatar}
-            </span>
+            {identity.profile_image ? (
+              <img
+                src={identity.profile_image}
+                alt={identity.name || "Profile"}
+                className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:size-9"
+              />
+            ) : (
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
+                {avatar}
+              </span>
+            )}
           </div>
         </header>
 
