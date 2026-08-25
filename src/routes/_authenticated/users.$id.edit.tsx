@@ -372,6 +372,19 @@ function EditUserPage() {
                 ) : null}
               </section>
 
+              {cropFile ? (
+                <ImageCropDialog
+                  file={cropFile}
+                  onCancel={() => setCropFile(null)}
+                  onConfirm={(blob) => {
+                    setCropFile(null);
+                    void uploadBlob(blob, "image/jpeg");
+                  }}
+                />
+              ) : null}
+
+
+
 
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">
