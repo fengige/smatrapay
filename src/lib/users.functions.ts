@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createUserSchema } from "@/lib/user-schema";
 import type { Database } from "@/integrations/supabase/types";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
@@ -41,7 +42,7 @@ export const listUsers = createServerFn({ method: "GET" })
     });
 
     const { data: profiles, error } = await supabase
-      .from("profiles")
+      .from("users")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -64,10 +65,10 @@ export const updateUser = createServerFn({ method: "POST" })
     const { id, role, ...fields } = data;
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
-    ) as Database["public"]["Tables"]["profiles"]["Update"];
+    ) as Database["public"]["Tables"]["users"]["Update"];
 
     const { error } = await supabase
-      .from("profiles")
+      .from("users")
       .update({ ...patch, updated_by: userId })
       .eq("id", id);
     if (error) throw new Error(error.message);
@@ -92,28 +93,14 @@ export const deleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("profiles").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("users").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const createUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z
-      .object({
-        name: z.string().trim().min(1).max(120),
-        email: z.string().trim().email().max(255),
-        password: z.string().min(6).max(72),
-        username: z.string().trim().max(60).optional().or(z.literal("")),
-        phone: z.string().trim().max(40).optional().or(z.literal("")),
-        bio: z.string().trim().max(1000).optional().or(z.literal("")),
-        notes: z.string().trim().max(2000).optional().or(z.literal("")),
-        status: statusEnum.default("active"),
-        role: roleEnum.default("user"),
-      })
-      .parse(data),
-  )
+  .inputValidator((data: unknown) => createUserSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", {
@@ -133,7 +120,7 @@ export const createUser = createServerFn({ method: "POST" })
     if (error || !created.user) throw new Error(error?.message ?? "Could not create user");
 
     const id = created.user.id;
-    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+    const { error: profileError } = await supabaseAdmin.from("users").upsert({
       id,
       name: data.name,
       email: data.email,

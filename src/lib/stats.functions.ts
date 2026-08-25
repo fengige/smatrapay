@@ -14,7 +14,7 @@ export const getAdminStats = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Admin access required");
 
     const [profilesResult, rolesResult] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, status, created_at, profile_image"),
+      supabase.from("users").select("id, name, email, status, created_at, profile_image"),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (profilesResult.error) throw new Error(profilesResult.error.message);

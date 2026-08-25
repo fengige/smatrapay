@@ -6,6 +6,7 @@ import { ArrowLeft, AtSign, Phone, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { createUser } from "@/lib/users.functions";
+import { createUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/users/new")({
@@ -54,6 +55,7 @@ function NewUserPage() {
   const queryClient = useQueryClient();
   const create = useServerFn(createUser);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -66,8 +68,15 @@ function NewUserPage() {
     status: "active",
   });
 
-  const set = (key: keyof typeof form, value: string) =>
+  const set = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   const mutation = useMutation({
     mutationFn: (data: typeof form) => create({ data } as never),
@@ -76,15 +85,25 @@ function NewUserPage() {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
       navigate({ to: "/users", search: { page: 1, limit: 10 } });
     },
-    onError: (error: Error) => toast.error(error.message || "Could not create user"),
+    onError: (error: Error) => {
+      const message = error.message || "Could not create user";
+      if (/already been registered|already exists|duplicate/i.test(message)) {
+        setErrors((prev) => ({ ...prev, email: "This email is already registered" }));
+      }
+      toast.error(message);
+    },
   });
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.email.trim() || form.password.length < 6) {
-      toast.error("Name, email and a password of at least 6 characters are required");
+    const parsed = createUserSchema.safeParse(form);
+    if (!parsed.success) {
+      const issues = fieldErrors(parsed.error);
+      setErrors(issues);
+      toast.error("Please fix the highlighted fields");
       return;
     }
+    setErrors({});
     mutation.mutate(form);
   };
 
@@ -133,7 +152,7 @@ function NewUserPage() {
                 <h2 className="text-base font-semibold text-foreground">Personal Information</h2>
               </header>
               <div className="grid gap-4 p-5 sm:grid-cols-2">
-                <Field label="Full Name" required>
+                <Field label="Full Name" required error={errors["name"]}>
                   <input
                     className={inputClass}
                     placeholder="e.g. Aisha Malik"
@@ -141,7 +160,7 @@ function NewUserPage() {
                     onChange={(e) => set("name", e.target.value)}
                   />
                 </Field>
-                <Field label="Email" required>
+                <Field label="Email" required error={errors["email"]}>
                   <div className="flex items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
                     <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
                       <AtSign className="size-4" />
@@ -155,7 +174,7 @@ function NewUserPage() {
                     />
                   </div>
                 </Field>
-                <Field label="Phone">
+                <Field label="Phone" error={errors["phone"]}>
                   <div className="flex items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
                     <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
                       <Phone className="size-4" />
@@ -168,7 +187,7 @@ function NewUserPage() {
                     />
                   </div>
                 </Field>
-                <Field label="Username">
+                <Field label="Username" error={errors["username"]}>
                   <input
                     className={inputClass}
                     placeholder="e.g. aisha.malik"
@@ -184,7 +203,7 @@ function NewUserPage() {
                 <h2 className="text-base font-semibold text-foreground">Account Details</h2>
               </header>
               <div className="grid gap-4 p-5 sm:grid-cols-2">
-                <Field label="Role" required>
+                <Field label="Role" required error={errors["role"]}>
                   <select
                     className={inputClass}
                     value={form.role}
@@ -197,17 +216,17 @@ function NewUserPage() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Temporary Password" required>
+                <Field label="Temporary Password" required error={errors["password"]}>
                   <input
                     type="password"
                     className={inputClass}
-                    placeholder="Minimum 6 characters"
+                    placeholder="Min 8 chars, letters and numbers"
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
                   />
                 </Field>
                 <div className="sm:col-span-2">
-                  <Field label="Bio">
+                  <Field label="Bio" error={errors["bio"]}>
                     <textarea
                       rows={3}
                       className={inputClass}
@@ -218,7 +237,7 @@ function NewUserPage() {
                   </Field>
                 </div>
                 <div className="sm:col-span-2">
-                  <Field label="Internal Notes">
+                  <Field label="Internal Notes" error={errors["notes"]}>
                     <textarea
                       rows={3}
                       className={inputClass}
@@ -237,7 +256,7 @@ function NewUserPage() {
               <h2 className="text-base font-semibold text-foreground">Status</h2>
             </header>
             <div className="p-5">
-              <Field label="Account Status">
+              <Field label="Account Status" error={errors["status"]}>
                 <select
                   className={inputClass}
                   value={form.status}
@@ -265,10 +284,12 @@ function NewUserPage() {
 function Field({
   label,
   required,
+  error,
   children,
 }: {
   label: string;
   required?: boolean;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -277,7 +298,14 @@ function Field({
         {label}
         {required && <span className="ml-0.5 text-destructive">*</span>}
       </span>
-      {children}
+      <div className={error ? "[&_input]:border-destructive [&_select]:border-destructive [&_textarea]:border-destructive [&>div]:border-destructive" : undefined}>
+        {children}
+      </div>
+      {error && (
+        <span role="alert" className="block text-xs font-medium text-destructive">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
