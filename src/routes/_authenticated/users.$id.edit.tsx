@@ -297,8 +297,11 @@ function EditUserPage() {
                 <header className="border-b border-border px-5 py-4">
                   <h2 className="text-base font-semibold text-foreground">Profile Image</h2>
                   <p className="text-xs text-muted-foreground">
-                    PNG or JPG, up to 5MB. Changes apply once you save.
+                    JPG, PNG or WebP · up to {formatBytes(MAX_IMAGE_BYTES)} · between{" "}
+                    {MIN_IMAGE_DIMENSION}×{MIN_IMAGE_DIMENSION}px and {MAX_IMAGE_DIMENSION}×
+                    {MAX_IMAGE_DIMENSION}px. Changes apply once you save.
                   </p>
+
                 </header>
                 <div className="flex flex-wrap items-center gap-5 p-5">
                   <div className="size-20 overflow-hidden rounded-full border border-border bg-muted">
