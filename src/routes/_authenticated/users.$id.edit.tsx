@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   ALLOWED_IMAGE_TYPES,
@@ -156,24 +158,16 @@ function EditUserPage() {
 
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
-
-  const onPickImage = async (file: File | undefined) => {
-    if (!file) return;
-    setImageError(null);
-    const check = await validateProfileImage(file);
-    if (!check.ok) {
-      setImageError(check.error);
-      toast.error(check.error);
-      return;
-    }
+  const uploadBlob = async (blob: Blob, contentType: string) => {
     setUploading(true);
     try {
-      const ext = extensionForType(file.type);
+      const ext = extensionForType(contentType);
       const path = `${id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .upload(path, blob, { upsert: true, contentType });
       if (uploadError) throw uploadError;
       const { data: signed, error: signError } = await supabase.storage
         .from("avatars")
@@ -189,6 +183,19 @@ function EditUserPage() {
       setUploading(false);
     }
   };
+
+  const onPickImage = async (file: File | undefined) => {
+    if (!file) return;
+    setImageError(null);
+    const check = await validateProfileImage(file);
+    if (!check.ok) {
+      setImageError(check.error);
+      toast.error(check.error);
+      return;
+    }
+    setCropFile(file);
+  };
+
 
 
   const mutation = useMutation({
@@ -366,6 +373,19 @@ function EditUserPage() {
                   </div>
                 ) : null}
               </section>
+
+              {cropFile ? (
+                <ImageCropDialog
+                  file={cropFile}
+                  onCancel={() => setCropFile(null)}
+                  onConfirm={(blob) => {
+                    setCropFile(null);
+                    void uploadBlob(blob, "image/jpeg");
+                  }}
+                />
+              ) : null}
+
+
 
 
               <section className="rounded-2xl border border-border bg-card">
