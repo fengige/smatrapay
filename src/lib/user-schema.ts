@@ -71,7 +71,9 @@ export const createUserSchema = z.object({
   bio: optionalText(1000, "Bio"),
   notes: optionalText(2000, "Notes"),
   status: userStatusEnum.default("active"),
+  ...residencyFields,
   role: userRoleEnum.default("user"),
+
 });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
