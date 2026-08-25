@@ -18,8 +18,6 @@ import { createUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/residents/new")({
-
-export const Route = createFileRoute("/_authenticated/residents/new")({
   head: () => ({
     meta: [
       { title: "Add New Resident · SmatraPay" },
