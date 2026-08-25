@@ -24,18 +24,32 @@ function initials(value: string) {
 }
 
 export function useSessionIdentity() {
-  const [identity, setIdentity] = useState<{ name: string; email: string }>({
+  const [identity, setIdentity] = useState<{
+    name: string;
+    email: string;
+    profile_image: string | null;
+  }>({
     name: "",
     email: "",
+    profile_image: null,
   });
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!active || !data.user) return;
       const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      const name =
+        (meta["name"] as string) || (data.user.email ?? "").split("@")[0] || "Account";
+      const { data: profile } = await supabase
+        .from("users")
+        .select("profile_image")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (!active) return;
       setIdentity({
-        name: (meta["name"] as string) || (data.user.email ?? "").split("@")[0] || "Account",
+        name,
         email: data.user.email ?? "",
+        profile_image: profile?.profile_image ?? null,
       });
     });
     return () => {
