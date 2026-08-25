@@ -154,20 +154,31 @@ function UsersPage() {
   }, [users, search, roleFilter, statusFilter]);
 
   function exportCsv() {
-    const header = ["Name", "Email", "Username", "Phone", "Role", "Status", "Joined"];
-    const lines = filtered.map((u) =>
-      [u.name, u.email, u.username, u.phone, u.role, u.status, u.created_at]
-        .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-        .join(","),
-    );
-    const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv" });
+    const cols = EXPORT_COLUMNS.filter((c) => selectedColumns.includes(c.key));
+    if (cols.length === 0) {
+      toast.error("Pick at least one column to export");
+      return;
+    }
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = filtered.map((u) => cols.map((c) => escape(c.value(u))).join(","));
+    const csv = [cols.map((c) => escape(c.label)).join(","), ...rows].join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const parts = [
+      "smatrapay-users",
+      roleFilter !== "all" ? roleFilter : null,
+      statusFilter !== "all" ? statusFilter : null,
+      search.trim() ? "search" : null,
+      new Date().toISOString().slice(0, 10),
+    ].filter(Boolean);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "smatrapay-users.csv";
+    a.download = `${parts.join("-")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} user${filtered.length === 1 ? "" : "s"}`);
   }
+
 
   const cards = [
     { label: "Total Users", value: stats.total, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
