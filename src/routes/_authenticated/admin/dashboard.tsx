@@ -253,6 +253,7 @@ function AdminDashboard() {
               <h2 className="text-sm font-bold text-foreground">Recent Vendors</h2>
               <Link
                 to="/users"
+                search={{ page: 1, limit: 10 }}
                 className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
               >
                 View All <ChevronRight className="size-3" />
@@ -312,6 +313,7 @@ function AdminDashboard() {
               </ul>
               <Link
                 to="/users"
+                search={{ page: 1, limit: 10 }}
                 className="mt-4 flex w-full items-center justify-center rounded-xl bg-background px-4 py-2.5 text-sm font-bold text-foreground transition-opacity hover:opacity-90"
               >
                 Review Fleet

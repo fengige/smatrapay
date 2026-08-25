@@ -26,8 +26,10 @@ const DEFAULT_LIMIT = 10;
 const LIMIT_OPTIONS = [10, 25, 50, 100];
 
 function parseSearch(search: Record<string, unknown>) {
-  const page = Math.max(1, Number(search.page) || 1);
-  const limit = LIMIT_OPTIONS.includes(Number(search.limit)) ? Number(search.limit) : DEFAULT_LIMIT;
+  const page = Math.max(1, Number(search["page"]) || 1);
+  const limit = LIMIT_OPTIONS.includes(Number(search["limit"]))
+    ? Number(search["limit"])
+    : DEFAULT_LIMIT;
   return { page, limit };
 }
 
