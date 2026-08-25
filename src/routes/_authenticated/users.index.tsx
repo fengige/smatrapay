@@ -454,29 +454,11 @@ function UsersPage() {
                 >
                   Disable
                 </button>
-                <select
-                  aria-label="Change role for selected users"
-                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm capitalize"
-                  value={bulkRole}
-                  disabled={bulkMutation.isPending}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setBulkRole(value);
-                    if (value) bulkMutation.mutate({ type: "role", value });
-                  }}
-                >
-                  <option value="">Change role…</option>
-                  {roles.map((r) => (
-                    <option key={r} value={r}>
-                      {pretty(r)}
-                    </option>
-                  ))}
-                </select>
                 <button
                   className="rounded-lg border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
                   disabled={bulkMutation.isPending}
                   onClick={() => {
-                    if (confirm(`Delete ${selectedIds.length} user record(s)?`))
+                    if (confirm(`Delete ${selectedIds.length} admin record(s)?`))
                       bulkMutation.mutate({ type: "delete" });
                   }}
                 >
