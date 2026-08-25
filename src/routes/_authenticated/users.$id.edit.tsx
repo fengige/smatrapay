@@ -2,10 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, AtSign, Phone, Save, X } from "lucide-react";
+import { ArrowLeft, AtSign, KeyRound, Phone, Save, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { getUserById, updateUser } from "@/lib/users.functions";
+import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/users/$id/edit")({
