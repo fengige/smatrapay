@@ -49,7 +49,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         { label: "Property Management", icon: Home },
         { label: "Vendor Management", icon: Store },
         { label: "Token Management", icon: KeyRound },
-        { label: "Transaction Management", icon: ArrowLeftRight },
+        { label: "Transaction Records", icon: ArrowLeftRight },
         { label: "User Management", to: "/users", icon: UserCircle },
         { label: "Reports & Analysis", icon: BarChart3 },
         { label: "Account Settings", icon: Settings },
