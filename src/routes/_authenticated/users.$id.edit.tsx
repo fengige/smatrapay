@@ -148,17 +148,16 @@ function EditUserPage() {
 
   const onPickImage = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
+    setImageError(null);
+    const check = await validateProfileImage(file);
+    if (!check.ok) {
+      setImageError(check.error);
+      toast.error(check.error);
       return;
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = extensionForType(file.type);
       const path = `${id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
@@ -171,11 +170,14 @@ function EditUserPage() {
       set("profile_image", signed.signedUrl);
       toast.success("Profile image uploaded — save to apply");
     } catch (e) {
-      toast.error((e as Error).message || "Could not upload image");
+      const message = (e as Error).message || "Could not upload image. Please try again.";
+      setImageError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
   };
+
 
   const mutation = useMutation({
     mutationFn: () =>
