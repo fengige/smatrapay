@@ -143,16 +143,24 @@ function EditUserPage() {
     onError: (e: Error) => toast.error(e.message || "Could not update user"),
   });
 
+  const originalRole = data?.roles?.[0] ?? "user";
+  const originalStatus = data?.user?.status ?? "active";
+  const roleChanged = !!data && form.role !== originalRole;
+  const statusChanged = !!data && form.status !== originalStatus;
+
   const validate = () => {
-    const next: Record<string, string> = {};
-    if (form.name.trim().length < 2) next["name"] = "Full name must be at least 2 characters";
-    if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email.trim()))
-      next["email"] = "Enter a valid email address";
-    if (form.username.trim() && !/^[a-zA-Z0-9._-]+$/.test(form.username.trim()))
-      next["username"] = "Only letters, numbers, dots, dashes and underscores";
-    if (form.phone.trim() && !/^[+]?[0-9\s()-]+$/.test(form.phone.trim()))
-      next["phone"] = "Enter a valid phone number";
-    return next;
+    const parsed = editUserSchema.safeParse({
+      name: form.name,
+      email: form.email,
+      username: form.username,
+      phone: form.phone,
+      profile_image: form.profile_image,
+      bio: form.bio,
+      notes: form.notes,
+      role: form.role,
+      status: form.status,
+    });
+    return parsed.success ? {} : fieldErrors(parsed.error);
   };
 
   const onSubmit = (event: React.FormEvent) => {
@@ -164,8 +172,13 @@ function EditUserPage() {
       return;
     }
     setErrors({});
+    if (roleChanged || statusChanged) {
+      setConfirmOpen(true);
+      return;
+    }
     mutation.mutate();
   };
+
 
   return (
     <PortalLayout roles={["admin"]} title="User Management" description="Edit user profile">
