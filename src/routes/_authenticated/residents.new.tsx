@@ -2,12 +2,22 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowLeft, AtSign, Phone, Save, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  AtSign,
+  Loader2,
+  Phone,
+  Save,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { createUser } from "@/lib/users.functions";
 import { createUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
+
+export const Route = createFileRoute("/_authenticated/residents/new")({
 
 export const Route = createFileRoute("/_authenticated/residents/new")({
   head: () => ({
