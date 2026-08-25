@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -15,6 +15,7 @@ import {
   Trash2,
   UserCheck,
   UserCog,
+  UserPlus,
   Users as UsersIcon,
 } from "lucide-react";
 
@@ -307,6 +308,12 @@ function UsersPage() {
       actions={
         <div className="relative">
           <div className="flex items-center gap-2">
+            <Link
+              to="/users/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              <UserPlus className="size-4" /> Add User
+            </Link>
             <button
               className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
               onClick={exportCsv}
