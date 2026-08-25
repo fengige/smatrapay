@@ -405,26 +405,19 @@ function UsersPage() {
               <Search className="size-4 text-muted-foreground" />
               <input
                 className="input-field"
-                placeholder="Search by name, email, phone…"
-                aria-label="Search users"
+                placeholder="Search admins by name, email, phone…"
+                aria-label="Search admins"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <select
-                aria-label="Filter by role"
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-              >
-                <option value="all">All Roles</option>
-                {roles.map((r) => (
-                  <option key={r} value={r}>
-                    {pretty(r)}
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Role:
+              </span>
+              <span className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+                Admin
+              </span>
               <select
                 aria-label="Filter by status"
                 className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
