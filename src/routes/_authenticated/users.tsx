@@ -3,16 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import {
+  ChevronDown,
   Download,
   Eye,
   Pencil,
   Search,
   ShieldAlert,
+  SlidersHorizontal,
   Trash2,
   UserCheck,
   UserCog,
   Users as UsersIcon,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { listUsers, updateUser, deleteUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
