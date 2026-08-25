@@ -119,6 +119,9 @@ function UsersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_COLUMNS);
   const [exportOpen, setExportOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkRole, setBulkRole] = useState("");
+
 
 
   const { data, isLoading } = useQuery({
