@@ -209,6 +209,18 @@ function UsersPage() {
     });
   }, [users, search, roleFilter, statusFilter]);
 
+  const allSelected = filtered.length > 0 && filtered.every((u) => selectedIds.includes(u.id));
+
+  function toggleAll(checked: boolean) {
+    setSelectedIds(checked ? filtered.map((u) => u.id) : []);
+  }
+
+  function toggleOne(id: string, checked: boolean) {
+    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
+  }
+
+
+
   function exportCsv() {
     const cols = EXPORT_COLUMNS.filter((c) => selectedColumns.includes(c.key));
     if (cols.length === 0) {
