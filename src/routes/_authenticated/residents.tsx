@@ -213,6 +213,12 @@ function ResidentsPage() {
             >
               <Download className="size-4" /> Export CSV
             </button>
+            <Link
+              to="/residents/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              <Plus className="size-4" /> Add Resident
+            </Link>
           </div>
 
           <div className="overflow-x-auto">
