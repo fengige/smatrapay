@@ -162,7 +162,30 @@ function UsersPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const bulkMutation = useMutation({
+    mutationFn: async (action: { type: "status"; value: string } | { type: "role"; value: string } | { type: "delete" }) => {
+      for (const id of selectedIds) {
+        if (action.type === "delete") {
+          await removeUser({ data: { id } });
+        } else if (action.type === "status") {
+          await saveUser({ data: { id, status: action.value as "active" } });
+        } else {
+          await saveUser({ data: { id, role: action.value as "user" } });
+        }
+      }
+      return selectedIds.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`Updated ${count} user${count === 1 ? "" : "s"}`);
+      setSelectedIds([]);
+      setBulkRole("");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const users = (data?.users ?? []) as Row[];
+
 
   const stats = useMemo(
     () => ({
