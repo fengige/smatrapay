@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
@@ -47,6 +48,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
+  id: '/landlords',
+  path: '/landlords',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedResidentsRoute = AuthenticatedResidentsRouteImport.update({
   id: '/residents',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/landlords': typeof AuthenticatedLandlordsRoute
   '/residents': typeof AuthenticatedResidentsRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/landlords': typeof AuthenticatedLandlordsRoute
   '/residents': typeof AuthenticatedResidentsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/landlords': typeof AuthenticatedLandlordsRoute
   '/_authenticated/residents': typeof AuthenticatedResidentsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/landlords'
     | '/residents'
     | '/users'
     | '/admin/dashboard'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/landlords'
     | '/residents'
     | '/admin/dashboard'
     | '/agent/dashboard'
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/landlords'
     | '/_authenticated/residents'
     | '/_authenticated/users'
     | '/_authenticated/admin/dashboard'
@@ -292,6 +304,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/landlords': {
+      id: '/_authenticated/landlords'
+      path: '/landlords'
+      fullPath: '/landlords'
+      preLoaderRoute: typeof AuthenticatedLandlordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/residents': {
       id: '/_authenticated/residents'
@@ -430,6 +449,7 @@ const AuthenticatedUsersRouteWithChildren =
   AuthenticatedUsersRoute._addFileChildren(AuthenticatedUsersRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRoute
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
@@ -441,6 +461,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLandlordsRoute: AuthenticatedLandlordsRoute,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
