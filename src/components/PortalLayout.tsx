@@ -236,9 +236,17 @@ export function PortalLayout({
               <Bell className="size-4" />
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
             </button>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
-              {avatar}
-            </span>
+            {identity.profile_image ? (
+              <img
+                src={identity.profile_image}
+                alt={identity.name || "Profile"}
+                className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:size-9"
+              />
+            ) : (
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
+                {avatar}
+              </span>
+            )}
           </div>
         </header>
 
