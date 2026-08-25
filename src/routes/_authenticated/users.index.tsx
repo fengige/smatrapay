@@ -33,7 +33,7 @@ function parseSearch(search: Record<string, unknown>) {
   return { page, limit };
 }
 
-export const Route = createFileRoute("/_authenticated/users")({
+export const Route = createFileRoute("/_authenticated/users/")({
   validateSearch: parseSearch,
   head: () => ({
     meta: [

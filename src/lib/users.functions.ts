@@ -96,3 +96,62 @@ export const deleteUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const createUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        email: z.string().trim().email().max(255),
+        password: z.string().min(6).max(72),
+        username: z.string().trim().max(60).optional().or(z.literal("")),
+        phone: z.string().trim().max(40).optional().or(z.literal("")),
+        bio: z.string().trim().max(1000).optional().or(z.literal("")),
+        notes: z.string().trim().max(2000).optional().or(z.literal("")),
+        status: statusEnum.default("active"),
+        role: roleEnum.default("user"),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Only admins can create users");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { name: data.name },
+    });
+    if (error || !created.user) throw new Error(error?.message ?? "Could not create user");
+
+    const id = created.user.id;
+    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      id,
+      name: data.name,
+      email: data.email,
+      username: data.username || null,
+      phone: data.phone || null,
+      bio: data.bio || null,
+      notes: data.notes || null,
+      status: data.status,
+      created_by: userId,
+      updated_by: userId,
+    });
+    if (profileError) throw new Error(profileError.message);
+
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", id);
+    const { error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: id, role: data.role });
+    if (roleError) throw new Error(roleError.message);
+
+    return { ok: true, id };
+  });
