@@ -522,7 +522,7 @@ function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((u) => (
+                  {paginated.map((u) => (
                     <tr key={u.id} className="border-t border-border hover:bg-muted/30">
                       {data?.isAdmin && (
                         <td className="px-4 py-3">
@@ -603,7 +603,7 @@ function UsersPage() {
                       </td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && (
+                  {paginated.length === 0 && (
                     <tr>
                       <td colSpan={data?.isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                         No users match your filters.
@@ -612,6 +612,54 @@ function UsersPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {filtered.length > 0 && (
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row">
+              <p className="text-sm text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{startIndex + 1}</span>–
+                <span className="font-medium text-foreground">{endIndex}</span> of{" "}
+                <span className="font-medium text-foreground">{filtered.length}</span> users
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span>Rows</span>
+                  <select
+                    aria-label="Rows per page"
+                    className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    {LIMIT_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    aria-label="Previous page"
+                    className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground disabled:opacity-40"
+                    disabled={safePage <= 1}
+                    onClick={() => setPage(safePage - 1)}
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <span className="min-w-[4.5rem] px-2 text-center text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{safePage}</span> / {totalPages}
+                  </span>
+                  <button
+                    aria-label="Next page"
+                    className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground disabled:opacity-40"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setPage(safePage + 1)}
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
