@@ -87,6 +87,9 @@ function EditUserPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [resetStatus, setResetStatus] = useState<
+    { ok: true; email: string; at: Date } | { ok: false; message: string; at: Date } | null
+  >(null);
   const requestReset = useServerFn(sendPasswordReset);
   const resetMutation = useMutation({
     mutationFn: () =>
@@ -97,9 +100,16 @@ function EditUserPage() {
             typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
         },
       } as never),
-    onSuccess: (res: { email?: string }) =>
-      toast.success(`Password reset email sent to ${res?.email ?? "the user"}`),
-    onError: (e: Error) => toast.error(e.message || "Could not send password reset email"),
+    onSuccess: (res: { email?: string }) => {
+      const email = res?.email ?? form.email.trim();
+      setResetStatus({ ok: true, email, at: new Date() });
+      toast.success(`Password reset email sent to ${email || "the user"}`);
+    },
+    onError: (e: Error) => {
+      const message = e.message || "Could not send password reset email";
+      setResetStatus({ ok: false, message, at: new Date() });
+      toast.error(message);
+    },
   });
 
   const { data, isLoading, error } = useQuery({
