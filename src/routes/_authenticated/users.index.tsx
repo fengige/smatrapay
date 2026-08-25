@@ -130,7 +130,6 @@ function UsersPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [viewing, setViewing] = useState<Row | null>(null);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_COLUMNS);
   const [exportOpen, setExportOpen] = useState(false);
