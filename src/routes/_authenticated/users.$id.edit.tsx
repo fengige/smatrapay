@@ -320,7 +320,7 @@ function EditUserPage() {
                       {uploading ? "Uploading…" : form.profile_image ? "Change image" : "Browse image"}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={ALLOWED_IMAGE_TYPES.join(",")}
                         className="sr-only"
                         disabled={uploading}
                         onChange={(e) => {
@@ -332,7 +332,10 @@ function EditUserPage() {
                     {form.profile_image ? (
                       <button
                         type="button"
-                        onClick={() => set("profile_image", "")}
+                        onClick={() => {
+                          setImageError(null);
+                          set("profile_image", "");
+                        }}
                         className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="size-4" /> Remove
@@ -340,7 +343,17 @@ function EditUserPage() {
                     ) : null}
                   </div>
                 </div>
+                {imageError ? (
+                  <div
+                    role="alert"
+                    className="mx-5 mb-5 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
+                  >
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                    <span>{imageError}</span>
+                  </div>
+                ) : null}
               </section>
+
 
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">
