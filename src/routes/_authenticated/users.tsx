@@ -230,13 +230,71 @@ function UsersPage() {
       title="Users"
       description="Manage your platform user directory"
       actions={
-        <button
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
-          onClick={exportCsv}
-        >
-          <Download className="size-4" /> Export CSV
-        </button>
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+              onClick={exportCsv}
+            >
+              <Download className="size-4" /> Export CSV ({filtered.length})
+            </button>
+            <button
+              aria-label="Choose export columns"
+              aria-expanded={exportOpen}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-2 text-sm text-muted-foreground hover:bg-accent/10"
+              onClick={() => setExportOpen((v) => !v)}
+            >
+              <SlidersHorizontal className="size-4" />
+              <ChevronDown className="size-3" />
+            </button>
+          </div>
+
+          {exportOpen && (
+            <div className="absolute right-0 z-40 mt-2 w-64 rounded-xl border border-border bg-background p-3 shadow-lg">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Columns to export
+              </p>
+              <div className="max-h-64 space-y-1 overflow-y-auto">
+                {EXPORT_COLUMNS.map((c) => (
+                  <label
+                    key={c.key}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={selectedColumns.includes(c.key)}
+                      onChange={(e) =>
+                        setSelectedColumns((prev) =>
+                          e.target.checked
+                            ? [...prev, c.key]
+                            : prev.filter((k) => k !== c.key),
+                        )
+                      }
+                    />
+                    {c.label}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2 flex justify-between border-t border-border pt-2 text-xs">
+                <button
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedColumns(EXPORT_COLUMNS.map((c) => c.key))}
+                >
+                  Select all
+                </button>
+                <button
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       }
+
     >
       <div className="space-y-5">
         {!data?.isAdmin && !isLoading && (
