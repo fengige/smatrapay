@@ -378,8 +378,7 @@ function UsersPage() {
       <div className="space-y-5">
         {!data?.isAdmin && !isLoading && (
           <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-            You're signed in as a standard user, so you only see your own record. An admin can
-            promote your account to see everyone.
+            Admin access is required to view this directory.
           </p>
         )}
 
