@@ -23,13 +23,13 @@ import { PortalLayout } from "@/components/PortalLayout";
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({
     meta: [
-      { title: "Users · SmatraPay" },
+      { title: "User Management · SmatraPay" },
       {
         name: "description",
         content:
           "Manage SmatraPay user accounts: names, usernames, emails, phones, roles, statuses and notes.",
       },
-      { property: "og:title", content: "Users · SmatraPay" },
+      { property: "og:title", content: "User Management · SmatraPay" },
       {
         property: "og:description",
         content: "Manage SmatraPay accounts, roles, statuses and profile details.",
@@ -268,7 +268,7 @@ function UsersPage() {
   return (
     <PortalLayout
       roles={data?.isAdmin ? ["admin"] : ["user"]}
-      title="Users"
+      title="User Management"
       description="Manage your platform user directory"
       actions={
         <div className="relative">
