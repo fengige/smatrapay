@@ -265,8 +265,7 @@ function UsersPage() {
     const csv = [cols.map((c) => escape(c.label)).join(","), ...rows].join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const parts = [
-      "smatrapay-users",
-      roleFilter !== "all" ? roleFilter : null,
+      "smatrapay-admins",
       statusFilter !== "all" ? statusFilter : null,
       search.trim() ? "search" : null,
       new Date().toISOString().slice(0, 10),
