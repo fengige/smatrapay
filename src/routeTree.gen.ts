@@ -29,6 +29,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
+import { Route as AuthenticatedResidentsIdEditRouteImport } from './routes/_authenticated/residents.$id.edit'
 import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authenticated/users.$id.index'
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -141,6 +142,12 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedResidentsIdEditRoute =
+  AuthenticatedResidentsIdEditRouteImport.update({
+    id: '/$id/edit',
+    path: '/$id/edit',
+    getParentRoute: () => AuthenticatedResidentsRoute,
+  } as any)
 const AuthenticatedUsersIdIndexRoute =
   AuthenticatedUsersIdIndexRouteImport.update({
     id: '/',
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -234,6 +243,7 @@ export interface FileRoutesById {
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/vendor/dashboard'
     | '/users/'
+    | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/vendor/dashboard'
     | '/users'
+    | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -310,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users/new'
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/users/'
+    | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -467,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/residents/$id/edit': {
+      id: '/_authenticated/residents/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/residents/$id/edit'
+      preLoaderRoute: typeof AuthenticatedResidentsIdEditRouteImport
+      parentRoute: typeof AuthenticatedResidentsRoute
+    }
     '/_authenticated/users/$id/': {
       id: '/_authenticated/users/$id/'
       path: '/'
@@ -500,11 +520,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedResidentsRouteChildren {
   AuthenticatedResidentsNewRoute: typeof AuthenticatedResidentsNewRoute
+  AuthenticatedResidentsIdEditRoute: typeof AuthenticatedResidentsIdEditRoute
 }
 
 const AuthenticatedResidentsRouteChildren: AuthenticatedResidentsRouteChildren =
   {
     AuthenticatedResidentsNewRoute: AuthenticatedResidentsNewRoute,
+    AuthenticatedResidentsIdEditRoute: AuthenticatedResidentsIdEditRoute,
   }
 
 const AuthenticatedResidentsRouteWithChildren =
