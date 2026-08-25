@@ -9,6 +9,16 @@ import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.function
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_DIMENSION,
+  MIN_IMAGE_DIMENSION,
+  extensionForType,
+  formatBytes,
+  validateProfileImage,
+} from "@/lib/image-upload";
+
 
 export const Route = createFileRoute("/_authenticated/users/$id/edit")({
   head: () => ({
