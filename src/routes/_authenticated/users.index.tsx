@@ -138,7 +138,7 @@ function UsersPage() {
   const [bulkRole, setBulkRole] = useState("");
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
-  const navigate = useNavigate({ from: "/users" });
+  const navigate = useNavigate({ from: "/users/" });
 
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) => navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
