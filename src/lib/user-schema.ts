@@ -70,3 +70,46 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
   }
   return result;
 }
+
+export const editUserSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Full name must be at least 2 characters" })
+    .max(120, { message: "Full name must be 120 characters or less" }),
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "Email is required" })
+    .email({ message: "Enter a valid email address" })
+    .max(255, { message: "Email must be 255 characters or less" }),
+  username: z
+    .string()
+    .trim()
+    .max(60, { message: "Username must be 60 characters or less" })
+    .regex(/^[a-zA-Z0-9._-]*$/, {
+      message: "Username can only contain letters, numbers, dots, dashes and underscores",
+    })
+    .optional()
+    .or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .max(20, { message: "Phone must be 20 characters or less" })
+    .regex(/^[+]?[0-9\s()-]*$/, { message: "Enter a valid phone number" })
+    .optional()
+    .or(z.literal("")),
+  profile_image: z
+    .string()
+    .trim()
+    .max(500, { message: "Profile image URL must be 500 characters or less" })
+    .url({ message: "Enter a valid image URL" })
+    .optional()
+    .or(z.literal("")),
+  bio: optionalText(1000, "Bio"),
+  notes: optionalText(2000, "Notes"),
+  role: userRoleEnum,
+  status: userStatusEnum,
+});
+
+export type EditUserInput = z.input<typeof editUserSchema>;

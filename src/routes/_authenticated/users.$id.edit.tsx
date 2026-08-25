@@ -2,10 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, AtSign, Phone, Save, X } from "lucide-react";
+import { ArrowLeft, AtSign, KeyRound, Phone, Save, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { getUserById, updateUser } from "@/lib/users.functions";
+import { getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/users/$id/edit")({
@@ -85,6 +86,21 @@ function EditUserPage() {
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const requestReset = useServerFn(sendPasswordReset);
+  const resetMutation = useMutation({
+    mutationFn: () =>
+      requestReset({
+        data: {
+          id,
+          redirectTo:
+            typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
+        },
+      } as never),
+    onSuccess: (res: { email?: string }) =>
+      toast.success(`Password reset email sent to ${res?.email ?? "the user"}`),
+    onError: (e: Error) => toast.error(e.message || "Could not send password reset email"),
+  });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
@@ -142,16 +158,24 @@ function EditUserPage() {
     onError: (e: Error) => toast.error(e.message || "Could not update user"),
   });
 
+  const originalRole = data?.roles?.[0] ?? "user";
+  const originalStatus = data?.user?.status ?? "active";
+  const roleChanged = !!data && form.role !== originalRole;
+  const statusChanged = !!data && form.status !== originalStatus;
+
   const validate = () => {
-    const next: Record<string, string> = {};
-    if (form.name.trim().length < 2) next["name"] = "Full name must be at least 2 characters";
-    if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email.trim()))
-      next["email"] = "Enter a valid email address";
-    if (form.username.trim() && !/^[a-zA-Z0-9._-]+$/.test(form.username.trim()))
-      next["username"] = "Only letters, numbers, dots, dashes and underscores";
-    if (form.phone.trim() && !/^[+]?[0-9\s()-]+$/.test(form.phone.trim()))
-      next["phone"] = "Enter a valid phone number";
-    return next;
+    const parsed = editUserSchema.safeParse({
+      name: form.name,
+      email: form.email,
+      username: form.username,
+      phone: form.phone,
+      profile_image: form.profile_image,
+      bio: form.bio,
+      notes: form.notes,
+      role: form.role,
+      status: form.status,
+    });
+    return parsed.success ? {} : fieldErrors(parsed.error);
   };
 
   const onSubmit = (event: React.FormEvent) => {
@@ -163,8 +187,13 @@ function EditUserPage() {
       return;
     }
     setErrors({});
+    if (roleChanged || statusChanged) {
+      setConfirmOpen(true);
+      return;
+    }
     mutation.mutate();
   };
+
 
   return (
     <PortalLayout roles={["admin"]} title="User Management" description="Edit user profile">
@@ -337,12 +366,103 @@ function EditUserPage() {
                 <p className="mt-3 text-xs text-muted-foreground">
                   Suspended or inactive accounts cannot sign in to any portal.
                 </p>
+                {(roleChanged || statusChanged) && (
+                  <p className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-foreground">
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-primary" />
+                    Permission changes pending — you'll be asked to confirm before saving.
+                  </p>
+                )}
+
+                <div className="mt-5 border-t border-border pt-5">
+                  <h3 className="text-sm font-semibold text-foreground">Security</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Send this user a secure link to choose a new password.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => resetMutation.mutate()}
+                    disabled={resetMutation.isPending || !form.email.trim()}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+                  >
+                    <KeyRound className="size-4" />
+                    {resetMutation.isPending ? "Sending…" : "Send Password Reset"}
+                  </button>
+                  {!form.email.trim() && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Add an email address to enable password resets.
+                    </p>
+                  )}
+                </div>
               </div>
             </section>
           </div>
         )}
       </form>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm permission change"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+          >
+            <div className="flex items-start gap-3">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <ShieldAlert className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Confirm changes</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You're about to change this account's access. Please review:
+                </p>
+              </div>
+            </div>
+
+            <ul className="mt-4 space-y-2 text-sm">
+              {roleChanged && (
+                <li className="rounded-lg border border-border bg-background px-3 py-2">
+                  <span className="text-muted-foreground">Role: </span>
+                  <span className="font-medium text-foreground">{originalRole}</span>
+                  <span className="text-muted-foreground"> → </span>
+                  <span className="font-semibold text-primary">{form.role}</span>
+                </li>
+              )}
+              {statusChanged && (
+                <li className="rounded-lg border border-border bg-background px-3 py-2">
+                  <span className="text-muted-foreground">Status: </span>
+                  <span className="font-medium text-foreground">{originalStatus}</span>
+                  <span className="text-muted-foreground"> → </span>
+                  <span className="font-semibold text-primary">{form.status}</span>
+                </li>
+              )}
+            </ul>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => {
+                  setConfirmOpen(false);
+                  mutation.mutate();
+                }}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                Confirm & Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PortalLayout>
+
   );
 }
 

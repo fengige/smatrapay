@@ -175,3 +175,39 @@ export const getUserById = createServerFn({ method: "GET" })
       roles: (roles ?? []).map((r) => r.role as string),
     };
   });
+
+export const sendPasswordReset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        redirectTo: z.string().trim().url().max(500).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Only admins can send password resets");
+
+    const { data: profile, error } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!profile?.email) throw new Error("This user has no email address on file");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(profile.email, {
+      ...(data.redirectTo ? { redirectTo: data.redirectTo } : {}),
+    });
+    if (resetError) throw new Error(resetError.message);
+
+    return { ok: true, email: profile.email };
+  });
