@@ -557,13 +557,15 @@ function UsersPage() {
                           >
                             <Eye className="size-4" />
                           </Link>
-                          <button
+                          <Link
+                            to="/users/$id/edit"
+                            params={{ id: u.id }}
                             aria-label="Edit user"
                             className="rounded-md p-2 text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-                            onClick={() => setEditing(u)}
                           >
                             <Pencil className="size-4" />
-                          </button>
+                          </Link>
+
                           {data?.isAdmin && (
                             <button
                               aria-label="Delete user"
