@@ -228,11 +228,10 @@ function UsersPage() {
       const matchesTerm =
         !term ||
         [u.name, u.email, u.username, u.phone].some((v) => (v ?? "").toLowerCase().includes(term));
-      const matchesRole = roleFilter === "all" || u.role === roleFilter;
       const matchesStatus = statusFilter === "all" || u.status === statusFilter;
-      return matchesTerm && matchesRole && matchesStatus;
+      return matchesTerm && matchesStatus;
     });
-  }, [users, search, roleFilter, statusFilter]);
+  }, [users, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
