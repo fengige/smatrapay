@@ -80,6 +80,30 @@ function pretty(value: string) {
   return value.replace(/_/g, " ");
 }
 
+function date(value: string | null) {
+  return value ? new Date(value).toLocaleDateString() : "";
+}
+
+const EXPORT_COLUMNS: { key: string; label: string; value: (u: Row) => string }[] = [
+  { key: "name", label: "Full Name", value: (u) => u.name ?? "" },
+  { key: "email", label: "Email Address", value: (u) => u.email ?? "" },
+  { key: "username", label: "Username", value: (u) => u.username ?? "" },
+  { key: "phone", label: "Phone Number", value: (u) => u.phone ?? "" },
+  { key: "role", label: "Portal Role", value: (u) => pretty(u.role) },
+  { key: "status", label: "Account Status", value: (u) => u.status },
+  {
+    key: "email_verified_at",
+    label: "Email Verified",
+    value: (u) => (u.email_verified_at ? "Yes" : "No"),
+  },
+  { key: "bio", label: "Bio", value: (u) => u.bio ?? "" },
+  { key: "notes", label: "Internal Notes", value: (u) => u.notes ?? "" },
+  { key: "created_at", label: "Joined Date", value: (u) => date(u.created_at) },
+  { key: "updated_at", label: "Last Updated", value: (u) => date(u.updated_at) },
+];
+
+const DEFAULT_COLUMNS = ["name", "email", "username", "phone", "role", "status", "created_at"];
+
 function UsersPage() {
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listUsers);
@@ -90,6 +114,9 @@ function UsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_COLUMNS);
+  const [exportOpen, setExportOpen] = useState(false);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
