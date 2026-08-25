@@ -165,6 +165,25 @@ function ResidentsPage() {
       roles={["admin"]}
       title="Resident Management"
       description="All resident accounts"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/residents/new"
+            search={{ page: 1, limit: 10 }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="size-4" /> Add Resident
+          </Link>
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={!filtered.length}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+          >
+            <Download className="size-4" /> Export CSV ({filtered.length})
+          </button>
+        </div>
+      }
     >
       <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -205,21 +224,6 @@ function ResidentsPage() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={!filtered.length}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
-            >
-              <Download className="size-4" /> Export CSV
-            </button>
-            <Link
-              to="/residents/new"
-              search={{ page: 1, limit: 10 }}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              <Plus className="size-4" /> Add Resident
-            </Link>
           </div>
 
           <div className="overflow-x-auto">
