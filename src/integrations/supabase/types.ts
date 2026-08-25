@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -38,51 +38,63 @@ export type Database = {
       users: {
         Row: {
           bio: string | null
+          building: string | null
           created_at: string
           created_by: string | null
           email: string | null
           email_verified_at: string | null
           id: string
+          move_in_date: string | null
           name: string | null
           notes: string | null
           phone: string | null
           profile_image: string | null
           profile_image_url: string | null
+          property: string | null
           status: Database["public"]["Enums"]["user_status"]
+          unit_number: string | null
           updated_at: string
           updated_by: string | null
           username: string | null
         }
         Insert: {
           bio?: string | null
+          building?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
           email_verified_at?: string | null
           id: string
+          move_in_date?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
           profile_image?: string | null
           profile_image_url?: string | null
+          property?: string | null
           status?: Database["public"]["Enums"]["user_status"]
+          unit_number?: string | null
           updated_at?: string
           updated_by?: string | null
           username?: string | null
         }
         Update: {
           bio?: string | null
+          building?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
           email_verified_at?: string | null
           id?: string
+          move_in_date?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
           profile_image?: string | null
           profile_image_url?: string | null
+          property?: string | null
           status?: Database["public"]["Enums"]["user_status"]
+          unit_number?: string | null
           updated_at?: string
           updated_by?: string | null
           username?: string | null

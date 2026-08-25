@@ -25,9 +25,19 @@ const profilePatch = z.object({
   profile_image: z.string().trim().max(500).nullable().optional(),
   bio: z.string().trim().max(1000).nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
+  property: z.string().trim().max(120).nullable().optional(),
+  building: z.string().trim().max(120).nullable().optional(),
+  unit_number: z.string().trim().max(40).nullable().optional(),
+  move_in_date: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
   status: statusEnum.optional(),
   role: roleEnum.optional(),
 });
+
 
 export type ProfilePatch = z.infer<typeof profilePatch>;
 
@@ -137,6 +147,11 @@ export const createUser = createServerFn({ method: "POST" })
       bio: data.bio || null,
       notes: data.notes || null,
       status: data.status,
+      property: data.property || null,
+      building: data.building || null,
+      unit_number: data.unit_number || null,
+      move_in_date: data.move_in_date || null,
+
       created_by: userId,
       updated_by: userId,
     });

@@ -20,6 +20,20 @@ const optionalText = (max: number, label: string) =>
     .optional()
     .or(z.literal(""));
 
+/** Resident-specific residency details, shared by create and edit forms. */
+export const residencyFields = {
+  property: optionalText(120, "Property"),
+  building: optionalText(120, "Building"),
+  unit_number: optionalText(40, "Unit / house number"),
+  move_in_date: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Enter a valid date" })
+    .optional()
+    .or(z.literal("")),
+};
+
+
 export const createUserSchema = z.object({
   name: z
     .string()
@@ -57,7 +71,9 @@ export const createUserSchema = z.object({
   bio: optionalText(1000, "Bio"),
   notes: optionalText(2000, "Notes"),
   status: userStatusEnum.default("active"),
+  ...residencyFields,
   role: userRoleEnum.default("user"),
+
 });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
@@ -103,6 +119,8 @@ export const editUserSchema = z.object({
   notes: optionalText(2000, "Notes"),
   role: userRoleEnum,
   status: userStatusEnum,
+  ...residencyFields,
 });
+
 
 export type EditUserInput = z.input<typeof editUserSchema>;
