@@ -134,7 +134,6 @@ function UsersPage() {
   const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_COLUMNS);
   const [exportOpen, setExportOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkRole, setBulkRole] = useState("");
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
   const navigate = useNavigate({ from: "/users/" });
