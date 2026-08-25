@@ -65,7 +65,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       {
         heading: "Account",
         items: [
-          { label: "User Management", to: "/users", icon: UserCircle },
+          { label: "Users", to: "/users", icon: UserCircle },
           { label: "Account Settings", icon: Settings },
         ],
       },
