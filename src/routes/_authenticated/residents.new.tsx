@@ -67,8 +67,6 @@ function NewResidentPage() {
     status: "active",
   });
 
-  const isSaving = mutation.isPending;
-
   const validateField = (key: keyof typeof form) => {
     const partial = createUserSchema.safeParse({ ...form, [key]: form[key] });
     if (!partial.success) {
