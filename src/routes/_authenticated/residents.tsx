@@ -1,21 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
   ChevronLeft,
   ChevronRight,
   Download,
   Eye,
+  Loader2,
   Pencil,
   Plus,
+  Power,
+  RefreshCw,
   Search,
   ShieldAlert,
+  Trash2,
   UserCheck,
   Users as UsersIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
-import { listUsersByRole } from "@/lib/users.functions";
+import { deleteUser, listUsersByRole, updateUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 const DEFAULT_LIMIT = 10;
@@ -37,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/residents")({
       {
         name: "description",
         content:
-          "Manage SmatraPay resident accounts: names, usernames, emails, phones, statuses and join dates.",
+          "Manage SmatraPay resident accounts: names, emails, phones, properties, units, statuses and join dates.",
       },
       { property: "og:title", content: "Resident Management · SmatraPay" },
       {
@@ -60,6 +67,10 @@ type Row = {
   email: string | null;
   username: string | null;
   phone: string | null;
+  property: string | null;
+  building: string | null;
+  unit_number: string | null;
+  move_in_date: string | null;
   profile_image: string | null;
   status: string;
   role: string;
@@ -74,6 +85,8 @@ const statusTone: Record<string, string> = {
   inactive: "bg-muted text-muted-foreground",
   suspended: "bg-destructive/12 text-destructive",
 };
+
+type SortKey = "name" | "email" | "phone" | "property" | "unit_number" | "status" | "created_at";
 
 function date(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : "";
@@ -91,8 +104,17 @@ function initials(row: Row) {
 
 function ResidentsPage() {
   const fetchResidents = useServerFn(listUsersByRole);
+  const saveResident = useServerFn(updateUser);
+  const removeResident = useServerFn(deleteUser);
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [confirm, setConfirm] = useState<
+    { type: "status" | "delete"; row: Row; next?: string } | null
+  >(null);
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
   const navigate = useNavigate({ from: "/residents" });
@@ -105,28 +127,64 @@ function ResidentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, statusFilter]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["users", "resident"],
     queryFn: () => fetchResidents({ data: { role: "resident" } }),
   });
 
   const residents = useMemo(() => (data?.users ?? []) as unknown as Row[], [data]);
 
+  const statusMutation = useMutation({
+    mutationFn: (vars: { id: string; status: string }) =>
+      saveResident({ data: { id: vars.id, status: vars.status } } as never),
+    onSuccess: async (_res, vars) => {
+      toast.success(vars.status === "active" ? "Resident activated" : "Resident deactivated");
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not update resident status"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => removeResident({ data: { id } } as never),
+    onSuccess: async () => {
+      toast.success("Resident deleted");
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not delete resident"),
+  });
+
+  const busy = statusMutation.isPending || deleteMutation.isPending;
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return residents.filter((r) => {
+    const rows = residents.filter((r) => {
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       if (!matchesStatus) return false;
       if (!term) return true;
-      return [r.name, r.email, r.username, r.phone]
+      return [r.name, r.email, r.username, r.phone, r.property, r.building, r.unit_number]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term));
     });
-  }, [residents, search, statusFilter]);
+
+    return [...rows].sort((a, b) => {
+      const av = String(a[sortKey] ?? "").toLowerCase();
+      const bv = String(b[sortKey] ?? "").toLowerCase();
+      if (av === bv) return 0;
+      return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
+    });
+  }, [residents, search, statusFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
 
   const stats = useMemo(
     () => ({
@@ -139,13 +197,26 @@ function ResidentsPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Full Name", "Email", "Username", "Phone", "Status", "Joined"];
+    const header = [
+      "Full Name",
+      "Email",
+      "Phone",
+      "Property",
+      "Building",
+      "Unit",
+      "Status",
+      "Move-in Date",
+      "Joined",
+    ];
     const rows = filtered.map((r) => [
       r.name ?? "",
       r.email ?? "",
-      r.username ?? "",
       r.phone ?? "",
+      r.property ?? "",
+      r.building ?? "",
+      r.unit_number ?? "",
       r.status,
+      r.move_in_date ?? "",
       date(r.created_at),
     ]);
     const csv = [header, ...rows]
@@ -160,6 +231,20 @@ function ResidentsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const SortHeader = ({ label, sortBy }: { label: string; sortBy: SortKey }) => (
+    <th className="px-4 py-3 font-semibold">
+      <button
+        type="button"
+        onClick={() => toggleSort(sortBy)}
+        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-foreground"
+      >
+        {label}
+        {sortKey === sortBy &&
+          (sortDir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
+      </button>
+    </th>
+  );
+
   return (
     <PortalLayout
       roles={["admin"]}
@@ -169,7 +254,6 @@ function ResidentsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/residents/new"
-            search={{ page: 1, limit: 10 }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="size-4" /> Add Resident
@@ -181,6 +265,14 @@ function ResidentsPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
           >
             <Download className="size-4" /> Export CSV ({filtered.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            aria-label="Refresh residents"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </button>
         </div>
       }
@@ -207,7 +299,7 @@ function ResidentsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search residents by name, email, username or phone"
+                placeholder="Search residents by name, email, phone, property or unit"
                 className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
               />
             </div>
@@ -227,34 +319,36 @@ function ResidentsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Resident</th>
-                  <th className="px-4 py-3 font-semibold">Username</th>
-                  <th className="px-4 py-3 font-semibold">Phone</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Joined</th>
+                  <SortHeader label="Resident" sortBy="name" />
+                  <SortHeader label="Phone" sortBy="phone" />
+                  <SortHeader label="Property" sortBy="property" />
+                  <SortHeader label="Unit" sortBy="unit_number" />
+                  <SortHeader label="Status" sortBy="status" />
+                  <SortHeader label="Created" sortBy="created_at" />
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading residents…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                      No residents found.
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      No residents found. Try adjusting your search or add a new resident.
                     </td>
                   </tr>
                 ) : (
@@ -279,8 +373,14 @@ function ResidentsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.username ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{r.phone ?? "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        <div>{r.property ?? "—"}</div>
+                        {r.building && (
+                          <div className="text-xs text-muted-foreground/80">{r.building}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{r.unit_number ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
@@ -302,13 +402,39 @@ function ResidentsPage() {
                             <Eye className="size-4" />
                           </Link>
                           <Link
-                            to="/users/$id/edit"
+                            to="/residents/$id/edit"
                             params={{ id: r.id }}
                             aria-label="Edit resident"
                             className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
                           >
                             <Pencil className="size-4" />
                           </Link>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              setConfirm({
+                                type: "status",
+                                row: r,
+                                next: r.status === "active" ? "inactive" : "active",
+                              })
+                            }
+                            aria-label={r.status === "active" ? "Deactivate resident" : "Activate resident"}
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+                          >
+                            <Power
+                              className={`size-4 ${r.status === "active" ? "text-emerald-600" : ""}`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setConfirm({ type: "delete", row: r })}
+                            aria-label="Delete resident"
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -363,6 +489,62 @@ function ResidentsPage() {
           </div>
         </section>
       </div>
+
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+          >
+            <h3 className="text-lg font-semibold text-foreground">
+              {confirm.type === "delete" ? "Delete resident" : "Change resident status"}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {confirm.type === "delete" ? (
+                <>
+                  This permanently removes{" "}
+                  <strong>{confirm.row.name ?? confirm.row.email}</strong> from residents. This
+                  action cannot be undone.
+                </>
+              ) : (
+                <>
+                  Set <strong>{confirm.row.name ?? confirm.row.email}</strong> to{" "}
+                  <strong>{confirm.next}</strong>? This affects their access to the resident portal.
+                </>
+              )}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirm(null)}
+                className="rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (confirm.type === "delete") deleteMutation.mutate(confirm.row.id);
+                  else
+                    statusMutation.mutate({
+                      id: confirm.row.id,
+                      status: confirm.next ?? "active",
+                    });
+                  setConfirm(null);
+                }}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60 ${
+                  confirm.type === "delete" ? "bg-destructive" : "bg-primary"
+                }`}
+              >
+                {busy && <Loader2 className="size-4 animate-spin" />}
+                {confirm.type === "delete" ? "Delete" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PortalLayout>
   );
 }
