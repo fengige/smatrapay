@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import {
   assignUnit,
   createBulkUnits,
+  previewBulkUnits,
   deleteAssignment,
   deleteProperty,
   deleteUnit,
@@ -294,6 +295,7 @@ function PropertyDetailPage() {
   const saveUnit = useServerFn(upsertUnit);
   const removeUnit = useServerFn(deleteUnit);
   const runBulkCreate = useServerFn(createBulkUnits);
+  const runBulkPreview = useServerFn(previewBulkUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -304,6 +306,17 @@ function PropertyDetailPage() {
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
+  const [bulkStep, setBulkStep] = useState<"form" | "confirm">("form");
+  const [bulkMode, setBulkMode] = useState<"fail" | "skip" | "append">("fail");
+  const [bulkPreview, setBulkPreview] = useState<null | {
+    existingTotal: number;
+    conflicts: string[];
+    willCreate: number;
+    firstLabel: string | null;
+    lastLabel: string | null;
+    appendFirstLabel: string | null;
+    appendLastLabel: string | null;
+  }>(null);
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -378,24 +391,48 @@ function PropertyDetailPage() {
     onError: (err: Error) => toast.error(err.message || "Could not remove unit"),
   });
 
+  const bulkPayload = (mode: "fail" | "skip" | "append") => ({
+    property_id: id,
+    count: Number(bulkForm.count),
+    start_number: Number(bulkForm.start_number),
+    prefix: bulkForm.prefix.trim() || null,
+    building: bulkForm.building.trim() || null,
+    unit_type: bulkForm.unit_type.trim() || null,
+    bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
+    floor: bulkForm.floor.trim() || null,
+    status: bulkForm.status,
+    mode,
+  });
+
+  const closeBulk = () => {
+    setBulkForm({ ...emptyBulkForm });
+    setBulkStep("form");
+    setBulkMode("fail");
+    setBulkPreview(null);
+  };
+
+  const bulkPreviewMutation = useMutation({
+    mutationFn: () => runBulkPreview({ data: bulkPayload("fail") } as never),
+    onSuccess: (res: any) => {
+      setBulkPreview(res);
+      setBulkMode(res.conflicts.length ? "skip" : "fail");
+      setBulkStep("confirm");
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not check existing units"),
+  });
+
   const bulkCreate = useMutation({
-    mutationFn: () =>
-      runBulkCreate({
-        data: {
-          property_id: id,
-          count: Number(bulkForm.count),
-          start_number: Number(bulkForm.start_number),
-          prefix: bulkForm.prefix.trim() || null,
-          building: bulkForm.building.trim() || null,
-          unit_type: bulkForm.unit_type.trim() || null,
-          bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
-          floor: bulkForm.floor.trim() || null,
-          status: bulkForm.status,
-        },
-      } as never),
-    onSuccess: async (res) => {
-      toast.success(`${res.created} units created`);
-      setBulkForm({ ...emptyBulkForm });
+    mutationFn: () => runBulkCreate({ data: bulkPayload(bulkMode) } as never),
+    onSuccess: async (res: any) => {
+      toast.success(`${res.created} unit${res.created === 1 ? "" : "s"} created`, {
+        description: [
+          res.firstLabel ? `${res.firstLabel} … ${res.lastLabel}` : null,
+          res.skipped ? `${res.skipped} existing number(s) skipped` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
+      closeBulk();
       await invalidate();
     },
     onError: (err: Error) => toast.error(err.message || "Could not bulk-create units"),
