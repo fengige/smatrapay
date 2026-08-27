@@ -141,7 +141,6 @@ type BulkForm = {
   count: string;
   start_number: string;
   prefix: string;
-  building: string;
   unit_type: string;
   bedrooms: string;
   floor: string;
@@ -153,7 +152,6 @@ const emptyBulkForm: BulkForm = {
   count: "",
   start_number: "",
   prefix: "Unit",
-  building: "",
   unit_type: "",
   bedrooms: "",
   floor: "",
@@ -397,7 +395,6 @@ function PropertyDetailPage() {
     count: Number(bulkForm.count),
     start_number: Number(bulkForm.start_number),
     prefix: bulkForm.prefix.trim() || null,
-    building: bulkForm.building.trim() || null,
     unit_type: bulkForm.unit_type.trim() || null,
     bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
     floor: bulkForm.floor.trim() || null,
@@ -1505,12 +1502,6 @@ function PropertyDetailPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <input
                 className={inputClass}
-                placeholder="Building"
-                value={bulkForm.building}
-                onChange={(e) => setBulkForm((p) => ({ ...p, building: e.target.value }))}
-              />
-              <input
-                className={inputClass}
                 placeholder="Unit type"
                 value={bulkForm.unit_type}
                 onChange={(e) => setBulkForm((p) => ({ ...p, unit_type: e.target.value }))}
@@ -1578,9 +1569,9 @@ function PropertyDetailPage() {
                     <dd className="capitalize text-foreground">{bulkForm.status}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">Building / type</dt>
-                    <dd className="text-foreground">
-                      {[bulkForm.building, bulkForm.unit_type].filter(Boolean).join(" · ") || "—"}
+                    <dt className="font-semibold uppercase tracking-wide">Type</dt>
+                    <dd className="capitalize text-foreground">
+                      {bulkForm.unit_type || "—"}
                     </dd>
                   </div>
                 </dl>
