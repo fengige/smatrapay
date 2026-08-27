@@ -109,6 +109,7 @@ export function PropertyForm({
     queryFn: () => fetchLandlords(),
   });
   const landlords = landlordsQuery.data?.landlords ?? [];
+  const selectedLandlord = landlords.find((l) => l.id === values.landlord_id);
 
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
