@@ -299,7 +299,7 @@ function LandlordsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search landlords by name, email, phone, property or unit"
+                placeholder="Search landlords by name, email or phone"
                 className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
               />
             </div>
