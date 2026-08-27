@@ -133,11 +133,16 @@ export function PropertyForm({
             ? "Zone name must be at least 2 characters"
             : "Property name must be at least 2 characters";
     }
-    if (index === 1 && values.number_of_units.trim()) {
-      if (!/^\d+$/.test(values.number_of_units.trim()))
-        next["number_of_units"] = "Number of units must be a whole number";
-      else if (Number(values.number_of_units) > 100000)
-        next["number_of_units"] = "Number of units is too large";
+    if (index === 1) {
+      if (values.number_of_units.trim()) {
+        if (!/^\d+$/.test(values.number_of_units.trim()))
+          next["number_of_units"] = "Number of units must be a whole number";
+        else if (Number(values.number_of_units) > 100000)
+          next["number_of_units"] = "Number of units is too large";
+      }
+      if (Number(values.number_of_units) > 0 && !values.landlord_id.trim()) {
+        next["landlord_id"] = "A landlord is required when units are greater than 0";
+      }
     }
     if (index === 2 && values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";
@@ -437,7 +442,7 @@ export function PropertyForm({
               placeholder="e.g. 24"
             />
           </Field>
-          <Field label="Select Landlord">
+          <Field label="Select Landlord" error={errors["landlord_id"]}>
             <select
               value={values.landlord_id}
               onChange={(e) => set("landlord_id", e.target.value)}
