@@ -601,6 +601,8 @@ export const assignUnit = createServerFn({ method: "POST" })
         start_date: dateStr.optional(),
         end_date: dateStr.nullable().optional(),
         notes: text(500),
+        /** Assignment the caller intends to replace; ended atomically before re-checking availability. */
+        replace_assignment_id: uuid.optional(),
       })
       .parse(data),
   )
@@ -608,9 +610,54 @@ export const assignUnit = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase, userId } = context;
 
-    const start = data.start_date ?? new Date().toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (data.replace_assignment_id) {
+      const { data: current, error: curErr } = await supabase
+        .from("unit_assignments")
+        .select("id, user_id, end_date")
+        .eq("id", data.replace_assignment_id)
+        .maybeSingle();
+      if (curErr) throw new Error(curErr.message);
+      if (!current) {
+        throw new Error(
+          "The assignment you are replacing no longer exists — reload the page and try again.",
+        );
+      }
+      if (current.user_id !== data.user_id) {
+        throw new Error("The assignment you are replacing belongs to a different person.");
+      }
+      if (!current.end_date) {
+        const { error: endErr } = await supabase
+          .from("unit_assignments")
+          .update({ end_date: today, updated_by: userId } as never)
+          .eq("id", data.replace_assignment_id)
+          .is("end_date", null);
+        if (endErr) throw new Error(endErr.message);
+      }
+    }
+
+    const start = data.start_date ?? today;
     const end = data.end_date ?? null;
     if (end && end < start) throw new Error("End date must be on or after the start date");
+
+    // Re-check availability at save time so a concurrent assignment cannot be overwritten.
+    const { data: conflicting, error: cErr } = await supabase
+      .from("unit_assignments")
+      .select("id, user_id, end_date")
+      .eq("unit_id", data.unit_id)
+      .eq("role", data.role);
+    if (cErr) throw new Error(cErr.message);
+    const takenByOther = (conflicting ?? []).find(
+      (row: any) =>
+        row.user_id !== data.user_id &&
+        overlaps(start, end, row.start_date ?? start, row.end_date ?? null),
+    );
+    if (takenByOther) {
+      throw new Error(
+        "This unit was just assigned to someone else. Reload the page and pick an available unit.",
+      );
+    }
 
     await assertNoOverlap(supabase, {
       unit_id: data.unit_id,
