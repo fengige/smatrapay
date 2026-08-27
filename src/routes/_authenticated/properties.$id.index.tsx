@@ -772,6 +772,50 @@ function PropertyDetailPage() {
                 </table>
               )}
 
+              {tab === "timeline" && (
+                <div className="space-y-5 p-4">
+                  {!timelineByUnit.length && (
+                    <p className="py-10 text-center text-muted-foreground">
+                      No unit history yet.
+                    </p>
+                  )}
+                  {timelineByUnit.map(([unitNumber, rows]) => (
+                    <div key={unitNumber} className="rounded-xl border border-border bg-background p-4">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <h4 className="text-sm font-bold text-foreground">Unit {unitNumber}</h4>
+                        {rows[0]?.building && (
+                          <span className="text-xs text-muted-foreground">{rows[0].building}</span>
+                        )}
+                        <Pill value={rows[rows.length - 1]?.state ?? "active"} />
+                      </div>
+                      <ol className="relative space-y-4 border-l border-border pl-5">
+                        {rows.map((r, i) => (
+                          <li key={`${unitNumber}-${i}`} className="relative">
+                            <span
+                              className={`absolute -left-[1.4rem] top-1 size-2.5 rounded-full ${
+                                r.state === "archived"
+                                  ? "bg-muted-foreground"
+                                  : r.state === "blocked"
+                                    ? "bg-amber-500"
+                                    : "bg-emerald-500"
+                              }`}
+                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">
+                                {r.event}
+                              </span>
+                              <Pill value={r.state} />
+                              <span className="text-xs text-muted-foreground">{fmt(r.date)}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{r.detail}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {(tab === "residents" || tab === "landlords") && (
                 <table className="w-full min-w-[900px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
