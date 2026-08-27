@@ -37,6 +37,8 @@ function clean(values: PropertyFormValues) {
     property_type: values.property_type,
     building_category: values.property_type === "building" ? values.building_category : null,
     subtype: values.property_type === "building" ? values.subtype || null : null,
+    number_of_units: values.number_of_units.trim() ? Number(values.number_of_units) : null,
+    landlord_id: values.landlord_id || null,
   };
   for (const key of [
     "code",
