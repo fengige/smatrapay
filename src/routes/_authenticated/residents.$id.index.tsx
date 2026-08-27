@@ -589,8 +589,8 @@ function ResidentDetailPage() {
                                     ) : null}
                                     {unit ? (
                                       <Link
-                                        to="/properties/$id/units/$unitId"
-                                        params={{ id: property?.id ?? "", unitId: unit.id }}
+                                        to="/units/$unitId"
+                                        params={{ unitId: unit.id }}
                                         className="text-xs font-medium text-primary hover:underline"
                                       >
                                         View unit
