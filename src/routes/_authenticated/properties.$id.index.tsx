@@ -1146,3 +1146,205 @@ function AssignForm({
     </form>
   );
 }
+
+type ImportResult = {
+  dryRun: boolean;
+  imported: number;
+  valid: number;
+  failed: number;
+  results: { line: number; ok: boolean; message: string }[];
+};
+
+const IMPORT_TEMPLATE =
+  "unit_number,building,role,identifier,start_date,end_date,notes\n" +
+  "A-101,Block A,resident,jane@example.com,2026-01-01,,Moved in\n" +
+  "A-101,Block A,landlord,+254700000000,2025-06-01,2025-12-31,Prior owner\n";
+
+function parseCsv(text: string) {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (quoted) {
+      if (char === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i += 1;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        cell += char;
+      }
+      continue;
+    }
+    if (char === '"') quoted = true;
+    else if (char === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (char === "\n") {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else if (char !== "\r") cell += char;
+  }
+  if (cell.length || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((c) => c.trim().length));
+}
+
+function ImportForm({
+  propertyId,
+  run,
+  onImported,
+}: {
+  propertyId: string;
+  run: (payload: Record<string, unknown>) => Promise<ImportResult>;
+  onImported: () => Promise<void> | void;
+}) {
+  const [rows, setRows] = useState<Record<string, string | null>[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+
+  const readFile = async (file: File) => {
+    const text = await file.text();
+    const table = parseCsv(text);
+    if (table.length < 2) {
+      toast.error("The CSV needs a header row and at least one data row");
+      return;
+    }
+    const header = table[0]!.map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+    const required = ["unit_number", "role", "identifier", "start_date"];
+    const missing = required.filter((key) => !header.includes(key));
+    if (missing.length) {
+      toast.error(`Missing column(s): ${missing.join(", ")}`);
+      return;
+    }
+    const parsed = table.slice(1).map((line) => {
+      const record: Record<string, string | null> = {};
+      header.forEach((key, index) => {
+        const value = (line[index] ?? "").trim();
+        record[key] = value === "" ? null : value;
+      });
+      return record;
+    });
+    setRows(parsed);
+    setFileName(file.name);
+    setResult(null);
+  };
+
+  const submit = async (dryRun: boolean) => {
+    if (!rows.length) {
+      toast.error("Choose a CSV file first");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await run({ property_id: propertyId, rows, dryRun });
+      setResult(res);
+      if (dryRun) {
+        toast.success(`Validated ${res.valid} row(s), ${res.failed} with issues`);
+      } else {
+        toast.success(`Imported ${res.imported} assignment(s), ${res.failed} skipped`);
+        await onImported();
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Import failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([IMPORT_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "smatrapay-unit-assignments-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        Columns: <span className="font-semibold">unit_number, building, role, identifier,
+        start_date, end_date, notes</span>. Identifier matches a user by email, phone or ID. Dates
+        use YYYY-MM-DD. Overlapping periods for the same unit and role are rejected.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={downloadTemplate}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-accent/10"
+        >
+          <Download className="size-3.5" /> Template
+        </button>
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void readFile(file);
+          }}
+          className="text-xs"
+        />
+      </div>
+      {fileName && (
+        <p className="text-xs text-muted-foreground">
+          {fileName} · {rows.length} row(s) ready
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={busy || !rows.length}
+          onClick={() => void submit(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-accent/10 disabled:opacity-60"
+        >
+          {busy && <Loader2 className="size-4 animate-spin" />} Validate only
+        </button>
+        <button
+          type="button"
+          disabled={busy || !rows.length}
+          onClick={() => void submit(false)}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        >
+          {busy && <Loader2 className="size-4 animate-spin" />} Import
+        </button>
+      </div>
+      {result && (
+        <div className="max-h-60 overflow-auto rounded-xl border border-border">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/40 uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-semibold">Row</th>
+                <th className="px-3 py-2 font-semibold">Status</th>
+                <th className="px-3 py-2 font-semibold">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.results.map((r) => (
+                <tr key={r.line} className="border-t border-border">
+                  <td className="px-3 py-2">{r.line}</td>
+                  <td
+                    className={`px-3 py-2 font-semibold ${
+                      r.ok ? "text-emerald-600" : "text-destructive"
+                    }`}
+                  >
+                    {r.ok ? (result.dryRun ? "Valid" : "Imported") : "Skipped"}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{r.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
