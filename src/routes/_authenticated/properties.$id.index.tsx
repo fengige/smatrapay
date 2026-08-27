@@ -423,6 +423,20 @@ function PropertyDetailPage() {
         rows: visibleAudit.map((e) => [fmt(e.date), e.actor, e.action, e.detail]),
       };
     }
+    if (tab === "timeline") {
+      return {
+        name: "unit-timeline",
+        header: ["Unit", "Building", "Date", "State", "Event", "Detail"],
+        rows: visibleTimeline.map((r) => [
+          r.unit,
+          r.building,
+          fmt(r.date),
+          r.state,
+          r.event,
+          r.detail,
+        ]),
+      };
+    }
     const role = tab === "landlords" ? "landlord" : "resident";
     return {
       name: tab,
