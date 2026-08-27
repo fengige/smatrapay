@@ -177,11 +177,44 @@ function ResidentsPage() {
 
   const busy = statusMutation.isPending || deleteMutation.isPending;
 
+  const propertyOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const r of residents)
+      for (const a of currentAssignments(r)) {
+        const name = a.unit?.property?.name;
+        if (name) names.add(name);
+      }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [residents]);
+
+  const unitOptions = useMemo(() => {
+    const units = new Set<string>();
+    for (const r of residents)
+      for (const a of currentAssignments(r)) {
+        if (propertyFilter !== "all" && a.unit?.property?.name !== propertyFilter) continue;
+        if (a.unit?.unit_number) units.add(a.unit.unit_number);
+      }
+    return [...units].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [residents, propertyFilter]);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const rows = residents.filter((r) => {
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       if (!matchesStatus) return false;
+      const active = currentAssignments(r);
+      if (propertyFilter !== "all") {
+        const has = active.some((a) => a.unit?.property?.name === propertyFilter);
+        if (!has) return false;
+      }
+      if (unitFilter !== "all") {
+        const has = active.some(
+          (a) =>
+            a.unit?.unit_number === unitFilter &&
+            (propertyFilter === "all" || a.unit?.property?.name === propertyFilter),
+        );
+        if (!has) return false;
+      }
       if (!term) return true;
       const display = assignmentDisplayString(r);
       const searchValues = [
