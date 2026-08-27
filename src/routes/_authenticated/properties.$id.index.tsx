@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Download,
   FileText,
+  History,
   Home,
   Layers,
   Loader2,
@@ -15,6 +16,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Upload,
   UserCog,
   UserPlus,
   Users as UsersIcon,
@@ -29,6 +31,7 @@ import {
   deleteUnit,
   endAssignment,
   getProperty,
+  importAssignments,
   listAssignableUsers,
   upsertUnit,
 } from "@/lib/properties.functions";
@@ -86,6 +89,7 @@ type Person = { id: string; name: string | null; email: string | null; phone: st
 
 const TABS = [
   { id: "units", label: "Units", icon: Layers },
+  { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
   { id: "landlords", label: "Landlords", icon: Building2 },
   { id: "audit", label: "Status & Audit Logs", icon: ClipboardList },
@@ -159,11 +163,13 @@ function PropertyDetailPage() {
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
+  const runImport = useServerFn(importAssignments);
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["properties", id],
@@ -320,6 +326,78 @@ function PropertyDetailPage() {
 
   const visibleAudit = auditEvents.filter((e) => match([e.actor, e.action, e.detail]));
 
+  const unitState = (status: string) =>
+    status === "archived" ? "archived" : status === "maintenance" ? "blocked" : "active";
+
+  const timeline = useMemo(() => {
+    const rows: {
+      unit: string;
+      building: string;
+      date: string;
+      state: string;
+      event: string;
+      detail: string;
+    }[] = [];
+    for (const u of units) {
+      rows.push({
+        unit: u.unit_number,
+        building: u.building ?? "",
+        date: u.created_at,
+        state: "active",
+        event: "Unit created",
+        detail: [u.unit_type, u.floor ? `floor ${u.floor}` : ""].filter(Boolean).join(" · ") || "—",
+      });
+      const unitAssignments = assignments
+        .filter((a) => a.unit_id === u.id)
+        .sort((a, b) => (a.start_date < b.start_date ? -1 : 1));
+      for (const a of unitAssignments) {
+        rows.push({
+          unit: u.unit_number,
+          building: u.building ?? "",
+          date: a.start_date,
+          state: "active",
+          event: a.role === "resident" ? "Resident assigned" : "Landlord assigned",
+          detail: `${label(a.user_id)}${a.notes ? ` — ${a.notes}` : ""}`,
+        });
+        if (a.end_date) {
+          rows.push({
+            unit: u.unit_number,
+            building: u.building ?? "",
+            date: a.end_date,
+            state: "archived",
+            event: "Assignment ended",
+            detail: `${label(a.user_id)} (${a.role})`,
+          });
+        }
+      }
+      rows.push({
+        unit: u.unit_number,
+        building: u.building ?? "",
+        date: u.updated_at,
+        state: unitState(u.status),
+        event: "Current status",
+        detail: u.status,
+      });
+    }
+    return rows.sort((a, b) =>
+      a.unit === b.unit ? (a.date < b.date ? -1 : 1) : a.unit.localeCompare(b.unit),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units, assignments, personById]);
+
+  const visibleTimeline = timeline.filter((r) =>
+    match([r.unit, r.building, r.state, r.event, r.detail]),
+  );
+  const timelineByUnit = useMemo(() => {
+    const map = new Map<string, typeof visibleTimeline>();
+    for (const row of visibleTimeline) {
+      const list = map.get(row.unit) ?? [];
+      list.push(row);
+      map.set(row.unit, list);
+    }
+    return [...map.entries()];
+  }, [visibleTimeline]);
+
   const exportSet = () => {
     if (tab === "units") {
       return {
@@ -343,6 +421,20 @@ function PropertyDetailPage() {
         name: "audit-logs",
         header: ["Date", "Actor", "Action", "Detail"],
         rows: visibleAudit.map((e) => [fmt(e.date), e.actor, e.action, e.detail]),
+      };
+    }
+    if (tab === "timeline") {
+      return {
+        name: "unit-timeline",
+        header: ["Unit", "Building", "Date", "State", "Event", "Detail"],
+        rows: visibleTimeline.map((r) => [
+          r.unit,
+          r.building,
+          fmt(r.date),
+          r.state,
+          r.event,
+          r.detail,
+        ]),
       };
     }
     const role = tab === "landlords" ? "landlord" : "resident";
@@ -522,15 +614,22 @@ function PropertyDetailPage() {
                 />
               </div>
               {tab === "units" && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setUnitForm({ ...emptyUnitForm, open: true })
-                  }
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  <Plus className="size-4" /> Add Unit
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setImportOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold hover:bg-accent/10"
+                  >
+                    <Upload className="size-4" /> Import CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUnitForm({ ...emptyUnitForm, open: true })}
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    <Plus className="size-4" /> Add Unit
+                  </button>
+                </>
               )}
             </div>
 
@@ -671,6 +770,50 @@ function PropertyDetailPage() {
                     })}
                   </tbody>
                 </table>
+              )}
+
+              {tab === "timeline" && (
+                <div className="space-y-5 p-4">
+                  {!timelineByUnit.length && (
+                    <p className="py-10 text-center text-muted-foreground">
+                      No unit history yet.
+                    </p>
+                  )}
+                  {timelineByUnit.map(([unitNumber, rows]) => (
+                    <div key={unitNumber} className="rounded-xl border border-border bg-background p-4">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <h4 className="text-sm font-bold text-foreground">Unit {unitNumber}</h4>
+                        {rows[0]?.building && (
+                          <span className="text-xs text-muted-foreground">{rows[0].building}</span>
+                        )}
+                        <Pill value={rows[rows.length - 1]?.state ?? "active"} />
+                      </div>
+                      <ol className="relative space-y-4 border-l border-border pl-5">
+                        {rows.map((r, i) => (
+                          <li key={`${unitNumber}-${i}`} className="relative">
+                            <span
+                              className={`absolute -left-[1.4rem] top-1 size-2.5 rounded-full ${
+                                r.state === "archived"
+                                  ? "bg-muted-foreground"
+                                  : r.state === "blocked"
+                                    ? "bg-amber-500"
+                                    : "bg-emerald-500"
+                              }`}
+                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">
+                                {r.event}
+                              </span>
+                              <Pill value={r.state} />
+                              <span className="text-xs text-muted-foreground">{fmt(r.date)}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{r.detail}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {(tab === "residents" || tab === "landlords") && (
@@ -866,6 +1009,18 @@ function PropertyDetailPage() {
         </Modal>
       )}
 
+      {importOpen && (
+        <Modal title="Bulk import unit assignments" onClose={() => setImportOpen(false)}>
+          <ImportForm
+            propertyId={id}
+            run={(payload) => runImport({ data: payload } as never) as Promise<ImportResult>}
+            onImported={invalidate}
+          />
+        </Modal>
+      )}
+
+
+
     </PortalLayout>
   );
 }
@@ -907,7 +1062,9 @@ function AssignForm({
   const [userId, setUserId] = useState("");
   const [role, setRole] = useState<"resident" | "landlord">("resident");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
+
 
   const options = people.filter((p) => (p.role ?? "resident") === role);
 
@@ -920,7 +1077,17 @@ function AssignForm({
           toast.error("Select a person to assign");
           return;
         }
-        onSubmit({ user_id: userId, role, start_date: startDate, notes: notes.trim() || null });
+        if (endDate && endDate < startDate) {
+          toast.error("End date must be on or after the start date");
+          return;
+        }
+        onSubmit({
+          user_id: userId,
+          role,
+          start_date: startDate,
+          end_date: endDate || null,
+          notes: notes.trim() || null,
+        });
       }}
     >
       <select
@@ -942,18 +1109,33 @@ function AssignForm({
           </option>
         ))}
       </select>
-      <input
-        className={inputClass}
-        type="date"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-      />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1 text-xs font-semibold text-muted-foreground">
+          Start date
+          <input
+            className={inputClass}
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </label>
+        <label className="space-y-1 text-xs font-semibold text-muted-foreground">
+          End date (optional)
+          <input
+            className={inputClass}
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </label>
+      </div>
       <input
         className={inputClass}
         placeholder="Notes (optional)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
+
       <button
         type="submit"
         disabled={pending}
@@ -962,5 +1144,207 @@ function AssignForm({
         {pending && <Loader2 className="size-4 animate-spin" />} Assign
       </button>
     </form>
+  );
+}
+
+type ImportResult = {
+  dryRun: boolean;
+  imported: number;
+  valid: number;
+  failed: number;
+  results: { line: number; ok: boolean; message: string }[];
+};
+
+const IMPORT_TEMPLATE =
+  "unit_number,building,role,identifier,start_date,end_date,notes\n" +
+  "A-101,Block A,resident,jane@example.com,2026-01-01,,Moved in\n" +
+  "A-101,Block A,landlord,+254700000000,2025-06-01,2025-12-31,Prior owner\n";
+
+function parseCsv(text: string) {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (quoted) {
+      if (char === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i += 1;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        cell += char;
+      }
+      continue;
+    }
+    if (char === '"') quoted = true;
+    else if (char === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (char === "\n") {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else if (char !== "\r") cell += char;
+  }
+  if (cell.length || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((c) => c.trim().length));
+}
+
+function ImportForm({
+  propertyId,
+  run,
+  onImported,
+}: {
+  propertyId: string;
+  run: (payload: Record<string, unknown>) => Promise<ImportResult>;
+  onImported: () => Promise<void> | void;
+}) {
+  const [rows, setRows] = useState<Record<string, string | null>[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+
+  const readFile = async (file: File) => {
+    const text = await file.text();
+    const table = parseCsv(text);
+    if (table.length < 2) {
+      toast.error("The CSV needs a header row and at least one data row");
+      return;
+    }
+    const header = table[0]!.map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+    const required = ["unit_number", "role", "identifier", "start_date"];
+    const missing = required.filter((key) => !header.includes(key));
+    if (missing.length) {
+      toast.error(`Missing column(s): ${missing.join(", ")}`);
+      return;
+    }
+    const parsed = table.slice(1).map((line) => {
+      const record: Record<string, string | null> = {};
+      header.forEach((key, index) => {
+        const value = (line[index] ?? "").trim();
+        record[key] = value === "" ? null : value;
+      });
+      return record;
+    });
+    setRows(parsed);
+    setFileName(file.name);
+    setResult(null);
+  };
+
+  const submit = async (dryRun: boolean) => {
+    if (!rows.length) {
+      toast.error("Choose a CSV file first");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await run({ property_id: propertyId, rows, dryRun });
+      setResult(res);
+      if (dryRun) {
+        toast.success(`Validated ${res.valid} row(s), ${res.failed} with issues`);
+      } else {
+        toast.success(`Imported ${res.imported} assignment(s), ${res.failed} skipped`);
+        await onImported();
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Import failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([IMPORT_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "smatrapay-unit-assignments-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        Columns: <span className="font-semibold">unit_number, building, role, identifier,
+        start_date, end_date, notes</span>. Identifier matches a user by email, phone or ID. Dates
+        use YYYY-MM-DD. Overlapping periods for the same unit and role are rejected.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={downloadTemplate}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-accent/10"
+        >
+          <Download className="size-3.5" /> Template
+        </button>
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void readFile(file);
+          }}
+          className="text-xs"
+        />
+      </div>
+      {fileName && (
+        <p className="text-xs text-muted-foreground">
+          {fileName} · {rows.length} row(s) ready
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={busy || !rows.length}
+          onClick={() => void submit(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-accent/10 disabled:opacity-60"
+        >
+          {busy && <Loader2 className="size-4 animate-spin" />} Validate only
+        </button>
+        <button
+          type="button"
+          disabled={busy || !rows.length}
+          onClick={() => void submit(false)}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        >
+          {busy && <Loader2 className="size-4 animate-spin" />} Import
+        </button>
+      </div>
+      {result && (
+        <div className="max-h-60 overflow-auto rounded-xl border border-border">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/40 uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-semibold">Row</th>
+                <th className="px-3 py-2 font-semibold">Status</th>
+                <th className="px-3 py-2 font-semibold">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.results.map((r) => (
+                <tr key={r.line} className="border-t border-border">
+                  <td className="px-3 py-2">{r.line}</td>
+                  <td
+                    className={`px-3 py-2 font-semibold ${
+                      r.ok ? "text-emerald-600" : "text-destructive"
+                    }`}
+                  >
+                    {r.ok ? (result.dryRun ? "Valid" : "Imported") : "Skipped"}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{r.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
