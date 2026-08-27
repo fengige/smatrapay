@@ -441,7 +441,7 @@ function LandlordDetailPage() {
               <div className="flex flex-wrap gap-1 rounded-2xl border border-border bg-card p-2">
                 {(
                   [
-                    ["property", "Property & Unit"],
+                    ["property", "My Properties"],
                     ["units", "Assigned Units"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
@@ -467,7 +467,7 @@ function LandlordDetailPage() {
               </div>
 
               {tab === "property" && (
-              <Section title="Property & Unit" icon={<Building2 className="size-4 text-primary" />}>
+              <Section title="My Properties" icon={<Building2 className="size-4 text-primary" />}>
                 <dl className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
                   <Detail label="Property" value={landlord.property ?? "Unassigned"} />
                   <Detail label="Building" value={landlord.building ?? "—"} />
