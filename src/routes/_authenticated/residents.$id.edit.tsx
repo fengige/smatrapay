@@ -43,17 +43,14 @@ const STATUSES = [
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-primary disabled:cursor-not-allowed disabled:bg-muted/30 disabled:opacity-60";
 
-const residentSchema = editUserSchema.omit({ role: true });
+const residentSchema = editUserSchema
+  .omit({ role: true, property: true, building: true, unit_number: true, move_in_date: true });
 
 type FormState = {
   name: string;
   email: string;
   username: string;
   phone: string;
-  property: string;
-  building: string;
-  unit_number: string;
-  move_in_date: string;
   bio: string;
   notes: string;
   status: string;
@@ -64,10 +61,6 @@ const EMPTY: FormState = {
   email: "",
   username: "",
   phone: "",
-  property: "",
-  building: "",
-  unit_number: "",
-  move_in_date: "",
   bio: "",
   notes: "",
   status: "active",
@@ -97,10 +90,6 @@ function EditResidentPage() {
       email: (u["email"] as string) ?? "",
       username: (u["username"] as string) ?? "",
       phone: (u["phone"] as string) ?? "",
-      property: (u["property"] as string) ?? "",
-      building: (u["building"] as string) ?? "",
-      unit_number: (u["unit_number"] as string) ?? "",
-      move_in_date: (u["move_in_date"] as string) ?? "",
       bio: (u["bio"] as string) ?? "",
       notes: (u["notes"] as string) ?? "",
       status: (u["status"] as string) ?? "active",
@@ -128,10 +117,6 @@ function EditResidentPage() {
           email: form.email,
           username: form.username || null,
           phone: form.phone || null,
-          property: form.property || null,
-          building: form.building || null,
-          unit_number: form.unit_number || null,
-          move_in_date: form.move_in_date || null,
           bio: form.bio || null,
           notes: form.notes || null,
           status: form.status,
@@ -289,49 +274,6 @@ function EditResidentPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-border bg-card">
-                <header className="border-b border-border px-5 py-4">
-                  <h2 className="text-base font-semibold text-foreground">Residency Details</h2>
-                </header>
-                <div className="grid gap-4 p-5 sm:grid-cols-2">
-                  <Field label="Property" error={errors["property"]}>
-                    <input
-                      className={inputClass}
-                      placeholder="e.g. Riverside Gardens"
-                      value={form.property}
-                      disabled={isSaving}
-                      onChange={(e) => set("property", e.target.value)}
-                    />
-                  </Field>
-                  <Field label="Building" error={errors["building"]}>
-                    <input
-                      className={inputClass}
-                      placeholder="e.g. Block B"
-                      value={form.building}
-                      disabled={isSaving}
-                      onChange={(e) => set("building", e.target.value)}
-                    />
-                  </Field>
-                  <Field label="Unit / House Number" error={errors["unit_number"]}>
-                    <input
-                      className={inputClass}
-                      placeholder="e.g. B-204"
-                      value={form.unit_number}
-                      disabled={isSaving}
-                      onChange={(e) => set("unit_number", e.target.value)}
-                    />
-                  </Field>
-                  <Field label="Move-in Date" error={errors["move_in_date"]}>
-                    <input
-                      type="date"
-                      className={inputClass}
-                      value={form.move_in_date}
-                      disabled={isSaving}
-                      onChange={(e) => set("move_in_date", e.target.value)}
-                    />
-                  </Field>
-                </div>
-              </section>
 
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">

@@ -270,5 +270,54 @@ export const listUsersByRole = createServerFn({ method: "GET" })
     const { data: profiles, error } = await q.order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    return { users: (profiles ?? []).map((p) => ({ ...p, role: data.role as string })) };
+    const { data: assignments, error: aErr } = await supabase
+      .from("unit_assignments")
+      .select("id, user_id, unit_id, start_date, end_date")
+      .in("user_id", ids)
+      .eq("role", "resident")
+      .order("start_date", { ascending: false });
+    if (aErr) throw new Error(aErr.message);
+
+    const unitIds = [...new Set((assignments ?? []).map((a) => a.unit_id).filter(Boolean))];
+    let units: { id: string; unit_number: string; property_id: string }[] = [];
+    let properties: { id: string; name: string }[] = [];
+    if (unitIds.length) {
+      const { data: unitsRows, error: uErr } = await supabase
+        .from("units")
+        .select("id, unit_number, property_id")
+        .in("id", unitIds);
+      if (uErr) throw new Error(uErr.message);
+      units = unitsRows ?? [];
+
+      const propertyIds = [...new Set(units.map((u) => u.property_id).filter(Boolean))];
+      if (propertyIds.length) {
+        const { data: propRows, error: pErr } = await supabase
+          .from("properties")
+          .select("id, name")
+          .in("id", propertyIds);
+        if (pErr) throw new Error(pErr.message);
+        properties = propRows ?? [];
+      }
+    }
+
+    const propertyById = new Map(properties.map((p) => [p.id, p]));
+    const unitById = new Map(units.map((u) => [u.id, { ...u, property: propertyById.get(u.property_id) ?? null }]));
+
+    const byUser = new Map<string, (typeof assignments extends (infer T)[] ? T & { unit: { unit_number: string; property: { name: string } | null } | null } : never)[]>();
+    for (const a of assignments ?? []) {
+      const list = byUser.get(a.user_id) ?? [];
+      list.push({
+        ...a,
+        unit: unitById.get(a.unit_id) ?? null,
+      } as never);
+      byUser.set(a.user_id, list);
+    }
+
+    return {
+      users: (profiles ?? []).map((p) => ({
+        ...p,
+        role: data.role as string,
+        assignments: (byUser.get(p.id) ?? []) as { id: string; user_id: string; start_date: string; end_date: string | null; unit: { unit_number: string; property: { name: string } | null } | null }[],
+      })),
+    };
   });

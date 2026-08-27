@@ -303,6 +303,8 @@ function PropertyDetailPage() {
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
   const [unitStatusFilter, setUnitStatusFilter] = useState("all");
+  const [unitSortKey, setUnitSortKey] = useState<"unit_number" | "electricity_meter_no" | "water_meter_no" | "gas_meter_no" | null>(null);
+  const [unitSortDir, setUnitSortDir] = useState<"asc" | "desc">("asc");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
   const [bulkStep, setBulkStep] = useState<"form" | "confirm">("form");
@@ -487,19 +489,28 @@ function PropertyDetailPage() {
   const match = (values: (string | null | undefined)[]) =>
     !term || values.filter(Boolean).join(" ").toLowerCase().includes(term);
 
-  const visibleUnits = units.filter(
-    (u) =>
-      (unitStatusFilter === "all" || u.status === unitStatusFilter) &&
-      match([
-        u.unit_number,
-        u.unit_type,
-        u.status,
-        u.electricity_meter_no,
-        u.water_meter_no,
-        u.gas_meter_no,
-        ...current.filter((a) => a.unit_id === u.id).map((a) => label(a.user_id)),
-      ]),
-  );
+  const visibleUnits = useMemo(() => {
+    const filtered = units.filter(
+      (u) =>
+        (unitStatusFilter === "all" || u.status === unitStatusFilter) &&
+        match([
+          u.unit_number,
+          u.unit_type,
+          u.status,
+          u.electricity_meter_no,
+          u.water_meter_no,
+          u.gas_meter_no,
+          ...current.filter((a) => a.unit_id === u.id).map((a) => label(a.user_id)),
+        ]),
+    );
+    if (!unitSortKey) return filtered;
+    return [...filtered].sort((a, b) => {
+      const av = (a[unitSortKey] ?? "").toString().toLowerCase();
+      const bv = (b[unitSortKey] ?? "").toString().toLowerCase();
+      if (av === bv) return 0;
+      return unitSortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
+    });
+  }, [units, unitStatusFilter, term, current, unitSortKey, unitSortDir]);
 
   const roleRows = (role: string) =>
     assignments
@@ -962,11 +973,71 @@ function PropertyDetailPage() {
                 <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">Unit</th>
+                      <th className="px-4 py-3 font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (unitSortKey === "unit_number") {
+                              setUnitSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                            } else {
+                              setUnitSortKey("unit_number");
+                              setUnitSortDir("asc");
+                            }
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          Unit {unitSortKey === "unit_number" && (unitSortDir === "asc" ? "↑" : "↓")}
+                        </button>
+                      </th>
                       <th className="px-4 py-3 font-semibold">Type</th>
-                      <th className="px-4 py-3 font-semibold">Electricity meter</th>
-                      <th className="px-4 py-3 font-semibold">Water meter</th>
-                      <th className="px-4 py-3 font-semibold">Gas meter</th>
+                      <th className="px-4 py-3 font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (unitSortKey === "electricity_meter_no") {
+                              setUnitSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                            } else {
+                              setUnitSortKey("electricity_meter_no");
+                              setUnitSortDir("asc");
+                            }
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          Electricity meter {unitSortKey === "electricity_meter_no" && (unitSortDir === "asc" ? "↑" : "↓")}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (unitSortKey === "water_meter_no") {
+                              setUnitSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                            } else {
+                              setUnitSortKey("water_meter_no");
+                              setUnitSortDir("asc");
+                            }
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          Water meter {unitSortKey === "water_meter_no" && (unitSortDir === "asc" ? "↑" : "↓")}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (unitSortKey === "gas_meter_no") {
+                              setUnitSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                            } else {
+                              setUnitSortKey("gas_meter_no");
+                              setUnitSortDir("asc");
+                            }
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          Gas meter {unitSortKey === "gas_meter_no" && (unitSortDir === "asc" ? "↑" : "↓")}
+                        </button>
+                      </th>
                       <th className="px-4 py-3 font-semibold">Status</th>
                       <th className="px-4 py-3 font-semibold">Current assignments</th>
                       <th className="px-4 py-3 text-right font-semibold">Actions</th>
