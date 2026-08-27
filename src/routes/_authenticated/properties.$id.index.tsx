@@ -958,15 +958,7 @@ function PropertyDetailPage() {
                               </div>
                             </div>
                           </div>
-                          <div className="mt-4 flex flex-wrap items-center gap-2">
-                            <Link
-                              to="/landlords/$id"
-                              params={{ id: landlord.id }}
-                              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                            >
-                              View landlord profile
-                            </Link>
-                          </div>
+                          <LandlordActions landlord={landlord} />
                         </div>
                       </div>
                     </div>
