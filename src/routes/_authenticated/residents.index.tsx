@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
+  Home,
   Trash2,
   UserCheck,
   Users as UsersIcon,
@@ -23,6 +24,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, listUsersByRole, updateUser } from "@/lib/users.functions";
+import { assignUnit, endAssignment, listProperties } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 const DEFAULT_LIMIT = 10;
@@ -137,6 +139,7 @@ function ResidentsPage() {
   const [confirm, setConfirm] = useState<
     { type: "status" | "delete"; row: Row; next?: string } | null
   >(null);
+  const [assignRow, setAssignRow] = useState<Row | null>(null);
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
   const navigate = useNavigate({ from: "/residents/" });
@@ -525,6 +528,16 @@ function ResidentsPage() {
                           >
                             <Pencil className="size-4" />
                           </Link>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setAssignRow(r)}
+                            aria-label="Change unit assignment"
+                            title="Change unit assignment"
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+                          >
+                            <Home className="size-4" />
+                          </button>
                           <button
                             type="button"
                             disabled={busy}
