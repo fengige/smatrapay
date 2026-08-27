@@ -57,6 +57,9 @@ export const Route = createFileRoute("/_authenticated/properties/$id/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: z.object({
+    success: z.enum(["created", "updated"]).optional(),
+  }),
   component: PropertyDetailPage,
   errorComponent: ({ error }) => (
     <div className="p-10 text-sm text-destructive">{error.message}</div>
