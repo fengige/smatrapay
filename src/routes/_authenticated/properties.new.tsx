@@ -62,9 +62,9 @@ function NewPropertyPage() {
 
   const mutation = useMutation({
     mutationFn: (values: PropertyFormValues) => create({ data: clean(values) } as never),
-    onSuccess: async (res: { id: string }) => {
+    onSuccess: async (res: { id: string }, variables: PropertyFormValues) => {
       toast.success("Property created", {
-        description: `${res.name ?? "The property"} has been added successfully.`,
+        description: `${variables.name} has been added successfully.`,
         duration: 5000,
       });
       await queryClient.invalidateQueries({ queryKey: ["properties"] });
