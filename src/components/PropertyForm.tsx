@@ -74,6 +74,8 @@ export function PropertyForm({
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const next: Record<string, string> = {};
+    if (values.property_type !== "building" && values.property_type !== "zone")
+      next["property_type"] = "Please select Building or Zone";
     if (values.name.trim().length < 2) next["name"] = "Property name must be at least 2 characters";
     if (values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";
@@ -87,8 +89,10 @@ export function PropertyForm({
       <section className="rounded-2xl border border-border bg-card p-5">
         <h2 className="text-sm font-bold text-foreground">Property details</h2>
         <div
-          role="tablist"
-          aria-label="Property type"
+          role="radiogroup"
+          aria-label="Property type (required)"
+          aria-required="true"
+          aria-invalid={!!errors["property_type"]}
           className="mt-4 grid w-full max-w-md grid-cols-2 gap-1 rounded-xl bg-muted p-1"
         >
           {(
@@ -102,8 +106,8 @@ export function PropertyForm({
               <button
                 key={option.value}
                 type="button"
-                role="tab"
-                aria-selected={selected}
+                role="radio"
+                aria-checked={selected}
                 onClick={() => set("property_type", option.value)}
                 className={
                   selected
@@ -116,6 +120,9 @@ export function PropertyForm({
             );
           })}
         </div>
+        {errors["property_type"] && (
+          <p className="mt-1.5 text-xs font-medium text-destructive">{errors["property_type"]}</p>
+        )}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Property name *" error={errors["name"]}>
             <input

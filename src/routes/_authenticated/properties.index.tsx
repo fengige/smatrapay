@@ -65,6 +65,7 @@ type Property = {
   city: string | null;
   country: string | null;
   status: string;
+  property_type: string | null;
   created_at: string;
 };
 
@@ -121,6 +122,7 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
   const [unitType, setUnitType] = useState("all");
   const [status, setStatus] = useState("all");
+  const [propertyType, setPropertyType] = useState("all");
 
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
@@ -129,7 +131,7 @@ function PropertiesPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, unitType, status]);
+  }, [search, unitType, status, propertyType]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["properties", "list"],
@@ -185,6 +187,8 @@ function PropertiesPage() {
     const term = search.trim().toLowerCase();
     return rows.filter((row) => {
       if (status !== "all" && row.property.status !== status) return false;
+      if (propertyType !== "all" && (row.property.property_type ?? "building") !== propertyType)
+        return false;
       if (unitType !== "all" && !row.unitTypes.includes(unitType)) return false;
       if (!term) return true;
       return [
@@ -192,6 +196,7 @@ function PropertiesPage() {
         row.property.code,
         row.property.city,
         row.property.country,
+        row.property.property_type,
         ...row.buildings,
         ...row.unitTypes,
       ]
@@ -200,7 +205,7 @@ function PropertiesPage() {
         .toLowerCase()
         .includes(term);
     });
-  }, [rows, search, status, unitType]);
+  }, [rows, search, status, propertyType, unitType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
@@ -219,6 +224,7 @@ function PropertiesPage() {
   const exportCsv = () => {
     const header = [
       "Property",
+      "Type",
       "Code",
       "City",
       "Status",
@@ -229,6 +235,7 @@ function PropertiesPage() {
     ];
     const lines = filtered.map((row) => [
       row.property.name,
+      row.property.property_type ?? "building",
       row.property.code ?? "",
       row.property.city ?? "",
       row.property.status,
@@ -253,6 +260,7 @@ function PropertiesPage() {
     setSearch("");
     setUnitType("all");
     setStatus("all");
+    setPropertyType("all");
   };
 
   return (
@@ -310,6 +318,16 @@ function PropertiesPage() {
                 />
               </div>
               <select
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+                aria-label="Filter by property type"
+                className={inputClass}
+              >
+                <option value="all">All types</option>
+                <option value="building">Building</option>
+                <option value="zone">Zone</option>
+              </select>
+              <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 aria-label="Filter by status"
@@ -349,6 +367,7 @@ function PropertiesPage() {
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Property</th>
+                  <th className="px-4 py-3 font-semibold">Type</th>
                   <th className="px-4 py-3 font-semibold">Unit Type</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
@@ -360,21 +379,21 @@ function PropertiesPage() {
               <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     </td>
                   </tr>
                 )}
                 {!isLoading && error && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={8} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 )}
                 {!isLoading && !error && !paged.length && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                       No properties match these filters.
                     </td>
                   </tr>
@@ -388,6 +407,22 @@ function PropertiesPage() {
                           .filter(Boolean)
                           .join(" · ") || "—"}
                       </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                          (row.property.property_type ?? "building") === "zone"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {(row.property.property_type ?? "building") === "zone" ? (
+                          <Layers className="size-3" />
+                        ) : (
+                          <Building2 className="size-3" />
+                        )}
+                        {row.property.property_type ?? "building"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {row.unitTypes.join(", ") || "—"}
