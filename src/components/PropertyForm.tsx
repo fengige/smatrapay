@@ -141,7 +141,14 @@ export function PropertyForm({
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => set("property_type", option.value)}
+                onClick={() =>
+                  setValues((prev) => ({
+                    ...prev,
+                    property_type: option.value,
+                    building_category: option.value === "building" ? prev.building_category : "",
+                    subtype: option.value === "building" ? prev.subtype : "",
+                  }))
+                }
                 className={
                   selected
                     ? "rounded-lg bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition-colors"
