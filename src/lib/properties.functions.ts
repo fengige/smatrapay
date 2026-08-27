@@ -1049,10 +1049,10 @@ export const listAssignmentAuditLogs = createServerFn({ method: "GET" })
         id: l.id,
         action: l.action,
         created_at: l.created_at,
-        actor: actorName(l.actor_id),
+        actor: actorName(l.actor_id) as string,
         old_unit: unitLabel(l.old_unit_id),
         new_unit: unitLabel(l.new_unit_id),
-        changes: l.changes ?? {},
+        changed_fields: Object.keys(l.changes ?? {}) as string[],
       })),
     };
   });

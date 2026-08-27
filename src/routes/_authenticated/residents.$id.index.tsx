@@ -177,7 +177,15 @@ function ResidentDetailPage() {
 
   const isActive = resident?.status === "active";
 
-  const assignmentEvents = (assignmentAudit?.logs ?? []).map((log) => {
+  const assignmentEvents = (assignmentAudit?.logs ?? []).map((log: {
+    id: string;
+    action: string;
+    actor: string;
+    old_unit: string | null;
+    new_unit: string | null;
+    changed_fields: string[];
+    created_at: string;
+  }) => {
     const labels: Record<string, string> = {
       assigned: "Unit assigned",
       moved: "Unit assignment moved",
@@ -188,7 +196,7 @@ function ResidentDetailPage() {
     const parts: string[] = [];
     if (log.old_unit) parts.push(`From ${log.old_unit}`);
     if (log.new_unit) parts.push(`To ${log.new_unit}`);
-    const changed = Object.keys(log.changes ?? {}).filter((k) => k !== "unit_id");
+    const changed = (log.changed_fields ?? []).filter((k) => k !== "unit_id");
     if (changed.length) parts.push(`Changed: ${changed.join(", ").replace(/_/g, " ")}`);
     return {
       key: log.id,
