@@ -58,7 +58,9 @@ const statusTone: Record<string, string> = {
 };
 
 function MetersPage() {
+  const queryClient = useQueryClient();
   const fetchMeters = useServerFn(listMeters);
+  const saveMeter = useServerFn(addMeter);
   const { data, isLoading } = useQuery({
     queryKey: ["meters"],
     queryFn: () => fetchMeters(),
@@ -67,6 +69,8 @@ function MetersPage() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState<string>("all");
   const [propertyId, setPropertyId] = useState<string>("all");
+  const [showAdd, setShowAdd] = useState(false);
+
 
   const meters = data?.meters ?? [];
   const properties = data?.properties ?? [];
