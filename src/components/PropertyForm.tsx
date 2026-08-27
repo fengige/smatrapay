@@ -106,8 +106,8 @@ export function PropertyForm({
               <button
                 key={option.value}
                 type="button"
-                role="tab"
-                aria-selected={selected}
+                role="radio"
+                aria-checked={selected}
                 onClick={() => set("property_type", option.value)}
                 className={
                   selected
