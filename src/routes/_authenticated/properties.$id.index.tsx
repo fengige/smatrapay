@@ -914,6 +914,18 @@ function PropertyDetailPage() {
               </div>
               {tab === "units" && (
                 <>
+                  <select
+                    value={unitStatusFilter}
+                    onChange={(e) => setUnitStatusFilter(e.target.value)}
+                    aria-label="Filter units by status"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="vacant">Vacant</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="archived">Archived</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => setImportOpen(true)}
