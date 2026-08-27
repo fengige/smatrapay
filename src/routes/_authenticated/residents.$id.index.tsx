@@ -115,7 +115,7 @@ function ResidentDetailPage() {
     "property" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
-  const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
+  const [auditAction, setAuditAction] = useState<string>("all");
   const [auditFrom, setAuditFrom] = useState("");
   const [auditTo, setAuditTo] = useState("");
 
@@ -123,6 +123,13 @@ function ResidentDetailPage() {
     queryKey: ["user", id],
     queryFn: () => fetchResident({ data: { id } }),
   });
+
+  const fetchAssignmentLogs = useServerFn(listAssignmentAuditLogs);
+  const { data: assignmentAudit } = useQuery({
+    queryKey: ["assignment-audit", id],
+    queryFn: () => fetchAssignmentLogs({ data: { userId: id } }),
+  });
+
 
   const resident = data?.user;
 
