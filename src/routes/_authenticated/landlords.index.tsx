@@ -196,17 +196,7 @@ function LandlordsPage() {
   );
 
   const exportCsv = () => {
-    const header = [
-      "Full Name",
-      "Email",
-      "Phone",
-      "Property",
-      "Building",
-      "Unit",
-      "Status",
-      "Move-in Date",
-      "Joined",
-    ];
+    const header = ["Full Name", "Email", "Phone", "Property", "Building", "Unit", "Status", "Joined"];
     const rows = filtered.map((r) => [
       r.name ?? "",
       r.email ?? "",
@@ -215,7 +205,6 @@ function LandlordsPage() {
       r.building ?? "",
       r.unit_number ?? "",
       r.status,
-      r.move_in_date ?? "",
       date(r.created_at),
     ]);
     const csv = [header, ...rows]
