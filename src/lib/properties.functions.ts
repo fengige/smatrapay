@@ -171,6 +171,24 @@ export const updateProperty = createServerFn({ method: "POST" })
         building_category: z.enum(["residential", "commercial"]).nullable().optional(),
         subtype: text(60),
       })
+      .superRefine((val, ctx) => {
+        if (val.property_type === "building") {
+          if (!val.building_category) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["building_category"],
+              message: "Property type (Residential or Commercial) is required for buildings",
+            });
+          }
+          if (!val.subtype?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["subtype"],
+              message: "Please select a residential or commercial type",
+            });
+          }
+        }
+      })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
