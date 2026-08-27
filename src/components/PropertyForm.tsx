@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, Loader2, MapPin, Save, UserRound } from "lucide-react";
 
 import { listLandlords } from "@/lib/properties.functions";
+
+const STEPS = [
+  { id: "property", label: "Property Details", icon: Building2 },
+  { id: "landlord", label: "Landlord Details", icon: UserRound },
+  { id: "address", label: "Address", icon: MapPin },
+] as const;
 
 export const RESIDENTIAL_TYPES = [
   "Apartments",
@@ -415,7 +421,7 @@ export function PropertyForm({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section className={step === 1 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
         <h2 className="text-sm font-bold text-foreground">Landlord details</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Number of Units" error={errors["number_of_units"]}>
@@ -455,7 +461,7 @@ export function PropertyForm({
         )}
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section className={step === 2 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
         <h2 className="text-sm font-bold text-foreground">Address</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Address line 1">
@@ -503,15 +509,36 @@ export function PropertyForm({
         </div>
       </section>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-        >
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {submitLabel}
-        </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={() => goToStep(step - 1)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
+          >
+            <ArrowLeft className="size-4" />
+            Back
+          </button>
+        )}
+        {!isLast ? (
+          <button
+            type="button"
+            onClick={() => goToStep(step + 1)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Next
+            <ArrowRight className="size-4" />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {submitLabel}
+          </button>
+        )}
         <button
           type="button"
           onClick={onCancel}
