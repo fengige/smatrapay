@@ -323,6 +323,67 @@ export const upsertUnit = createServerFn({ method: "POST" })
     return { id: row.id };
   });
 
+export const createBulkUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        property_id: uuid,
+        count: z.number().int().min(1).max(200),
+        start_number: z.number().int().min(0).max(1000000),
+        building: text(120),
+        unit_type: text(60),
+        bedrooms: z.number().int().min(0).max(50).nullable().optional(),
+        floor: text(30),
+        status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
+        electricity_prefix: text(40),
+        water_prefix: text(40),
+        gas_prefix: text(40),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    const { data: existing, error: existingError } = await supabase
+      .from("units")
+      .select("unit_number")
+      .eq("property_id", data.property_id);
+    if (existingError) throw new Error(existingError.message);
+    const existingNumbers = new Set((existing ?? []).map((u: any) => u.unit_number));
+
+    const status = data.status ?? "vacant";
+    const rows = [];
+    for (let i = 0; i < data.count; i++) {
+      const unitNumber = String(data.start_number + i);
+      if (existingNumbers.has(unitNumber)) {
+        throw new Error(`Unit ${unitNumber} already exists in this property`);
+      }
+      const suffix = unitNumber;
+      rows.push({
+        property_id: data.property_id,
+        unit_number: unitNumber,
+        building: data.building ?? null,
+        unit_type: data.unit_type ?? null,
+        bedrooms: data.bedrooms ?? null,
+        floor: data.floor ?? null,
+        status,
+        electricity_meter_no: data.electricity_prefix ? `${data.electricity_prefix}${suffix}` : null,
+        water_meter_no: data.water_prefix ? `${data.water_prefix}${suffix}` : null,
+        gas_meter_no: data.gas_prefix ? `${data.gas_prefix}${suffix}` : null,
+        created_by: userId,
+        updated_by: userId,
+      });
+    }
+
+    const { error } = await supabase.from("units").insert(rows as never);
+    if (error) throw new Error(error.message);
+    return { created: rows.length };
+  });
+
+
+
 export const deleteUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
