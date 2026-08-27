@@ -67,9 +67,6 @@ type Row = {
   email: string | null;
   username: string | null;
   phone: string | null;
-  property: string | null;
-  building: string | null;
-  unit_number: string | null;
   profile_image: string | null;
   status: string;
   role: string;
