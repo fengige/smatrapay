@@ -70,7 +70,6 @@ type Row = {
   property: string | null;
   building: string | null;
   unit_number: string | null;
-  move_in_date: string | null;
   profile_image: string | null;
   status: string;
   role: string;
@@ -86,7 +85,7 @@ const statusTone: Record<string, string> = {
   suspended: "bg-destructive/12 text-destructive",
 };
 
-type SortKey = "name" | "email" | "phone" | "property" | "unit_number" | "status" | "created_at";
+type SortKey = "name" | "email" | "phone" | "status" | "created_at";
 
 function date(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : "";
@@ -161,7 +160,7 @@ function LandlordsPage() {
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       if (!matchesStatus) return false;
       if (!term) return true;
-      return [r.name, r.email, r.username, r.phone, r.property, r.building, r.unit_number]
+      return [r.name, r.email, r.username, r.phone]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term));
     });
@@ -197,17 +196,7 @@ function LandlordsPage() {
   );
 
   const exportCsv = () => {
-    const header = [
-      "Full Name",
-      "Email",
-      "Phone",
-      "Property",
-      "Building",
-      "Unit",
-      "Status",
-      "Move-in Date",
-      "Joined",
-    ];
+    const header = ["Full Name", "Email", "Phone", "Property", "Building", "Unit", "Status", "Joined"];
     const rows = filtered.map((r) => [
       r.name ?? "",
       r.email ?? "",
@@ -216,7 +205,6 @@ function LandlordsPage() {
       r.building ?? "",
       r.unit_number ?? "",
       r.status,
-      r.move_in_date ?? "",
       date(r.created_at),
     ]);
     const csv = [header, ...rows]
@@ -300,7 +288,7 @@ function LandlordsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search landlords by name, email, phone, property or unit"
+                placeholder="Search landlords by name, email or phone"
                 className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
               />
             </div>
@@ -320,13 +308,11 @@ function LandlordsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <SortHeader label="Landlord" sortBy="name" />
                   <SortHeader label="Phone" sortBy="phone" />
-                  <SortHeader label="Property" sortBy="property" />
-                  <SortHeader label="Unit" sortBy="unit_number" />
                   <SortHeader label="Status" sortBy="status" />
                   <SortHeader label="Created" sortBy="created_at" />
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -335,20 +321,20 @@ function LandlordsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading landlords…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={5} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                       No landlords found. Try adjusting your search or add a new landlord.
                     </td>
                   </tr>
@@ -375,13 +361,6 @@ function LandlordsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{r.phone ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        <div>{r.property ?? "—"}</div>
-                        {r.building && (
-                          <div className="text-xs text-muted-foreground/80">{r.building}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.unit_number ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
