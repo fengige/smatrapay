@@ -96,7 +96,7 @@ const statusTone: Record<string, string> = {
   suspended: "bg-destructive/12 text-destructive",
 };
 
-type SortKey = "name" | "email" | "phone" | "property" | "unit_number" | "status" | "created_at";
+type SortKey = "name" | "email" | "phone" | "property" | "status" | "created_at";
 
 function date(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : "";
@@ -239,9 +239,6 @@ function ResidentsPage() {
       if (sortKey === "property") {
         av = (assignmentDisplayString(a)?.properties ?? []).join(", ") ?? "";
         bv = (assignmentDisplayString(b)?.properties ?? []).join(", ") ?? "";
-      } else if (sortKey === "unit_number") {
-        av = (assignmentDisplayString(a)?.units ?? []).join(", ") ?? "";
-        bv = (assignmentDisplayString(b)?.units ?? []).join(", ") ?? "";
       } else {
         av = String(a[sortKey] ?? "").toLowerCase();
         bv = String(b[sortKey] ?? "").toLowerCase();
@@ -274,15 +271,19 @@ function ResidentsPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Full Name", "Email", "Phone", "Property", "Unit", "Status", "Joined"];
+    const header = ["Full Name", "Email", "Phone", "My Property", "Status", "Joined"];
     const rows = filtered.map((r) => {
       const display = assignmentDisplayString(r);
+      const myProperty = display
+        ? display.properties
+            .map((p, i) => (display.units[i] ? `${p} · Unit ${display.units[i]}` : p))
+            .join("; ")
+        : "";
       return [
         r.name ?? "",
         r.email ?? "",
         r.phone ?? "",
-        (display?.properties ?? []).join(", ") ?? "",
-        (display?.units ?? []).join(", ") ?? "",
+        myProperty,
         r.status,
         date(r.created_at),
       ];
@@ -422,8 +423,7 @@ function ResidentsPage() {
                 <tr>
                   <SortHeader label="Resident" sortBy="name" />
                   <SortHeader label="Phone" sortBy="phone" />
-                  <SortHeader label="Property" sortBy="property" />
-                  <SortHeader label="Unit" sortBy="unit_number" />
+                  <SortHeader label="My Property" sortBy="property" />
                   <SortHeader label="Status" sortBy="status" />
                   <SortHeader label="Created" sortBy="created_at" />
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -432,20 +432,20 @@ function ResidentsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading residents…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={6} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                       No residents found. Try adjusting your search or add a new resident.
                     </td>
                   </tr>
@@ -478,21 +478,11 @@ function ResidentsPage() {
                           if (!display) return "—";
                           return (
                             <div className="space-y-1">
-                              {display.properties.map((p) => (
-                                <div key={p}>{p}</div>
-                              ))}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {(() => {
-                          const display = assignmentDisplayString(r);
-                          if (!display) return "—";
-                          return (
-                            <div className="space-y-1">
-                              {display.units.map((u) => (
-                                <div key={u}>{u}</div>
+                              {display.properties.map((p, i) => (
+                                <div key={p}>
+                                  {p}
+                                  {display.units[i] ? ` · Unit ${display.units[i]}` : ""}
+                                </div>
                               ))}
                             </div>
                           );
