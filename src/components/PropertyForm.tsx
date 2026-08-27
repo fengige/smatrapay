@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ArrowRight, Building2, Check, Loader2, MapPin, Save, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, ClipboardCheck, Loader2, MapPin, Save, UserRound } from "lucide-react";
 
 import { listLandlords } from "@/lib/properties.functions";
 
@@ -9,6 +9,7 @@ const STEPS = [
   { id: "property", label: "Property Details", icon: Building2 },
   { id: "landlord", label: "Landlord Details", icon: UserRound },
   { id: "address", label: "Address", icon: MapPin },
+  { id: "review", label: "Review & Submit", icon: ClipboardCheck },
 ] as const;
 
 export const RESIDENTIAL_TYPES = [
