@@ -197,7 +197,10 @@ function PropertyDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["properties", id],
     queryFn: () => fetchProperty({ data: { id } }),
+    retry: (count, err) =>
+      !/not found/i.test((err as Error)?.message ?? "") && count < 2,
   });
+  const notFound = /not found/i.test((error as Error | null)?.message ?? "");
   const peopleQuery = useQuery({
     queryKey: ["assignable-people"],
     queryFn: () => fetchPeople(),
@@ -585,6 +588,20 @@ function PropertyDetailPage() {
       {isLoading ? (
         <div className="p-10 text-center text-muted-foreground">
           <Loader2 className="mx-auto size-5 animate-spin" />
+        </div>
+      ) : notFound ? (
+        <div className="rounded-2xl border border-border bg-card p-10 text-center">
+          <p className="text-sm font-semibold text-foreground">This property no longer exists.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            It may have been deleted. Head back to the properties list.
+          </p>
+          <button
+            type="button"
+            onClick={() => void router.navigate({ to: "/properties", search: { page: 1, limit: 10 } })}
+            className="mt-5 inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Back to properties
+          </button>
         </div>
       ) : error ? (
         <p className="p-6 text-sm text-destructive">{(error as Error).message}</p>
