@@ -164,24 +164,16 @@ function LandlordsPage() {
 
   const busy = statusMutation.isPending || deleteMutation.isPending;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const rows = landlords.filter((r) => {
-      const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-      if (!matchesStatus) return false;
-      if (!term) return true;
-      return [r.name, r.email, r.username, r.phone]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term));
-    });
-
-    return [...rows].sort((a, b) => {
-      const av = String(a[sortKey] ?? "").toLowerCase();
-      const bv = String(b[sortKey] ?? "").toLowerCase();
-      if (av === bv) return 0;
-      return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
-    });
-  }, [landlords, search, statusFilter, sortKey, sortDir]);
+  const sortedRows = useMemo(
+    () =>
+      [...landlords].sort((a, b) => {
+        const av = String(a[sortKey] ?? "").toLowerCase();
+        const bv = String(b[sortKey] ?? "").toLowerCase();
+        if (av === bv) return 0;
+        return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
+      }),
+    [landlords, sortKey, sortDir],
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
