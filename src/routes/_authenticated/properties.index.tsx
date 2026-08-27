@@ -65,6 +65,7 @@ type Property = {
   city: string | null;
   country: string | null;
   status: string;
+  property_type: string | null;
   created_at: string;
 };
 
@@ -121,6 +122,7 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
   const [unitType, setUnitType] = useState("all");
   const [status, setStatus] = useState("all");
+  const [propertyType, setPropertyType] = useState("all");
 
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
