@@ -189,6 +189,113 @@ function LandlordsPage() {
     }
   };
 
+  const RowActions = ({ row }: { row: Row }) => {
+    const [open, setOpen] = useState(false);
+    const isActive = row.status === "active";
+    const nextStatus = isActive ? "inactive" : "active";
+
+    return (
+      <div className="flex items-center justify-end gap-1">
+        <div className="hidden items-center gap-1 sm:flex">
+          <Link
+            to="/landlords/$id"
+            params={{ id: row.id }}
+            search={{ page: 1, limit: 10 }}
+            aria-label="View landlord"
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+          >
+            <Eye className="size-3.5" />
+          </Link>
+          <Link
+            to="/landlords/$id/edit"
+            params={{ id: row.id }}
+            search={{ page: 1, limit: 10 }}
+            aria-label="Edit landlord"
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+          >
+            <Pencil className="size-3.5" />
+          </Link>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirm({ type: "status", row, next: nextStatus })}
+            aria-label={isActive ? "Deactivate landlord" : "Activate landlord"}
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+          >
+            <Power className={`size-3.5 ${isActive ? "text-emerald-600" : ""}`} />
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirm({ type: "delete", row })}
+            aria-label="Delete landlord"
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
+
+        <div className="relative sm:hidden">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Landlord actions"
+            aria-expanded={open}
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+          >
+            <MoreVertical className="size-3.5" />
+          </button>
+          {open && (
+            <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-border bg-card p-1 shadow-lg">
+              <Link
+                to="/landlords/$id"
+                params={{ id: row.id }}
+                search={{ page: 1, limit: 10 }}
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
+                onClick={() => setOpen(false)}
+              >
+                <Eye className="size-3.5" /> View
+              </Link>
+              <Link
+                to="/landlords/$id/edit"
+                params={{ id: row.id }}
+                search={{ page: 1, limit: 10 }}
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
+                onClick={() => setOpen(false)}
+              >
+                <Pencil className="size-3.5" /> Edit
+              </Link>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setOpen(false);
+                  setConfirm({ type: "status", row, next: nextStatus });
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-foreground hover:bg-accent/10 disabled:opacity-50"
+              >
+                <Power className={`size-3.5 ${isActive ? "text-emerald-600" : ""}`} />
+                {isActive ? "Deactivate" : "Activate"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setOpen(false);
+                  setConfirm({ type: "delete", row });
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" /> Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const stats = useMemo(
     () => ({
       total: landlords.length,
