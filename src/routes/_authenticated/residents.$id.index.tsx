@@ -476,7 +476,7 @@ function ResidentDetailPage() {
               <div className="flex flex-wrap gap-1 rounded-2xl border border-border bg-card p-2">
                 {(
                   [
-                    ["property", "Property & Unit"],
+                    ["property", "My Property"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
                     ["meters", "Meters"],
