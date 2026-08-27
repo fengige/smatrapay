@@ -114,7 +114,12 @@ function MetersPage() {
   };
 
   return (
-    <PortalLayout>
+    <PortalLayout
+      roles={["admin"]}
+      title="Meter Management"
+      description="Every electricity, water and gas meter across your properties."
+      hideHeading
+    >
       <div className="space-y-6 p-6">
         <header className="space-y-2">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
