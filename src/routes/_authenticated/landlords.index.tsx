@@ -175,9 +175,9 @@ function LandlordsPage() {
     [landlords, sortKey, sortDir],
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const page = Math.min(currentPage, totalPages);
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const paged = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -199,7 +199,7 @@ function LandlordsPage() {
 
   const exportCsv = () => {
     const header = ["Full Name", "Email", "Phone", "Status", "Joined"];
-    const rows = filtered.map((r) => [
+    const rows = sortedRows.map((r) => [
       r.name ?? "",
       r.email ?? "",
       r.phone ?? "",
@@ -249,10 +249,10 @@ function LandlordsPage() {
           <button
             type="button"
             onClick={exportCsv}
-            disabled={!filtered.length}
+            disabled={!sortedRows.length}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
           >
-            <Download className="size-4" /> Export CSV ({filtered.length})
+            <Download className="size-4" /> Export CSV ({sortedRows.length})
           </button>
           <button
             type="button"
@@ -440,8 +440,8 @@ function LandlordsPage() {
                 ))}
               </select>
               <span>
-                {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-                {Math.min(page * pageSize, filtered.length)} of {filtered.length}
+                {sortedRows.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+                {Math.min(page * pageSize, sortedRows.length)} of {sortedRows.length}
               </span>
             </div>
             <div className="flex items-center gap-2">
