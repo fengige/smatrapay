@@ -281,22 +281,32 @@ function LandlordsPage() {
         </div>
 
         <section className="rounded-2xl border border-border bg-card">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-            <div className="flex min-w-[220px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
-              <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+            <div className="flex min-w-[180px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
+              <span className="flex items-center bg-muted/50 px-2.5 text-muted-foreground">
                 <Search className="size-4" />
               </span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search landlords by name, email or phone"
-                className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
+                placeholder="Search name / email"
+                className="w-full bg-background px-2.5 py-1.5 text-sm outline-none placeholder:text-muted-foreground/70"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                  className="flex items-center px-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
             >
               <option value="all">All statuses</option>
               {STATUSES.map((s) => (
@@ -306,6 +316,18 @@ function LandlordsPage() {
                 </option>
               ))}
             </select>
+            {(search || statusFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+                className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
