@@ -96,7 +96,7 @@ function EditPropertyPage() {
           initial={{
             property_type: (property["property_type"] as "building" | "zone") ?? "building",
             building_category:
-              (property["building_category"] as "residential" | "commercial" | null) ?? "",
+              (property["building_category"] as "residential" | "commercial" | null) ?? "residential",
             subtype: property["subtype"] ?? "",
             name: property["name"] ?? "",
             code: property["code"] ?? "",
