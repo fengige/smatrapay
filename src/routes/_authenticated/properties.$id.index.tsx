@@ -159,6 +159,8 @@ const inputClass =
 
 function PropertyDetailPage() {
   const { id } = Route.useParams();
+  const { success } = Route.useSearch();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const fetchProperty = useServerFn(getProperty);
@@ -175,6 +177,19 @@ function PropertyDetailPage() {
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(
+    success === "created" ? "Property created successfully." : success === "updated" ? "Property updated successfully." : null,
+  );
+
+  const dismissSuccess = () => {
+    setSuccessBanner(null);
+    void router.navigate({
+      to: "/properties/$id",
+      params: { id },
+      search: {},
+      replace: true,
+    });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["properties", id],
