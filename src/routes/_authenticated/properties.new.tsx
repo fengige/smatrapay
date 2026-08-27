@@ -31,7 +31,11 @@ export const Route = createFileRoute("/_authenticated/properties/new")({
 });
 
 function clean(values: PropertyFormValues) {
-  const out: Record<string, unknown> = { name: values.name, status: values.status };
+  const out: Record<string, unknown> = {
+    name: values.name,
+    status: values.status,
+    property_type: values.property_type,
+  };
   for (const key of [
     "code",
     "address_line1",
