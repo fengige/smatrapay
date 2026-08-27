@@ -522,24 +522,123 @@ function ResidentDetailPage() {
               </Section>
               )}
 
+              {tab === "invoices" && (
+                <Section title="Invoices" icon={<Receipt className="size-4 text-primary" />}>
+                  <EmptyTabState
+                    icon={<Receipt className="size-8" />}
+                    title="No invoices yet"
+                    description="Utility and rent invoices issued to this resident will appear here once billing is connected."
+                  />
+                </Section>
+              )}
+
+              {tab === "payments" && (
+                <Section title="Payment History" icon={<CreditCard className="size-4 text-primary" />}>
+                  <EmptyTabState
+                    icon={<CreditCard className="size-8" />}
+                    title="No payments recorded"
+                    description="Token purchases and invoice payments made by this resident will appear here."
+                  />
+                </Section>
+              )}
+
+              {tab === "meters" && (
+                <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
+                  <EmptyTabState
+                    icon={<Gauge className="size-8" />}
+                    title="No meters assigned"
+                    description="Water and electricity meters linked to this resident's unit will appear here."
+                  />
+                </Section>
+              )}
+
               {tab === "audit" && (
                 <Section title="Audit Logs" icon={<ShieldCheck className="size-4 text-primary" />}>
-                  <ol className="divide-y divide-border">
-                    {auditEvents.map((event) => (
-                      <li key={event.key} className="flex items-start gap-3 px-6 py-4">
-                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          {event.icon}
-                        </span>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-foreground">{event.label}</p>
-                          <p className="text-xs text-muted-foreground">{event.detail}</p>
-                        </div>
-                        <span className="shrink-0 text-xs text-muted-foreground/80">
-                          {dateTime(event.at)}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                  <div className="flex flex-wrap items-end gap-3 border-b border-border px-6 py-4">
+                    <div className="min-w-48 flex-1">
+                      <label className="text-xs font-medium text-muted-foreground">Search</label>
+                      <div className="relative mt-1">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          type="text"
+                          value={auditQuery}
+                          onChange={(e) => setAuditQuery(e.target.value)}
+                          placeholder="Actor, action or detail…"
+                          className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Action type</label>
+                      <select
+                        value={auditAction}
+                        onChange={(e) => setAuditAction(e.target.value as typeof auditAction)}
+                        className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        <option value="all">All actions</option>
+                        <option value="created">Created</option>
+                        <option value="updated">Updated</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">From</label>
+                      <input
+                        type="date"
+                        value={auditFrom}
+                        onChange={(e) => setAuditFrom(e.target.value)}
+                        className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">To</label>
+                      <input
+                        type="date"
+                        value={auditTo}
+                        onChange={(e) => setAuditTo(e.target.value)}
+                        className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={exportAuditCsv}
+                        disabled={filteredAuditEvents.length === 0}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+                      >
+                        <Download className="size-4" /> CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportAuditPdf}
+                        disabled={filteredAuditEvents.length === 0}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+                      >
+                        <FileText className="size-4" /> PDF
+                      </button>
+                    </div>
+                  </div>
+                  {filteredAuditEvents.length === 0 ? (
+                    <p className="p-6 text-sm text-muted-foreground">
+                      No audit events match the current filters.
+                    </p>
+                  ) : (
+                    <ol className="divide-y divide-border">
+                      {filteredAuditEvents.map((event) => (
+                        <li key={event.key} className="flex items-start gap-3 px-6 py-4">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            {event.icon}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">{event.label}</p>
+                            <p className="text-xs text-muted-foreground">{event.detail}</p>
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground/80">
+                            {dateTime(event.at)}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
                 </Section>
               )}
             </div>
