@@ -21,7 +21,8 @@ const propertyInput = z.object({
   description: text(2000),
   status: z.enum(["active", "archived"]).optional(),
   property_type: z.enum(["building", "zone"], {
-    error: () => ({ message: "Property type must be Building or Zone" }),
+    required_error: "Property type is required",
+    invalid_type_error: "Property type must be Building or Zone",
   }),
 });
 
