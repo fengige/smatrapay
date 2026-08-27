@@ -89,8 +89,10 @@ export function PropertyForm({
       <section className="rounded-2xl border border-border bg-card p-5">
         <h2 className="text-sm font-bold text-foreground">Property details</h2>
         <div
-          role="tablist"
-          aria-label="Property type"
+          role="radiogroup"
+          aria-label="Property type (required)"
+          aria-required="true"
+          aria-invalid={!!errors["property_type"]}
           className="mt-4 grid w-full max-w-md grid-cols-2 gap-1 rounded-xl bg-muted p-1"
         >
           {(
@@ -118,6 +120,9 @@ export function PropertyForm({
             );
           })}
         </div>
+        {errors["property_type"] && (
+          <p className="mt-1.5 text-xs font-medium text-destructive">{errors["property_type"]}</p>
+        )}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Property name *" error={errors["name"]}>
             <input
