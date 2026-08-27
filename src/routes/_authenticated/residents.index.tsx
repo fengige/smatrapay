@@ -147,7 +147,7 @@ function ResidentsPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter]);
+  }, [search, statusFilter, propertyFilter, unitFilter]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["users", "resident"],
