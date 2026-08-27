@@ -74,6 +74,8 @@ export function PropertyForm({
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const next: Record<string, string> = {};
+    if (values.property_type !== "building" && values.property_type !== "zone")
+      next["property_type"] = "Please select Building or Zone";
     if (values.name.trim().length < 2) next["name"] = "Property name must be at least 2 characters";
     if (values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";

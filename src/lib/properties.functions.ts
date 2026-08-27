@@ -20,7 +20,9 @@ const propertyInput = z.object({
   postal_code: text(30),
   description: text(2000),
   status: z.enum(["active", "archived"]).optional(),
-  property_type: z.enum(["building", "zone"]).optional(),
+  property_type: z.enum(["building", "zone"], {
+    error: () => ({ message: "Property type must be Building or Zone" }),
+  }),
 });
 
 const unitInput = z.object({
