@@ -274,7 +274,7 @@ function ResidentsPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Full Name", "Email", "Phone", "Property", "Unit", "Status", "Joined"];
+    const header = ["Full Name", "Email", "Phone", "My Property", "Status", "Joined"];
     const rows = filtered.map((r) => {
       const display = assignmentDisplayString(r);
       return [
