@@ -17,7 +17,7 @@ import {
 import { listUsersByRole } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
-export const Route = createFileRoute("/_authenticated/properties")({
+export const Route = createFileRoute("/_authenticated/properties/")({
   head: () => ({
     meta: [
       { title: "Property Management · SmatraPay" },
