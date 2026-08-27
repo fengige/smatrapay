@@ -96,6 +96,15 @@ export function PropertyForm({
     const next: Record<string, string> = {};
     if (values.property_type !== "building" && values.property_type !== "zone")
       next["property_type"] = "Please select Building or Zone";
+    if (values.property_type === "building") {
+      if (values.building_category !== "residential" && values.building_category !== "commercial")
+        next["building_category"] = "Please select Residential or Commercial";
+      else if (!values.subtype)
+        next["subtype"] =
+          values.building_category === "residential"
+            ? "Please select a residential type"
+            : "Please select a commercial type";
+    }
     if (values.name.trim().length < 2)
       next["name"] =
         values.property_type === "zone"
