@@ -304,6 +304,7 @@ function PropertyDetailPage() {
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
+  const [unitStatusFilter, setUnitStatusFilter] = useState("all");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
   const [bulkStep, setBulkStep] = useState<"form" | "confirm">("form");
@@ -489,14 +490,19 @@ function PropertyDetailPage() {
   const match = (values: (string | null | undefined)[]) =>
     !term || values.filter(Boolean).join(" ").toLowerCase().includes(term);
 
-  const visibleUnits = units.filter((u) =>
-    match([
-      u.unit_number,
-      u.building,
-      u.unit_type,
-      u.status,
-      ...current.filter((a) => a.unit_id === u.id).map((a) => label(a.user_id)),
-    ]),
+  const visibleUnits = units.filter(
+    (u) =>
+      (unitStatusFilter === "all" || u.status === unitStatusFilter) &&
+      match([
+        u.unit_number,
+        u.building,
+        u.unit_type,
+        u.status,
+        u.electricity_meter_no,
+        u.water_meter_no,
+        u.gas_meter_no,
+        ...current.filter((a) => a.unit_id === u.id).map((a) => label(a.user_id)),
+      ]),
   );
 
   const roleRows = (role: string) =>
@@ -908,6 +914,18 @@ function PropertyDetailPage() {
               </div>
               {tab === "units" && (
                 <>
+                  <select
+                    value={unitStatusFilter}
+                    onChange={(e) => setUnitStatusFilter(e.target.value)}
+                    aria-label="Filter units by status"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="vacant">Vacant</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="archived">Archived</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => setImportOpen(true)}
@@ -965,8 +983,8 @@ function PropertyDetailPage() {
                       <tr>
                         <td colSpan={9} className="px-4 py-10 text-center">
                           <p className="text-sm font-semibold text-foreground">
-                            {term
-                              ? "No units match your search."
+                            {term || unitStatusFilter !== "all"
+                              ? "No units match your search or filters."
                               : actualUnitCount === 0
                                 ? configuredUnitCount == null
                                   ? "No unit count is configured for this property. Add units to get started."

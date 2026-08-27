@@ -212,7 +212,39 @@ export const getUnit = createServerFn({ method: "GET" })
       people = rows ?? [];
     }
 
-    return { unit, property, assignments: assignments ?? [], people };
+    const { data: auditLogs, error: lErr } = await supabase
+      .from("unit_audit_logs" as never)
+      .select("id, actor_id, action, changes, created_at")
+      .eq("unit_id", data.unitId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (lErr) throw new Error((lErr as { message: string }).message);
+
+    const actorIds = [
+      ...new Set(
+        ((auditLogs ?? []) as { actor_id: string | null }[])
+          .map((l) => l.actor_id)
+          .filter((v): v is string => !!v),
+      ),
+    ];
+    let actors: any[] = [];
+    if (actorIds.length) {
+      const { data: rows, error: actErr } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", actorIds);
+      if (actErr) throw new Error(actErr.message);
+      actors = rows ?? [];
+    }
+
+    return {
+      unit,
+      property,
+      assignments: assignments ?? [],
+      people,
+      auditLogs: auditLogs ?? [],
+      actors,
+    };
   });
 
 

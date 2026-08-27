@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,14 +8,16 @@ import {
   Building2,
   Droplets,
   Flame,
+  History,
   Home,
   Layers,
   Loader2,
   Pencil,
+  Trash2,
   X,
   Zap,
 } from "lucide-react";
-import { getUnit, updateUnitDetails } from "@/lib/properties.functions";
+import { deleteUnit, getUnit, updateUnitDetails } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/units/$unitId")({
@@ -84,13 +86,24 @@ type Person = {
   status: string;
 };
 
+type AuditLog = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  changes: Record<string, { old: unknown; new: unknown }>;
+  created_at: string;
+};
+
 function UnitDetailPage() {
   const { unitId } = Route.useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchUnit = useServerFn(getUnit);
   const saveUnit = useServerFn(updateUnitDetails);
+  const removeUnit = useServerFn(deleteUnit);
   const [edit, setEdit] = useState<EditForm | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { data, isLoading, error } = useQuery({
     queryKey: ["units", unitId],
     queryFn: () => fetchUnit({ data: { unitId } }),
@@ -103,6 +116,27 @@ function UnitDetailPage() {
   const assignments = (data?.assignments ?? []) as Assignment[];
   const people = (data?.people ?? []) as Person[];
   const personById = new Map(people.map((p) => [p.id, p]));
+  const auditLogs = (data?.auditLogs ?? []) as AuditLog[];
+  const actors = (data?.actors ?? []) as { id: string; name: string | null; email: string | null }[];
+  const actorById = new Map(actors.map((a) => [a.id, a.name || a.email || "Unknown"]));
+  const actorLabel = (id: string | null) =>
+    (id && actorById.get(id)) || (id ? "Unknown user" : "System");
+
+  const remove = useMutation({
+    mutationFn: () => removeUnit({ data: { id: unitId } } as never),
+    onSuccess: async () => {
+      toast.success(`Unit ${unit?.unit_number ?? ""} deleted`);
+      setConfirmDelete(false);
+      queryClient.removeQueries({ queryKey: ["units", unitId] });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      if (property?.id) {
+        navigate({ to: "/properties/$id", params: { id: property.id } });
+      } else {
+        navigate({ to: "/properties", search: { page: 1, limit: 10 } });
+      }
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not delete unit"),
+  });
 
   useEffect(() => {
     setEdit(null);
@@ -179,6 +213,7 @@ function UnitDetailPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
         {unit && (
+          <>
           <button
             type="button"
             onClick={openEdit}
@@ -186,6 +221,14 @@ function UnitDetailPage() {
           >
             <Pencil className="size-4" /> Edit unit
           </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3.5 py-2 text-sm font-semibold text-destructive hover:bg-destructive/20"
+          >
+            <Trash2 className="size-4" /> Delete unit
+          </button>
+          </>
         )}
         <Link
           to="/properties/$id"
@@ -323,6 +366,78 @@ function UnitDetailPage() {
               </table>
             </div>
           </section>
+
+          <section className="rounded-2xl border border-border bg-card">
+            <div className="flex items-center gap-2 border-b border-border p-4">
+              <History className="size-4 text-muted-foreground" />
+              <h3 className="text-sm font-bold text-foreground">Audit log</h3>
+            </div>
+            {!auditLogs.length ? (
+              <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+                No changes recorded for this unit yet.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {auditLogs.map((log) => (
+                  <li key={log.id} className="px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-semibold text-foreground">
+                        {actorLabel(log.actor_id)}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {log.action === "created" ? "created this unit" : "updated this unit"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        · {new Date(log.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <ul className="mt-1.5 space-y-0.5">
+                      {Object.entries(log.changes ?? {}).map(([field, change]) => (
+                        <li key={field} className="text-xs text-muted-foreground">
+                          <span className="font-medium capitalize text-foreground">
+                            {field.replace(/_/g, " ")}
+                          </span>
+                          : {change?.old == null || change.old === "" ? "—" : String(change.old)}
+                          {" → "}
+                          {change?.new == null || change.new === "" ? "—" : String(change.new)}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      )}
+      {confirmDelete && unit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <h3 className="text-base font-bold text-foreground">Delete unit {unit.unit_number}?</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This will permanently delete the unit and its assignment history. This action cannot
+              be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={remove.isPending}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => remove.mutate()}
+                disabled={remove.isPending}
+                aria-busy={remove.isPending}
+                className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {remove.isPending && <Loader2 className="size-4 animate-spin" />} Delete unit
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {edit && (

@@ -141,6 +141,41 @@ export type Database = {
           },
         ]
       }
+      unit_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          unit_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          unit_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_audit_logs_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           bedrooms: number | null
