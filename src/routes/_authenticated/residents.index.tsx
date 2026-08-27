@@ -431,20 +431,20 @@ function ResidentsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading residents…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={6} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                       No residents found. Try adjusting your search or add a new resident.
                     </td>
                   </tr>
@@ -477,21 +477,11 @@ function ResidentsPage() {
                           if (!display) return "—";
                           return (
                             <div className="space-y-1">
-                              {display.properties.map((p) => (
-                                <div key={p}>{p}</div>
-                              ))}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {(() => {
-                          const display = assignmentDisplayString(r);
-                          if (!display) return "—";
-                          return (
-                            <div className="space-y-1">
-                              {display.units.map((u) => (
-                                <div key={u}>{u}</div>
+                              {display.properties.map((p, i) => (
+                                <div key={p}>
+                                  {p}
+                                  {display.units[i] ? ` · Unit ${display.units[i]}` : ""}
+                                </div>
                               ))}
                             </div>
                           );
