@@ -601,6 +601,8 @@ export const assignUnit = createServerFn({ method: "POST" })
         start_date: dateStr.optional(),
         end_date: dateStr.nullable().optional(),
         notes: text(500),
+        /** Assignment the caller intends to replace; ended atomically before re-checking availability. */
+        replace_assignment_id: uuid.optional(),
       })
       .parse(data),
   )
@@ -608,9 +610,54 @@ export const assignUnit = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase, userId } = context;
 
-    const start = data.start_date ?? new Date().toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (data.replace_assignment_id) {
+      const { data: current, error: curErr } = await supabase
+        .from("unit_assignments")
+        .select("id, user_id, end_date")
+        .eq("id", data.replace_assignment_id)
+        .maybeSingle();
+      if (curErr) throw new Error(curErr.message);
+      if (!current) {
+        throw new Error(
+          "The assignment you are replacing no longer exists — reload the page and try again.",
+        );
+      }
+      if (current.user_id !== data.user_id) {
+        throw new Error("The assignment you are replacing belongs to a different person.");
+      }
+      if (!current.end_date) {
+        const { error: endErr } = await supabase
+          .from("unit_assignments")
+          .update({ end_date: today, updated_by: userId } as never)
+          .eq("id", data.replace_assignment_id)
+          .is("end_date", null);
+        if (endErr) throw new Error(endErr.message);
+      }
+    }
+
+    const start = data.start_date ?? today;
     const end = data.end_date ?? null;
     if (end && end < start) throw new Error("End date must be on or after the start date");
+
+    // Re-check availability at save time so a concurrent assignment cannot be overwritten.
+    const { data: conflicting, error: cErr } = await supabase
+      .from("unit_assignments")
+      .select("id, user_id, start_date, end_date")
+      .eq("unit_id", data.unit_id)
+      .eq("role", data.role);
+    if (cErr) throw new Error(cErr.message);
+    const takenByOther = (conflicting ?? []).find(
+      (row: any) =>
+        row.user_id !== data.user_id &&
+        overlaps(start, end, row.start_date ?? start, row.end_date ?? null),
+    );
+    if (takenByOther) {
+      throw new Error(
+        "This unit was just assigned to someone else. Reload the page and pick an available unit.",
+      );
+    }
 
     await assertNoOverlap(supabase, {
       unit_id: data.unit_id,
@@ -921,4 +968,172 @@ export const listLandlords = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     return { landlords: users ?? [] };
+  });
+
+/** Audit trail of unit-assignment changes for a resident (who changed what, and old/new unit). */
+export const listAssignmentAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ userId: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: logs, error } = await supabase
+      .from("assignment_audit_logs" as never)
+      .select("id, assignment_id, user_id, actor_id, action, old_unit_id, new_unit_id, changes, created_at")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error((error as { message: string }).message);
+
+    const rows = (logs ?? []) as {
+      id: string;
+      actor_id: string | null;
+      action: string;
+      old_unit_id: string | null;
+      new_unit_id: string | null;
+      changes: Record<string, unknown>;
+      created_at: string;
+    }[];
+
+    const unitIds = [
+      ...new Set(rows.flatMap((l) => [l.old_unit_id, l.new_unit_id]).filter((v): v is string => !!v)),
+    ];
+    let units: any[] = [];
+    let properties: any[] = [];
+    if (unitIds.length) {
+      const { data: u, error: uErr } = await supabase
+        .from("units")
+        .select("id, unit_number, property_id")
+        .in("id", unitIds);
+      if (uErr) throw new Error(uErr.message);
+      units = u ?? [];
+      const propIds = [...new Set(units.map((x) => x.property_id))];
+      if (propIds.length) {
+        const { data: p, error: pErr } = await supabase
+          .from("properties")
+          .select("id, name")
+          .in("id", propIds);
+        if (pErr) throw new Error(pErr.message);
+        properties = p ?? [];
+      }
+    }
+
+    const actorIds = [...new Set(rows.map((l) => l.actor_id).filter((v): v is string => !!v))];
+    let actors: any[] = [];
+    if (actorIds.length) {
+      const { data: a, error: aErr } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", actorIds);
+      if (aErr) throw new Error(aErr.message);
+      actors = a ?? [];
+    }
+
+    const propName = new Map(properties.map((p) => [p.id, p.name as string]));
+    const unitLabel = (unitId: string | null) => {
+      if (!unitId) return null;
+      const u = units.find((x) => x.id === unitId);
+      if (!u) return "Unknown unit";
+      const prop = propName.get(u.property_id);
+      return prop ? `${prop} · Unit ${u.unit_number}` : `Unit ${u.unit_number}`;
+    };
+    const actorName = (actorId: string | null) => {
+      if (!actorId) return "System";
+      const a = actors.find((x) => x.id === actorId);
+      return a?.name || a?.email || `user ${actorId.slice(0, 8)}`;
+    };
+
+    return {
+      logs: rows.map((l) => ({
+        id: l.id,
+        action: l.action,
+        created_at: l.created_at,
+        actor: actorName(l.actor_id) as string,
+        old_unit: unitLabel(l.old_unit_id),
+        new_unit: unitLabel(l.new_unit_id),
+        changed_fields: Object.keys(l.changes ?? {}) as string[],
+      })),
+    };
+  });
+
+/** All meters across units, with property and landlord context. */
+export const listMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: units, error } = await supabase
+      .from("units")
+      .select(
+        "id, property_id, unit_number, unit_type, floor, status, electricity_meter_no, water_meter_no, gas_meter_no",
+      )
+      .order("unit_number", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const propIds = [...new Set((units ?? []).map((u) => u.property_id))];
+    let properties: any[] = [];
+    if (propIds.length) {
+      const { data: p, error: pErr } = await supabase
+        .from("properties")
+        .select("id, name, landlord_id")
+        .in("id", propIds);
+      if (pErr) throw new Error(pErr.message);
+      properties = p ?? [];
+    }
+
+    const landlordIds = [
+      ...new Set(properties.map((p) => p.landlord_id).filter((v): v is string => !!v)),
+    ];
+    let landlords: any[] = [];
+    if (landlordIds.length) {
+      const { data: l, error: lErr } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", landlordIds);
+      if (lErr) throw new Error(lErr.message);
+      landlords = l ?? [];
+    }
+
+    const propById = new Map(properties.map((p) => [p.id, p]));
+    const landlordById = new Map(landlords.map((l) => [l.id, l]));
+
+    type Meter = {
+      key: string;
+      unit_id: string;
+      unit_number: string;
+      unit_status: string;
+      property_id: string;
+      property_name: string;
+      landlord_name: string | null;
+      type: "electricity" | "water" | "gas";
+      serial: string;
+    };
+
+    const meters: Meter[] = [];
+    for (const u of units ?? []) {
+      const prop = propById.get(u.property_id);
+      const landlord = prop?.landlord_id ? landlordById.get(prop.landlord_id) : null;
+      const base = {
+        unit_id: u.id,
+        unit_number: u.unit_number,
+        unit_status: u.status as string,
+        property_id: u.property_id,
+        property_name: (prop?.name as string) ?? "—",
+        landlord_name: (landlord?.name as string) ?? (landlord?.email as string) ?? null,
+      };
+      const entries: [Meter["type"], string | null][] = [
+        ["electricity", u.electricity_meter_no],
+        ["water", u.water_meter_no],
+        ["gas", u.gas_meter_no],
+      ];
+      for (const [type, serial] of entries) {
+        if (serial && String(serial).trim()) {
+          meters.push({ ...base, key: `${u.id}-${type}`, type, serial: String(serial).trim() });
+        }
+      }
+    }
+
+    return { meters, properties };
   });

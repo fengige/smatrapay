@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          assignment_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          new_unit_id: string | null
+          old_unit_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          assignment_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          new_unit_id?: string | null
+          old_unit_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          assignment_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          new_unit_id?: string | null
+          old_unit_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address_line1: string | null

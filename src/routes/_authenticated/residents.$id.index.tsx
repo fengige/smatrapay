@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { listAssignmentAuditLogs } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/residents/$id/")({
@@ -115,7 +116,7 @@ function ResidentDetailPage() {
     "property" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
-  const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
+  const [auditAction, setAuditAction] = useState<string>("all");
   const [auditFrom, setAuditFrom] = useState("");
   const [auditTo, setAuditTo] = useState("");
 
@@ -123,6 +124,13 @@ function ResidentDetailPage() {
     queryKey: ["user", id],
     queryFn: () => fetchResident({ data: { id } }),
   });
+
+  const fetchAssignmentLogs = useServerFn(listAssignmentAuditLogs);
+  const { data: assignmentAudit } = useQuery({
+    queryKey: ["assignment-audit", id],
+    queryFn: () => fetchAssignmentLogs({ data: { userId: id } }),
+  });
+
 
   const resident = data?.user;
 
@@ -169,30 +177,66 @@ function ResidentDetailPage() {
 
   const isActive = resident?.status === "active";
 
-  const auditEvents = resident
-    ? [
-        {
-          key: "created",
-          action: "created" as const,
-          actor: resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System",
-          label: "Record created",
-          detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
-          at: resident.created_at,
-          icon: <UserCheck className="size-4" />,
-        },
-        {
-          key: "updated",
-          action: "updated" as const,
-          actor: resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System",
-          label: "Record last updated",
-          detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
-          at: resident.updated_at,
-          icon: <Pencil className="size-4" />,
-        },
-      ]
-        .filter((e) => e.at)
-        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-    : [];
+  const assignmentEvents = (assignmentAudit?.logs ?? []).map((log: {
+    id: string;
+    action: string;
+    actor: string;
+    old_unit: string | null;
+    new_unit: string | null;
+    changed_fields: string[];
+    created_at: string;
+  }) => {
+    const labels: Record<string, string> = {
+      assigned: "Unit assigned",
+      moved: "Unit assignment moved",
+      ended: "Unit assignment ended",
+      updated: "Unit assignment updated",
+      removed: "Unit assignment removed",
+    };
+    const parts: string[] = [];
+    if (log.old_unit) parts.push(`From ${log.old_unit}`);
+    if (log.new_unit) parts.push(`To ${log.new_unit}`);
+    const changed = (log.changed_fields ?? []).filter((k) => k !== "unit_id");
+    if (changed.length) parts.push(`Changed: ${changed.join(", ").replace(/_/g, " ")}`);
+    return {
+      key: log.id,
+      action: log.action,
+      actor: log.actor,
+      label: labels[log.action] ?? "Unit assignment change",
+      detail: parts.join(" · ") || "No unit details recorded",
+      at: log.created_at,
+      icon: <DoorOpen className="size-4" />,
+    };
+  });
+
+  const auditEvents = (
+    resident
+      ? [
+          {
+            key: "created",
+            action: "created",
+            actor: resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System",
+            label: "Record created",
+            detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
+            at: resident.created_at,
+            icon: <UserCheck className="size-4" />,
+          },
+          {
+            key: "updated",
+            action: "updated",
+            actor: resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System",
+            label: "Record last updated",
+            detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
+            at: resident.updated_at,
+            icon: <Pencil className="size-4" />,
+          },
+          ...assignmentEvents,
+        ]
+      : assignmentEvents
+  )
+    .filter((e) => e.at)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
 
   const filteredAuditEvents = auditEvents.filter((event) => {
     const q = auditQuery.trim().toLowerCase();
@@ -572,12 +616,16 @@ function ResidentDetailPage() {
                       <label className="text-xs font-medium text-muted-foreground">Action type</label>
                       <select
                         value={auditAction}
-                        onChange={(e) => setAuditAction(e.target.value as typeof auditAction)}
+                        onChange={(e) => setAuditAction(e.target.value)}
                         className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                       >
                         <option value="all">All actions</option>
                         <option value="created">Created</option>
                         <option value="updated">Updated</option>
+                        <option value="assigned">Unit assigned</option>
+                        <option value="moved">Unit moved</option>
+                        <option value="ended">Assignment ended</option>
+                        <option value="removed">Assignment removed</option>
                       </select>
                     </div>
                     <div>

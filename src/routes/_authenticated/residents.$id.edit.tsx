@@ -190,13 +190,18 @@ function EditResidentPage() {
 
       // Sync unit assignment: end the current one if changed/removed, then assign the new one
       if (selectedUnitId !== initialUnitId) {
-        if (activeAssignment) {
-          await endAssign({ data: { id: activeAssignment.id } });
-        }
         if (selectedUnitId) {
+          // Server re-checks availability and ends the replaced assignment atomically.
           await assign({
-            data: { unit_id: selectedUnitId, user_id: id, role: "resident" },
-          });
+            data: {
+              unit_id: selectedUnitId,
+              user_id: id,
+              role: "resident",
+              ...(activeAssignment ? { replace_assignment_id: activeAssignment.id } : {}),
+            },
+          } as never);
+        } else if (activeAssignment) {
+          await endAssign({ data: { id: activeAssignment.id } });
         }
       }
     },
