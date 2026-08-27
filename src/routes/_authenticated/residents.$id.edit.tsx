@@ -174,8 +174,8 @@ function EditResidentPage() {
   };
 
   const mutation = useMutation({
-    mutationFn: () =>
-      save({
+    mutationFn: async () => {
+      await save({
         data: {
           id,
           name: form.name,
@@ -186,10 +186,31 @@ function EditResidentPage() {
           notes: form.notes || null,
           status: form.status,
         },
-      } as never),
+      } as never);
+
+      // Sync unit assignment: end the current one if changed/removed, then assign the new one
+      if (selectedUnitId !== initialUnitId) {
+        if (activeAssignment) {
+          await endAssign({ data: { id: activeAssignment.id } });
+        }
+        if (selectedUnitId) {
+          await assign({
+            data: { unit_id: selectedUnitId, user_id: id, role: "resident" },
+          });
+        }
+      }
+    },
     onSuccess: async () => {
-      toast.success("Resident updated");
+      const changed = selectedUnitId !== initialUnitId;
+      toast.success(
+        changed
+          ? selectedUnitId
+            ? "Resident updated and assigned to the selected unit"
+            : "Resident updated and unassigned from their unit"
+          : "Resident updated",
+      );
       await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
       navigate({ to: "/residents", search: { page: 1, limit: 10 } });
     },
     onError: (err: Error) => toast.error(err.message || "Could not update resident"),
