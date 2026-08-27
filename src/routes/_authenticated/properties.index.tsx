@@ -367,6 +367,7 @@ function PropertiesPage() {
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Property</th>
+                  <th className="px-4 py-3 font-semibold">Type</th>
                   <th className="px-4 py-3 font-semibold">Unit Type</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
@@ -406,6 +407,22 @@ function PropertiesPage() {
                           .filter(Boolean)
                           .join(" · ") || "—"}
                       </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                          (row.property.property_type ?? "building") === "zone"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {(row.property.property_type ?? "building") === "zone" ? (
+                          <Layers className="size-3" />
+                        ) : (
+                          <Building2 className="size-3" />
+                        )}
+                        {row.property.property_type ?? "building"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {row.unitTypes.join(", ") || "—"}
