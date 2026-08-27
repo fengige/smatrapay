@@ -1057,7 +1057,39 @@ export const listAssignmentAuditLogs = createServerFn({ method: "GET" })
     };
   });
 
+const meterInput = z.object({
+  unit_id: uuid,
+  type: z.enum(["electricity", "water", "gas"]),
+  serial: z.string().trim().min(1).max(60),
+});
+
+export const addMeter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => meterInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    const { data: unit, error: unitError } = await supabase
+      .from("units")
+      .select("id")
+      .eq("id", data.unit_id)
+      .maybeSingle();
+    if (unitError) throw new Error(unitError.message);
+    if (!unit) throw new Error("Unit not found");
+
+    const column = `${data.type}_meter_no` as "electricity_meter_no" | "water_meter_no" | "gas_meter_no";
+    const { error } = await supabase
+      .from("units")
+      .update({ [column]: data.serial, updated_by: userId } as never)
+      .eq("id", data.unit_id);
+    if (error) throw new Error(error.message);
+
+    return { ok: true };
+  });
+
 /** All meters across units, with property and landlord context. */
+
 export const listMeters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -1135,5 +1167,6 @@ export const listMeters = createServerFn({ method: "GET" })
       }
     }
 
-    return { meters, properties };
+    return { meters, properties, units: units ?? [] };
   });
+
