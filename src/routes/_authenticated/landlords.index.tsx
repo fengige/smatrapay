@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   Loader2,
+  MoreVertical,
   Pencil,
   Plus,
   Power,
@@ -19,6 +20,7 @@ import {
   Trash2,
   UserCheck,
   Users as UsersIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
