@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { createUser } from "@/lib/users.functions";
+import { createLandlord } from "@/lib/landlords.functions";
 import { createUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
@@ -45,13 +45,21 @@ const STATUSES = [
   { value: "suspended", label: "Suspended" },
 ] as const;
 
+const landlordSchema = createUserSchema.omit({
+  property: true,
+  building: true,
+  unit_number: true,
+  move_in_date: true,
+  role: true,
+});
+
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-primary disabled:cursor-not-allowed disabled:bg-muted/30 disabled:opacity-60";
 
 function NewLandlordPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const create = useServerFn(createUser);
+  const create = useServerFn(createLandlord);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -63,13 +71,12 @@ function NewLandlordPage() {
     phone: "",
     bio: "",
     notes: "",
-    role: "landlord",
     status: "active",
   });
 
 
   const validateField = (key: keyof typeof form) => {
-    const partial = createUserSchema.safeParse({ ...form, [key]: form[key] });
+    const partial = landlordSchema.safeParse({ ...form, [key]: form[key] });
     if (!partial.success) {
       const issues = fieldErrors(partial.error);
       if (issues[key]) {
@@ -124,7 +131,7 @@ function NewLandlordPage() {
     for (const key of Object.keys(form)) allTouched[key] = true;
     setTouched(allTouched);
 
-    const parsed = createUserSchema.safeParse(form);
+    const parsed = landlordSchema.safeParse(form);
     if (!parsed.success) {
       const issues = fieldErrors(parsed.error);
       setErrors(issues);
