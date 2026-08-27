@@ -105,7 +105,13 @@ function ResidentDetailPage() {
 
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
-  const [tab, setTab] = useState<"property" | "history" | "notes" | "audit">("property");
+  const [tab, setTab] = useState<
+    "property" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
+  >("property");
+  const [auditQuery, setAuditQuery] = useState("");
+  const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
+  const [auditFrom, setAuditFrom] = useState("");
+  const [auditTo, setAuditTo] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
