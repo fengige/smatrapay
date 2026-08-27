@@ -125,7 +125,7 @@ function EditLandlordPage() {
     onSuccess: async () => {
       toast.success("Landlord updated");
       await queryClient.invalidateQueries({ queryKey: ["users"] });
-      navigate({ to: "/landlords", search: { page: 1, limit: 10 } });
+      navigate({ to: "/landlords", search: { page: 1, limit: 10, status: "all", q: "" } });
     },
     onError: (err: Error) => toast.error(err.message || "Could not update landlord"),
   });

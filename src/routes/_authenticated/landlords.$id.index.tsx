@@ -157,7 +157,7 @@ function LandlordDetailPage() {
     onSuccess: () => {
       toast.success("Landlord deleted");
       queryClient.invalidateQueries({ queryKey: ["users", "landlord"] });
-      navigate({ to: "/landlords", search: { page: 1, limit: 10 } });
+      navigate({ to: "/landlords", search: { page: 1, limit: 10, status: "all", q: "" } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
