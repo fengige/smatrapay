@@ -1167,5 +1167,6 @@ export const listMeters = createServerFn({ method: "GET" })
       }
     }
 
-    return { meters, properties };
+    return { meters, properties, units: units ?? [] };
   });
+
