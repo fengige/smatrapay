@@ -1,8 +1,26 @@
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 
+export const RESIDENTIAL_TYPES = [
+  "Apartments",
+  "Bungalows",
+  "Maisonettes",
+  "Townhouses",
+  "Villas",
+  "Land",
+] as const;
+
+export const COMMERCIAL_TYPES = [
+  "Office Spaces",
+  "Retail Spaces",
+  "Industrial Spaces",
+  "Land",
+] as const;
+
 export type PropertyFormValues = {
   property_type: "building" | "zone";
+  building_category: "residential" | "commercial" | "";
+  subtype: string;
   name: string;
   code: string;
   address_line1: string;
@@ -17,6 +35,8 @@ export type PropertyFormValues = {
 
 export const emptyProperty: PropertyFormValues = {
   property_type: "building",
+  building_category: "",
+  subtype: "",
   name: "",
   code: "",
   address_line1: "",
