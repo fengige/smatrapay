@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 
 export type PropertyFormValues = {
+  property_type: "building" | "zone";
   name: string;
   code: string;
   address_line1: string;
