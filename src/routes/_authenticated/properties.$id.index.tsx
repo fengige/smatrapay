@@ -297,6 +297,7 @@ function PropertyDetailPage() {
   const fetchPeople = useServerFn(listAssignableUsers);
   const saveUnit = useServerFn(upsertUnit);
   const removeUnit = useServerFn(deleteUnit);
+  const runBulkCreate = useServerFn(createBulkUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -306,6 +307,7 @@ function PropertyDetailPage() {
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
+  const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
