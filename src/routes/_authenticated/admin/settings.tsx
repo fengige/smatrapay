@@ -67,7 +67,7 @@ function SettingsPage() {
   const year = new Date().getFullYear();
 
   return (
-    <PortalLayout title="App settings" description="Customize the site footer shown across the portal.">
+    <PortalLayout roles={["admin"]} title="App settings" description="Customize the site footer shown across the portal.">
       <form
         onSubmit={onSubmit}
         aria-busy={saving || isLoading}
