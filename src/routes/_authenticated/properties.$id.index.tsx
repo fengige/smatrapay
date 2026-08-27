@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import {
   assignUnit,
   deleteAssignment,
+  deleteProperty,
   deleteUnit,
   endAssignment,
   getProperty,
@@ -171,12 +172,14 @@ function PropertyDetailPage() {
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
   const runImport = useServerFn(importAssignments);
+  const removeProperty = useServerFn(deleteProperty);
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(
     success === "created" ? "Property created successfully." : success === "updated" ? "Property updated successfully." : null,
   );
@@ -242,6 +245,19 @@ function PropertyDetailPage() {
       await invalidate();
     },
     onError: (err: Error) => toast.error(err.message || "Could not remove unit"),
+  });
+
+  const propertyDelete = useMutation({
+    mutationFn: () => removeProperty({ data: { id } } as never),
+    onSuccess: async () => {
+      setDeleteOpen(false);
+      toast.success("Property deleted", {
+        description: `${property?.["name"] ?? "The property"} was removed.`,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      void router.navigate({ to: "/properties", search: { page: 1, limit: 10 } });
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not delete property"),
   });
 
   const assignMutation = useMutation({
@@ -554,6 +570,13 @@ function PropertyDetailPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
           >
             <FileText className="size-4" /> PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm font-semibold text-destructive hover:bg-destructive/15"
+          >
+            <Trash2 className="size-4" /> Delete
           </button>
         </div>
       }
@@ -1053,8 +1076,43 @@ function PropertyDetailPage() {
         </Modal>
       )}
 
-
-
+      {deleteOpen && (
+        <Modal title="Delete property" onClose={() => !propertyDelete.isPending && setDeleteOpen(false)}>
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <Trash2 className="size-5" />
+            </span>
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-foreground">{property?.["name"] ?? "this property"}</span>?
+              </p>
+              <p className="mt-1">
+                This will permanently remove the property and its units and assignments. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(false)}
+              disabled={propertyDelete.isPending}
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => propertyDelete.mutate()}
+              disabled={propertyDelete.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm hover:opacity-90 disabled:opacity-60"
+            >
+              {propertyDelete.isPending && <Loader2 className="size-4 animate-spin" />}
+              {propertyDelete.isPending ? "Deleting…" : "Delete property"}
+            </button>
+          </div>
+        </Modal>
+      )}
     </PortalLayout>
   );
 }

@@ -85,7 +85,7 @@ function Field({
 }
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+  "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none transition-all duration-200 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-primary focus:ring-4 focus:ring-primary/10";
 
 export function PropertyForm({
   initial,
@@ -167,6 +167,7 @@ export function PropertyForm({
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (pending) return;
     const next = { ...validateStep(0), ...validateStep(1), ...validateStep(2) };
     setErrors(next);
     if (Object.keys(next).length) {
@@ -180,73 +181,92 @@ export function PropertyForm({
   const isLast = step === STEPS.length - 1;
 
   return (
-    <form onSubmit={submit} className="space-y-5">
-      <ol className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-center">
+    <form onSubmit={submit} className="mx-auto max-w-4xl space-y-6">
+      <ol className="relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-start sm:gap-0">
+        <span
+          aria-hidden
+          className="absolute left-12 right-12 top-11 hidden h-0.5 rounded bg-border sm:block"
+        />
+        <span
+          aria-hidden
+          className="absolute left-12 top-11 hidden h-0.5 rounded bg-primary transition-all duration-500 sm:block"
+          style={{ width: `calc((100% - 6rem) * ${step / (STEPS.length - 1)})` }}
+        />
         {STEPS.map((s, index) => {
           const Icon = s.icon;
           const active = index === step;
           const done = index < step;
           return (
-            <li key={s.id} className="flex flex-1 items-center gap-3">
+            <li key={s.id} className="relative z-10 flex flex-1">
               <button
                 type="button"
                 onClick={() => goToStep(index)}
                 aria-current={active ? "step" : undefined}
-                className="flex flex-1 items-center gap-3 text-left"
+                className="group flex flex-1 items-center gap-3 text-left sm:flex-col sm:items-center sm:gap-2 sm:text-center"
               >
                 <span
                   className={
                     active
-                      ? "flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"
+                      ? "flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-primary/15 transition-all duration-300"
                       : done
-                        ? "flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary"
-                        : "flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"
+                        ? "flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-4 ring-card transition-all duration-300 group-hover:bg-primary/25"
+                        : "flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground ring-4 ring-card transition-all duration-300 group-hover:border-primary/40 group-hover:text-primary"
                   }
                 >
                   {done ? <Check className="size-5" /> : <Icon className="size-5" />}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span
+                    className={
+                      active
+                        ? "block text-[11px] font-bold uppercase tracking-widest text-primary"
+                        : "block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+                    }
+                  >
                     Step {index + 1}
                   </span>
                   <span
                     className={
                       active
                         ? "block truncate text-sm font-bold text-foreground"
-                        : "block truncate text-sm font-medium text-muted-foreground"
+                        : done
+                          ? "block truncate text-sm font-semibold text-foreground/80"
+                          : "block truncate text-sm font-medium text-muted-foreground"
                     }
                   >
                     {s.label}
                   </span>
                 </span>
               </button>
-              {index < STEPS.length - 1 && (
-                <span
-                  aria-hidden
-                  className={
-                    done
-                      ? "hidden h-0.5 flex-1 rounded bg-primary sm:block"
-                      : "hidden h-0.5 flex-1 rounded bg-border sm:block"
-                  }
-                />
-              )}
             </li>
           );
         })}
       </ol>
 
-      <section className={step === 0 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
-        <h2 className="text-sm font-bold text-foreground">Property details</h2>
+      <div key={step} className="fade-swap">
 
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <section className={step === 0 ? "rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8" : "hidden"}>
+        <div className="flex items-center gap-3 border-b border-border pb-5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Building2 className="size-5" />
+          </span>
           <div>
+            <h2 className="text-base font-bold text-foreground">Property details</h2>
+            <p className="text-xs text-muted-foreground">Choose the property type and its core details.</p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div>
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Property Type <span className="text-destructive">*</span>
+            </span>
             <div
               role="radiogroup"
               aria-label="Property type (required)"
               aria-required="true"
               aria-invalid={!!errors["property_type"]}
-              className="grid w-full grid-cols-2 gap-1 rounded-xl bg-muted p-1"
+              className="grid w-full grid-cols-2 gap-1 rounded-xl bg-muted p-1.5"
             >
               {(
                 [
@@ -288,12 +308,15 @@ export function PropertyForm({
 
           {values.property_type === "building" && (
             <div>
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Building Category <span className="text-destructive">*</span>
+              </span>
               <div
                 role="radiogroup"
                 aria-label="Building category (required)"
                 aria-required="true"
                 aria-invalid={!!errors["building_category"]}
-                className="grid w-full grid-cols-2 gap-1 rounded-xl bg-muted p-1"
+                className="grid w-full grid-cols-2 gap-1 rounded-xl bg-muted p-1.5"
               >
                 {(
                   [
@@ -428,9 +451,17 @@ export function PropertyForm({
         </div>
       </section>
 
-      <section className={step === 1 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
-        <h2 className="text-sm font-bold text-foreground">Landlord details</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <section className={step === 1 ? "rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8" : "hidden"}>
+        <div className="flex items-center gap-3 border-b border-border pb-5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <UserRound className="size-5" />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-foreground">Landlord details</h2>
+            <p className="text-xs text-muted-foreground">Assign the number of units and the managing landlord.</p>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <Field label="Number of Units" error={errors["number_of_units"]}>
             <input
               type="number"
@@ -468,9 +499,17 @@ export function PropertyForm({
         )}
       </section>
 
-      <section className={step === 2 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
-        <h2 className="text-sm font-bold text-foreground">Address</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <section className={step === 2 ? "rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8" : "hidden"}>
+        <div className="flex items-center gap-3 border-b border-border pb-5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <MapPin className="size-5" />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-foreground">Address</h2>
+            <p className="text-xs text-muted-foreground">Where is this property located?</p>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <Field label="Address line 1">
             <input
               value={values.address_line1}
@@ -516,11 +555,18 @@ export function PropertyForm({
         </div>
       </section>
 
-      <section className={step === 3 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
-        <h2 className="text-sm font-bold text-foreground">Review & Submit</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Confirm the details before saving.</p>
+      <section className={step === 3 ? "rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8" : "hidden"}>
+        <div className="flex items-center gap-3 border-b border-border pb-5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <ClipboardCheck className="size-5" />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-foreground">Review & Submit</h2>
+            <p className="text-xs text-muted-foreground">Confirm the details before saving.</p>
+          </div>
+        </div>
 
-        <div className="mt-4 space-y-5">
+        <div className="mt-6 space-y-6">
           <div>
             <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
               <Building2 className="size-4" /> Property Details
@@ -627,44 +673,50 @@ export function PropertyForm({
           </div>
         )}
       </section>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {step > 0 && (
-          <button
-            type="button"
-            onClick={() => goToStep(step - 1)}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </button>
-        )}
-        {!isLast ? (
-          <button
-            type="button"
-            onClick={() => goToStep(step + 1)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-          >
-            Next
-            <ArrowRight className="size-4" />
-          </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {submitLabel}
-          </button>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
+          disabled={pending}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
           Cancel
         </button>
+        <div className="flex items-center gap-2">
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={() => goToStep(step - 1)}
+              disabled={pending}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-semibold transition-all hover:bg-accent/10 disabled:opacity-50"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+          )}
+          {!isLast ? (
+            <button
+              type="button"
+              onClick={() => goToStep(step + 1)}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 active:scale-95"
+            >
+              Next
+              <ArrowRight className="size-4" />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={pending}
+              aria-busy={pending}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              {pending ? "Saving…" : submitLabel}
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );
