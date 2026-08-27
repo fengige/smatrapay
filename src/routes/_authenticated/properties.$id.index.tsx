@@ -917,15 +917,18 @@ function PropertyDetailPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      setBulkStep("form");
+                      setBulkPreview(null);
+                      setBulkMode("fail");
                       setBulkForm({
                         ...emptyBulkForm,
                         open: true,
                         prefix: "Unit",
                         count: String(Math.max(0, (configuredUnitCount ?? 0) - actualUnitCount)),
                         start_number: String(actualUnitCount + 1),
-                      })
-                    }
+                      });
+                    }}
                     className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   >
                     <Plus className="size-4" /> Bulk Add Units
