@@ -502,52 +502,7 @@ function LandlordsPage() {
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{date(r.created_at)}</td>
                       <td className="px-3 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <Link
-                            to="/landlords/$id"
-                            params={{ id: r.id }}
-                            search={{ page: 1, limit: 10 }}
-                            aria-label="View landlord"
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Eye className="size-3.5" />
-                          </Link>
-                          <Link
-                            to="/landlords/$id/edit"
-                            params={{ id: r.id }}
-                            search={{ page: 1, limit: 10 }}
-                            aria-label="Edit landlord"
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Pencil className="size-3.5" />
-                          </Link>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
-                              setConfirm({
-                                type: "status",
-                                row: r,
-                                next: r.status === "active" ? "inactive" : "active",
-                              })
-                            }
-                            aria-label={r.status === "active" ? "Deactivate landlord" : "Activate landlord"}
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
-                          >
-                            <Power
-                              className={`size-3.5 ${r.status === "active" ? "text-emerald-600" : ""}`}
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setConfirm({ type: "delete", row: r })}
-                            aria-label="Delete landlord"
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
+                        <RowActions row={r} />
                       </td>
                     </tr>
                   ))
