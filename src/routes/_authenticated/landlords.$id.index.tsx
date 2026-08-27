@@ -17,7 +17,7 @@ import {
   KeyRound,
   Loader2,
   Mail,
-  MapPin,
+  
   Pencil,
   Phone,
   Receipt,
@@ -87,18 +87,6 @@ function dateTime(value: string | null | undefined) {
   });
 }
 
-function tenureLabel(moveIn: string | null | undefined) {
-  if (!moveIn) return "—";
-  const start = new Date(moveIn).getTime();
-  if (Number.isNaN(start)) return "—";
-  const months = Math.max(0, Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24 * 30.44)));
-  if (months < 1) return "Less than a month";
-  const years = Math.floor(months / 12);
-  const rest = months % 12;
-  return [years ? `${years} yr${years > 1 ? "s" : ""}` : null, rest ? `${rest} mo` : null]
-    .filter(Boolean)
-    .join(" ");
-}
 
 function LandlordDetailPage() {
   const { id } = Route.useParams();
