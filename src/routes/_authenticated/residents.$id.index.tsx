@@ -157,6 +157,27 @@ function ResidentDetailPage() {
 
   const isActive = resident?.status === "active";
 
+  const auditEvents = resident
+    ? [
+        {
+          key: "created",
+          label: "Record created",
+          detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
+          at: resident.created_at,
+          icon: <UserCheck className="size-4" />,
+        },
+        {
+          key: "updated",
+          label: "Record last updated",
+          detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
+          at: resident.updated_at,
+          icon: <Pencil className="size-4" />,
+        },
+      ]
+        .filter((e) => e.at)
+        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    : [];
+
   const timeline = resident
     ? [
         {
