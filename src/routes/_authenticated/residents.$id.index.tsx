@@ -325,6 +325,31 @@ function ResidentDetailPage() {
             </aside>
 
             <div className="space-y-5">
+              <div className="flex flex-wrap gap-1 rounded-2xl border border-border bg-card p-2">
+                {(
+                  [
+                    ["property", "Property & Unit"],
+                    ["history", "Status History"],
+                    ["notes", "Notes & Bio"],
+                    ["audit", "Audit Logs"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTab(key)}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                      tab === key
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {tab === "property" && (
               <Section title="Property & Unit" icon={<Building2 className="size-4 text-primary" />}>
                 <dl className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
                   <Detail label="Property" value={resident.property ?? "Unassigned"} />
