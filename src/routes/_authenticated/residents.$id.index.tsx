@@ -131,6 +131,12 @@ function ResidentDetailPage() {
     queryFn: () => fetchAssignmentLogs({ data: { userId: id } }),
   });
 
+  const fetchAssignments = useServerFn(listUserAssignments);
+  const { data: assignmentData, isLoading: assignmentsLoading } = useQuery({
+    queryKey: ["user-assignments", id],
+    queryFn: () => fetchAssignments({ data: { userId: id } }),
+  });
+
 
   const resident = data?.user;
 
