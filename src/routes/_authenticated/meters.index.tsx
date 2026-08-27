@@ -172,6 +172,13 @@ function MetersPage() {
               className="h-11 w-full rounded-xl border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setShowAdd(true)}
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="size-4" /> Add Meter
+          </button>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
@@ -205,6 +212,7 @@ function MetersPage() {
             <Download className="size-4" /> Export CSV
           </button>
         </div>
+
 
         {isLoading ? (
           <div className="flex items-center gap-2 p-10 text-sm text-muted-foreground">
