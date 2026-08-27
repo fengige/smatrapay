@@ -70,7 +70,6 @@ type Row = {
   property: string | null;
   building: string | null;
   unit_number: string | null;
-  move_in_date: string | null;
   profile_image: string | null;
   status: string;
   role: string;
