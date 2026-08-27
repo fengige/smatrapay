@@ -197,7 +197,10 @@ function PropertyDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["properties", id],
     queryFn: () => fetchProperty({ data: { id } }),
+    retry: (count, err) =>
+      !/not found/i.test((err as Error)?.message ?? "") && count < 2,
   });
+  const notFound = /not found/i.test((error as Error | null)?.message ?? "");
   const peopleQuery = useQuery({
     queryKey: ["assignable-people"],
     queryFn: () => fetchPeople(),
