@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           address_line1: string | null
           address_line2: string | null
+          building_category: string | null
           city: string | null
           code: string | null
           country: string | null
@@ -30,12 +31,14 @@ export type Database = {
           property_type: string
           state: string | null
           status: Database["public"]["Enums"]["property_status"]
+          subtype: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           address_line1?: string | null
           address_line2?: string | null
+          building_category?: string | null
           city?: string | null
           code?: string | null
           country?: string | null
@@ -48,12 +51,14 @@ export type Database = {
           property_type?: string
           state?: string | null
           status?: Database["public"]["Enums"]["property_status"]
+          subtype?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           address_line1?: string | null
           address_line2?: string | null
+          building_category?: string | null
           city?: string | null
           code?: string | null
           country?: string | null
@@ -66,6 +71,7 @@ export type Database = {
           property_type?: string
           state?: string | null
           status?: Database["public"]["Enums"]["property_status"]
+          subtype?: string | null
           updated_at?: string
           updated_by?: string | null
         }

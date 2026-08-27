@@ -1,8 +1,26 @@
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 
+export const RESIDENTIAL_TYPES = [
+  "Apartments",
+  "Bungalows",
+  "Maisonettes",
+  "Townhouses",
+  "Villas",
+  "Land",
+] as const;
+
+export const COMMERCIAL_TYPES = [
+  "Office Spaces",
+  "Retail Spaces",
+  "Industrial Spaces",
+  "Land",
+] as const;
+
 export type PropertyFormValues = {
   property_type: "building" | "zone";
+  building_category: "residential" | "commercial" | "";
+  subtype: string;
   name: string;
   code: string;
   address_line1: string;
@@ -17,6 +35,8 @@ export type PropertyFormValues = {
 
 export const emptyProperty: PropertyFormValues = {
   property_type: "building",
+  building_category: "",
+  subtype: "",
   name: "",
   code: "",
   address_line1: "",
@@ -76,6 +96,15 @@ export function PropertyForm({
     const next: Record<string, string> = {};
     if (values.property_type !== "building" && values.property_type !== "zone")
       next["property_type"] = "Please select Building or Zone";
+    if (values.property_type === "building") {
+      if (values.building_category !== "residential" && values.building_category !== "commercial")
+        next["building_category"] = "Please select Residential or Commercial";
+      else if (!values.subtype)
+        next["subtype"] =
+          values.building_category === "residential"
+            ? "Please select a residential type"
+            : "Please select a commercial type";
+    }
     if (values.name.trim().length < 2)
       next["name"] =
         values.property_type === "zone"
@@ -112,7 +141,14 @@ export function PropertyForm({
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => set("property_type", option.value)}
+                onClick={() =>
+                  setValues((prev) => ({
+                    ...prev,
+                    property_type: option.value,
+                    building_category: option.value === "building" ? prev.building_category : "",
+                    subtype: option.value === "building" ? prev.subtype : "",
+                  }))
+                }
                 className={
                   selected
                     ? "rounded-lg bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition-colors"
@@ -127,7 +163,86 @@ export function PropertyForm({
         {errors["property_type"] && (
           <p className="mt-1.5 text-xs font-medium text-destructive">{errors["property_type"]}</p>
         )}
+        {values.property_type === "building" && (
+          <>
+            <div
+              role="radiogroup"
+              aria-label="Property type (required)"
+              aria-required="true"
+              aria-invalid={!!errors["building_category"]}
+              className="mt-4 grid w-full max-w-md grid-cols-2 gap-1 rounded-xl bg-muted p-1"
+            >
+              {(
+                [
+                  { value: "residential", label: "Residential" },
+                  { value: "commercial", label: "Commercial" },
+                ] as const
+              ).map((option) => {
+                const selected = values.building_category === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() =>
+                      setValues((prev) => ({
+                        ...prev,
+                        building_category: option.value,
+                        subtype: "",
+                      }))
+                    }
+                    className={
+                      selected
+                        ? "rounded-lg bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition-colors"
+                        : "rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    }
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            {errors["building_category"] && (
+              <p className="mt-1.5 text-xs font-medium text-destructive">
+                {errors["building_category"]}
+              </p>
+            )}
+          </>
+        )}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {values.property_type === "building" && values.building_category === "residential" && (
+            <Field label="Residential Type *" error={errors["subtype"]}>
+              <select
+                value={values.subtype}
+                onChange={(e) => set("subtype", e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select residential type</option>
+                {RESIDENTIAL_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+          {values.property_type === "building" && values.building_category === "commercial" && (
+            <Field label="Commercial Type *" error={errors["subtype"]}>
+              <select
+                value={values.subtype}
+                onChange={(e) => set("subtype", e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select commercial type</option>
+                {COMMERCIAL_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           {values.property_type === "zone" ? (
             <>
               <Field label="Zone name *" error={errors["name"]}>

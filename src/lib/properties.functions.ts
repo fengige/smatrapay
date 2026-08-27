@@ -24,7 +24,27 @@ const propertyInput = z.object({
     required_error: "Property type is required",
     invalid_type_error: "Property type must be Building or Zone",
   }),
-});
+  building_category: z.enum(["residential", "commercial"]).nullable().optional(),
+  subtype: text(60),
+})
+  .superRefine((val, ctx) => {
+    if (val.property_type === "building") {
+      if (!val.building_category) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["building_category"],
+          message: "Property type (Residential or Commercial) is required for buildings",
+        });
+      }
+      if (!val.subtype?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["subtype"],
+          message: "Please select a residential or commercial type",
+        });
+      }
+    }
+  });
 
 const unitInput = z.object({
   property_id: uuid,
@@ -133,7 +153,26 @@ export const createProperty = createServerFn({ method: "POST" })
 
 export const updateProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => propertyInput.partial().extend({ id: uuid }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: uuid,
+        name: z.string().trim().min(2).max(140).optional(),
+        code: text(40),
+        address_line1: text(200),
+        address_line2: text(200),
+        city: text(120),
+        state: text(120),
+        country: text(120),
+        postal_code: text(30),
+        description: text(2000),
+        status: z.enum(["active", "archived"]).optional(),
+        property_type: z.enum(["building", "zone"]).optional(),
+        building_category: z.enum(["residential", "commercial"]).nullable().optional(),
+        subtype: text(60),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabase, userId } = context;
