@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, Loader2, MapPin, Save, UserRound } from "lucide-react";
 
 import { listLandlords } from "@/lib/properties.functions";
+
+const STEPS = [
+  { id: "property", label: "Property Details", icon: Building2 },
+  { id: "landlord", label: "Landlord Details", icon: UserRound },
+  { id: "address", label: "Address", icon: MapPin },
+] as const;
 
 export const RESIDENTIAL_TYPES = [
   "Apartments",
@@ -95,6 +101,7 @@ export function PropertyForm({
 }) {
   const [values, setValues] = useState<PropertyFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [step, setStep] = useState(0);
   const fetchLandlords = useServerFn(listLandlords);
   const landlordsQuery = useQuery({
     queryKey: ["landlord-options"],
@@ -105,42 +112,125 @@ export function PropertyForm({
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const validateStep = (index: number) => {
     const next: Record<string, string> = {};
-    if (values.property_type !== "building" && values.property_type !== "zone")
-      next["property_type"] = "Please select Building or Zone";
-    if (values.property_type === "building") {
-      if (values.building_category !== "residential" && values.building_category !== "commercial")
-        next["building_category"] = "Please select Residential or Commercial";
-      else if (!values.subtype)
-        next["subtype"] =
-          values.building_category === "residential"
-            ? "Please select a residential type"
-            : "Please select a commercial type";
+    if (index === 0) {
+      if (values.property_type !== "building" && values.property_type !== "zone")
+        next["property_type"] = "Please select Building or Zone";
+      if (values.property_type === "building") {
+        if (values.building_category !== "residential" && values.building_category !== "commercial")
+          next["building_category"] = "Please select Residential or Commercial";
+        else if (!values.subtype)
+          next["subtype"] =
+            values.building_category === "residential"
+              ? "Please select a residential type"
+              : "Please select a commercial type";
+      }
+      if (values.name.trim().length < 2)
+        next["name"] =
+          values.property_type === "zone"
+            ? "Zone name must be at least 2 characters"
+            : "Property name must be at least 2 characters";
     }
-    if (values.name.trim().length < 2)
-      next["name"] =
-        values.property_type === "zone"
-          ? "Zone name must be at least 2 characters"
-          : "Property name must be at least 2 characters";
-    if (values.number_of_units.trim()) {
+    if (index === 1 && values.number_of_units.trim()) {
       if (!/^\d+$/.test(values.number_of_units.trim()))
         next["number_of_units"] = "Number of units must be a whole number";
       else if (Number(values.number_of_units) > 100000)
         next["number_of_units"] = "Number of units is too large";
     }
-    if (values.postal_code && values.postal_code.trim().length > 30)
+    if (index === 2 && values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";
+    return next;
+  };
+
+  const goToStep = (target: number) => {
+    if (target > step) {
+      for (let i = step; i < target; i += 1) {
+        const stepErrors = validateStep(i);
+        if (Object.keys(stepErrors).length) {
+          setErrors(stepErrors);
+          setStep(i);
+          return;
+        }
+      }
+    }
+    setErrors({});
+    setStep(target);
+  };
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const next = { ...validateStep(0), ...validateStep(1), ...validateStep(2) };
     setErrors(next);
-    if (Object.keys(next).length) return;
+    if (Object.keys(next).length) {
+      const failing = [0, 1, 2].find((i) => Object.keys(validateStep(i)).length);
+      if (failing !== undefined) setStep(failing);
+      return;
+    }
     onSubmit({ ...values, name: values.name.trim() });
   };
 
+  const isLast = step === STEPS.length - 1;
+
   return (
     <form onSubmit={submit} className="space-y-5">
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <ol className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-center">
+        {STEPS.map((s, index) => {
+          const Icon = s.icon;
+          const active = index === step;
+          const done = index < step;
+          return (
+            <li key={s.id} className="flex flex-1 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => goToStep(index)}
+                aria-current={active ? "step" : undefined}
+                className="flex flex-1 items-center gap-3 text-left"
+              >
+                <span
+                  className={
+                    active
+                      ? "flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"
+                      : done
+                        ? "flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary"
+                        : "flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"
+                  }
+                >
+                  {done ? <Check className="size-5" /> : <Icon className="size-5" />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Step {index + 1}
+                  </span>
+                  <span
+                    className={
+                      active
+                        ? "block truncate text-sm font-bold text-foreground"
+                        : "block truncate text-sm font-medium text-muted-foreground"
+                    }
+                  >
+                    {s.label}
+                  </span>
+                </span>
+              </button>
+              {index < STEPS.length - 1 && (
+                <span
+                  aria-hidden
+                  className={
+                    done
+                      ? "hidden h-0.5 flex-1 rounded bg-primary sm:block"
+                      : "hidden h-0.5 flex-1 rounded bg-border sm:block"
+                  }
+                />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+
+      <section className={step === 0 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
         <h2 className="text-sm font-bold text-foreground">Property details</h2>
+
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -331,7 +421,7 @@ export function PropertyForm({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section className={step === 1 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
         <h2 className="text-sm font-bold text-foreground">Landlord details</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Number of Units" error={errors["number_of_units"]}>
@@ -371,7 +461,7 @@ export function PropertyForm({
         )}
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section className={step === 2 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
         <h2 className="text-sm font-bold text-foreground">Address</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Address line 1">
@@ -419,15 +509,36 @@ export function PropertyForm({
         </div>
       </section>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-        >
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {submitLabel}
-        </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={() => goToStep(step - 1)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
+          >
+            <ArrowLeft className="size-4" />
+            Back
+          </button>
+        )}
+        {!isLast ? (
+          <button
+            type="button"
+            onClick={() => goToStep(step + 1)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Next
+            <ArrowRight className="size-4" />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {submitLabel}
+          </button>
+        )}
         <button
           type="button"
           onClick={onCancel}
