@@ -64,7 +64,11 @@ const unitInput = z.object({
   floor: text(30),
   status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
   notes: text(1000),
+  electricity_meter_no: text(60),
+  water_meter_no: text(60),
+  gas_meter_no: text(60),
 });
+
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
@@ -323,26 +327,84 @@ export const upsertUnit = createServerFn({ method: "POST" })
     return { id: row.id };
   });
 
+const bulkInput = z.object({
+  property_id: uuid,
+  count: z.number().int().min(1).max(500),
+  start_number: z.number().int().min(0).max(1000000),
+  prefix: text(60),
+  building: text(120),
+  unit_type: text(60),
+  bedrooms: z.number().int().min(0).max(50).nullable().optional(),
+  floor: text(30),
+  status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
+  electricity_prefix: text(40),
+  water_prefix: text(40),
+  gas_prefix: text(40),
+  mode: z.enum(["fail", "skip", "append"]).optional(),
+});
+
+const unitLabel = (prefix: string | null | undefined, n: number) =>
+  prefix ? `${prefix} ${n}` : String(n);
+
+function planBulk(
+  input: { count: number; start_number: number; prefix?: string | null | undefined; mode?: string | undefined },
+  existingNumbers: Set<string>,
+) {
+  const mode = input.mode ?? "fail";
+  const planned: { number: number; unit_number: string }[] = [];
+  const conflicts: string[] = [];
+
+  if (mode === "append") {
+    let n = input.start_number;
+    while (planned.length < input.count) {
+      const label = unitLabel(input.prefix, n);
+      if (!existingNumbers.has(label)) planned.push({ number: n, unit_number: label });
+      n += 1;
+      if (n > input.start_number + input.count + 5000) break;
+    }
+    return { mode, planned, conflicts };
+  }
+
+  for (let i = 0; i < input.count; i++) {
+    const n = input.start_number + i;
+    const label = unitLabel(input.prefix, n);
+    if (existingNumbers.has(label)) {
+      conflicts.push(label);
+      continue;
+    }
+    planned.push({ number: n, unit_number: label });
+  }
+  return { mode, planned, conflicts };
+}
+
+export const previewBulkUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { data: existing, error } = await context.supabase
+      .from("units")
+      .select("unit_number")
+      .eq("property_id", data.property_id);
+    if (error) throw new Error(error.message);
+    const labels = (existing ?? []).map((u: any) => u.unit_number as string);
+    const existingNumbers = new Set(labels);
+    const plan = planBulk(data, existingNumbers);
+    const appendPlan = planBulk({ ...data, mode: "append" }, existingNumbers);
+    return {
+      existingTotal: labels.length,
+      conflicts: plan.conflicts,
+      willCreate: plan.planned.length,
+      firstLabel: plan.planned[0]?.unit_number ?? null,
+      lastLabel: plan.planned[plan.planned.length - 1]?.unit_number ?? null,
+      appendFirstLabel: appendPlan.planned[0]?.unit_number ?? null,
+      appendLastLabel: appendPlan.planned[appendPlan.planned.length - 1]?.unit_number ?? null,
+    };
+  });
+
 export const createBulkUnits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z
-      .object({
-        property_id: uuid,
-        count: z.number().int().min(1).max(500),
-        start_number: z.number().int().min(0).max(1000000),
-        prefix: text(60),
-        building: text(120),
-        unit_type: text(60),
-        bedrooms: z.number().int().min(0).max(50).nullable().optional(),
-        floor: text(30),
-        status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
-        electricity_prefix: text(40),
-        water_prefix: text(40),
-        gas_prefix: text(40),
-      })
-      .parse(data),
-  )
+  .inputValidator((data: unknown) => bulkInput.parse(data))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabase, userId } = context;
@@ -354,34 +416,96 @@ export const createBulkUnits = createServerFn({ method: "POST" })
     if (existingError) throw new Error(existingError.message);
     const existingNumbers = new Set((existing ?? []).map((u: any) => u.unit_number));
 
-    const status = data.status ?? "vacant";
-    const rows = [];
-    for (let i = 0; i < data.count; i++) {
-      const number = data.start_number + i;
-      const unitNumber = data.prefix ? `${data.prefix} ${number}` : String(number);
-      if (existingNumbers.has(unitNumber)) {
-        throw new Error(`Unit ${unitNumber} already exists in this property`);
-      }
-      rows.push({
-        property_id: data.property_id,
-        unit_number: unitNumber,
-        building: data.building ?? null,
-        unit_type: data.unit_type ?? null,
-        bedrooms: data.bedrooms ?? null,
-        floor: data.floor ?? null,
-        status,
-        electricity_meter_no: data.electricity_prefix ? `${data.electricity_prefix}${number}` : null,
-        water_meter_no: data.water_prefix ? `${data.water_prefix}${number}` : null,
-        gas_meter_no: data.gas_prefix ? `${data.gas_prefix}${number}` : null,
-        created_by: userId,
-        updated_by: userId,
-      });
+    const plan = planBulk(data, existingNumbers);
+    if (plan.mode === "fail" && plan.conflicts.length) {
+      throw new Error(
+        `${plan.conflicts.length} unit number(s) already exist in this property (e.g. ${plan.conflicts
+          .slice(0, 3)
+          .join(", ")}). Choose to skip existing numbers or append after them.`,
+      );
     }
+    if (!plan.planned.length) {
+      throw new Error("No new units to create — every generated number already exists.");
+    }
+
+    const status = data.status ?? "vacant";
+    const rows = plan.planned.map(({ number, unit_number }) => ({
+      property_id: data.property_id,
+      unit_number,
+      building: data.building ?? null,
+      unit_type: data.unit_type ?? null,
+      bedrooms: data.bedrooms ?? null,
+      floor: data.floor ?? null,
+      status,
+      electricity_meter_no: data.electricity_prefix ? `${data.electricity_prefix}${number}` : null,
+      water_meter_no: data.water_prefix ? `${data.water_prefix}${number}` : null,
+      gas_meter_no: data.gas_prefix ? `${data.gas_prefix}${number}` : null,
+      created_by: userId,
+      updated_by: userId,
+    }));
 
     const { error } = await supabase.from("units").insert(rows as never);
     if (error) throw new Error(error.message);
-    return { created: rows.length };
+    return {
+      created: rows.length,
+      skipped: plan.conflicts.length,
+      skippedNumbers: plan.conflicts.slice(0, 10),
+      firstLabel: rows[0]?.unit_number ?? null,
+      lastLabel: rows[rows.length - 1]?.unit_number ?? null,
+    };
   });
+
+export const updateUnitDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: uuid,
+        unit_number: z.string().trim().min(1).max(40),
+        building: text(120),
+        unit_type: text(60),
+        bedrooms: z.number().int().min(0).max(50).nullable().optional(),
+        floor: text(30),
+        status: z.enum(["vacant", "occupied", "maintenance", "archived"]),
+        electricity_meter_no: text(60),
+        water_meter_no: text(60),
+        gas_meter_no: text(60),
+        notes: text(1000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+    const { id, ...patch } = data;
+
+    const { data: current, error: curErr } = await supabase
+      .from("units")
+      .select("property_id, unit_number")
+      .eq("id", id)
+      .single();
+    if (curErr) throw new Error(curErr.message);
+    if (!current) throw new Error("Unit not found");
+
+    if (current.unit_number !== patch.unit_number) {
+      const { data: dupe } = await supabase
+        .from("units")
+        .select("id")
+        .eq("property_id", current.property_id)
+        .eq("unit_number", patch.unit_number)
+        .neq("id", id)
+        .maybeSingle();
+      if (dupe) throw new Error(`Unit ${patch.unit_number} already exists in this property`);
+    }
+
+    const { error } = await supabase
+      .from("units")
+      .update({ ...patch, updated_by: userId } as never)
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 
 

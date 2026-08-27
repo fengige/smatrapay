@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import {
   assignUnit,
   createBulkUnits,
+  previewBulkUnits,
   deleteAssignment,
   deleteProperty,
   deleteUnit,
@@ -294,6 +295,7 @@ function PropertyDetailPage() {
   const saveUnit = useServerFn(upsertUnit);
   const removeUnit = useServerFn(deleteUnit);
   const runBulkCreate = useServerFn(createBulkUnits);
+  const runBulkPreview = useServerFn(previewBulkUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -304,6 +306,17 @@ function PropertyDetailPage() {
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
+  const [bulkStep, setBulkStep] = useState<"form" | "confirm">("form");
+  const [bulkMode, setBulkMode] = useState<"fail" | "skip" | "append">("fail");
+  const [bulkPreview, setBulkPreview] = useState<null | {
+    existingTotal: number;
+    conflicts: string[];
+    willCreate: number;
+    firstLabel: string | null;
+    lastLabel: string | null;
+    appendFirstLabel: string | null;
+    appendLastLabel: string | null;
+  }>(null);
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -378,24 +391,48 @@ function PropertyDetailPage() {
     onError: (err: Error) => toast.error(err.message || "Could not remove unit"),
   });
 
+  const bulkPayload = (mode: "fail" | "skip" | "append") => ({
+    property_id: id,
+    count: Number(bulkForm.count),
+    start_number: Number(bulkForm.start_number),
+    prefix: bulkForm.prefix.trim() || null,
+    building: bulkForm.building.trim() || null,
+    unit_type: bulkForm.unit_type.trim() || null,
+    bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
+    floor: bulkForm.floor.trim() || null,
+    status: bulkForm.status,
+    mode,
+  });
+
+  const closeBulk = () => {
+    setBulkForm({ ...emptyBulkForm });
+    setBulkStep("form");
+    setBulkMode("fail");
+    setBulkPreview(null);
+  };
+
+  const bulkPreviewMutation = useMutation({
+    mutationFn: () => runBulkPreview({ data: bulkPayload("fail") } as never),
+    onSuccess: (res: any) => {
+      setBulkPreview(res);
+      setBulkMode(res.conflicts.length ? "skip" : "fail");
+      setBulkStep("confirm");
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not check existing units"),
+  });
+
   const bulkCreate = useMutation({
-    mutationFn: () =>
-      runBulkCreate({
-        data: {
-          property_id: id,
-          count: Number(bulkForm.count),
-          start_number: Number(bulkForm.start_number),
-          prefix: bulkForm.prefix.trim() || null,
-          building: bulkForm.building.trim() || null,
-          unit_type: bulkForm.unit_type.trim() || null,
-          bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
-          floor: bulkForm.floor.trim() || null,
-          status: bulkForm.status,
-        },
-      } as never),
-    onSuccess: async (res) => {
-      toast.success(`${res.created} units created`);
-      setBulkForm({ ...emptyBulkForm });
+    mutationFn: () => runBulkCreate({ data: bulkPayload(bulkMode) } as never),
+    onSuccess: async (res: any) => {
+      toast.success(`${res.created} unit${res.created === 1 ? "" : "s"} created`, {
+        description: [
+          res.firstLabel ? `${res.firstLabel} … ${res.lastLabel}` : null,
+          res.skipped ? `${res.skipped} existing number(s) skipped` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
+      closeBulk();
       await invalidate();
     },
     onError: (err: Error) => toast.error(err.message || "Could not bulk-create units"),
@@ -880,15 +917,18 @@ function PropertyDetailPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      setBulkStep("form");
+                      setBulkPreview(null);
+                      setBulkMode("fail");
                       setBulkForm({
                         ...emptyBulkForm,
                         open: true,
                         prefix: "Unit",
                         count: String(Math.max(0, (configuredUnitCount ?? 0) - actualUnitCount)),
                         start_number: String(actualUnitCount + 1),
-                      })
-                    }
+                      });
+                    }}
                     className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                   >
                     <Plus className="size-4" /> Bulk Add Units
@@ -1370,9 +1410,12 @@ function PropertyDetailPage() {
       )}
 
       {bulkForm.open && (
-        <Modal title="Bulk Add Units" onClose={() => !bulkCreate.isPending && setBulkForm({ ...emptyBulkForm })}>
+        <Modal
+          title={bulkStep === "confirm" ? "Confirm bulk units" : "Bulk Add Units"}
+          onClose={() => !bulkCreate.isPending && !bulkPreviewMutation.isPending && closeBulk()}
+        >
           <form
-            className="space-y-4"
+            className={`space-y-4 ${bulkStep === "confirm" ? "hidden" : ""}`}
             onSubmit={(e) => {
               e.preventDefault();
               const count = Number(bulkForm.count);
@@ -1385,7 +1428,7 @@ function PropertyDetailPage() {
                 toast.error("Start at must be a non-negative number");
                 return;
               }
-              bulkCreate.mutate();
+              bulkPreviewMutation.mutate();
             }}
           >
             <p className="text-sm text-muted-foreground">
@@ -1484,13 +1527,116 @@ function PropertyDetailPage() {
             </div>
             <button
               type="submit"
-              disabled={bulkCreate.isPending}
+              disabled={bulkPreviewMutation.isPending}
+              aria-busy={bulkPreviewMutation.isPending}
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
-              {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
-              Create {Number(bulkForm.count || 0) > 0 ? bulkForm.count : "0"} units
+              {bulkPreviewMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+              Review {Number(bulkForm.count || 0) > 0 ? bulkForm.count : "0"} units
             </button>
           </form>
+
+          {bulkStep === "confirm" && bulkPreview && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-background p-4 text-sm">
+                <p className="font-semibold text-foreground">
+                  {bulkMode === "append"
+                    ? `${bulkForm.count} unit(s) will be created`
+                    : `${bulkPreview.willCreate} unit(s) will be created`}
+                  {" in "}
+                  {property?.["name"] ?? "this property"}
+                </p>
+                <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Range</dt>
+                    <dd className="text-foreground">
+                      {bulkMode === "append"
+                        ? `${bulkPreview.appendFirstLabel ?? "—"} … ${bulkPreview.appendLastLabel ?? "—"}`
+                        : `${bulkPreview.firstLabel ?? "—"} … ${bulkPreview.lastLabel ?? "—"}`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Existing units</dt>
+                    <dd className="text-foreground">{bulkPreview.existingTotal}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Status</dt>
+                    <dd className="capitalize text-foreground">{bulkForm.status}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Building / type</dt>
+                    <dd className="text-foreground">
+                      {[bulkForm.building, bulkForm.unit_type].filter(Boolean).join(" · ") || "—"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              {bulkPreview.conflicts.length > 0 && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                  <p className="font-semibold text-amber-700">
+                    {bulkPreview.conflicts.length} unit number(s) already exist
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700/90">
+                    e.g. {bulkPreview.conflicts.slice(0, 5).join(", ")}
+                    {bulkPreview.conflicts.length > 5 ? "…" : ""}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    <label className="flex items-start gap-2 text-xs text-foreground">
+                      <input
+                        type="radio"
+                        className="mt-0.5"
+                        checked={bulkMode === "skip"}
+                        onChange={() => setBulkMode("skip")}
+                      />
+                      <span>
+                        <span className="font-semibold">Skip existing numbers</span> — create only{" "}
+                        {bulkPreview.willCreate} new unit(s).
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-2 text-xs text-foreground">
+                      <input
+                        type="radio"
+                        className="mt-0.5"
+                        checked={bulkMode === "append"}
+                        onChange={() => setBulkMode("append")}
+                      />
+                      <span>
+                        <span className="font-semibold">Append after existing</span> — create the full{" "}
+                        {bulkForm.count} unit(s) using the next free numbers (
+                        {bulkPreview.appendFirstLabel ?? "—"} … {bulkPreview.appendLastLabel ?? "—"}).
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={bulkCreate.isPending}
+                  onClick={() => setBulkStep("form")}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    bulkCreate.isPending ||
+                    (bulkMode !== "append" && bulkPreview.willCreate === 0)
+                  }
+                  aria-busy={bulkCreate.isPending}
+                  onClick={() => bulkCreate.mutate()}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Confirm & create{" "}
+                  {bulkMode === "append" ? Number(bulkForm.count || 0) : bulkPreview.willCreate} units
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 
