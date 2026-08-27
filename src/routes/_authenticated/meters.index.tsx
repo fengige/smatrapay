@@ -74,6 +74,8 @@ function MetersPage() {
 
   const meters = data?.meters ?? [];
   const properties = data?.properties ?? [];
+  const units = data?.units ?? [];
+
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
