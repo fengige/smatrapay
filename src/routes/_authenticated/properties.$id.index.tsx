@@ -614,15 +614,22 @@ function PropertyDetailPage() {
                 />
               </div>
               {tab === "units" && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setUnitForm({ ...emptyUnitForm, open: true })
-                  }
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  <Plus className="size-4" /> Add Unit
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setImportOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold hover:bg-accent/10"
+                  >
+                    <Upload className="size-4" /> Import CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUnitForm({ ...emptyUnitForm, open: true })}
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    <Plus className="size-4" /> Add Unit
+                  </button>
+                </>
               )}
             </div>
 
