@@ -501,28 +501,111 @@ function ResidentDetailPage() {
               </div>
 
               {tab === "property" && (
-              <Section title="Property & Unit" icon={<Building2 className="size-4 text-primary" />}>
-                <dl className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
-                  <Detail label="Property" value={resident.property ?? "Unassigned"} />
-                  <Detail label="Building" value={resident.building ?? "—"} />
-                  <Detail label="Unit / house no." value={resident.unit_number ?? "—"} />
-                  <Detail label="Move-in date" value={date(resident.move_in_date)} />
-                  <Detail label="Tenure" value={tenureLabel(resident.move_in_date)} />
-                  <Detail label="Account status" value={resident.status} />
-                  <Detail
-                    label="Email verified"
-                    value={resident.email_verified_at ? date(resident.email_verified_at) : "Not verified"}
-                  />
-                  <Detail label="Resident ID" value={resident.id.slice(0, 8)} mono />
-                </dl>
-                {resident.property || resident.unit_number ? (
-                  <div className="flex items-center gap-2 border-t border-border px-6 py-4 text-sm text-muted-foreground">
-                    <MapPin className="size-4 text-primary" />
-                    {[resident.property, resident.building, resident.unit_number]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </div>
-                ) : null}
+              <Section title="My Property" icon={<Building2 className="size-4 text-primary" />}>
+                <div className="p-6">
+                  {assignmentsLoading ? (
+                    <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin" /> Loading occupied properties…
+                    </div>
+                  ) : (assignmentData?.assignments ?? []).length === 0 ? (
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-accent/5 p-8 text-center">
+                      <Building2 className="size-8 text-muted-foreground" />
+                      <p className="text-sm font-semibold text-foreground">No properties assigned</p>
+                      <p className="max-w-xs text-xs text-muted-foreground">
+                        This resident is not currently assigned to any unit or property.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50 text-left">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold text-foreground">Property</th>
+                            <th className="px-4 py-3 font-semibold text-foreground">Unit</th>
+                            <th className="px-4 py-3 font-semibold text-foreground">Role</th>
+                            <th className="px-4 py-3 font-semibold text-foreground">Start date</th>
+                            <th className="px-4 py-3 font-semibold text-foreground">End date</th>
+                            <th className="px-4 py-3 font-semibold text-foreground">Status</th>
+                            <th className="px-4 py-3 font-semibold text-foreground">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {(assignmentData?.assignments ?? []).map((assignment) => {
+                            const unit = (assignmentData?.units ?? []).find(
+                              (u) => u.id === assignment.unit_id,
+                            );
+                            const property = unit
+                              ? (assignmentData?.properties ?? []).find(
+                                  (p) => p.id === unit.property_id,
+                                )
+                              : undefined;
+                            const isActive = !assignment.end_date;
+                            return (
+                              <tr key={assignment.id} className="hover:bg-accent/5">
+                                <td className="px-4 py-3 align-top">
+                                  <div className="font-semibold text-foreground">
+                                    {property?.name ?? "Unknown property"}
+                                  </div>
+                                  {property?.city ? (
+                                    <div className="text-xs text-muted-foreground">{property.city}</div>
+                                  ) : null}
+                                </td>
+                                <td className="px-4 py-3 align-top">
+                                  <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                                    {unit?.unit_number ?? assignment.unit_id.slice(0, 8)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 align-top capitalize text-foreground">
+                                  {assignment.role}
+                                </td>
+                                <td className="px-4 py-3 align-top text-muted-foreground">
+                                  {date(assignment.start_date)}
+                                </td>
+                                <td className="px-4 py-3 align-top text-muted-foreground">
+                                  {assignment.end_date ? date(assignment.end_date) : "—"}
+                                </td>
+                                <td className="px-4 py-3 align-top">
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                      isActive
+                                        ? "bg-emerald-500/10 text-emerald-600"
+                                        : "bg-muted text-muted-foreground"
+                                    }`}
+                                  >
+                                    <span className="size-1.5 rounded-full bg-current" />
+                                    {isActive ? "Active" : "Ended"}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 align-top">
+                                  <div className="flex flex-wrap gap-2">
+                                    {property ? (
+                                      <Link
+                                        to="/properties/$id"
+                                        params={{ id: property.id }}
+                                        className="text-xs font-medium text-primary hover:underline"
+                                      >
+                                        View property
+                                      </Link>
+                                    ) : null}
+                                    {unit ? (
+                                      <Link
+                                        to="/properties/$id/units/$unitId"
+                                        params={{ id: property?.id ?? "", unitId: unit.id }}
+                                        className="text-xs font-medium text-primary hover:underline"
+                                      >
+                                        View unit
+                                      </Link>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </Section>
               )}
 
