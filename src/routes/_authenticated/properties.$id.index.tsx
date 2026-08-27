@@ -896,13 +896,87 @@ function PropertyDetailPage() {
                 </div>
               )}
 
-              {(tab === "residents" || tab === "landlords") && (
+              {tab === "landlords" && (
+                <div className="p-4">
+                  {!landlord ? (
+                    <div className="rounded-xl border border-border bg-background p-8 text-center">
+                      <Building2 className="mx-auto size-8 text-muted-foreground" />
+                      <p className="mt-3 text-sm font-semibold text-foreground">No landlord assigned</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        This property does not have a landlord linked in the Landlord Details section.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          {landlord.profile_image ? (
+                            <img
+                              src={landlord.profile_image}
+                              alt={landlord.name ?? ""}
+                              className="size-16 rounded-full object-cover"
+                            />
+                          ) : (
+                            <Building2 className="size-7" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-bold text-foreground">
+                              {landlord.name || "Unnamed landlord"}
+                            </h3>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                                landlord.status === "active"
+                                  ? "bg-emerald-500/12 text-emerald-600"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {landlord.status}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-sm text-muted-foreground">Property owner</p>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                              <Mail className="size-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-xs text-muted-foreground">Email</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {landlord.email || "—"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                              <Phone className="size-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-xs text-muted-foreground">Phone</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {landlord.phone || "—"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <Link
+                              to="/landlords/$id"
+                              params={{ id: landlord.id }}
+                              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                            >
+                              View landlord profile
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === "residents" && (
                 <table className="w-full min-w-[900px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">
-                        {tab === "residents" ? "Resident" : "Landlord"}
-                      </th>
+                      <th className="px-4 py-3 font-semibold">Resident</th>
                       <th className="px-4 py-3 font-semibold">Phone</th>
                       <th className="px-4 py-3 font-semibold">Unit</th>
                       <th className="px-4 py-3 font-semibold">Start</th>
@@ -912,14 +986,14 @@ function PropertyDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {!roleRows(tab === "residents" ? "resident" : "landlord").length && (
+                    {!roleRows("resident").length && (
                       <tr>
                         <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
-                          No {tab} assigned to this property yet.
+                          No residents assigned to this property yet.
                         </td>
                       </tr>
                     )}
-                    {roleRows(tab === "residents" ? "resident" : "landlord").map((a) => {
+                    {roleRows("resident").map((a) => {
                       const person = personById.get(a.user_id);
                       return (
                         <tr key={a.id} className="border-t border-border">
