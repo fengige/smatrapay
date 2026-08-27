@@ -71,10 +71,17 @@ function EditPropertyPage() {
 
   const mutation = useMutation({
     mutationFn: (values: PropertyFormValues) => save({ data: { id, ...clean(values) } } as never),
-    onSuccess: async () => {
-      toast.success("Property updated");
+    onSuccess: async (_data: unknown, variables: PropertyFormValues) => {
+      toast.success("Property updated", {
+        description: `${variables.name} has been saved successfully.`,
+        duration: 5000,
+      });
       await queryClient.invalidateQueries({ queryKey: ["properties"] });
-      await navigate({ to: "/properties/$id", params: { id } });
+      await navigate({
+        to: "/properties/$id",
+        params: { id },
+        search: { success: "updated" },
+      });
     },
     onError: (err: Error) => toast.error(err.message || "Could not update property"),
   });

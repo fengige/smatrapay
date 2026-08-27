@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { z } from "zod";
 import {
   ArrowLeft,
   Building2,
+  CheckCircle2,
   ClipboardList,
   Download,
   FileText,
@@ -54,6 +56,9 @@ export const Route = createFileRoute("/_authenticated/properties/$id/")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+  }),
+  validateSearch: z.object({
+    success: z.enum(["created", "updated"]).optional(),
   }),
   component: PropertyDetailPage,
   errorComponent: ({ error }) => (
@@ -154,6 +159,8 @@ const inputClass =
 
 function PropertyDetailPage() {
   const { id } = Route.useParams();
+  const { success } = Route.useSearch();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const fetchProperty = useServerFn(getProperty);
@@ -170,6 +177,19 @@ function PropertyDetailPage() {
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(
+    success === "created" ? "Property created successfully." : success === "updated" ? "Property updated successfully." : null,
+  );
+
+  const dismissSuccess = () => {
+    setSuccessBanner(null);
+    void router.navigate({
+      to: "/properties/$id",
+      params: { id },
+      search: {},
+      replace: true,
+    });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["properties", id],
@@ -546,6 +566,20 @@ function PropertyDetailPage() {
         <p className="p-6 text-sm text-destructive">{(error as Error).message}</p>
       ) : (
         <div className="space-y-5">
+          {successBanner && (
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-700">
+              <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+              <div className="flex-1 text-sm font-medium">{successBanner}</div>
+              <button
+                type="button"
+                onClick={dismissSuccess}
+                className="rounded-md p-1 hover:bg-emerald-500/20"
+                aria-label="Dismiss"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          )}
           <div className="rounded-2xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-center gap-3">
               <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
