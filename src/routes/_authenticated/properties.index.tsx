@@ -318,6 +318,16 @@ function PropertiesPage() {
                 />
               </div>
               <select
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+                aria-label="Filter by property type"
+                className={inputClass}
+              >
+                <option value="all">All types</option>
+                <option value="building">Building</option>
+                <option value="zone">Zone</option>
+              </select>
+              <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 aria-label="Filter by status"
