@@ -102,7 +102,8 @@ function ResidentDetailPage() {
   const removeResident = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
 
-  const [confirm, setConfirm] = useState<null | "status" | "delete">(null);
+  const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
+  const [resetSentAt, setResetSentAt] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
@@ -137,8 +138,12 @@ function ResidentDetailPage() {
       resetPassword({
         data: { id, redirectTo: `${window.location.origin}/reset-password` },
       }),
-    onSuccess: (res) => toast.success(`Password reset email sent to ${res.email}`),
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: (res) => {
+      toast.success(`Password reset email sent to ${res.email}`);
+      setResetSentAt(new Date().toISOString());
+      setConfirm(null);
+    },
+    onError: (e: Error) => toast.error(`Could not send reset email: ${e.message}`),
   });
 
   const initials = (resident?.name || resident?.email || "R")
