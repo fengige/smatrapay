@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/landlords/")({
       {
         name: "description",
         content:
-          "Manage SmatraPay landlord accounts: names, emails, phones, properties, units, statuses and join dates.",
+          "Manage SmatraPay landlord accounts: names, emails, phones, statuses and join dates.",
       },
       { property: "og:title", content: "Landlord Management · SmatraPay" },
       {
@@ -67,9 +67,6 @@ type Row = {
   email: string | null;
   username: string | null;
   phone: string | null;
-  property: string | null;
-  building: string | null;
-  unit_number: string | null;
   profile_image: string | null;
   status: string;
   role: string;
@@ -196,14 +193,11 @@ function LandlordsPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Full Name", "Email", "Phone", "Property", "Building", "Unit", "Status", "Joined"];
+    const header = ["Full Name", "Email", "Phone", "Status", "Joined"];
     const rows = filtered.map((r) => [
       r.name ?? "",
       r.email ?? "",
       r.phone ?? "",
-      r.property ?? "",
-      r.building ?? "",
-      r.unit_number ?? "",
       r.status,
       date(r.created_at),
     ]);
@@ -220,7 +214,7 @@ function LandlordsPage() {
   };
 
   const SortHeader = ({ label, sortBy }: { label: string; sortBy: SortKey }) => (
-    <th className="px-4 py-3 font-semibold">
+    <th className="px-3 py-2 font-semibold">
       <button
         type="button"
         onClick={() => toggleSort(sortBy)}
@@ -308,42 +302,42 @@ function LandlordsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[540px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <SortHeader label="Landlord" sortBy="name" />
                   <SortHeader label="Phone" sortBy="phone" />
                   <SortHeader label="Status" sortBy="status" />
                   <SortHeader label="Created" sortBy="created_at" />
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  <th className="px-3 py-2 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading landlords…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={5} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
                       No landlords found. Try adjusting your search or add a new landlord.
                     </td>
                   </tr>
                 ) : (
                   paged.map((r) => (
                     <tr key={r.id} className="border-t border-border/70">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      <td className="px-3 py-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary">
                             {r.profile_image ? (
                               <img
                                 src={r.profile_image}
@@ -354,42 +348,42 @@ function LandlordsPage() {
                               initials(r)
                             )}
                           </span>
-                          <div>
-                            <div className="font-medium text-foreground">{r.name ?? "—"}</div>
-                            <div className="text-xs text-muted-foreground">{r.email ?? "—"}</div>
+                          <div className="min-w-0">
+                            <div className="truncate font-medium text-foreground">{r.name ?? "—"}</div>
+                            <div className="truncate text-xs text-muted-foreground">{r.email ?? "—"}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.phone ?? "—"}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{r.phone ?? "—"}</td>
+                      <td className="px-3 py-2.5">
                         <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                             statusTone[r.status] ?? "bg-muted text-muted-foreground"
                           }`}
                         >
                           {r.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{date(r.created_at)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{date(r.created_at)}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
                           <Link
                             to="/landlords/$id"
                             params={{ id: r.id }}
                             search={{ page: 1, limit: 10 }}
                             aria-label="View landlord"
-                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
+                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
                           >
-                            <Eye className="size-4" />
+                            <Eye className="size-3.5" />
                           </Link>
                           <Link
                             to="/landlords/$id/edit"
                             params={{ id: r.id }}
                             search={{ page: 1, limit: 10 }}
                             aria-label="Edit landlord"
-                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
+                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
                           >
-                            <Pencil className="size-4" />
+                            <Pencil className="size-3.5" />
                           </Link>
                           <button
                             type="button"
@@ -402,10 +396,10 @@ function LandlordsPage() {
                               })
                             }
                             aria-label={r.status === "active" ? "Deactivate landlord" : "Activate landlord"}
-                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
                           >
                             <Power
-                              className={`size-4 ${r.status === "active" ? "text-emerald-600" : ""}`}
+                              className={`size-3.5 ${r.status === "active" ? "text-emerald-600" : ""}`}
                             />
                           </button>
                           <button
@@ -413,9 +407,9 @@ function LandlordsPage() {
                             disabled={busy}
                             onClick={() => setConfirm({ type: "delete", row: r })}
                             aria-label="Delete landlord"
-                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         </div>
                       </td>
