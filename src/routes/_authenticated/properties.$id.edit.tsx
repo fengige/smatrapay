@@ -39,6 +39,8 @@ function clean(values: PropertyFormValues) {
     property_type: values.property_type,
     building_category: values.property_type === "building" ? values.building_category : null,
     subtype: values.property_type === "building" ? values.subtype || null : null,
+    number_of_units: values.number_of_units.trim() ? Number(values.number_of_units) : null,
+    landlord_id: values.landlord_id || null,
   };
   for (const key of [
     "code",
@@ -108,6 +110,11 @@ function EditPropertyPage() {
             postal_code: property["postal_code"] ?? "",
             description: property["description"] ?? "",
             status: (property["status"] as "active" | "archived") ?? "active",
+            number_of_units:
+              property["number_of_units"] === null || property["number_of_units"] === undefined
+                ? ""
+                : String(property["number_of_units"]),
+            landlord_id: property["landlord_id"] ?? "",
           }}
           submitLabel="Save changes"
           pending={mutation.isPending}

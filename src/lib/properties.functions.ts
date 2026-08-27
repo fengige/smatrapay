@@ -26,6 +26,8 @@ const propertyInput = z.object({
   }),
   building_category: z.enum(["residential", "commercial"]).nullable().optional(),
   subtype: text(60),
+  number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
+  landlord_id: uuid.nullable().optional(),
 })
   .superRefine((val, ctx) => {
     if (val.property_type === "building") {
@@ -170,6 +172,8 @@ export const updateProperty = createServerFn({ method: "POST" })
         property_type: z.enum(["building", "zone"]).optional(),
         building_category: z.enum(["residential", "commercial"]).nullable().optional(),
         subtype: text(60),
+        number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
+        landlord_id: uuid.nullable().optional(),
       })
       .superRefine((val, ctx) => {
         if (val.property_type === "building") {
@@ -594,4 +598,29 @@ export const listAssignableUsers = createServerFn({ method: "GET" })
     return {
       people: (users ?? []).map((u) => ({ ...u, role: roleById.get(u.id) ?? "resident" })),
     };
+  });
+
+export const listLandlords = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: roles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "landlord");
+    if (rolesError) throw new Error(rolesError.message);
+
+    const ids = [...new Set((roles ?? []).map((r) => r.user_id))];
+    if (!ids.length) return { landlords: [] as { id: string; name: string | null; email: string | null }[] };
+
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, name, email")
+      .in("id", ids)
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    return { landlords: users ?? [] };
   });
