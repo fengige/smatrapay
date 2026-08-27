@@ -35,7 +35,7 @@ export type PropertyFormValues = {
 
 export const emptyProperty: PropertyFormValues = {
   property_type: "building",
-  building_category: "",
+  building_category: "residential",
   subtype: "",
   name: "",
   code: "",
@@ -145,7 +145,8 @@ export function PropertyForm({
                   setValues((prev) => ({
                     ...prev,
                     property_type: option.value,
-                    building_category: option.value === "building" ? prev.building_category : "",
+                    building_category:
+                      option.value === "building" ? prev.building_category || "residential" : "",
                     subtype: option.value === "building" ? prev.subtype : "",
                   }))
                 }
