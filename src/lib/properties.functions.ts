@@ -153,7 +153,26 @@ export const createProperty = createServerFn({ method: "POST" })
 
 export const updateProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => propertyInput.partial().extend({ id: uuid }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: uuid,
+        name: z.string().trim().min(2).max(140).optional(),
+        code: text(40),
+        address_line1: text(200),
+        address_line2: text(200),
+        city: text(120),
+        state: text(120),
+        country: text(120),
+        postal_code: text(30),
+        description: text(2000),
+        status: z.enum(["active", "archived"]).optional(),
+        property_type: z.enum(["building", "zone"]).optional(),
+        building_category: z.enum(["residential", "commercial"]).nullable().optional(),
+        subtype: text(60),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabase, userId } = context;
