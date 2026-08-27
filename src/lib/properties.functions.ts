@@ -46,6 +46,13 @@ const propertyInput = z.object({
         });
       }
     }
+    if ((val.number_of_units ?? 0) > 0 && !val.landlord_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["landlord_id"],
+        message: "A landlord is required when units are greater than 0",
+      });
+    }
   });
 
 const unitInput = z.object({
@@ -191,6 +198,13 @@ export const updateProperty = createServerFn({ method: "POST" })
               message: "Please select a residential or commercial type",
             });
           }
+        }
+        if ((val.number_of_units ?? 0) > 0 && !val.landlord_id) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["landlord_id"],
+            message: "A landlord is required when units are greater than 0",
+          });
         }
       })
       .parse(data),

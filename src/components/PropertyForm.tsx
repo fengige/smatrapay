@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ArrowRight, Building2, Check, Loader2, MapPin, Save, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, ClipboardCheck, Loader2, MapPin, Save, UserRound } from "lucide-react";
 
 import { listLandlords } from "@/lib/properties.functions";
 
@@ -9,6 +9,7 @@ const STEPS = [
   { id: "property", label: "Property Details", icon: Building2 },
   { id: "landlord", label: "Landlord Details", icon: UserRound },
   { id: "address", label: "Address", icon: MapPin },
+  { id: "review", label: "Review & Submit", icon: ClipboardCheck },
 ] as const;
 
 export const RESIDENTIAL_TYPES = [
@@ -108,6 +109,7 @@ export function PropertyForm({
     queryFn: () => fetchLandlords(),
   });
   const landlords = landlordsQuery.data?.landlords ?? [];
+  const selectedLandlord = landlords.find((l) => l.id === values.landlord_id);
 
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -132,11 +134,16 @@ export function PropertyForm({
             ? "Zone name must be at least 2 characters"
             : "Property name must be at least 2 characters";
     }
-    if (index === 1 && values.number_of_units.trim()) {
-      if (!/^\d+$/.test(values.number_of_units.trim()))
-        next["number_of_units"] = "Number of units must be a whole number";
-      else if (Number(values.number_of_units) > 100000)
-        next["number_of_units"] = "Number of units is too large";
+    if (index === 1) {
+      if (values.number_of_units.trim()) {
+        if (!/^\d+$/.test(values.number_of_units.trim()))
+          next["number_of_units"] = "Number of units must be a whole number";
+        else if (Number(values.number_of_units) > 100000)
+          next["number_of_units"] = "Number of units is too large";
+      }
+      if (Number(values.number_of_units) > 0 && !values.landlord_id.trim()) {
+        next["landlord_id"] = "A landlord is required when units are greater than 0";
+      }
     }
     if (index === 2 && values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";
@@ -436,7 +443,7 @@ export function PropertyForm({
               placeholder="e.g. 24"
             />
           </Field>
-          <Field label="Select Landlord">
+          <Field label="Select Landlord" error={errors["landlord_id"]}>
             <select
               value={values.landlord_id}
               onChange={(e) => set("landlord_id", e.target.value)}
@@ -507,6 +514,118 @@ export function PropertyForm({
             />
           </Field>
         </div>
+      </section>
+
+      <section className={step === 3 ? "rounded-2xl border border-border bg-card p-5" : "hidden"}>
+        <h2 className="text-sm font-bold text-foreground">Review & Submit</h2>
+        <p className="mt-1 text-xs text-muted-foreground">Confirm the details before saving.</p>
+
+        <div className="mt-4 space-y-5">
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+              <Building2 className="size-4" /> Property Details
+            </h3>
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Property Type</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground capitalize">{values.property_type}</dd>
+              </div>
+              {values.property_type === "building" && (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Building Category</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground capitalize">{values.building_category}</dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Type</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">{values.subtype || "—"}</dd>
+                  </div>
+                </>
+              )}
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {values.property_type === "zone" ? "Zone Name" : "Property Name"}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.name || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {values.property_type === "zone" ? "Zone Code" : "Property Code"}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.code || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground capitalize">{values.status}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Description</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.description || "—"}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+              <UserRound className="size-4" /> Landlord Details
+            </h3>
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Number of Units</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.number_of_units || "0"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Assigned Landlord</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">
+                  {selectedLandlord ? selectedLandlord.name || selectedLandlord.email : values.landlord_id ? "Unknown" : "—"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+              <MapPin className="size-4" /> Address
+            </h3>
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address Line 1</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.address_line1 || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address Line 2</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.address_line2 || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">City</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.city || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">State / County</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.state || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Country</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.country || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Postal Code</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.postal_code || "—"}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        {Object.keys(errors).length > 0 && (
+          <div className="mt-5 rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+            <p className="text-xs font-semibold text-destructive">Please fix the following issues before submitting:</p>
+            <ul className="mt-1 list-inside list-disc text-xs text-destructive">
+              {Object.entries(errors).map(([key, message]) => (
+                <li key={key}>{message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       <div className="flex flex-wrap items-center gap-2">
