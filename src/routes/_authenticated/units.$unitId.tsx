@@ -116,6 +116,27 @@ function UnitDetailPage() {
   const assignments = (data?.assignments ?? []) as Assignment[];
   const people = (data?.people ?? []) as Person[];
   const personById = new Map(people.map((p) => [p.id, p]));
+  const auditLogs = (data?.auditLogs ?? []) as AuditLog[];
+  const actors = (data?.actors ?? []) as { id: string; name: string | null; email: string | null }[];
+  const actorById = new Map(actors.map((a) => [a.id, a.name || a.email || "Unknown"]));
+  const actorLabel = (id: string | null) =>
+    (id && actorById.get(id)) || (id ? "Unknown user" : "System");
+
+  const remove = useMutation({
+    mutationFn: () => removeUnit({ data: { id: unitId } } as never),
+    onSuccess: async () => {
+      toast.success(`Unit ${unit?.unit_number ?? ""} deleted`);
+      setConfirmDelete(false);
+      queryClient.removeQueries({ queryKey: ["units", unitId] });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      if (property?.id) {
+        navigate({ to: "/properties/$id", params: { id: property.id } });
+      } else {
+        navigate({ to: "/properties" });
+      }
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not delete unit"),
+  });
 
   useEffect(() => {
     setEdit(null);
@@ -192,6 +213,7 @@ function UnitDetailPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
         {unit && (
+          <>
           <button
             type="button"
             onClick={openEdit}
@@ -199,6 +221,14 @@ function UnitDetailPage() {
           >
             <Pencil className="size-4" /> Edit unit
           </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3.5 py-2 text-sm font-semibold text-destructive hover:bg-destructive/20"
+          >
+            <Trash2 className="size-4" /> Delete unit
+          </button>
+          </>
         )}
         <Link
           to="/properties/$id"
