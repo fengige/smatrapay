@@ -117,7 +117,7 @@ function ResidentsPage() {
   >(null);
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
-  const navigate = useNavigate({ from: "/residents" });
+  const navigate = useNavigate({ from: "/residents/" });
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
     navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
