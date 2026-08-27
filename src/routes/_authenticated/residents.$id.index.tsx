@@ -398,7 +398,9 @@ function ResidentDetailPage() {
                   ))}
                 </ol>
               </Section>
+              )}
 
+              {tab === "notes" && (
               <Section title="Notes & Bio" icon={<Pencil className="size-4 text-primary" />}>
                 <div className="space-y-4 p-6 text-sm">
                   <div>
