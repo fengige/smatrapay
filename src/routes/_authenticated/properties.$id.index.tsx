@@ -161,6 +161,91 @@ function slug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "property";
 }
 
+function LandlordActions({ landlord }: { landlord: Landlord }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent | KeyboardEvent) => {
+      if (
+        e instanceof KeyboardEvent && e.key === "Escape" &&
+        setOpen(false)
+      ) {
+        return;
+      }
+      if (
+        e instanceof MouseEvent &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", handler);
+    };
+  }, [open]);
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+        <Link
+          to="/landlords/$id"
+          params={{ id: landlord.id }}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          <Eye className="size-4" /> View landlord profile
+        </Link>
+        <Link
+          to="/landlords/$id/edit"
+          params={{ id: landlord.id }}
+          search={{ page: 1, limit: 10 }}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+        >
+          <Pencil className="size-4" /> Edit landlord
+        </Link>
+      </div>
+
+      <div className="relative sm:hidden" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Landlord actions"
+          aria-expanded={open}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Actions <MoreVertical className="size-4" />
+        </button>
+        {open && (
+          <div className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-border bg-card p-1 shadow-lg">
+            <Link
+              to="/landlords/$id"
+              params={{ id: landlord.id }}
+              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
+              onClick={() => setOpen(false)}
+            >
+              <Eye className="size-3.5" /> View landlord profile
+            </Link>
+            <Link
+              to="/landlords/$id/edit"
+              params={{ id: landlord.id }}
+              search={{ page: 1, limit: 10 }}
+              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
+              onClick={() => setOpen(false)}
+            >
+              <Pencil className="size-3.5" /> Edit landlord
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
 
