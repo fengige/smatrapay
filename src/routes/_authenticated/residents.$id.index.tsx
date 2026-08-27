@@ -427,6 +427,9 @@ function ResidentDetailPage() {
                 {(
                   [
                     ["property", "Property & Unit"],
+                    ["invoices", "Invoices"],
+                    ["payments", "Payment History"],
+                    ["meters", "Meters"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
                     ["audit", "Audit Logs"],
