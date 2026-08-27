@@ -14,6 +14,166 @@ export type Database = {
   }
   public: {
     Tables: {
+      properties: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          code: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          postal_code: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["property_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          code?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          postal_code?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["property_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          code?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          postal_code?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["property_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      unit_assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          role: Database["public"]["Enums"]["assignment_role"]
+          start_date: string
+          unit_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          role: Database["public"]["Enums"]["assignment_role"]
+          start_date?: string
+          unit_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          role?: Database["public"]["Enums"]["assignment_role"]
+          start_date?: string
+          unit_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_assignments_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units: {
+        Row: {
+          bedrooms: number | null
+          building: string | null
+          created_at: string
+          created_by: string | null
+          floor: string | null
+          id: string
+          notes: string | null
+          property_id: string
+          status: Database["public"]["Enums"]["unit_status"]
+          unit_number: string
+          unit_type: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bedrooms?: number | null
+          building?: string | null
+          created_at?: string
+          created_by?: string | null
+          floor?: string | null
+          id?: string
+          notes?: string | null
+          property_id: string
+          status?: Database["public"]["Enums"]["unit_status"]
+          unit_number: string
+          unit_type?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bedrooms?: number | null
+          building?: string | null
+          created_at?: string
+          created_by?: string | null
+          floor?: string | null
+          id?: string
+          notes?: string | null
+          property_id?: string
+          status?: Database["public"]["Enums"]["unit_status"]
+          unit_number?: string
+          unit_type?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -124,6 +284,9 @@ export type Database = {
         | "vendor"
         | "agent"
         | "service_provider"
+      assignment_role: "resident" | "landlord"
+      property_status: "active" | "archived"
+      unit_status: "vacant" | "occupied" | "maintenance" | "archived"
       user_status: "active" | "inactive" | "suspended" | "pending"
     }
     CompositeTypes: {
@@ -262,6 +425,9 @@ export const Constants = {
         "agent",
         "service_provider",
       ],
+      assignment_role: ["resident", "landlord"],
+      property_status: ["active", "archived"],
+      unit_status: ["vacant", "occupied", "maintenance", "archived"],
       user_status: ["active", "inactive", "suspended", "pending"],
     },
   },
