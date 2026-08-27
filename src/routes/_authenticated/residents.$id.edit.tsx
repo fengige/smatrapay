@@ -2,10 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowLeft, AtSign, Loader2, Phone, Save, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, AtSign, Building2, Loader2, Phone, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { getUserById, updateUser } from "@/lib/users.functions";
+import {
+  assignUnit,
+  endAssignment,
+  listProperties,
+  listUserAssignments,
+} from "@/lib/properties.functions";
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
@@ -72,15 +78,37 @@ function EditResidentPage() {
   const queryClient = useQueryClient();
   const fetchUser = useServerFn(getUserById);
   const save = useServerFn(updateUser);
+  const fetchProperties = useServerFn(listProperties);
+  const fetchAssignments = useServerFn(listUserAssignments);
+  const assign = useServerFn(assignUnit);
+  const endAssign = useServerFn(endAssignment);
 
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState("");
+  const [assignmentTouched, setAssignmentTouched] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["users", "detail", id],
     queryFn: () => fetchUser({ data: { id } }),
   });
+
+  const { data: propertyData, isLoading: propertiesLoading } = useQuery({
+    queryKey: ["properties", "picker"],
+    queryFn: () => fetchProperties({}),
+  });
+
+  const { data: assignmentData } = useQuery({
+    queryKey: ["users", "assignments", id],
+    queryFn: () => fetchAssignments({ data: { userId: id } }),
+  });
+
+  const activeAssignment = (assignmentData?.assignments ?? []).find(
+    (a: any) => a.role === "resident" && !a.end_date,
+  );
+  const initialUnitId = activeAssignment?.unit_id ?? "";
 
   useEffect(() => {
     if (!data?.user) return;
@@ -96,6 +124,43 @@ function EditResidentPage() {
     });
   }, [data]);
 
+  useEffect(() => {
+    if (!initialUnitId || assignmentTouched) return;
+    const unit = (assignmentData?.units ?? []).find((u: any) => u.id === initialUnitId);
+    if (!unit) return;
+    setSelectedUnitId(initialUnitId);
+    setSelectedPropertyId(unit.property_id ?? "");
+  }, [initialUnitId, assignmentData, assignmentTouched]);
+
+  const properties = ((propertyData?.properties ?? []) as any[]).filter(
+    (p) => p.status !== "archived",
+  );
+  const allUnits = (propertyData?.units ?? []) as any[];
+  const allAssignments = (propertyData?.assignments ?? []) as any[];
+
+  // units with an active resident assignment by someone else
+  const occupiedByOther = new Set(
+    allAssignments
+      .filter((a) => a.role === "resident" && !a.end_date && a.user_id !== id)
+      .map((a) => a.unit_id),
+  );
+
+  const propertyUnits = allUnits.filter(
+    (u) =>
+      u.property_id === selectedPropertyId &&
+      (u.status !== "archived" || u.id === initialUnitId),
+  );
+
+  const onPropertyChange = (propertyId: string) => {
+    setAssignmentTouched(true);
+    setSelectedPropertyId(propertyId);
+    setSelectedUnitId("");
+  };
+  const onUnitChange = (unitId: string) => {
+    setAssignmentTouched(true);
+    setSelectedUnitId(unitId);
+  };
+
   const originalStatus = (data?.user as { status?: string } | undefined)?.status ?? "active";
 
   const set = (key: keyof FormState, value: string) => {
@@ -109,8 +174,8 @@ function EditResidentPage() {
   };
 
   const mutation = useMutation({
-    mutationFn: () =>
-      save({
+    mutationFn: async () => {
+      await save({
         data: {
           id,
           name: form.name,
@@ -121,10 +186,31 @@ function EditResidentPage() {
           notes: form.notes || null,
           status: form.status,
         },
-      } as never),
+      } as never);
+
+      // Sync unit assignment: end the current one if changed/removed, then assign the new one
+      if (selectedUnitId !== initialUnitId) {
+        if (activeAssignment) {
+          await endAssign({ data: { id: activeAssignment.id } });
+        }
+        if (selectedUnitId) {
+          await assign({
+            data: { unit_id: selectedUnitId, user_id: id, role: "resident" },
+          });
+        }
+      }
+    },
     onSuccess: async () => {
-      toast.success("Resident updated");
+      const changed = selectedUnitId !== initialUnitId;
+      toast.success(
+        changed
+          ? selectedUnitId
+            ? "Resident updated and assigned to the selected unit"
+            : "Resident updated and unassigned from their unit"
+          : "Resident updated",
+      );
       await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
       navigate({ to: "/residents", search: { page: 1, limit: 10 } });
     },
     onError: (err: Error) => toast.error(err.message || "Could not update resident"),
@@ -274,6 +360,90 @@ function EditResidentPage() {
                 </div>
               </section>
 
+              <section className="rounded-2xl border border-border bg-card">
+                <header className="border-b border-border px-5 py-4">
+                  <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                    <Building2 className="size-4 text-primary" aria-hidden="true" />
+                    Unit Assignment
+                  </h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Select the property and unit this resident occupies. Units already occupied by
+                    another resident are unavailable.
+                  </p>
+                </header>
+                <div className="grid gap-4 p-5 sm:grid-cols-2">
+                  <Field label="Property">
+                    <select
+                      className={inputClass}
+                      value={selectedPropertyId}
+                      disabled={isSaving || propertiesLoading}
+                      onChange={(e) => onPropertyChange(e.target.value)}
+                      aria-label="Select property"
+                    >
+                      <option value="">
+                        {propertiesLoading ? "Loading properties…" : "Select a property"}
+                      </option>
+                      {properties.map((p: any) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.code ? ` (${p.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Unit">
+                    <select
+                      className={inputClass}
+                      value={selectedUnitId}
+                      disabled={isSaving || !selectedPropertyId}
+                      onChange={(e) => onUnitChange(e.target.value)}
+                      aria-label="Select unit"
+                    >
+                      <option value="">
+                        {!selectedPropertyId
+                          ? "Select a property first"
+                          : propertyUnits.length
+                            ? "Unassigned"
+                            : "No units in this property"}
+                      </option>
+                      {propertyUnits.map((u: any) => {
+                        const taken = occupiedByOther.has(u.id);
+                        return (
+                          <option key={u.id} value={u.id} disabled={taken}>
+                            Unit {u.unit_number}
+                            {u.unit_type ? ` · ${u.unit_type}` : ""} · {u.status}
+                            {taken ? " (occupied)" : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </Field>
+                </div>
+                {initialUnitId && (
+                  <div className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+                    Currently assigned to{" "}
+                    <strong className="text-foreground">
+                      {(() => {
+                        const unit = (assignmentData?.units ?? []).find(
+                          (u: any) => u.id === initialUnitId,
+                        );
+                        const property = (assignmentData?.properties ?? []).find(
+                          (p: any) => p.id === unit?.property_id,
+                        );
+                        return unit
+                          ? `${property?.name ?? "property"} · Unit ${unit.unit_number}`
+                          : "a unit";
+                      })()}
+                    </strong>
+                    {selectedUnitId !== initialUnitId && (
+                      <span className="ml-1 text-amber-600 dark:text-amber-400">
+                        — this assignment will be ended on save
+                        {selectedUnitId ? " and replaced with the new unit" : ""}.
+                      </span>
+                    )}
+                  </div>
+                )}
+              </section>
 
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">

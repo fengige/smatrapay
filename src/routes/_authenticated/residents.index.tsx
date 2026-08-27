@@ -130,6 +130,8 @@ function ResidentsPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [propertyFilter, setPropertyFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [confirm, setConfirm] = useState<
@@ -145,7 +147,7 @@ function ResidentsPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter]);
+  }, [search, statusFilter, propertyFilter, unitFilter]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["users", "resident"],
@@ -175,11 +177,44 @@ function ResidentsPage() {
 
   const busy = statusMutation.isPending || deleteMutation.isPending;
 
+  const propertyOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const r of residents)
+      for (const a of currentAssignments(r)) {
+        const name = a.unit?.property?.name;
+        if (name) names.add(name);
+      }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [residents]);
+
+  const unitOptions = useMemo(() => {
+    const units = new Set<string>();
+    for (const r of residents)
+      for (const a of currentAssignments(r)) {
+        if (propertyFilter !== "all" && a.unit?.property?.name !== propertyFilter) continue;
+        if (a.unit?.unit_number) units.add(a.unit.unit_number);
+      }
+    return [...units].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [residents, propertyFilter]);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const rows = residents.filter((r) => {
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       if (!matchesStatus) return false;
+      const active = currentAssignments(r);
+      if (propertyFilter !== "all") {
+        const has = active.some((a) => a.unit?.property?.name === propertyFilter);
+        if (!has) return false;
+      }
+      if (unitFilter !== "all") {
+        const has = active.some(
+          (a) =>
+            a.unit?.unit_number === unitFilter &&
+            (propertyFilter === "all" || a.unit?.property?.name === propertyFilter),
+        );
+        if (!has) return false;
+      }
       if (!term) return true;
       const display = assignmentDisplayString(r);
       const searchValues = [
@@ -211,7 +246,7 @@ function ResidentsPage() {
       if (av === bv) return 0;
       return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
     });
-  }, [residents, search, statusFilter, sortKey, sortDir]);
+  }, [residents, search, statusFilter, propertyFilter, unitFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
@@ -334,6 +369,35 @@ function ResidentsPage() {
                 className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
               />
             </div>
+            <select
+              value={propertyFilter}
+              onChange={(e) => {
+                setPropertyFilter(e.target.value);
+                setUnitFilter("all");
+              }}
+              aria-label="Filter by property"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">All properties</option>
+              {propertyOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={unitFilter}
+              onChange={(e) => setUnitFilter(e.target.value)}
+              aria-label="Filter by unit"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">All units</option>
+              {unitOptions.map((unit) => (
+                <option key={unit} value={unit}>
+                  Unit {unit}
+                </option>
+              ))}
+            </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
