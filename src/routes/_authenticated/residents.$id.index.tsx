@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { listAssignmentAuditLogs } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/residents/$id/")({
@@ -607,12 +608,16 @@ function ResidentDetailPage() {
                       <label className="text-xs font-medium text-muted-foreground">Action type</label>
                       <select
                         value={auditAction}
-                        onChange={(e) => setAuditAction(e.target.value as typeof auditAction)}
+                        onChange={(e) => setAuditAction(e.target.value)}
                         className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                       >
                         <option value="all">All actions</option>
                         <option value="created">Created</option>
                         <option value="updated">Updated</option>
+                        <option value="assigned">Unit assigned</option>
+                        <option value="moved">Unit moved</option>
+                        <option value="ended">Assignment ended</option>
+                        <option value="removed">Assignment removed</option>
                       </select>
                     </div>
                     <div>
