@@ -35,6 +35,8 @@ function clean(values: PropertyFormValues) {
     name: values.name,
     status: values.status,
     property_type: values.property_type,
+    building_category: values.property_type === "building" ? values.building_category : null,
+    subtype: values.property_type === "building" ? values.subtype || null : null,
   };
   for (const key of [
     "code",

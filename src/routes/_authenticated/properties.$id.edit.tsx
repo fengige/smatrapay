@@ -37,6 +37,8 @@ function clean(values: PropertyFormValues) {
     name: values.name,
     status: values.status,
     property_type: values.property_type,
+    building_category: values.property_type === "building" ? values.building_category : null,
+    subtype: values.property_type === "building" ? values.subtype || null : null,
   };
   for (const key of [
     "code",
@@ -93,6 +95,9 @@ function EditPropertyPage() {
         <PropertyForm
           initial={{
             property_type: (property["property_type"] as "building" | "zone") ?? "building",
+            building_category:
+              (property["building_category"] as "residential" | "commercial" | null) ?? "",
+            subtype: property["subtype"] ?? "",
             name: property["name"] ?? "",
             code: property["code"] ?? "",
             address_line1: property["address_line1"] ?? "",
