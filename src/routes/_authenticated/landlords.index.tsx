@@ -33,7 +33,12 @@ function parseSearch(search: Record<string, unknown>) {
   const limit = LIMIT_OPTIONS.includes(Number(search["limit"]))
     ? Number(search["limit"])
     : DEFAULT_LIMIT;
-  return { page, limit };
+  const status =
+    typeof search["status"] === "string" && STATUSES.includes(search["status"])
+      ? search["status"]
+      : "all";
+  const q = typeof search["q"] === "string" ? search["q"] : "";
+  return { page, limit, status, q };
 }
 
 export const Route = createFileRoute("/_authenticated/landlords/")({
