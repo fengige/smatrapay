@@ -1009,6 +1009,18 @@ function PropertyDetailPage() {
         </Modal>
       )}
 
+      {importOpen && (
+        <Modal title="Bulk import unit assignments" onClose={() => setImportOpen(false)}>
+          <ImportForm
+            propertyId={id}
+            run={(payload) => runImport({ data: payload } as never) as Promise<ImportResult>}
+            onImported={invalidate}
+          />
+        </Modal>
+      )}
+
+
+
     </PortalLayout>
   );
 }
