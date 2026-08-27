@@ -373,7 +373,9 @@ function ResidentDetailPage() {
                   </div>
                 ) : null}
               </Section>
+              )}
 
+              {tab === "history" && (
               <Section title="Status History" icon={<Clock className="size-4 text-primary" />}>
                 <ol className="space-y-5 p-6">
                   {timeline.map((event) => (
