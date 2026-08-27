@@ -16,6 +16,7 @@ import {
   MapPin,
   Pencil,
   Phone,
+  ShieldCheck,
   Trash2,
   UserCheck,
   UserX,
@@ -104,6 +105,7 @@ function ResidentDetailPage() {
 
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
+  const [tab, setTab] = useState<"property" | "history" | "notes" | "audit">("property");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
