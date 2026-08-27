@@ -1369,6 +1369,131 @@ function PropertyDetailPage() {
         </Modal>
       )}
 
+      {bulkForm.open && (
+        <Modal title="Bulk Add Units" onClose={() => !bulkCreate.isPending && setBulkForm({ ...emptyBulkForm })}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const count = Number(bulkForm.count);
+              const start = Number(bulkForm.start_number);
+              if (!Number.isInteger(count) || count < 1 || count > 500) {
+                toast.error("How many must be a number between 1 and 500");
+                return;
+              }
+              if (!Number.isInteger(start) || start < 0) {
+                toast.error("Start at must be a non-negative number");
+                return;
+              }
+              bulkCreate.mutate();
+            }}
+          >
+            <p className="text-sm text-muted-foreground">
+              Create multiple units at once (e.g. Unit 1 through Unit 10), then assign meters in the table below.
+            </p>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Add under
+              </label>
+              <select disabled className={inputClass}>
+                <option>{property?.["name"] ?? "This property"}</option>
+              </select>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  How many
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  className={inputClass}
+                  value={bulkForm.count}
+                  onChange={(e) => setBulkForm((p) => ({ ...p, count: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Start at
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  className={inputClass}
+                  value={bulkForm.start_number}
+                  onChange={(e) => setBulkForm((p) => ({ ...p, start_number: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Name prefix
+              </label>
+              <input
+                className={inputClass}
+                placeholder="Unit"
+                value={bulkForm.prefix}
+                onChange={(e) => setBulkForm((p) => ({ ...p, prefix: e.target.value }))}
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Preview:{" "}
+                <span className="text-foreground">
+                  {bulkForm.prefix || "Unit"} {Number(bulkForm.start_number || 0)}{" "}
+                  … {bulkForm.prefix || "Unit"}{" "}
+                  {Math.max(0, Number(bulkForm.start_number || 0) + Math.max(0, Number(bulkForm.count || 0)) - 1)}
+                </span>
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                className={inputClass}
+                placeholder="Building"
+                value={bulkForm.building}
+                onChange={(e) => setBulkForm((p) => ({ ...p, building: e.target.value }))}
+              />
+              <input
+                className={inputClass}
+                placeholder="Unit type"
+                value={bulkForm.unit_type}
+                onChange={(e) => setBulkForm((p) => ({ ...p, unit_type: e.target.value }))}
+              />
+              <input
+                className={inputClass}
+                placeholder="Bedrooms"
+                type="number"
+                value={bulkForm.bedrooms}
+                onChange={(e) => setBulkForm((p) => ({ ...p, bedrooms: e.target.value }))}
+              />
+              <input
+                className={inputClass}
+                placeholder="Floor"
+                value={bulkForm.floor}
+                onChange={(e) => setBulkForm((p) => ({ ...p, floor: e.target.value }))}
+              />
+              <select
+                className={inputClass}
+                value={bulkForm.status}
+                onChange={(e) => setBulkForm((p) => ({ ...p, status: e.target.value }))}
+              >
+                <option value="vacant">Vacant</option>
+                <option value="occupied">Occupied</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={bulkCreate.isPending}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
+              Create {Number(bulkForm.count || 0) > 0 ? bulkForm.count : "0"} units
+            </button>
+          </form>
+        </Modal>
+      )}
+
       {assignFor && (
         <Modal title={`Assign unit ${assignFor.unit_number}`} onClose={() => setAssignFor(null)}>
           <AssignForm
