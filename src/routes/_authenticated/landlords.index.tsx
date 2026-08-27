@@ -191,8 +191,32 @@ function LandlordsPage() {
 
   const RowActions = ({ row }: { row: Row }) => {
     const [open, setOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const isActive = row.status === "active";
     const nextStatus = isActive ? "inactive" : "active";
+
+    useEffect(() => {
+      if (!open) return;
+      const handle = (e: MouseEvent | KeyboardEvent) => {
+        if (e.type === "keydown" && (e as KeyboardEvent).key === "Escape") {
+          setOpen(false);
+          return;
+        }
+        if (
+          e.type === "mousedown" &&
+          menuRef.current &&
+          !menuRef.current.contains(e.target as Node)
+        ) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener("mousedown", handle);
+      document.addEventListener("keydown", handle);
+      return () => {
+        document.removeEventListener("mousedown", handle);
+        document.removeEventListener("keydown", handle);
+      };
+    }, [open]);
 
     return (
       <div className="flex items-center justify-end gap-1">
