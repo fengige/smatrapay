@@ -419,6 +419,28 @@ function ResidentDetailPage() {
                   </div>
                 </div>
               </Section>
+              )}
+
+              {tab === "audit" && (
+                <Section title="Audit Logs" icon={<ShieldCheck className="size-4 text-primary" />}>
+                  <ol className="divide-y divide-border">
+                    {auditEvents.map((event) => (
+                      <li key={event.key} className="flex items-start gap-3 px-6 py-4">
+                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          {event.icon}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-foreground">{event.label}</p>
+                          <p className="text-xs text-muted-foreground">{event.detail}</p>
+                        </div>
+                        <span className="shrink-0 text-xs text-muted-foreground/80">
+                          {dateTime(event.at)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </Section>
+              )}
             </div>
           </div>
         )}
