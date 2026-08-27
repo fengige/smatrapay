@@ -495,7 +495,6 @@ function PropertyDetailPage() {
       (unitStatusFilter === "all" || u.status === unitStatusFilter) &&
       match([
         u.unit_number,
-        u.building,
         u.unit_type,
         u.status,
         u.electricity_meter_no,
@@ -636,10 +635,9 @@ function PropertyDetailPage() {
     if (tab === "units") {
       return {
         name: "units",
-        header: ["Unit", "Building", "Type", "Bedrooms", "Status", "Current occupants"],
+        header: ["Unit", "Type", "Bedrooms", "Status", "Current occupants"],
         rows: visibleUnits.map((u) => [
           u.unit_number,
-          u.building ?? "",
           u.unit_type ?? "",
           u.bedrooms == null ? "" : String(u.bedrooms),
           u.status,
@@ -968,7 +966,6 @@ function PropertyDetailPage() {
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Unit</th>
-                      <th className="px-4 py-3 font-semibold">Building</th>
                       <th className="px-4 py-3 font-semibold">Type</th>
                       <th className="px-4 py-3 font-semibold">Electricity meter</th>
                       <th className="px-4 py-3 font-semibold">Water meter</th>
@@ -981,7 +978,7 @@ function PropertyDetailPage() {
                   <tbody>
                     {!visibleUnits.length && (
                       <tr>
-                        <td colSpan={9} className="px-4 py-10 text-center">
+                        <td colSpan={8} className="px-4 py-10 text-center">
                           <p className="text-sm font-semibold text-foreground">
                             {term || unitStatusFilter !== "all"
                               ? "No units match your search or filters."
@@ -1009,7 +1006,6 @@ function PropertyDetailPage() {
                           <td className="px-4 py-3 font-semibold text-foreground">
                             {u.unit_number}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">{u.building || "—"}</td>
                           <td className="px-4 py-3 text-muted-foreground">
                             {u.unit_type || "—"}
                             {u.bedrooms != null && ` · ${u.bedrooms} bed`}
