@@ -124,7 +124,6 @@ function EditResidentPage() {
     });
   }, [data]);
 
-  const [assignmentTouched, setAssignmentTouched] = useState(false);
   useEffect(() => {
     if (!initialUnitId || assignmentTouched) return;
     const unit = (assignmentData?.units ?? []).find((u: any) => u.id === initialUnitId);
