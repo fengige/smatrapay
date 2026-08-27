@@ -1407,9 +1407,12 @@ function PropertyDetailPage() {
       )}
 
       {bulkForm.open && (
-        <Modal title="Bulk Add Units" onClose={() => !bulkCreate.isPending && setBulkForm({ ...emptyBulkForm })}>
+        <Modal
+          title={bulkStep === "confirm" ? "Confirm bulk units" : "Bulk Add Units"}
+          onClose={() => !bulkCreate.isPending && !bulkPreviewMutation.isPending && closeBulk()}
+        >
           <form
-            className="space-y-4"
+            className={`space-y-4 ${bulkStep === "confirm" ? "hidden" : ""}`}
             onSubmit={(e) => {
               e.preventDefault();
               const count = Number(bulkForm.count);
@@ -1422,7 +1425,7 @@ function PropertyDetailPage() {
                 toast.error("Start at must be a non-negative number");
                 return;
               }
-              bulkCreate.mutate();
+              bulkPreviewMutation.mutate();
             }}
           >
             <p className="text-sm text-muted-foreground">
@@ -1521,13 +1524,116 @@ function PropertyDetailPage() {
             </div>
             <button
               type="submit"
-              disabled={bulkCreate.isPending}
+              disabled={bulkPreviewMutation.isPending}
+              aria-busy={bulkPreviewMutation.isPending}
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
-              {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
-              Create {Number(bulkForm.count || 0) > 0 ? bulkForm.count : "0"} units
+              {bulkPreviewMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+              Review {Number(bulkForm.count || 0) > 0 ? bulkForm.count : "0"} units
             </button>
           </form>
+
+          {bulkStep === "confirm" && bulkPreview && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-background p-4 text-sm">
+                <p className="font-semibold text-foreground">
+                  {bulkMode === "append"
+                    ? `${bulkForm.count} unit(s) will be created`
+                    : `${bulkPreview.willCreate} unit(s) will be created`}
+                  {" in "}
+                  {property?.["name"] ?? "this property"}
+                </p>
+                <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Range</dt>
+                    <dd className="text-foreground">
+                      {bulkMode === "append"
+                        ? `${bulkPreview.appendFirstLabel ?? "—"} … ${bulkPreview.appendLastLabel ?? "—"}`
+                        : `${bulkPreview.firstLabel ?? "—"} … ${bulkPreview.lastLabel ?? "—"}`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Existing units</dt>
+                    <dd className="text-foreground">{bulkPreview.existingTotal}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Status</dt>
+                    <dd className="capitalize text-foreground">{bulkForm.status}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Building / type</dt>
+                    <dd className="text-foreground">
+                      {[bulkForm.building, bulkForm.unit_type].filter(Boolean).join(" · ") || "—"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              {bulkPreview.conflicts.length > 0 && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                  <p className="font-semibold text-amber-700">
+                    {bulkPreview.conflicts.length} unit number(s) already exist
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700/90">
+                    e.g. {bulkPreview.conflicts.slice(0, 5).join(", ")}
+                    {bulkPreview.conflicts.length > 5 ? "…" : ""}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    <label className="flex items-start gap-2 text-xs text-foreground">
+                      <input
+                        type="radio"
+                        className="mt-0.5"
+                        checked={bulkMode === "skip"}
+                        onChange={() => setBulkMode("skip")}
+                      />
+                      <span>
+                        <span className="font-semibold">Skip existing numbers</span> — create only{" "}
+                        {bulkPreview.willCreate} new unit(s).
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-2 text-xs text-foreground">
+                      <input
+                        type="radio"
+                        className="mt-0.5"
+                        checked={bulkMode === "append"}
+                        onChange={() => setBulkMode("append")}
+                      />
+                      <span>
+                        <span className="font-semibold">Append after existing</span> — create the full{" "}
+                        {bulkForm.count} unit(s) using the next free numbers (
+                        {bulkPreview.appendFirstLabel ?? "—"} … {bulkPreview.appendLastLabel ?? "—"}).
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={bulkCreate.isPending}
+                  onClick={() => setBulkStep("form")}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    bulkCreate.isPending ||
+                    (bulkMode !== "append" && bulkPreview.willCreate === 0)
+                  }
+                  aria-busy={bulkCreate.isPending}
+                  onClick={() => bulkCreate.mutate()}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Confirm & create{" "}
+                  {bulkMode === "append" ? Number(bulkForm.count || 0) : bulkPreview.willCreate} units
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 
