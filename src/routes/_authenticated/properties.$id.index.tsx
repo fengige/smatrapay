@@ -962,7 +962,7 @@ function PropertyDetailPage() {
 
             <div className="overflow-x-auto">
               {tab === "units" && (
-                <table className="w-full min-w-[1100px] text-left text-sm">
+                <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Unit</th>
