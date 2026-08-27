@@ -78,15 +78,36 @@ function EditResidentPage() {
   const queryClient = useQueryClient();
   const fetchUser = useServerFn(getUserById);
   const save = useServerFn(updateUser);
+  const fetchProperties = useServerFn(listProperties);
+  const fetchAssignments = useServerFn(listUserAssignments);
+  const assign = useServerFn(assignUnit);
+  const endAssign = useServerFn(endAssignment);
 
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["users", "detail", id],
     queryFn: () => fetchUser({ data: { id } }),
   });
+
+  const { data: propertyData, isLoading: propertiesLoading } = useQuery({
+    queryKey: ["properties", "picker"],
+    queryFn: () => fetchProperties({}),
+  });
+
+  const { data: assignmentData } = useQuery({
+    queryKey: ["users", "assignments", id],
+    queryFn: () => fetchAssignments({ data: { userId: id } }),
+  });
+
+  const activeAssignment = (assignmentData?.assignments ?? []).find(
+    (a: any) => a.role === "resident" && !a.end_date,
+  );
+  const initialUnitId = activeAssignment?.unit_id ?? "";
 
   useEffect(() => {
     if (!data?.user) return;
@@ -101,6 +122,44 @@ function EditResidentPage() {
       status: (u["status"] as string) ?? "active",
     });
   }, [data]);
+
+  const [assignmentTouched, setAssignmentTouched] = useState(false);
+  useEffect(() => {
+    if (!initialUnitId || assignmentTouched) return;
+    const unit = (assignmentData?.units ?? []).find((u: any) => u.id === initialUnitId);
+    if (!unit) return;
+    setSelectedUnitId(initialUnitId);
+    setSelectedPropertyId(unit.property_id ?? "");
+  }, [initialUnitId, assignmentData, assignmentTouched]);
+
+  const properties = ((propertyData?.properties ?? []) as any[]).filter(
+    (p) => p.status !== "archived",
+  );
+  const allUnits = (propertyData?.units ?? []) as any[];
+  const allAssignments = (propertyData?.assignments ?? []) as any[];
+
+  // units with an active resident assignment by someone else
+  const occupiedByOther = new Set(
+    allAssignments
+      .filter((a) => a.role === "resident" && !a.end_date && a.user_id !== id)
+      .map((a) => a.unit_id),
+  );
+
+  const propertyUnits = allUnits.filter(
+    (u) =>
+      u.property_id === selectedPropertyId &&
+      (u.status !== "archived" || u.id === initialUnitId),
+  );
+
+  const onPropertyChange = (propertyId: string) => {
+    setAssignmentTouched(true);
+    setSelectedPropertyId(propertyId);
+    setSelectedUnitId("");
+  };
+  const onUnitChange = (unitId: string) => {
+    setAssignmentTouched(true);
+    setSelectedUnitId(unitId);
+  };
 
   const originalStatus = (data?.user as { status?: string } | undefined)?.status ?? "active";
 
