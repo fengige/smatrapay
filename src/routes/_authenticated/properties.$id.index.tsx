@@ -304,6 +304,7 @@ function PropertyDetailPage() {
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
+  const [unitStatusFilter, setUnitStatusFilter] = useState("all");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
   const [bulkStep, setBulkStep] = useState<"form" | "confirm">("form");
@@ -489,14 +490,19 @@ function PropertyDetailPage() {
   const match = (values: (string | null | undefined)[]) =>
     !term || values.filter(Boolean).join(" ").toLowerCase().includes(term);
 
-  const visibleUnits = units.filter((u) =>
-    match([
-      u.unit_number,
-      u.building,
-      u.unit_type,
-      u.status,
-      ...current.filter((a) => a.unit_id === u.id).map((a) => label(a.user_id)),
-    ]),
+  const visibleUnits = units.filter(
+    (u) =>
+      (unitStatusFilter === "all" || u.status === unitStatusFilter) &&
+      match([
+        u.unit_number,
+        u.building,
+        u.unit_type,
+        u.status,
+        u.electricity_meter_no,
+        u.water_meter_no,
+        u.gas_meter_no,
+        ...current.filter((a) => a.unit_id === u.id).map((a) => label(a.user_id)),
+      ]),
   );
 
   const roleRows = (role: string) =>
