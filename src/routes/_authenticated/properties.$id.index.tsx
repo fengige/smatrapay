@@ -255,7 +255,7 @@ function PropertyDetailPage() {
         description: `${property?.["name"] ?? "The property"} was removed.`,
       });
       queryClient.removeQueries({ queryKey: ["properties", id] });
-      void queryClient.invalidateQueries({ queryKey: ["properties"], exact: true });
+      void queryClient.invalidateQueries({ queryKey: ["properties"] });
       void router.navigate({ to: "/properties", search: { page: 1, limit: 10 } });
     },
     onError: (err: Error) => toast.error(err.message || "Could not delete property"),
