@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
+  AlertTriangle,
   ArrowLeft,
   Building2,
   CheckCircle2,
@@ -80,6 +81,9 @@ type Unit = {
   bedrooms: number | null;
   floor: string | null;
   status: string;
+  electricity_meter_no: string | null;
+  water_meter_no: string | null;
+  gas_meter_no: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -164,6 +168,8 @@ function slug(value: string) {
 function LandlordActions({ landlord }: { landlord: Landlord }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const triggerId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -206,31 +212,41 @@ function LandlordActions({ landlord }: { landlord: Landlord }) {
       <div className="relative sm:hidden" ref={menuRef}>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Landlord actions"
+          id={triggerId}
+          aria-haspopup="menu"
+          aria-controls={menuId}
           aria-expanded={open}
+          aria-label={`Actions for ${landlord.name || "landlord"}`}
+          onClick={() => setOpen((v) => !v)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
-          Actions <MoreVertical className="size-4" />
+          Actions <MoreVertical className="size-4" aria-hidden="true" />
         </button>
         {open && (
-          <div className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-border bg-card p-1 shadow-lg">
+          <div
+            id={menuId}
+            role="menu"
+            aria-labelledby={triggerId}
+            className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-border bg-card p-1 shadow-lg"
+          >
             <Link
               to="/landlords/$id"
               params={{ id: landlord.id }}
+              role="menuitem"
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
               onClick={() => setOpen(false)}
             >
-              <Eye className="size-3.5" /> View landlord profile
+              <Eye className="size-3.5" aria-hidden="true" /> View landlord profile
             </Link>
             <Link
               to="/landlords/$id/edit"
               params={{ id: landlord.id }}
               search={{ page: 1, limit: 10 }}
+              role="menuitem"
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
               onClick={() => setOpen(false)}
             >
-              <Pencil className="size-3.5" /> Edit landlord
+              <Pencil className="size-3.5" aria-hidden="true" /> Edit landlord
             </Link>
           </div>
         )}
@@ -618,8 +634,14 @@ function PropertyDetailPage() {
     doc.save(`smatrapay-${slug(property?.["name"] ?? "property")}-${name}.pdf`);
   };
 
+  const configuredUnitCount =
+    property?.["number_of_units"] != null ? Number(property["number_of_units"]) : null;
+  const actualUnitCount = units.length;
+  const unitCountMissing = configuredUnitCount == null;
+  const unitCountMismatch = configuredUnitCount != null && configuredUnitCount !== actualUnitCount;
+
   const stats = [
-    { label: "Units", value: Number(property?.["number_of_units"] ?? 0), icon: Layers },
+    { label: "Units", value: configuredUnitCount ?? "—", icon: Layers },
     { label: "Current residents", value: residentsCurrent.length, icon: UsersIcon },
     { label: "Past assignments", value: previous.length, icon: UserCog },
   ];
@@ -741,6 +763,31 @@ function PropertyDetailPage() {
               ))}
             </div>
           </div>
+          {(unitCountMissing || unitCountMismatch) && (
+            <div
+              className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
+                unitCountMismatch
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 font-medium">
+                {unitCountMissing
+                  ? "Number of units is not set for this property."
+                  : `Configured unit count (${configuredUnitCount}) does not match the actual unit records (${actualUnitCount}).`}
+              </div>
+              <Link
+                to="/properties/$id/edit"
+                params={{ id }}
+                className={`font-semibold hover:underline ${
+                  unitCountMismatch ? "text-destructive" : "text-amber-800"
+                }`}
+              >
+                Edit property
+              </Link>
+            </div>
+          )}
 
           <section className="rounded-2xl border border-border bg-card">
             <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
@@ -794,12 +841,15 @@ function PropertyDetailPage() {
 
             <div className="overflow-x-auto">
               {tab === "units" && (
-                <table className="w-full min-w-[900px] text-left text-sm">
+                <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Unit</th>
                       <th className="px-4 py-3 font-semibold">Building</th>
                       <th className="px-4 py-3 font-semibold">Type</th>
+                      <th className="px-4 py-3 font-semibold">Electricity meter</th>
+                      <th className="px-4 py-3 font-semibold">Water meter</th>
+                      <th className="px-4 py-3 font-semibold">Gas meter</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
                       <th className="px-4 py-3 font-semibold">Current assignments</th>
                       <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -808,8 +858,23 @@ function PropertyDetailPage() {
                   <tbody>
                     {!visibleUnits.length && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                          No units yet. Use “Add Unit” to create one.
+                        <td colSpan={9} className="px-4 py-10 text-center">
+                          <p className="text-sm font-semibold text-foreground">
+                            {term
+                              ? "No units match your search."
+                              : actualUnitCount === 0
+                                ? configuredUnitCount == null
+                                  ? "No unit count is configured for this property. Add units to get started."
+                                  : configuredUnitCount === 0
+                                    ? "This property has no configured units."
+                                    : `This property is configured for ${configuredUnitCount} units, but no units have been added yet.`
+                              : "No units match your search."}
+                          </p>
+                          {!term && actualUnitCount === 0 && configuredUnitCount != null && configuredUnitCount > 0 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Use “Add Unit” to create the expected unit records.
+                            </p>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -825,6 +890,15 @@ function PropertyDetailPage() {
                           <td className="px-4 py-3 text-muted-foreground">
                             {u.unit_type || "—"}
                             {u.bedrooms != null && ` · ${u.bedrooms} bed`}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.electricity_meter_no || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.water_meter_no || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.gas_meter_no || "—"}
                           </td>
                           <td className="px-4 py-3">
                             <Pill value={u.status} />
@@ -887,6 +961,14 @@ function PropertyDetailPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1.5">
+                              <Link
+                                to="/units/$unitId"
+                                params={{ unitId: u.id }}
+                                className="rounded-lg border border-border p-2 hover:bg-accent/10"
+                                aria-label={`View unit ${u.unit_number}`}
+                              >
+                                <Eye className="size-4" />
+                              </Link>
                               <button
                                 type="button"
                                 onClick={() => setAssignFor(u)}

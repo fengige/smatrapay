@@ -31,6 +31,7 @@ import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_au
 import { Route as AuthenticatedResidentsIndexRouteImport } from './routes/_authenticated/residents.index'
 import { Route as AuthenticatedResidentsNewRouteImport } from './routes/_authenticated/residents.new'
 import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
+import { Route as AuthenticatedUnitsUnitIdRouteImport } from './routes/_authenticated/units.$unitId'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
@@ -167,6 +168,12 @@ const AuthenticatedServiceProviderDashboardRoute =
     path: '/service-provider/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUnitsUnitIdRoute =
+  AuthenticatedUnitsUnitIdRouteImport.update({
+    id: '/units/$unitId',
+    path: '/units/$unitId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -266,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
@@ -299,6 +307,7 @@ export interface FileRoutesByTo {
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/landlords': typeof AuthenticatedLandlordsIndexRoute
@@ -337,6 +346,7 @@ export interface FileRoutesById {
   '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/_authenticated/residents/new': typeof AuthenticatedResidentsNewRoute
   '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/_authenticated/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
@@ -376,6 +386,7 @@ export interface FileRouteTypes {
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
+    | '/units/$unitId'
     | '/users/$id'
     | '/users/new'
     | '/vendor/dashboard'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
+    | '/units/$unitId'
     | '/users/new'
     | '/vendor/dashboard'
     | '/landlords'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resident/dashboard'
     | '/_authenticated/residents/new'
     | '/_authenticated/service-provider/dashboard'
+    | '/_authenticated/units/$unitId'
     | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
     | '/_authenticated/vendor/dashboard'
@@ -628,6 +641,13 @@ declare module '@tanstack/react-router' {
       path: '/service-provider/dashboard'
       fullPath: '/service-provider/dashboard'
       preLoaderRoute: typeof AuthenticatedServiceProviderDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/units/$unitId': {
+      id: '/_authenticated/units/$unitId'
+      path: '/units/$unitId'
+      fullPath: '/units/$unitId'
+      preLoaderRoute: typeof AuthenticatedUnitsUnitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users/': {
@@ -832,6 +852,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
+  AuthenticatedUnitsUnitIdRoute: typeof AuthenticatedUnitsUnitIdRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
 }
 
@@ -849,6 +870,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResidentDashboardRoute: AuthenticatedResidentDashboardRoute,
   AuthenticatedServiceProviderDashboardRoute:
     AuthenticatedServiceProviderDashboardRoute,
+  AuthenticatedUnitsUnitIdRoute: AuthenticatedUnitsUnitIdRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
 }
 

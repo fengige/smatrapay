@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -192,6 +192,8 @@ function LandlordsPage() {
   const RowActions = ({ row }: { row: Row }) => {
     const [open, setOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const menuId = useId();
+    const triggerId = useId();
     const isActive = row.status === "active";
     const nextStatus = isActive ? "inactive" : "active";
 

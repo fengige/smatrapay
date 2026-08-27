@@ -168,6 +168,51 @@ export const getProperty = createServerFn({ method: "GET" })
     return { property, landlord: property.landlord ?? null, units: units ?? [], assignments, people };
   });
 
+export const getUnit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ unitId: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: unit, error } = await supabase
+      .from("units")
+      .select("*")
+      .eq("id", data.unitId)
+      .single();
+    if (error) throw new Error(error.message);
+    if (!unit) throw new Error("Unit not found");
+
+    const { data: property, error: pErr } = await supabase
+      .from("properties")
+      .select("id, name")
+      .eq("id", unit.property_id)
+      .single();
+    if (pErr) throw new Error(pErr.message);
+
+    const { data: assignments, error: aErr } = await supabase
+      .from("unit_assignments")
+      .select("*")
+      .eq("unit_id", data.unitId)
+      .order("start_date", { ascending: false });
+    if (aErr) throw new Error(aErr.message);
+
+    const userIds = [...new Set((assignments ?? []).map((a) => a.user_id))];
+    let people: any[] = [];
+    if (userIds.length) {
+      const { data: rows, error: pplErr } = await supabase
+        .from("users")
+        .select("id, name, email, phone, status")
+        .in("id", userIds);
+      if (pplErr) throw new Error(pplErr.message);
+      people = rows ?? [];
+    }
+
+    return { unit, property, assignments: assignments ?? [], people };
+  });
+
+
+
 export const createProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => propertyInput.parse(data))
