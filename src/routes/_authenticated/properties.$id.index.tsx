@@ -95,7 +95,7 @@ type Assignment = {
 
 type Person = { id: string; name: string | null; email: string | null; phone: string | null; status: string; role?: string };
 
-type Landlord = Person;
+type Landlord = Person & { profile_image: string | null };
 
 const TABS = [
   { id: "units", label: "Units", icon: Layers },
