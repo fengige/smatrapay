@@ -88,6 +88,7 @@ function EditResidentPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState("");
+  const [assignmentTouched, setAssignmentTouched] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["users", "detail", id],
