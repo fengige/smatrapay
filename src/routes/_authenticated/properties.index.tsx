@@ -379,21 +379,21 @@ function PropertiesPage() {
               <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     </td>
                   </tr>
                 )}
                 {!isLoading && error && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={8} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 )}
                 {!isLoading && !error && !paged.length && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                       No properties match these filters.
                     </td>
                   </tr>
