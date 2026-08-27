@@ -229,7 +229,15 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
 
 export const listUsersByRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ role: roleEnum }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        role: roleEnum,
+        status: statusEnum.optional(),
+        q: z.string().trim().max(100).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -246,12 +254,20 @@ export const listUsersByRole = createServerFn({ method: "GET" })
     if (rolesError) throw new Error(rolesError.message);
 
     const ids = (roleRows ?? []).map((r) => r.user_id);
+    if (ids.length === 0) return { users: [] };
 
-    const { data: profiles, error } = await supabase
-      .from("users")
-      .select("*")
-      .in("id", ids)
-      .order("created_at", { ascending: false });
+    let q = supabase.from("users").select("*").in("id", ids);
+
+    if (data.status) {
+      q = q.eq("status", data.status);
+    }
+
+    if (data.q) {
+      const term = `%${data.q}%`;
+      q = q.or(`name.ilike.${term},email.ilike.${term}`);
+    }
+
+    const { data: profiles, error } = await q.order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
     return { users: (profiles ?? []).map((p) => ({ ...p, role: data.role as string })) };

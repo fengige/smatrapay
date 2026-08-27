@@ -125,7 +125,7 @@ function EditLandlordPage() {
     onSuccess: async () => {
       toast.success("Landlord updated");
       await queryClient.invalidateQueries({ queryKey: ["users"] });
-      navigate({ to: "/landlords", search: { page: 1, limit: 10 } });
+      navigate({ to: "/landlords", search: { page: 1, limit: 10, status: "all", q: "" } });
     },
     onError: (err: Error) => toast.error(err.message || "Could not update landlord"),
   });
@@ -166,7 +166,7 @@ function EditLandlordPage() {
             <div className="flex items-start gap-3">
               <Link
                 to="/landlords"
-                search={{ page: 1, limit: 10 }}
+                search={{ page: 1, limit: 10, status: "all", q: "" }}
                 aria-label="Back to landlord management"
                 className="mt-1 inline-flex size-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-accent/10"
               >
@@ -180,7 +180,7 @@ function EditLandlordPage() {
             <div className="flex items-center gap-2">
               <Link
                 to="/landlords"
-                search={{ page: 1, limit: 10 }}
+                search={{ page: 1, limit: 10, status: "all", q: "" }}
                 className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
               >
                 <X className="size-4" /> Cancel

@@ -157,7 +157,7 @@ function LandlordDetailPage() {
     onSuccess: () => {
       toast.success("Landlord deleted");
       queryClient.invalidateQueries({ queryKey: ["users", "landlord"] });
-      navigate({ to: "/landlords", search: { page: 1, limit: 10 } });
+      navigate({ to: "/landlords", search: { page: 1, limit: 10, status: "all", q: "" } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -335,7 +335,7 @@ function LandlordDetailPage() {
           <Link
             to="/landlords/$id/edit"
             params={{ id }}
-            search={{ page: 1, limit: 10 }}
+            search={{ page: 1, limit: 10, status: "all", q: "" }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Pencil className="size-4" /> Edit Landlord
@@ -347,7 +347,7 @@ function LandlordDetailPage() {
         <div className="flex items-start gap-3">
           <Link
             to="/landlords"
-            search={{ page: 1, limit: 10 }}
+            search={{ page: 1, limit: 10, status: "all", q: "" }}
             aria-label="Back to landlord management"
             className="mt-1 inline-flex size-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-accent/10"
           >
@@ -441,7 +441,7 @@ function LandlordDetailPage() {
               <div className="flex flex-wrap gap-1 rounded-2xl border border-border bg-card p-2">
                 {(
                   [
-                    ["property", "Property & Unit"],
+                    ["property", "My Properties"],
                     ["units", "Assigned Units"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
@@ -467,7 +467,7 @@ function LandlordDetailPage() {
               </div>
 
               {tab === "property" && (
-              <Section title="Property & Unit" icon={<Building2 className="size-4 text-primary" />}>
+              <Section title="My Properties" icon={<Building2 className="size-4 text-primary" />}>
                 <dl className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
                   <Detail label="Property" value={landlord.property ?? "Unassigned"} />
                   <Detail label="Building" value={landlord.building ?? "—"} />

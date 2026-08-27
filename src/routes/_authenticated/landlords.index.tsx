@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   Loader2,
+  MoreVertical,
   Pencil,
   Plus,
   Power,
@@ -19,6 +20,7 @@ import {
   Trash2,
   UserCheck,
   Users as UsersIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +35,12 @@ function parseSearch(search: Record<string, unknown>) {
   const limit = LIMIT_OPTIONS.includes(Number(search["limit"]))
     ? Number(search["limit"])
     : DEFAULT_LIMIT;
-  return { page, limit };
+  const status =
+    typeof search["status"] === "string" && STATUSES.includes(search["status"])
+      ? search["status"]
+      : "all";
+  const q = typeof search["q"] === "string" ? search["q"] : "";
+  return { page, limit, status, q };
 }
 
 export const Route = createFileRoute("/_authenticated/landlords/")({
@@ -104,19 +111,20 @@ function LandlordsPage() {
   const removeLandlord = useServerFn(deleteUser);
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { page: currentPage, limit: pageSize, status: statusFilter, q: search } = Route.useSearch();
+  const navigate = useNavigate({ from: "/landlords/" });
+  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+  const setPageSize = (limit: number) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
+  const setStatusFilter = (status: string) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, status }) });
+  const setSearch = (q: string) => navigate({ search: (prev) => ({ ...prev, page: 1, q }) });
+
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [confirm, setConfirm] = useState<
     { type: "status" | "delete"; row: Row; next?: string } | null
   >(null);
-
-  const { page: currentPage, limit: pageSize } = Route.useSearch();
-  const navigate = useNavigate({ from: "/landlords/" });
-  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
-  const setPageSize = (limit: number) =>
-    navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
 
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
@@ -124,8 +132,15 @@ function LandlordsPage() {
   }, [search, statusFilter]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["users", "landlord"],
-    queryFn: () => fetchLandlords({ data: { role: "landlord" } }),
+    queryKey: ["users", "landlord", statusFilter, search],
+    queryFn: () =>
+      fetchLandlords({
+        data: {
+          role: "landlord",
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          ...(search.trim() ? { q: search.trim() } : {}),
+        },
+      }),
   });
 
   const landlords = useMemo(() => (data?.users ?? []) as unknown as Row[], [data]);
@@ -151,28 +166,20 @@ function LandlordsPage() {
 
   const busy = statusMutation.isPending || deleteMutation.isPending;
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const rows = landlords.filter((r) => {
-      const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-      if (!matchesStatus) return false;
-      if (!term) return true;
-      return [r.name, r.email, r.username, r.phone]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term));
-    });
+  const sortedRows = useMemo(
+    () =>
+      [...landlords].sort((a, b) => {
+        const av = String(a[sortKey] ?? "").toLowerCase();
+        const bv = String(b[sortKey] ?? "").toLowerCase();
+        if (av === bv) return 0;
+        return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
+      }),
+    [landlords, sortKey, sortDir],
+  );
 
-    return [...rows].sort((a, b) => {
-      const av = String(a[sortKey] ?? "").toLowerCase();
-      const bv = String(b[sortKey] ?? "").toLowerCase();
-      if (av === bv) return 0;
-      return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
-    });
-  }, [landlords, search, statusFilter, sortKey, sortDir]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const page = Math.min(currentPage, totalPages);
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const paged = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -180,6 +187,137 @@ function LandlordsPage() {
       setSortKey(key);
       setSortDir("asc");
     }
+  };
+
+  const RowActions = ({ row }: { row: Row }) => {
+    const [open, setOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const isActive = row.status === "active";
+    const nextStatus = isActive ? "inactive" : "active";
+
+    useEffect(() => {
+      if (!open) return;
+      const handle = (e: MouseEvent | KeyboardEvent) => {
+        if (e.type === "keydown" && (e as KeyboardEvent).key === "Escape") {
+          setOpen(false);
+          return;
+        }
+        if (
+          e.type === "mousedown" &&
+          menuRef.current &&
+          !menuRef.current.contains(e.target as Node)
+        ) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener("mousedown", handle);
+      document.addEventListener("keydown", handle);
+      return () => {
+        document.removeEventListener("mousedown", handle);
+        document.removeEventListener("keydown", handle);
+      };
+    }, [open]);
+
+    return (
+      <div className="flex items-center justify-end gap-1">
+        <div className="hidden items-center gap-1 sm:flex">
+          <Link
+            to="/landlords/$id"
+            params={{ id: row.id }}
+            search={{ page: 1, limit: 10 }}
+            aria-label="View landlord"
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+          >
+            <Eye className="size-3.5" />
+          </Link>
+          <Link
+            to="/landlords/$id/edit"
+            params={{ id: row.id }}
+            search={{ page: 1, limit: 10 }}
+            aria-label="Edit landlord"
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+          >
+            <Pencil className="size-3.5" />
+          </Link>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirm({ type: "status", row, next: nextStatus })}
+            aria-label={isActive ? "Deactivate landlord" : "Activate landlord"}
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+          >
+            <Power className={`size-3.5 ${isActive ? "text-emerald-600" : ""}`} />
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirm({ type: "delete", row })}
+            aria-label="Delete landlord"
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
+
+        <div className="relative sm:hidden" ref={menuRef}>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Landlord actions"
+            aria-expanded={open}
+            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+          >
+            <MoreVertical className="size-3.5" />
+          </button>
+          {open && (
+            <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-border bg-card p-1 shadow-lg">
+              <Link
+                to="/landlords/$id"
+                params={{ id: row.id }}
+                search={{ page: 1, limit: 10 }}
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
+                onClick={() => setOpen(false)}
+              >
+                <Eye className="size-3.5" /> View
+              </Link>
+              <Link
+                to="/landlords/$id/edit"
+                params={{ id: row.id }}
+                search={{ page: 1, limit: 10 }}
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
+                onClick={() => setOpen(false)}
+              >
+                <Pencil className="size-3.5" /> Edit
+              </Link>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setOpen(false);
+                  setConfirm({ type: "status", row, next: nextStatus });
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-foreground hover:bg-accent/10 disabled:opacity-50"
+              >
+                <Power className={`size-3.5 ${isActive ? "text-emerald-600" : ""}`} />
+                {isActive ? "Deactivate" : "Activate"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setOpen(false);
+                  setConfirm({ type: "delete", row });
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" /> Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const stats = useMemo(
@@ -194,7 +332,7 @@ function LandlordsPage() {
 
   const exportCsv = () => {
     const header = ["Full Name", "Email", "Phone", "Status", "Joined"];
-    const rows = filtered.map((r) => [
+    const rows = sortedRows.map((r) => [
       r.name ?? "",
       r.email ?? "",
       r.phone ?? "",
@@ -244,10 +382,10 @@ function LandlordsPage() {
           <button
             type="button"
             onClick={exportCsv}
-            disabled={!filtered.length}
+            disabled={!sortedRows.length}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
           >
-            <Download className="size-4" /> Export CSV ({filtered.length})
+            <Download className="size-4" /> Export CSV ({sortedRows.length})
           </button>
           <button
             type="button"
@@ -274,22 +412,32 @@ function LandlordsPage() {
         </div>
 
         <section className="rounded-2xl border border-border bg-card">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-            <div className="flex min-w-[220px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
-              <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+            <div className="flex min-w-[180px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
+              <span className="flex items-center bg-muted/50 px-2.5 text-muted-foreground">
                 <Search className="size-4" />
               </span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search landlords by name, email or phone"
-                className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
+                placeholder="Search name / email"
+                className="w-full bg-background px-2.5 py-1.5 text-sm outline-none placeholder:text-muted-foreground/70"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                  className="flex items-center px-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
             >
               <option value="all">All statuses</option>
               {STATUSES.map((s) => (
@@ -299,6 +447,18 @@ function LandlordsPage() {
                 </option>
               ))}
             </select>
+            {(search || statusFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+                className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -366,52 +526,7 @@ function LandlordsPage() {
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{date(r.created_at)}</td>
                       <td className="px-3 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <Link
-                            to="/landlords/$id"
-                            params={{ id: r.id }}
-                            search={{ page: 1, limit: 10 }}
-                            aria-label="View landlord"
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Eye className="size-3.5" />
-                          </Link>
-                          <Link
-                            to="/landlords/$id/edit"
-                            params={{ id: r.id }}
-                            search={{ page: 1, limit: 10 }}
-                            aria-label="Edit landlord"
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Pencil className="size-3.5" />
-                          </Link>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
-                              setConfirm({
-                                type: "status",
-                                row: r,
-                                next: r.status === "active" ? "inactive" : "active",
-                              })
-                            }
-                            aria-label={r.status === "active" ? "Deactivate landlord" : "Activate landlord"}
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
-                          >
-                            <Power
-                              className={`size-3.5 ${r.status === "active" ? "text-emerald-600" : ""}`}
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setConfirm({ type: "delete", row: r })}
-                            aria-label="Delete landlord"
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
+                        <RowActions row={r} />
                       </td>
                     </tr>
                   ))
@@ -435,8 +550,8 @@ function LandlordsPage() {
                 ))}
               </select>
               <span>
-                {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-                {Math.min(page * pageSize, filtered.length)} of {filtered.length}
+                {sortedRows.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+                {Math.min(page * pageSize, sortedRows.length)} of {sortedRows.length}
               </span>
             </div>
             <div className="flex items-center gap-2">
