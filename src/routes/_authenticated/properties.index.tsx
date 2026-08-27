@@ -131,7 +131,7 @@ function PropertiesPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, unitType, status]);
+  }, [search, unitType, status, propertyType]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["properties", "list"],
@@ -187,6 +187,8 @@ function PropertiesPage() {
     const term = search.trim().toLowerCase();
     return rows.filter((row) => {
       if (status !== "all" && row.property.status !== status) return false;
+      if (propertyType !== "all" && (row.property.property_type ?? "building") !== propertyType)
+        return false;
       if (unitType !== "all" && !row.unitTypes.includes(unitType)) return false;
       if (!term) return true;
       return [
@@ -194,6 +196,7 @@ function PropertiesPage() {
         row.property.code,
         row.property.city,
         row.property.country,
+        row.property.property_type,
         ...row.buildings,
         ...row.unitTypes,
       ]
@@ -202,7 +205,7 @@ function PropertiesPage() {
         .toLowerCase()
         .includes(term);
     });
-  }, [rows, search, status, unitType]);
+  }, [rows, search, status, propertyType, unitType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
