@@ -278,7 +278,21 @@ function MetersPage() {
             })}
           </div>
         )}
+
+        {showAdd && (
+          <AddMeterDialog
+            properties={properties}
+            units={units}
+            onClose={() => setShowAdd(false)}
+            onSaved={async () => {
+              setShowAdd(false);
+              await queryClient.invalidateQueries({ queryKey: ["meters"] });
+              toast.success("Meter added");
+            }}
+          />
+        )}
       </div>
     </PortalLayout>
   );
 }
+
