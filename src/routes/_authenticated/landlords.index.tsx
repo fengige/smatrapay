@@ -85,7 +85,7 @@ const statusTone: Record<string, string> = {
   suspended: "bg-destructive/12 text-destructive",
 };
 
-type SortKey = "name" | "email" | "phone" | "property" | "unit_number" | "status" | "created_at";
+type SortKey = "name" | "email" | "phone" | "status" | "created_at";
 
 function date(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : "";
