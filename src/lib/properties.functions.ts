@@ -97,6 +97,29 @@ export const listProperties = createServerFn({ method: "GET" })
     return { properties: properties ?? [], units: units ?? [], assignments: assignments ?? [] };
   });
 
+export const listLandlordProperties = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ landlordId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: properties, error } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("landlord_id", data.landlordId)
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const ids = (properties ?? []).map((p) => p.id);
+    const { data: units, error: unitsError } = ids.length
+      ? await supabase.from("units").select("id, property_id, status").in("property_id", ids)
+      : { data: [] as { id: string; property_id: string; status: string }[], error: null };
+    if (unitsError) throw new Error(unitsError.message);
+
+    return { properties: properties ?? [], units: units ?? [] };
+  });
+
 export const getProperty = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
