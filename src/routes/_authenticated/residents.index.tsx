@@ -61,20 +61,28 @@ export const Route = createFileRoute("/_authenticated/residents/")({
   ),
 });
 
+type Assignment = {
+  id: string;
+  user_id: string;
+  start_date: string;
+  end_date: string | null;
+  unit: {
+    unit_number: string;
+    property: { name: string } | null;
+  } | null;
+};
+
 type Row = {
   id: string;
   name: string | null;
   email: string | null;
   username: string | null;
   phone: string | null;
-  property: string | null;
-  building: string | null;
-  unit_number: string | null;
-  move_in_date: string | null;
-  profile_image: string | null;
   status: string;
   role: string;
   created_at: string;
+  profile_image: string | null;
+  assignments: Assignment[];
 };
 
 const STATUSES = ["active", "pending", "inactive", "suspended"];
@@ -100,6 +108,18 @@ function initials(row: Row) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
+}
+
+function currentAssignments(row: Row) {
+  return row.assignments.filter((a) => !a.end_date);
+}
+
+function assignmentDisplayString(row: Row) {
+  const active = currentAssignments(row);
+  if (!active.length) return null;
+  const properties = [...new Set(active.map((a) => a.unit?.property?.name).filter(Boolean))];
+  const units = active.map((a) => a.unit?.unit_number).filter(Boolean);
+  return { properties, units };
 }
 
 function ResidentsPage() {
@@ -161,14 +181,33 @@ function ResidentsPage() {
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       if (!matchesStatus) return false;
       if (!term) return true;
-      return [r.name, r.email, r.username, r.phone, r.property, r.building, r.unit_number]
+      const display = assignmentDisplayString(r);
+      const searchValues = [
+        r.name,
+        r.email,
+        r.username,
+        r.phone,
+        ...(display?.properties ?? []),
+        ...(display?.units ?? []),
+      ];
+      return searchValues
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term));
     });
 
     return [...rows].sort((a, b) => {
-      const av = String(a[sortKey] ?? "").toLowerCase();
-      const bv = String(b[sortKey] ?? "").toLowerCase();
+      let av: string;
+      let bv: string;
+      if (sortKey === "property") {
+        av = (assignmentDisplayString(a)?.properties ?? []).join(", ") ?? "";
+        bv = (assignmentDisplayString(b)?.properties ?? []).join(", ") ?? "";
+      } else if (sortKey === "unit_number") {
+        av = (assignmentDisplayString(a)?.units ?? []).join(", ") ?? "";
+        bv = (assignmentDisplayString(b)?.units ?? []).join(", ") ?? "";
+      } else {
+        av = String(a[sortKey] ?? "").toLowerCase();
+        bv = String(b[sortKey] ?? "").toLowerCase();
+      }
       if (av === bv) return 0;
       return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
     });
@@ -197,28 +236,19 @@ function ResidentsPage() {
   );
 
   const exportCsv = () => {
-    const header = [
-      "Full Name",
-      "Email",
-      "Phone",
-      "Property",
-      "Building",
-      "Unit",
-      "Status",
-      "Move-in Date",
-      "Joined",
-    ];
-    const rows = filtered.map((r) => [
-      r.name ?? "",
-      r.email ?? "",
-      r.phone ?? "",
-      r.property ?? "",
-      r.building ?? "",
-      r.unit_number ?? "",
-      r.status,
-      r.move_in_date ?? "",
-      date(r.created_at),
-    ]);
+    const header = ["Full Name", "Email", "Phone", "Property", "Unit", "Status", "Joined"];
+    const rows = filtered.map((r) => {
+      const display = assignmentDisplayString(r);
+      return [
+        r.name ?? "",
+        r.email ?? "",
+        r.phone ?? "",
+        (display?.properties ?? []).join(", ") ?? "",
+        (display?.units ?? []).join(", ") ?? "",
+        r.status,
+        date(r.created_at),
+      ];
+    });
     const csv = [header, ...rows]
       .map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
@@ -376,12 +406,31 @@ function ResidentsPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{r.phone ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        <div>{r.property ?? "—"}</div>
-                        {r.building && (
-                          <div className="text-xs text-muted-foreground/80">{r.building}</div>
-                        )}
+                        {(() => {
+                          const display = assignmentDisplayString(r);
+                          if (!display) return "—";
+                          return (
+                            <div className="space-y-1">
+                              {display.properties.map((p) => (
+                                <div key={p}>{p}</div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.unit_number ?? "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {(() => {
+                          const display = assignmentDisplayString(r);
+                          if (!display) return "—";
+                          return (
+                            <div className="space-y-1">
+                              {display.units.map((u) => (
+                                <div key={u}>{u}</div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
