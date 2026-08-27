@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -93,6 +93,27 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+type UnitForm = {
+  open: boolean;
+  id?: string;
+  unit_number: string;
+  building: string;
+  unit_type: string;
+  bedrooms: string;
+  floor: string;
+  status: string;
+};
+
+const emptyUnitForm: UnitForm = {
+  open: false,
+  unit_number: "",
+  building: "",
+  unit_type: "",
+  bedrooms: "",
+  floor: "",
+  status: "vacant",
+};
+
 const tone: Record<string, string> = {
   active: "bg-emerald-500/12 text-emerald-600",
   occupied: "bg-emerald-500/12 text-emerald-600",
@@ -129,7 +150,6 @@ const inputClass =
 
 function PropertyDetailPage() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const fetchProperty = useServerFn(getProperty);
@@ -142,9 +162,7 @@ function PropertyDetailPage() {
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
-  const [unitForm, setUnitForm] = useState<{ id?: string; open: boolean } & Record<string, string>>(
-    { open: false } as never,
-  );
+  const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
 
   const { data, isLoading, error } = useQuery({
@@ -185,7 +203,7 @@ function PropertyDetailPage() {
     mutationFn: (payload: Record<string, unknown>) => saveUnit({ data: payload } as never),
     onSuccess: async () => {
       toast.success("Unit saved");
-      setUnitForm({ open: false } as never);
+      setUnitForm({ ...emptyUnitForm });
       await invalidate();
     },
     onError: (err: Error) => toast.error(err.message || "Could not save unit"),
@@ -399,6 +417,7 @@ function PropertyDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/properties"
+            search={{ page: 1, limit: 10 }}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
           >
             <ArrowLeft className="size-4" /> Back
@@ -506,15 +525,7 @@ function PropertyDetailPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    setUnitForm({
-                      open: true,
-                      unit_number: "",
-                      building: "",
-                      unit_type: "",
-                      bedrooms: "",
-                      floor: "",
-                      status: "vacant",
-                    } as never)
+                    setUnitForm({ ...emptyUnitForm, open: true })
                   }
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
                 >
@@ -638,7 +649,7 @@ function PropertyDetailPage() {
                                     bedrooms: u.bedrooms == null ? "" : String(u.bedrooms),
                                     floor: u.floor ?? "",
                                     status: u.status,
-                                  } as never)
+                                  })
                                 }
                                 aria-label={`Edit unit ${u.unit_number}`}
                                 className="rounded-lg border border-border p-2 hover:bg-accent/10"
@@ -767,24 +778,24 @@ function PropertyDetailPage() {
       )}
 
       {unitForm.open && (
-        <Modal title={unitForm["id"] ? "Edit unit" : "Add unit"} onClose={() => setUnitForm({ open: false } as never)}>
+        <Modal title={unitForm.id ? "Edit unit" : "Add unit"} onClose={() => setUnitForm({ ...emptyUnitForm })}>
           <form
             className="space-y-3"
             onSubmit={(e) => {
               e.preventDefault();
-              if (!String(unitForm["unit_number"] ?? "").trim()) {
+              if (!unitForm.unit_number.trim()) {
                 toast.error("Unit number is required");
                 return;
               }
               unitMutation.mutate({
-                ...(unitForm["id"] ? { id: unitForm["id"] } : {}),
+                ...(unitForm.id ? { id: unitForm.id } : {}),
                 property_id: id,
-                unit_number: String(unitForm["unit_number"]).trim(),
-                building: String(unitForm["building"] ?? "").trim() || null,
-                unit_type: String(unitForm["unit_type"] ?? "").trim() || null,
-                bedrooms: unitForm["bedrooms"] ? Number(unitForm["bedrooms"]) : null,
-                floor: String(unitForm["floor"] ?? "").trim() || null,
-                status: unitForm["status"] || "vacant",
+                unit_number: unitForm.unit_number.trim(),
+                building: unitForm.building.trim() || null,
+                unit_type: unitForm.unit_type.trim() || null,
+                bedrooms: unitForm.bedrooms ? Number(unitForm.bedrooms) : null,
+                floor: unitForm.floor.trim() || null,
+                status: unitForm.status,
               });
             }}
           >
@@ -792,19 +803,19 @@ function PropertyDetailPage() {
               <input
                 className={inputClass}
                 placeholder="Unit number *"
-                value={unitForm["unit_number"] ?? ""}
+                value={unitForm.unit_number ?? ""}
                 onChange={(e) => setUnitForm((p) => ({ ...p, unit_number: e.target.value }))}
               />
               <input
                 className={inputClass}
                 placeholder="Building"
-                value={unitForm["building"] ?? ""}
+                value={unitForm.building ?? ""}
                 onChange={(e) => setUnitForm((p) => ({ ...p, building: e.target.value }))}
               />
               <input
                 className={inputClass}
                 placeholder="Unit type (Studio, 2BR…)"
-                value={unitForm["unit_type"] ?? ""}
+                value={unitForm.unit_type ?? ""}
                 onChange={(e) => setUnitForm((p) => ({ ...p, unit_type: e.target.value }))}
               />
               <input
@@ -812,18 +823,18 @@ function PropertyDetailPage() {
                 type="number"
                 min={0}
                 placeholder="Bedrooms"
-                value={unitForm["bedrooms"] ?? ""}
+                value={unitForm.bedrooms}
                 onChange={(e) => setUnitForm((p) => ({ ...p, bedrooms: e.target.value }))}
               />
               <input
                 className={inputClass}
                 placeholder="Floor"
-                value={unitForm["floor"] ?? ""}
+                value={unitForm.floor ?? ""}
                 onChange={(e) => setUnitForm((p) => ({ ...p, floor: e.target.value }))}
               />
               <select
                 className={inputClass}
-                value={unitForm["status"] ?? "vacant"}
+                value={unitForm.status}
                 onChange={(e) => setUnitForm((p) => ({ ...p, status: e.target.value }))}
               >
                 <option value="vacant">Vacant</option>
@@ -855,11 +866,6 @@ function PropertyDetailPage() {
         </Modal>
       )}
 
-      <div className="sr-only">
-        <button type="button" onClick={() => void navigate({ to: "/properties" })}>
-          Back to properties
-        </button>
-      </div>
     </PortalLayout>
   );
 }

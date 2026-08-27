@@ -69,7 +69,7 @@ function NewPropertyPage() {
         submitLabel="Create property"
         pending={mutation.isPending}
         onSubmit={(values) => mutation.mutate(values)}
-        onCancel={() => void navigate({ to: "/properties" })}
+        onCancel={() => void navigate({ to: "/properties", search: { page: 1, limit: 10 } })}
       />
     </PortalLayout>
   );
