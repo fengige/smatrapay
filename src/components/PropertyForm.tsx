@@ -68,7 +68,7 @@ export function PropertyForm({
   const [values, setValues] = useState<PropertyFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const set = (key: keyof PropertyFormValues, value: string) =>
+  const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
   const submit = (event: React.FormEvent) => {
