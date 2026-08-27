@@ -360,6 +360,90 @@ function EditResidentPage() {
                 </div>
               </section>
 
+              <section className="rounded-2xl border border-border bg-card">
+                <header className="border-b border-border px-5 py-4">
+                  <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                    <Building2 className="size-4 text-primary" aria-hidden="true" />
+                    Unit Assignment
+                  </h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Select the property and unit this resident occupies. Units already occupied by
+                    another resident are unavailable.
+                  </p>
+                </header>
+                <div className="grid gap-4 p-5 sm:grid-cols-2">
+                  <Field label="Property">
+                    <select
+                      className={inputClass}
+                      value={selectedPropertyId}
+                      disabled={isSaving || propertiesLoading}
+                      onChange={(e) => onPropertyChange(e.target.value)}
+                      aria-label="Select property"
+                    >
+                      <option value="">
+                        {propertiesLoading ? "Loading properties…" : "Select a property"}
+                      </option>
+                      {properties.map((p: any) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.code ? ` (${p.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Unit">
+                    <select
+                      className={inputClass}
+                      value={selectedUnitId}
+                      disabled={isSaving || !selectedPropertyId}
+                      onChange={(e) => onUnitChange(e.target.value)}
+                      aria-label="Select unit"
+                    >
+                      <option value="">
+                        {!selectedPropertyId
+                          ? "Select a property first"
+                          : propertyUnits.length
+                            ? "Unassigned"
+                            : "No units in this property"}
+                      </option>
+                      {propertyUnits.map((u: any) => {
+                        const taken = occupiedByOther.has(u.id);
+                        return (
+                          <option key={u.id} value={u.id} disabled={taken}>
+                            Unit {u.unit_number}
+                            {u.unit_type ? ` · ${u.unit_type}` : ""} · {u.status}
+                            {taken ? " (occupied)" : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </Field>
+                </div>
+                {initialUnitId && (
+                  <div className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+                    Currently assigned to{" "}
+                    <strong className="text-foreground">
+                      {(() => {
+                        const unit = (assignmentData?.units ?? []).find(
+                          (u: any) => u.id === initialUnitId,
+                        );
+                        const property = (assignmentData?.properties ?? []).find(
+                          (p: any) => p.id === unit?.property_id,
+                        );
+                        return unit
+                          ? `${property?.name ?? "property"} · Unit ${unit.unit_number}`
+                          : "a unit";
+                      })()}
+                    </strong>
+                    {selectedUnitId !== initialUnitId && (
+                      <span className="ml-1 text-amber-600 dark:text-amber-400">
+                        — this assignment will be ended on save
+                        {selectedUnitId ? " and replaced with the new unit" : ""}.
+                      </span>
+                    )}
+                  </div>
+                )}
+              </section>
 
               <section className="rounded-2xl border border-border bg-card">
                 <header className="border-b border-border px-5 py-4">
