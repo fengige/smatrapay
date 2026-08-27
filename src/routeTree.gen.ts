@@ -38,6 +38,7 @@ import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 import { Route as AuthenticatedLandlordsIdIndexRouteImport } from './routes/_authenticated/landlords.$id.index'
 import { Route as AuthenticatedLandlordsIdEditRouteImport } from './routes/_authenticated/landlords.$id.edit'
+import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_authenticated/properties.$id.index'
 import { Route as AuthenticatedPropertiesIdEditRouteImport } from './routes/_authenticated/properties.$id.edit'
 import { Route as AuthenticatedResidentsIdIndexRouteImport } from './routes/_authenticated/residents.$id.index'
 import { Route as AuthenticatedResidentsIdEditRouteImport } from './routes/_authenticated/residents.$id.edit'
@@ -206,6 +207,12 @@ const AuthenticatedLandlordsIdEditRoute =
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedLandlordsRoute,
   } as any)
+const AuthenticatedPropertiesIdIndexRoute =
+  AuthenticatedPropertiesIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPropertiesIdRoute,
+  } as any)
 const AuthenticatedPropertiesIdEditRoute =
   AuthenticatedPropertiesIdEditRouteImport.update({
     id: '/edit',
@@ -281,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
+  '/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id/': typeof AuthenticatedUsersIdIndexRoute
 }
@@ -295,7 +303,6 @@ export interface FileRoutesByTo {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
-  '/properties/$id': typeof AuthenticatedPropertiesIdRouteWithChildren
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/landlords/$id': typeof AuthenticatedLandlordsIdIndexRoute
+  '/properties/$id': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id': typeof AuthenticatedUsersIdIndexRoute
 }
@@ -352,6 +360,7 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/_authenticated/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
+  '/_authenticated/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/_authenticated/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/_authenticated/users/$id/': typeof AuthenticatedUsersIdIndexRoute
 }
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/landlords/$id/'
+    | '/properties/$id/'
     | '/residents/$id/'
     | '/users/$id/'
   fileRoutesByTo: FileRoutesByTo
@@ -405,7 +415,6 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/landlord/dashboard'
     | '/landlords/new'
-    | '/properties/$id'
     | '/properties/new'
     | '/resident/dashboard'
     | '/residents/new'
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/landlords/$id'
+    | '/properties/$id'
     | '/residents/$id'
     | '/users/$id'
   id:
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/_authenticated/landlords/$id/'
+    | '/_authenticated/properties/$id/'
     | '/_authenticated/residents/$id/'
     | '/_authenticated/users/$id/'
   fileRoutesById: FileRoutesById
@@ -679,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLandlordsIdEditRouteImport
       parentRoute: typeof AuthenticatedLandlordsRoute
     }
+    '/_authenticated/properties/$id/': {
+      id: '/_authenticated/properties/$id/'
+      path: '/'
+      fullPath: '/properties/$id/'
+      preLoaderRoute: typeof AuthenticatedPropertiesIdIndexRouteImport
+      parentRoute: typeof AuthenticatedPropertiesIdRoute
+    }
     '/_authenticated/properties/$id/edit': {
       id: '/_authenticated/properties/$id/edit'
       path: '/edit'
@@ -753,11 +771,13 @@ const AuthenticatedLandlordsRouteWithChildren =
 
 interface AuthenticatedPropertiesIdRouteChildren {
   AuthenticatedPropertiesIdEditRoute: typeof AuthenticatedPropertiesIdEditRoute
+  AuthenticatedPropertiesIdIndexRoute: typeof AuthenticatedPropertiesIdIndexRoute
 }
 
 const AuthenticatedPropertiesIdRouteChildren: AuthenticatedPropertiesIdRouteChildren =
   {
     AuthenticatedPropertiesIdEditRoute: AuthenticatedPropertiesIdEditRoute,
+    AuthenticatedPropertiesIdIndexRoute: AuthenticatedPropertiesIdIndexRoute,
   }
 
 const AuthenticatedPropertiesIdRouteWithChildren =

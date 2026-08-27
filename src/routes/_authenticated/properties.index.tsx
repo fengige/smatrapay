@@ -1,35 +1,52 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
+  ChevronLeft,
+  ChevronRight,
   Download,
+  Eye,
   Home,
   Layers,
   Loader2,
+  Pencil,
+  Plus,
   RefreshCw,
   Search,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 
-import { listUsersByRole } from "@/lib/users.functions";
+import { listProperties } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
+const LIMIT_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_LIMIT = 10;
+
+function parseSearch(search: Record<string, unknown>) {
+  const page = Math.max(1, Number(search["page"]) || 1);
+  const limit = LIMIT_OPTIONS.includes(Number(search["limit"]))
+    ? Number(search["limit"])
+    : DEFAULT_LIMIT;
+  return { page, limit };
+}
+
 export const Route = createFileRoute("/_authenticated/properties/")({
+  validateSearch: parseSearch,
   head: () => ({
     meta: [
       { title: "Property Management · SmatraPay" },
       {
         name: "description",
         content:
-          "Manage SmatraPay properties: buildings, units, assigned residents and landlords across the portfolio.",
+          "Manage SmatraPay properties: buildings, units, unit types, occupancy, residents and landlords.",
       },
       { property: "og:title", content: "Property Management · SmatraPay" },
       {
         property: "og:description",
-        content: "View every property, its buildings, units, residents and landlords on SmatraPay.",
+        content: "Search, filter and manage every property in the SmatraPay portfolio.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -41,23 +58,32 @@ export const Route = createFileRoute("/_authenticated/properties/")({
   ),
 });
 
-type Person = {
+type Property = {
   id: string;
-  name: string | null;
-  email: string | null;
-  property: string | null;
+  name: string;
+  code: string | null;
+  city: string | null;
+  country: string | null;
+  status: string;
+  created_at: string;
+};
+
+type Unit = {
+  id: string;
+  property_id: string;
+  unit_number: string;
   building: string | null;
-  unit_number: string | null;
+  unit_type: string | null;
   status: string;
 };
 
-type PropertyRow = {
-  property: string;
-  buildings: string[];
-  units: string[];
-  residents: number;
-  activeResidents: number;
-  landlords: string[];
+type Assignment = {
+  id: string;
+  unit_id: string;
+  user_id: string;
+  role: string;
+  start_date: string;
+  end_date: string | null;
 };
 
 function StatCard({
@@ -84,104 +110,144 @@ function StatCard({
   );
 }
 
+const inputClass =
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+
 function PropertiesPage() {
-  const fetchByRole = useServerFn(listUsersByRole);
+  const fetchProperties = useServerFn(listProperties);
+  const { page: currentPage, limit: pageSize } = Route.useSearch();
+  const navigate = useNavigate({ from: "/properties/" });
+
   const [search, setSearch] = useState("");
+  const [building, setBuilding] = useState("all");
+  const [unitType, setUnitType] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [moveInFrom, setMoveInFrom] = useState("");
+  const [moveInTo, setMoveInTo] = useState("");
 
-  const residentsQuery = useQuery({
-    queryKey: ["users", "resident"],
-    queryFn: () => fetchByRole({ data: { role: "resident" } }),
+  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+  const setPageSize = (limit: number) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
+
+  useEffect(() => {
+    if (currentPage !== 1) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, building, unitType, status, moveInFrom, moveInTo]);
+
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ["properties", "list"],
+    queryFn: () => fetchProperties(),
   });
-  const landlordsQuery = useQuery({
-    queryKey: ["users", "landlord"],
-    queryFn: () => fetchByRole({ data: { role: "landlord" } }),
-  });
 
-  const isLoading = residentsQuery.isLoading || landlordsQuery.isLoading;
-  const isFetching = residentsQuery.isFetching || landlordsQuery.isFetching;
-  const error = (residentsQuery.error ?? landlordsQuery.error) as Error | null;
+  const properties = useMemo(() => (data?.properties ?? []) as unknown as Property[], [data]);
+  const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
+  const assignments = useMemo(() => (data?.assignments ?? []) as unknown as Assignment[], [data]);
 
-  const rows = useMemo<PropertyRow[]>(() => {
-    const residents = (residentsQuery.data?.users ?? []) as unknown as Person[];
-    const landlords = (landlordsQuery.data?.users ?? []) as unknown as Person[];
-    const map = new Map<string, PropertyRow>();
+  const buildingOptions = useMemo(
+    () => [...new Set(units.map((u) => (u.building ?? "").trim()).filter(Boolean))].sort(),
+    [units],
+  );
+  const unitTypeOptions = useMemo(
+    () => [...new Set(units.map((u) => (u.unit_type ?? "").trim()).filter(Boolean))].sort(),
+    [units],
+  );
 
-    const ensure = (name: string) => {
-      let row = map.get(name);
-      if (!row) {
-        row = {
-          property: name,
-          buildings: [],
-          units: [],
-          residents: 0,
-          activeResidents: 0,
-          landlords: [],
-        };
-        map.set(name, row);
-      }
-      return row;
-    };
-
-    for (const person of residents) {
-      const name = (person.property ?? "").trim();
-      if (!name) continue;
-      const row = ensure(name);
-      row.residents += 1;
-      if (person.status === "active") row.activeResidents += 1;
-      const building = (person.building ?? "").trim();
-      if (building && !row.buildings.includes(building)) row.buildings.push(building);
-      const unit = (person.unit_number ?? "").trim();
-      if (unit && !row.units.includes(unit)) row.units.push(unit);
+  const rows = useMemo(() => {
+    const unitsByProperty = new Map<string, Unit[]>();
+    for (const unit of units) {
+      const list = unitsByProperty.get(unit.property_id) ?? [];
+      list.push(unit);
+      unitsByProperty.set(unit.property_id, list);
+    }
+    const byUnit = new Map<string, Assignment[]>();
+    for (const a of assignments) {
+      const list = byUnit.get(a.unit_id) ?? [];
+      list.push(a);
+      byUnit.set(a.unit_id, list);
     }
 
-    for (const person of landlords) {
-      const name = (person.property ?? "").trim();
-      if (!name) continue;
-      const row = ensure(name);
-      const label = person.name || person.email || "Landlord";
-      if (!row.landlords.includes(label)) row.landlords.push(label);
-      const building = (person.building ?? "").trim();
-      if (building && !row.buildings.includes(building)) row.buildings.push(building);
-    }
-
-    return [...map.values()].sort((a, b) => a.property.localeCompare(b.property));
-  }, [residentsQuery.data, landlordsQuery.data]);
+    return properties.map((property) => {
+      const propertyUnits = unitsByProperty.get(property.id) ?? [];
+      const propertyAssignments = propertyUnits.flatMap((u) => byUnit.get(u.id) ?? []);
+      const currentAssignments = propertyAssignments.filter((a) => !a.end_date);
+      return {
+        property,
+        units: propertyUnits,
+        buildings: [...new Set(propertyUnits.map((u) => (u.building ?? "").trim()).filter(Boolean))],
+        unitTypes: [
+          ...new Set(propertyUnits.map((u) => (u.unit_type ?? "").trim()).filter(Boolean)),
+        ],
+        residents: currentAssignments.filter((a) => a.role === "resident").length,
+        landlords: currentAssignments.filter((a) => a.role === "landlord").length,
+        earliestStart: propertyAssignments
+          .map((a) => a.start_date)
+          .sort()
+          .at(0),
+        startDates: propertyAssignments.map((a) => a.start_date),
+      };
+    });
+  }, [properties, units, assignments]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter((row) =>
-      [row.property, ...row.buildings, ...row.units, ...row.landlords]
+    return rows.filter((row) => {
+      if (status !== "all" && row.property.status !== status) return false;
+      if (building !== "all" && !row.buildings.includes(building)) return false;
+      if (unitType !== "all" && !row.unitTypes.includes(unitType)) return false;
+      if (moveInFrom && !row.startDates.some((d) => d >= moveInFrom)) return false;
+      if (moveInTo && !row.startDates.some((d) => d <= moveInTo)) return false;
+      if (!term) return true;
+      return [
+        row.property.name,
+        row.property.code,
+        row.property.city,
+        row.property.country,
+        ...row.buildings,
+        ...row.unitTypes,
+      ]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase()
-        .includes(term),
-    );
-  }, [rows, search]);
+        .includes(term);
+    });
+  }, [rows, search, status, building, unitType, moveInFrom, moveInTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const page = Math.min(currentPage, totalPages);
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = useMemo(
     () => ({
-      properties: rows.length,
-      buildings: rows.reduce((sum, r) => sum + r.buildings.length, 0),
-      units: rows.reduce((sum, r) => sum + r.units.length, 0),
-      residents: rows.reduce((sum, r) => sum + r.residents, 0),
+      properties: properties.length,
+      active: properties.filter((p) => p.status === "active").length,
+      units: units.length,
+      residents: assignments.filter((a) => !a.end_date && a.role === "resident").length,
     }),
-    [rows],
+    [properties, units, assignments],
   );
 
-  const refresh = () => {
-    void residentsQuery.refetch();
-    void landlordsQuery.refetch();
-  };
-
   const exportCsv = () => {
-    const header = ["Property", "Buildings", "Units", "Residents", "Active Residents", "Landlords"];
-    const lines = filtered.map((r) => [
-      r.property,
-      r.buildings.join(" | "),
-      String(r.units.length),
-      String(r.residents),
-      String(r.activeResidents),
-      r.landlords.join(" | "),
+    const header = [
+      "Property",
+      "Code",
+      "City",
+      "Status",
+      "Buildings",
+      "Units",
+      "Unit types",
+      "Current residents",
+      "Current landlords",
+    ];
+    const lines = filtered.map((row) => [
+      row.property.name,
+      row.property.code ?? "",
+      row.property.city ?? "",
+      row.property.status,
+      row.buildings.join(" | "),
+      String(row.units.length),
+      row.unitTypes.join(" | "),
+      String(row.residents),
+      String(row.landlords),
     ]);
     const csv = [header, ...lines]
       .map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -195,6 +261,15 @@ function PropertiesPage() {
     URL.revokeObjectURL(url);
   };
 
+  const resetFilters = () => {
+    setSearch("");
+    setBuilding("all");
+    setUnitType("all");
+    setStatus("all");
+    setMoveInFrom("");
+    setMoveInTo("");
+  };
+
   return (
     <PortalLayout
       roles={["admin"]}
@@ -202,19 +277,25 @@ function PropertiesPage() {
       description="Properties, buildings and units across the portfolio"
       actions={
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/properties/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="size-4" /> Add Property
+          </Link>
           <button
             type="button"
             onClick={exportCsv}
             disabled={!filtered.length}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
           >
             <Download className="size-4" /> Export CSV ({filtered.length})
           </button>
           <button
             type="button"
-            onClick={refresh}
+            onClick={() => refetch()}
             aria-label="Refresh properties"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
           >
             <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </button>
@@ -224,81 +305,219 @@ function PropertiesPage() {
       <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Properties" value={stats.properties} icon={Home} />
-          <StatCard label="Buildings" value={stats.buildings} icon={Building2} />
-          <StatCard label="Units" value={stats.units} icon={Layers} tone="text-emerald-600" />
-          <StatCard label="Residents Housed" value={stats.residents} icon={UsersIcon} />
+          <StatCard label="Active" value={stats.active} icon={Building2} tone="text-emerald-600" />
+          <StatCard label="Units" value={stats.units} icon={Layers} />
+          <StatCard label="Current Residents" value={stats.residents} icon={UsersIcon} />
         </div>
 
         <section className="rounded-2xl border border-border bg-card">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-            <div className="flex min-w-[220px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
-              <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
-                <Search className="size-4" />
+          <div className="space-y-3 border-b border-border p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex min-w-[220px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
+                <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
+                  <Search className="size-4" />
+                </span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by property, code, city, building or unit type"
+                  className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
+                />
+              </div>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                aria-label="Filter by status"
+                className={inputClass}
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="archived">Archived</option>
+              </select>
+              <select
+                value={building}
+                onChange={(e) => setBuilding(e.target.value)}
+                aria-label="Filter by building"
+                className={inputClass}
+              >
+                <option value="all">All buildings</option>
+                {buildingOptions.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={unitType}
+                onChange={(e) => setUnitType(e.target.value)}
+                aria-label="Filter by unit type"
+                className={inputClass}
+              >
+                <option value="all">All unit types</option>
+                {unitTypeOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Move-in between
               </span>
               <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by property, building, unit or landlord"
-                className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
+                type="date"
+                value={moveInFrom}
+                aria-label="Move-in from"
+                onChange={(e) => setMoveInFrom(e.target.value)}
+                className={inputClass}
               />
+              <input
+                type="date"
+                value={moveInTo}
+                aria-label="Move-in to"
+                onChange={(e) => setMoveInTo(e.target.value)}
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Reset filters
+              </button>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-left text-sm">
+            <table className="w-full min-w-[980px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Property</th>
                   <th className="px-4 py-3 font-semibold">Buildings</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
-                  <th className="px-4 py-3 font-semibold">Active</th>
                   <th className="px-4 py-3 font-semibold">Landlords</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     </td>
                   </tr>
                 )}
                 {!isLoading && error && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-destructive">
-                      {error.message}
+                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                      {(error as Error).message}
                     </td>
                   </tr>
                 )}
-                {!isLoading && !error && !filtered.length && (
+                {!isLoading && !error && !paged.length && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                      No properties yet. Properties appear here once residents or landlords are
-                      assigned to one.
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      No properties match these filters.
                     </td>
                   </tr>
                 )}
-                {filtered.map((row) => (
-                  <tr key={row.property} className="border-t border-border">
-                    <td className="px-4 py-3 font-semibold text-foreground">{row.property}</td>
+                {paged.map((row) => (
+                  <tr key={row.property.id} className="border-t border-border">
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-foreground">{row.property.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {[row.property.code, row.property.city, row.property.country]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </p>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {row.buildings.length ? row.buildings.join(", ") : "—"}
+                      {row.buildings.join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{row.units.length}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.residents}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.landlords}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-semibold text-emerald-600">
-                        {row.activeResidents} active
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                          row.property.status === "active"
+                            ? "bg-emerald-500/12 text-emerald-600"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {row.property.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {row.landlords.length ? row.landlords.join(", ") : "—"}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          to="/properties/$id"
+                          params={{ id: row.property.id }}
+                          aria-label={`View ${row.property.name}`}
+                          className="rounded-lg border border-border p-2 hover:bg-accent/10"
+                        >
+                          <Eye className="size-4" />
+                        </Link>
+                        <Link
+                          to="/properties/$id/edit"
+                          params={{ id: row.property.id }}
+                          aria-label={`Edit ${row.property.name}`}
+                          className="rounded-lg border border-border p-2 hover:bg-accent/10"
+                        >
+                          <Pencil className="size-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span>Rows per page</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                aria-label="Rows per page"
+                className={inputClass}
+              >
+                {LIMIT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span>
+                {filtered.length ? (page - 1) * pageSize + 1 : 0}–
+                {Math.min(page * pageSize, filtered.length)} of {filtered.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 font-medium disabled:opacity-50"
+              >
+                <ChevronLeft className="size-4" /> Previous
+              </button>
+              <span className="text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages}
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 font-medium disabled:opacity-50"
+              >
+                Next <ChevronRight className="size-4" />
+              </button>
+            </div>
           </div>
         </section>
       </div>
