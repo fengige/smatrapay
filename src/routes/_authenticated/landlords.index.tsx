@@ -160,7 +160,7 @@ function LandlordsPage() {
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       if (!matchesStatus) return false;
       if (!term) return true;
-      return [r.name, r.email, r.username, r.phone, r.property, r.building, r.unit_number]
+      return [r.name, r.email, r.username, r.phone]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term));
     });
