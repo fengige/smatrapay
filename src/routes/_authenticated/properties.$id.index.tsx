@@ -380,7 +380,7 @@ function PropertyDetailPage() {
   const current = assignments.filter((a) => !a.end_date);
   const previous = assignments.filter((a) => a.end_date);
   const residentsCurrent = current.filter((a) => a.role === "resident");
-  const landlordsCurrent = current.filter((a) => a.role === "landlord");
+  
 
   const term = query.trim().toLowerCase();
   const match = (values: (string | null | undefined)[]) =>
@@ -619,9 +619,8 @@ function PropertyDetailPage() {
   };
 
   const stats = [
-    { label: "Units", value: units.length, icon: Layers },
+    { label: "Units", value: Number(property?.["number_of_units"] ?? 0), icon: Layers },
     { label: "Current residents", value: residentsCurrent.length, icon: UsersIcon },
-    { label: "Current landlords", value: landlordsCurrent.length, icon: Building2 },
     { label: "Past assignments", value: previous.length, icon: UserCog },
   ];
 
@@ -728,7 +727,7 @@ function PropertyDetailPage() {
               </div>
               <Pill value={property?.["status"] ?? "active"} />
             </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {stats.map((s) => (
                 <div key={s.label} className="rounded-xl border border-border bg-background p-4">
                   <div className="flex items-center justify-between">
