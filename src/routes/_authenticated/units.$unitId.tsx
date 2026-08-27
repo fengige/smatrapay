@@ -132,7 +132,7 @@ function UnitDetailPage() {
       if (property?.id) {
         navigate({ to: "/properties/$id", params: { id: property.id } });
       } else {
-        navigate({ to: "/properties" });
+        navigate({ to: "/properties", search: { page: 1, limit: 10 } });
       }
     },
     onError: (err: Error) => toast.error(err.message || "Could not delete unit"),
