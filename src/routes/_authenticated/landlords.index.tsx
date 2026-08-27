@@ -109,19 +109,20 @@ function LandlordsPage() {
   const removeLandlord = useServerFn(deleteUser);
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { page: currentPage, limit: pageSize, status: statusFilter, q: search } = Route.useSearch();
+  const navigate = useNavigate({ from: "/landlords/" });
+  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+  const setPageSize = (limit: number) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
+  const setStatusFilter = (status: string) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, status }) });
+  const setSearch = (q: string) => navigate({ search: (prev) => ({ ...prev, page: 1, q }) });
+
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [confirm, setConfirm] = useState<
     { type: "status" | "delete"; row: Row; next?: string } | null
   >(null);
-
-  const { page: currentPage, limit: pageSize } = Route.useSearch();
-  const navigate = useNavigate({ from: "/landlords/" });
-  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
-  const setPageSize = (limit: number) =>
-    navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
 
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
@@ -129,8 +130,15 @@ function LandlordsPage() {
   }, [search, statusFilter]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["users", "landlord"],
-    queryFn: () => fetchLandlords({ data: { role: "landlord" } }),
+    queryKey: ["users", "landlord", statusFilter, search],
+    queryFn: () =>
+      fetchLandlords({
+        data: {
+          role: "landlord",
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          ...(search.trim() ? { q: search.trim() } : {}),
+        },
+      }),
   });
 
   const landlords = useMemo(() => (data?.users ?? []) as unknown as Row[], [data]);
