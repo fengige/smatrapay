@@ -97,7 +97,7 @@ const TABS = [
   { id: "units", label: "Units", icon: Layers },
   { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
-  { id: "landlords", label: "Landlords", icon: Building2 },
+  { id: "landlords", label: "Landlord", icon: Building2 },
   { id: "audit", label: "Status & Audit Logs", icon: ClipboardList },
 ] as const;
 
