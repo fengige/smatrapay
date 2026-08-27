@@ -102,7 +102,8 @@ function ResidentDetailPage() {
   const removeResident = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
 
-  const [confirm, setConfirm] = useState<null | "status" | "delete">(null);
+  const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
+  const [resetSentAt, setResetSentAt] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
@@ -137,8 +138,12 @@ function ResidentDetailPage() {
       resetPassword({
         data: { id, redirectTo: `${window.location.origin}/reset-password` },
       }),
-    onSuccess: (res) => toast.success(`Password reset email sent to ${res.email}`),
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: (res) => {
+      toast.success(`Password reset email sent to ${res.email}`);
+      setResetSentAt(new Date().toISOString());
+      setConfirm(null);
+    },
+    onError: (e: Error) => toast.error(`Could not send reset email: ${e.message}`),
   });
 
   const initials = (resident?.name || resident?.email || "R")
@@ -203,7 +208,7 @@ function ResidentDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => resetMutation.mutate()}
+            onClick={() => setConfirm("reset")}
             disabled={resetMutation.isPending || !resident?.email}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
           >
@@ -390,7 +395,45 @@ function ResidentDetailPage() {
         )}
       </div>
 
-      {confirm && resident ? (
+      {resetSentAt ? (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CheckCircle2 className="size-3.5 text-emerald-600" />
+          Reset email last sent {dateTime(resetSentAt)}
+        </p>
+      ) : null}
+
+      {confirm === "reset" && resident ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <h3 className="text-base font-bold text-foreground">Send password reset email?</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              A reset link will be emailed to{" "}
+              <span className="font-medium text-foreground">{resident.email}</span>. The resident
+              can use it to set a new password.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirm(null)}
+                className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={resetMutation.isPending}
+                onClick={() => resetMutation.mutate()}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {resetMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Send reset email
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirm && confirm !== "reset" && resident ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
             <h3 className="text-base font-bold text-foreground">
