@@ -147,7 +147,9 @@ export type Database = {
           building: string | null
           created_at: string
           created_by: string | null
+          electricity_meter_no: string | null
           floor: string | null
+          gas_meter_no: string | null
           id: string
           notes: string | null
           property_id: string
@@ -156,13 +158,16 @@ export type Database = {
           unit_type: string | null
           updated_at: string
           updated_by: string | null
+          water_meter_no: string | null
         }
         Insert: {
           bedrooms?: number | null
           building?: string | null
           created_at?: string
           created_by?: string | null
+          electricity_meter_no?: string | null
           floor?: string | null
+          gas_meter_no?: string | null
           id?: string
           notes?: string | null
           property_id: string
@@ -171,13 +176,16 @@ export type Database = {
           unit_type?: string | null
           updated_at?: string
           updated_by?: string | null
+          water_meter_no?: string | null
         }
         Update: {
           bedrooms?: number | null
           building?: string | null
           created_at?: string
           created_by?: string | null
+          electricity_meter_no?: string | null
           floor?: string | null
+          gas_meter_no?: string | null
           id?: string
           notes?: string | null
           property_id?: string
@@ -186,6 +194,7 @@ export type Database = {
           unit_type?: string | null
           updated_at?: string
           updated_by?: string | null
+          water_meter_no?: string | null
         }
         Relationships: [
           {
