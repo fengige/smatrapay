@@ -364,7 +364,6 @@ const bulkInput = z.object({
   count: z.number().int().min(1).max(500),
   start_number: z.number().int().min(0).max(1000000),
   prefix: text(60),
-  building: text(120),
   unit_type: text(60),
   bedrooms: z.number().int().min(0).max(50).nullable().optional(),
   floor: text(30),
@@ -464,7 +463,6 @@ export const createBulkUnits = createServerFn({ method: "POST" })
     const rows = plan.planned.map(({ number, unit_number }) => ({
       property_id: data.property_id,
       unit_number,
-      building: data.building ?? null,
       unit_type: data.unit_type ?? null,
       bedrooms: data.bedrooms ?? null,
       floor: data.floor ?? null,
