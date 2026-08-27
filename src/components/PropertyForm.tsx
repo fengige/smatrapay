@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Save } from "lucide-react";
+
+import { listLandlords } from "@/lib/properties.functions";
 
 export const RESIDENTIAL_TYPES = [
   "Apartments",
@@ -31,6 +35,8 @@ export type PropertyFormValues = {
   postal_code: string;
   description: string;
   status: "active" | "archived";
+  number_of_units: string;
+  landlord_id: string;
 };
 
 export const emptyProperty: PropertyFormValues = {
@@ -47,6 +53,8 @@ export const emptyProperty: PropertyFormValues = {
   postal_code: "",
   description: "",
   status: "active",
+  number_of_units: "",
+  landlord_id: "",
 };
 
 function Field({
@@ -87,6 +95,12 @@ export function PropertyForm({
 }) {
   const [values, setValues] = useState<PropertyFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const fetchLandlords = useServerFn(listLandlords);
+  const landlordsQuery = useQuery({
+    queryKey: ["landlord-options"],
+    queryFn: () => fetchLandlords(),
+  });
+  const landlords = landlordsQuery.data?.landlords ?? [];
 
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -110,6 +124,12 @@ export function PropertyForm({
         values.property_type === "zone"
           ? "Zone name must be at least 2 characters"
           : "Property name must be at least 2 characters";
+    if (values.number_of_units.trim()) {
+      if (!/^\d+$/.test(values.number_of_units.trim()))
+        next["number_of_units"] = "Number of units must be a whole number";
+      else if (Number(values.number_of_units) > 100000)
+        next["number_of_units"] = "Number of units is too large";
+    }
     if (values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";
     setErrors(next);
@@ -309,6 +329,46 @@ export function PropertyForm({
             />
           </Field>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="text-sm font-bold text-foreground">Landlord details</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Number of Units" error={errors["number_of_units"]}>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              inputMode="numeric"
+              value={values.number_of_units}
+              onChange={(e) => set("number_of_units", e.target.value.replace(/[^0-9]/g, ""))}
+              className={inputClass}
+              placeholder="e.g. 24"
+            />
+          </Field>
+          <Field label="Select Landlord">
+            <select
+              value={values.landlord_id}
+              onChange={(e) => set("landlord_id", e.target.value)}
+              className={inputClass}
+              disabled={landlordsQuery.isLoading}
+            >
+              <option value="">
+                {landlordsQuery.isLoading ? "Loading landlords…" : "Select landlord"}
+              </option>
+              {landlords.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name || l.email || l.id}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        {!landlordsQuery.isLoading && landlords.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            No landlord accounts found. Add one from Landlord Management first.
+          </p>
+        )}
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5">
