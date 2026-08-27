@@ -17,7 +17,6 @@ import {
   KeyRound,
   Loader2,
   Mail,
-  MapPin,
   Pencil,
   Phone,
   Receipt,
