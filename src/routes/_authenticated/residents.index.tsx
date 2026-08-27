@@ -277,12 +277,16 @@ function ResidentsPage() {
     const header = ["Full Name", "Email", "Phone", "My Property", "Status", "Joined"];
     const rows = filtered.map((r) => {
       const display = assignmentDisplayString(r);
+      const myProperty = display
+        ? display.properties
+            .map((p, i) => (display.units[i] ? `${p} · Unit ${display.units[i]}` : p))
+            .join("; ")
+        : "";
       return [
         r.name ?? "",
         r.email ?? "",
         r.phone ?? "",
-        (display?.properties ?? []).join(", ") ?? "",
-        (display?.units ?? []).join(", ") ?? "",
+        myProperty,
         r.status,
         date(r.created_at),
       ];
