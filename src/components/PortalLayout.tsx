@@ -255,7 +255,13 @@ export function PortalLayout({
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
 
-        <main className="px-4 pb-8 pt-1 sm:px-5">{children}</main>
+        <main className="px-4 pb-2 pt-1 sm:px-5">{children}</main>
+
+        <footer className="border-t border-border px-4 py-3 sm:px-5">
+          <p className="text-center text-xs text-muted-foreground">
+            © 2026 Developed by Rezicom Technologies Limited. All rights reserved.
+          </p>
+        </footer>
       </div>
     </div>
   );
