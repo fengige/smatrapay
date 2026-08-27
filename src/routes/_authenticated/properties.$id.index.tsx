@@ -139,28 +139,24 @@ type BulkForm = {
   open: boolean;
   count: string;
   start_number: string;
+  prefix: string;
   building: string;
   unit_type: string;
   bedrooms: string;
   floor: string;
   status: string;
-  electricity_prefix: string;
-  water_prefix: string;
-  gas_prefix: string;
 };
 
 const emptyBulkForm: BulkForm = {
   open: false,
   count: "",
   start_number: "",
+  prefix: "Unit",
   building: "",
   unit_type: "",
   bedrooms: "",
   floor: "",
   status: "vacant",
-  electricity_prefix: "",
-  water_prefix: "",
-  gas_prefix: "",
 };
 
 const tone: Record<string, string> = {
