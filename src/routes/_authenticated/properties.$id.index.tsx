@@ -1109,18 +1109,33 @@ function AssignForm({
           </option>
         ))}
       </select>
-      <input
-        className={inputClass}
-        type="date"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-      />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1 text-xs font-semibold text-muted-foreground">
+          Start date
+          <input
+            className={inputClass}
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </label>
+        <label className="space-y-1 text-xs font-semibold text-muted-foreground">
+          End date (optional)
+          <input
+            className={inputClass}
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </label>
+      </div>
       <input
         className={inputClass}
         placeholder="Notes (optional)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
+
       <button
         type="submit"
         disabled={pending}
