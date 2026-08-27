@@ -259,7 +259,7 @@ function LandlordsPage() {
           </button>
         </div>
 
-        <div className="relative sm:hidden">
+        <div className="relative sm:hidden" ref={menuRef}>
           <button
             type="button"
             disabled={busy}
