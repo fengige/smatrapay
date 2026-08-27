@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -9,12 +9,14 @@ import {
   CheckCircle2,
   ClipboardList,
   Download,
+  Eye,
   FileText,
   History,
   Home,
   Layers,
   Loader2,
   Mail,
+  MoreVertical,
   Pencil,
   Phone,
   Plus,
