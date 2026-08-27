@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
@@ -105,6 +106,7 @@ function LandlordDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchLandlord = useServerFn(getUserById);
+  const fetchAssignments = useServerFn(listUserAssignments);
   const saveLandlord = useServerFn(updateUser);
   const removeLandlord = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -112,7 +114,7 @@ function LandlordDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
+    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
@@ -125,6 +127,19 @@ function LandlordDetailPage() {
   });
 
   const landlord = data?.user;
+
+  const { data: assignmentData, isLoading: assignmentsLoading } = useQuery({
+    queryKey: ["landlord-assignments", id],
+    queryFn: () => fetchAssignments({ data: { userId: id } }),
+  });
+
+  const assignedUnits = (assignmentData?.assignments ?? []).map((a) => {
+    const unit = assignmentData?.units.find((u) => u.id === a.unit_id);
+    const property = assignmentData?.properties.find((p) => p.id === unit?.property_id);
+    return { ...a, unit, property };
+  });
+  const currentUnits = assignedUnits.filter((a) => !a.end_date);
+  const previousUnits = assignedUnits.filter((a) => a.end_date);
 
   const statusMutation = useMutation({
     mutationFn: (status: "active" | "inactive") => saveLandlord({ data: { id, status } }),
@@ -427,6 +442,7 @@ function LandlordDetailPage() {
                 {(
                   [
                     ["property", "Property & Unit"],
+                    ["units", "Assigned Units"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
                     ["meters", "Meters"],
@@ -473,6 +489,91 @@ function LandlordDetailPage() {
                       .join(" · ")}
                   </div>
                 ) : null}
+              </Section>
+              )}
+
+              {tab === "units" && (
+              <Section title="Assigned Units" icon={<DoorOpen className="size-4 text-primary" />}>
+                {assignmentsLoading ? (
+                  <div className="flex justify-center p-10 text-muted-foreground">
+                    <Loader2 className="size-5 animate-spin" />
+                  </div>
+                ) : assignedUnits.length === 0 ? (
+                  <EmptyTabState
+                    icon={<DoorOpen className="size-8" />}
+                    title="No unit assignments"
+                    description="This landlord has not been assigned to any units yet. Use Property Management to assign units."
+                  />
+                ) : (
+                  <div className="space-y-8 p-6">
+                    {[
+                      ["Current assignments", currentUnits],
+                      ["Previous assignments", previousUnits],
+                    ].map(([label, list]) => (
+                      <div key={label as string}>
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {label as string} ({(list as typeof assignedUnits).length})
+                        </p>
+                        {(list as typeof assignedUnits).length === 0 ? (
+                          <p className="text-sm text-muted-foreground">None.</p>
+                        ) : (
+                          <div className="overflow-x-auto rounded-xl border border-border">
+                            <table className="w-full text-left text-sm">
+                              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tr>
+                                  <th className="px-4 py-2.5 font-semibold">Property</th>
+                                  <th className="px-4 py-2.5 font-semibold">Unit</th>
+                                  <th className="px-4 py-2.5 font-semibold">Unit type</th>
+                                  <th className="px-4 py-2.5 font-semibold">Role</th>
+                                  <th className="px-4 py-2.5 font-semibold">Start</th>
+                                  <th className="px-4 py-2.5 font-semibold">End</th>
+                                  <th className="px-4 py-2.5 font-semibold">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(list as typeof assignedUnits).map((a) => (
+                                  <tr key={a.id} className="border-t border-border">
+                                    <td className="px-4 py-2.5 font-medium text-foreground">
+                                      {a.property?.name ?? "—"}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-muted-foreground">
+                                      {[a.unit?.building, a.unit?.unit_number]
+                                        .filter(Boolean)
+                                        .join(" · ") || "—"}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-muted-foreground">
+                                      {a.unit?.unit_type ?? "—"}
+                                    </td>
+                                    <td className="px-4 py-2.5 capitalize text-muted-foreground">
+                                      {a.role}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-muted-foreground">
+                                      {date(a.start_date)}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-muted-foreground">
+                                      {a.end_date ? date(a.end_date) : "—"}
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span
+                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                          a.end_date
+                                            ? "bg-muted text-muted-foreground"
+                                            : "bg-emerald-500/10 text-emerald-600"
+                                        }`}
+                                      >
+                                        {a.end_date ? "Ended" : "Active"}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Section>
               )}
 
