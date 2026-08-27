@@ -293,7 +293,11 @@ function MetersPage() {
         )}
       </div>
     </PortalLayout>
+  );
+}
+
 function AddMeterDialog({
+
   properties,
   units,
   onClose,
