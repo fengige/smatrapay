@@ -224,6 +224,7 @@ function PropertiesPage() {
   const exportCsv = () => {
     const header = [
       "Property",
+      "Type",
       "Code",
       "City",
       "Status",
@@ -234,6 +235,7 @@ function PropertiesPage() {
     ];
     const lines = filtered.map((row) => [
       row.property.name,
+      row.property.property_type ?? "building",
       row.property.code ?? "",
       row.property.city ?? "",
       row.property.status,
@@ -258,6 +260,7 @@ function PropertiesPage() {
     setSearch("");
     setUnitType("all");
     setStatus("all");
+    setPropertyType("all");
   };
 
   return (
