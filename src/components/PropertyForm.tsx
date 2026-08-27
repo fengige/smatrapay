@@ -136,7 +136,7 @@ export function PropertyForm({
           <Field label="Status">
             <select
               value={values.status}
-              onChange={(e) => set("status", e.target.value)}
+              onChange={(e) => set("status", e.target.value as "active" | "archived")}
               className={inputClass}
             >
               <option value="active">Active</option>
