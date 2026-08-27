@@ -1062,7 +1062,9 @@ function AssignForm({
   const [userId, setUserId] = useState("");
   const [role, setRole] = useState<"resident" | "landlord">("resident");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
+
 
   const options = people.filter((p) => (p.role ?? "resident") === role);
 
