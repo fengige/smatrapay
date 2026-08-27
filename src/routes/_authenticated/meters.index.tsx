@@ -293,6 +293,162 @@ function MetersPage() {
         )}
       </div>
     </PortalLayout>
+function AddMeterDialog({
+  properties,
+  units,
+  onClose,
+  onSaved,
+}: {
+  properties: { id: string; name: string }[];
+  units: { id: string; property_id: string; unit_number: string }[];
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const saveMeter = useServerFn(addMeter);
+
+  const [propertyId, setPropertyId] = useState<string>("");
+  const [unitId, setUnitId] = useState<string>("");
+  const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">("electricity");
+  const [serial, setSerial] = useState<string>("");
+
+  useEffect(() => {
+    setUnitId("");
+  }, [propertyId]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const unitChoices = useMemo(
+    () => units.filter((u) => u.property_id === propertyId).sort((a, b) => a.unit_number.localeCompare(b.unit_number)),
+    [units, propertyId],
+  );
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!unitId) throw new Error("Please select a unit");
+      if (!serial.trim()) throw new Error("Please enter a meter serial number");
+      await saveMeter({ data: { unit_id: unitId, type: meterType, serial: serial.trim() } } as never);
+    },
+    onSuccess: () => {
+      setSerial("");
+      onSaved();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not add meter"),
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-meter-title"
+    >
+      <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
+        <h2 id="add-meter-title" className="text-lg font-bold">
+          Add Meter
+        </h2>
+        <p className="text-sm text-muted-foreground">Assign a meter serial number to a unit.</p>
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-property">
+              Property
+            </label>
+            <select
+              id="meter-property"
+              value={propertyId}
+              onChange={(e) => setPropertyId(e.target.value)}
+              className="h-11 w-full rounded-xl border bg-background px-3 text-sm"
+            >
+              <option value="">Select property</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-unit">
+              Unit
+            </label>
+            <select
+              id="meter-unit"
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              disabled={!propertyId || unitChoices.length === 0}
+              className="h-11 w-full rounded-xl border bg-background px-3 text-sm disabled:opacity-50"
+            >
+              <option value="">{unitChoices.length ? "Select unit" : "No units available"}</option>
+              {unitChoices.map((u) => (
+                <option key={u.id} value={u.id}>
+                  Unit {u.unit_number}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-type">
+              Meter Type
+            </label>
+            <select
+              id="meter-type"
+              value={meterType}
+              onChange={(e) => setMeterType(e.target.value as typeof meterType)}
+              className="h-11 w-full rounded-xl border bg-background px-3 text-sm"
+            >
+              <option value="electricity">Electricity</option>
+              <option value="water">Water</option>
+              <option value="gas">Gas</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-serial">
+              Serial Number
+            </label>
+            <input
+              id="meter-serial"
+              type="text"
+              value={serial}
+              onChange={(e) => setSerial(e.target.value)}
+              placeholder="e.g. EM-2026-001"
+              className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={mutation.isPending || !unitId || !serial.trim()}
+            onClick={() => mutation.mutate()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+            Save Meter
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
+
 
