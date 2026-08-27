@@ -329,8 +329,9 @@ export const createBulkUnits = createServerFn({ method: "POST" })
     z
       .object({
         property_id: uuid,
-        count: z.number().int().min(1).max(200),
+        count: z.number().int().min(1).max(500),
         start_number: z.number().int().min(0).max(1000000),
+        prefix: text(60),
         building: text(120),
         unit_type: text(60),
         bedrooms: z.number().int().min(0).max(50).nullable().optional(),
@@ -356,11 +357,11 @@ export const createBulkUnits = createServerFn({ method: "POST" })
     const status = data.status ?? "vacant";
     const rows = [];
     for (let i = 0; i < data.count; i++) {
-      const unitNumber = String(data.start_number + i);
+      const number = data.start_number + i;
+      const unitNumber = data.prefix ? `${data.prefix} ${number}` : String(number);
       if (existingNumbers.has(unitNumber)) {
         throw new Error(`Unit ${unitNumber} already exists in this property`);
       }
-      const suffix = unitNumber;
       rows.push({
         property_id: data.property_id,
         unit_number: unitNumber,
@@ -369,9 +370,9 @@ export const createBulkUnits = createServerFn({ method: "POST" })
         bedrooms: data.bedrooms ?? null,
         floor: data.floor ?? null,
         status,
-        electricity_meter_no: data.electricity_prefix ? `${data.electricity_prefix}${suffix}` : null,
-        water_meter_no: data.water_prefix ? `${data.water_prefix}${suffix}` : null,
-        gas_meter_no: data.gas_prefix ? `${data.gas_prefix}${suffix}` : null,
+        electricity_meter_no: data.electricity_prefix ? `${data.electricity_prefix}${number}` : null,
+        water_meter_no: data.water_prefix ? `${data.water_prefix}${number}` : null,
+        gas_meter_no: data.gas_prefix ? `${data.gas_prefix}${number}` : null,
         created_by: userId,
         updated_by: userId,
       });
