@@ -77,7 +77,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         heading: "SETTINGS",
         items: [
           { label: "Account Settings", icon: Settings },
-          { label: "Configurations", icon: Cog },
+          { label: "Configurations", icon: Cog, to: "/admin/settings" },
         ],
       }
     );

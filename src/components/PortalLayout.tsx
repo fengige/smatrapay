@@ -6,6 +6,7 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { navGroupsForRoles } from "@/lib/portal-nav";
 import { roleLabel } from "@/lib/portals";
+import { useFooterSettings } from "@/lib/use-footer-settings";
 
 export function usePortalSignOut() {
   const navigate = useNavigate();
@@ -257,12 +258,29 @@ export function PortalLayout({
 
         <main className="px-4 pb-2 pt-1 sm:px-5">{children}</main>
 
-        <footer className="border-t border-border px-4 py-3 sm:px-5">
-          <p className="text-center text-xs text-muted-foreground">
-            © 2026 Developed by Rezicom Technologies Limited. All rights reserved.
-          </p>
-        </footer>
+        <PortalFooter />
       </div>
     </div>
+  );
+}
+
+export function PortalFooter() {
+  const footer = useFooterSettings();
+  const year = new Date().getFullYear();
+  return (
+    <footer className="border-t border-border px-4 py-3 sm:px-5">
+      <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground sm:flex-row sm:justify-center sm:gap-3">
+        <p className="text-center">© {year} {footer.footer_copyright}</p>
+        <span className="hidden sm:inline" aria-hidden="true">·</span>
+        <nav className="flex items-center gap-3" aria-label="Legal">
+          <a href={footer.footer_terms_url} className="underline-offset-2 hover:text-foreground hover:underline">
+            Terms of Service
+          </a>
+          <a href={footer.footer_privacy_url} className="underline-offset-2 hover:text-foreground hover:underline">
+            Privacy Policy
+          </a>
+        </nav>
+      </div>
+    </footer>
   );
 }
