@@ -16,6 +16,7 @@ import {
   MapPin,
   Pencil,
   Phone,
+  ShieldCheck,
   Trash2,
   UserCheck,
   UserX,
@@ -104,6 +105,7 @@ function ResidentDetailPage() {
 
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
+  const [tab, setTab] = useState<"property" | "history" | "notes" | "audit">("property");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
@@ -154,6 +156,27 @@ function ResidentDetailPage() {
     .toUpperCase();
 
   const isActive = resident?.status === "active";
+
+  const auditEvents = resident
+    ? [
+        {
+          key: "created",
+          label: "Record created",
+          detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
+          at: resident.created_at,
+          icon: <UserCheck className="size-4" />,
+        },
+        {
+          key: "updated",
+          label: "Record last updated",
+          detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
+          at: resident.updated_at,
+          icon: <Pencil className="size-4" />,
+        },
+      ]
+        .filter((e) => e.at)
+        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    : [];
 
   const timeline = resident
     ? [
@@ -325,6 +348,31 @@ function ResidentDetailPage() {
             </aside>
 
             <div className="space-y-5">
+              <div className="flex flex-wrap gap-1 rounded-2xl border border-border bg-card p-2">
+                {(
+                  [
+                    ["property", "Property & Unit"],
+                    ["history", "Status History"],
+                    ["notes", "Notes & Bio"],
+                    ["audit", "Audit Logs"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTab(key)}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                      tab === key
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {tab === "property" && (
               <Section title="Property & Unit" icon={<Building2 className="size-4 text-primary" />}>
                 <dl className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
                   <Detail label="Property" value={resident.property ?? "Unassigned"} />
@@ -348,7 +396,9 @@ function ResidentDetailPage() {
                   </div>
                 ) : null}
               </Section>
+              )}
 
+              {tab === "history" && (
               <Section title="Status History" icon={<Clock className="size-4 text-primary" />}>
                 <ol className="space-y-5 p-6">
                   {timeline.map((event) => (
@@ -371,7 +421,9 @@ function ResidentDetailPage() {
                   ))}
                 </ol>
               </Section>
+              )}
 
+              {tab === "notes" && (
               <Section title="Notes & Bio" icon={<Pencil className="size-4 text-primary" />}>
                 <div className="space-y-4 p-6 text-sm">
                   <div>
@@ -390,6 +442,28 @@ function ResidentDetailPage() {
                   </div>
                 </div>
               </Section>
+              )}
+
+              {tab === "audit" && (
+                <Section title="Audit Logs" icon={<ShieldCheck className="size-4 text-primary" />}>
+                  <ol className="divide-y divide-border">
+                    {auditEvents.map((event) => (
+                      <li key={event.key} className="flex items-start gap-3 px-6 py-4">
+                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          {event.icon}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-foreground">{event.label}</p>
+                          <p className="text-xs text-muted-foreground">{event.detail}</p>
+                        </div>
+                        <span className="shrink-0 text-xs text-muted-foreground/80">
+                          {dateTime(event.at)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </Section>
+              )}
             </div>
           </div>
         )}
