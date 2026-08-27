@@ -319,13 +319,11 @@ function LandlordsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <SortHeader label="Landlord" sortBy="name" />
                   <SortHeader label="Phone" sortBy="phone" />
-                  <SortHeader label="Property" sortBy="property" />
-                  <SortHeader label="Unit" sortBy="unit_number" />
                   <SortHeader label="Status" sortBy="status" />
                   <SortHeader label="Created" sortBy="created_at" />
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -334,20 +332,20 @@ function LandlordsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading landlords…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={5} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                       No landlords found. Try adjusting your search or add a new landlord.
                     </td>
                   </tr>
@@ -374,13 +372,6 @@ function LandlordsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{r.phone ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        <div>{r.property ?? "—"}</div>
-                        {r.building && (
-                          <div className="text-xs text-muted-foreground/80">{r.building}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.unit_number ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
