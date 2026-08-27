@@ -674,7 +674,203 @@ function ResidentsPage() {
           </div>
         </div>
       )}
+
+      {assignRow && (
+        <AssignUnitDialog
+          row={assignRow}
+          onClose={() => setAssignRow(null)}
+          onSaved={async () => {
+            setAssignRow(null);
+            await queryClient.invalidateQueries({ queryKey: ["users"] });
+            await queryClient.invalidateQueries({ queryKey: ["properties"] });
+          }}
+        />
+      )}
     </PortalLayout>
+  );
+}
+
+function AssignUnitDialog({
+  row,
+  onClose,
+  onSaved,
+}: {
+  row: Row;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const fetchProperties = useServerFn(listProperties);
+  const assign = useServerFn(assignUnit);
+  const endAssign = useServerFn(endAssignment);
+
+  const active = row.assignments.find((a) => !a.end_date) ?? null;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["properties"],
+    queryFn: () => fetchProperties(),
+  });
+
+  const properties = (data?.properties ?? []) as { id: string; name: string }[];
+  const units = (data?.units ?? []) as {
+    id: string;
+    property_id: string;
+    unit_number: string;
+    status: string;
+  }[];
+  const assignments = (data?.assignments ?? []) as {
+    unit_id: string;
+    user_id: string;
+    role: string;
+    end_date: string | null;
+  }[];
+
+  const currentUnit = active
+    ? units.find(
+        (u) =>
+          u.unit_number === active.unit?.unit_number &&
+          properties.find((p) => p.id === u.property_id)?.name === active.unit?.property?.name,
+      )
+    : undefined;
+
+  const [propertyId, setPropertyId] = useState(currentUnit?.property_id ?? "");
+  const [unitId, setUnitId] = useState(currentUnit?.id ?? "");
+
+  useEffect(() => {
+    if (currentUnit && !propertyId) {
+      setPropertyId(currentUnit.property_id);
+      setUnitId(currentUnit.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUnit?.id]);
+
+  const takenByOthers = useMemo(
+    () =>
+      new Set(
+        assignments
+          .filter((a) => a.role === "resident" && !a.end_date && a.user_id !== row.id)
+          .map((a) => a.unit_id),
+      ),
+    [assignments, row.id],
+  );
+
+  const unitChoices = units.filter((u) => u.property_id === propertyId);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (unitId === (currentUnit?.id ?? "")) return;
+      if (unitId) {
+        await assign({
+          data: {
+            unit_id: unitId,
+            user_id: row.id,
+            role: "resident",
+            ...(active ? { replace_assignment_id: active.id } : {}),
+          },
+        } as never);
+      } else if (active) {
+        await endAssign({ data: { id: active.id } });
+      }
+    },
+    onSuccess: async () => {
+      toast.success(
+        unitId ? "Unit assignment updated" : "Resident unassigned from their unit",
+      );
+      await onSaved();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not update the unit assignment"),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Change unit assignment"
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      >
+        <h3 className="text-lg font-semibold">Change unit assignment</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {row.name ?? row.email} — currently{" "}
+          {active?.unit
+            ? `${active.unit.property?.name ?? "—"} · Unit ${active.unit.unit_number}`
+            : "unassigned"}
+          .
+        </p>
+
+        {isLoading ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Loading properties…
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Property</span>
+              <select
+                value={propertyId}
+                onChange={(e) => {
+                  setPropertyId(e.target.value);
+                  setUnitId("");
+                }}
+                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+              >
+                <option value="">No property</option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Unit</span>
+              <select
+                value={unitId}
+                onChange={(e) => setUnitId(e.target.value)}
+                disabled={!propertyId}
+                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm disabled:opacity-50"
+              >
+                <option value="">No unit (unassign)</option>
+                {unitChoices.map((u) => {
+                  const taken = takenByOthers.has(u.id);
+                  return (
+                    <option key={u.id} value={u.id} disabled={taken}>
+                      Unit {u.unit_number} · {u.status}
+                      {taken ? " · occupied by another resident" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+
+            {active && unitId && unitId !== currentUnit?.id && (
+              <p className="rounded-lg bg-amber-500/10 p-3 text-xs text-amber-600">
+                Saving ends the current assignment and moves this resident to the selected unit.
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={mutation.isPending || isLoading}
+            onClick={() => mutation.mutate()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+            Save assignment
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
