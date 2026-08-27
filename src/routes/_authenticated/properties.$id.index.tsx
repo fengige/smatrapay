@@ -249,12 +249,13 @@ function PropertyDetailPage() {
 
   const propertyDelete = useMutation({
     mutationFn: () => removeProperty({ data: { id } } as never),
-    onSuccess: async () => {
+    onSuccess: () => {
       setDeleteOpen(false);
       toast.success("Property deleted", {
         description: `${property?.["name"] ?? "The property"} was removed.`,
       });
-      await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.removeQueries({ queryKey: ["properties", id] });
+      void queryClient.invalidateQueries({ queryKey: ["properties"], exact: true });
       void router.navigate({ to: "/properties", search: { page: 1, limit: 10 } });
     },
     onError: (err: Error) => toast.error(err.message || "Could not delete property"),
