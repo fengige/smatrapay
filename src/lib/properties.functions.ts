@@ -64,7 +64,11 @@ const unitInput = z.object({
   floor: text(30),
   status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
   notes: text(1000),
+  electricity_meter_no: text(60),
+  water_meter_no: text(60),
+  gas_meter_no: text(60),
 });
+
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
