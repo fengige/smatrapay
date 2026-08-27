@@ -30,7 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
-import { listUserAssignments } from "@/lib/properties.functions";
+import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
@@ -107,6 +107,7 @@ function LandlordDetailPage() {
 
   const fetchLandlord = useServerFn(getUserById);
   const fetchAssignments = useServerFn(listUserAssignments);
+  const fetchOwnedProperties = useServerFn(listLandlordProperties);
   const saveLandlord = useServerFn(updateUser);
   const removeLandlord = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -131,6 +132,20 @@ function LandlordDetailPage() {
   const { data: assignmentData, isLoading: assignmentsLoading } = useQuery({
     queryKey: ["landlord-assignments", id],
     queryFn: () => fetchAssignments({ data: { userId: id } }),
+  });
+
+  const { data: ownedData, isLoading: ownedLoading } = useQuery({
+    queryKey: ["landlord-properties", id],
+    queryFn: () => fetchOwnedProperties({ data: { landlordId: id } }),
+  });
+
+  const ownedProperties = (ownedData?.properties ?? []).map((p) => {
+    const units = (ownedData?.units ?? []).filter((u) => u.property_id === p.id);
+    return {
+      ...p,
+      unitCount: units.length,
+      occupiedCount: units.filter((u) => u.status === "occupied").length,
+    };
   });
 
   const assignedUnits = (assignmentData?.assignments ?? []).map((a) => {
