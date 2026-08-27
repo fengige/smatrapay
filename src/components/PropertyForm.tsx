@@ -16,6 +16,7 @@ export type PropertyFormValues = {
 };
 
 export const emptyProperty: PropertyFormValues = {
+  property_type: "building",
   name: "",
   code: "",
   address_line1: "",
