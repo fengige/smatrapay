@@ -167,26 +167,19 @@ function LandlordActions({ landlord }: { landlord: Landlord }) {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent | KeyboardEvent) => {
-      if (
-        e instanceof KeyboardEvent && e.key === "Escape" &&
-        setOpen(false)
-      ) {
-        return;
-      }
-      if (
-        e instanceof MouseEvent &&
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node)
-      ) {
+    const onMouseDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("keydown", handler);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("keydown", handler);
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
 
