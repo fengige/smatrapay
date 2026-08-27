@@ -76,7 +76,11 @@ export function PropertyForm({
     const next: Record<string, string> = {};
     if (values.property_type !== "building" && values.property_type !== "zone")
       next["property_type"] = "Please select Building or Zone";
-    if (values.name.trim().length < 2) next["name"] = "Property name must be at least 2 characters";
+    if (values.name.trim().length < 2)
+      next["name"] =
+        values.property_type === "zone"
+          ? "Zone name must be at least 2 characters"
+          : "Property name must be at least 2 characters";
     if (values.postal_code && values.postal_code.trim().length > 30)
       next["postal_code"] = "Postal code is too long";
     setErrors(next);
@@ -124,22 +128,45 @@ export function PropertyForm({
           <p className="mt-1.5 text-xs font-medium text-destructive">{errors["property_type"]}</p>
         )}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Property name *" error={errors["name"]}>
-            <input
-              value={values.name}
-              onChange={(e) => set("name", e.target.value)}
-              className={inputClass}
-              placeholder="Riverside Apartments"
-            />
-          </Field>
-          <Field label="Property code">
-            <input
-              value={values.code}
-              onChange={(e) => set("code", e.target.value)}
-              className={inputClass}
-              placeholder="RVS-01"
-            />
-          </Field>
+          {values.property_type === "zone" ? (
+            <>
+              <Field label="Zone name *" error={errors["name"]}>
+                <input
+                  value={values.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  className={inputClass}
+                  placeholder="Greenfield Zone"
+                />
+              </Field>
+              <Field label="Zone code">
+                <input
+                  value={values.code}
+                  onChange={(e) => set("code", e.target.value)}
+                  className={inputClass}
+                  placeholder="GFD-01"
+                />
+              </Field>
+            </>
+          ) : values.property_type === "building" ? (
+            <>
+              <Field label="Property name *" error={errors["name"]}>
+                <input
+                  value={values.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  className={inputClass}
+                  placeholder="Riverside Apartments"
+                />
+              </Field>
+              <Field label="Property code">
+                <input
+                  value={values.code}
+                  onChange={(e) => set("code", e.target.value)}
+                  className={inputClass}
+                  placeholder="RVS-01"
+                />
+              </Field>
+            </>
+          ) : null}
           <Field label="Status">
             <select
               value={values.status}
