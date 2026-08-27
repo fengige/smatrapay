@@ -734,6 +734,26 @@ function ResidentDetailPage() {
   );
 }
 
+function EmptyTabState({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 p-10 text-center">
+      <span className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
 function Row({ icon, value }: { icon: React.ReactNode; value: string }) {
   return (
     <div className="flex items-center gap-3 text-muted-foreground">
