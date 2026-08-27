@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
+  AlertTriangle,
   ArrowLeft,
   Building2,
   CheckCircle2,
@@ -33,6 +34,7 @@ import { toast } from "sonner";
 
 import {
   assignUnit,
+  createBulkUnits,
   deleteAssignment,
   deleteProperty,
   deleteUnit,
@@ -80,6 +82,9 @@ type Unit = {
   bedrooms: number | null;
   floor: string | null;
   status: string;
+  electricity_meter_no: string | null;
+  water_meter_no: string | null;
+  gas_meter_no: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -130,6 +135,30 @@ const emptyUnitForm: UnitForm = {
   status: "vacant",
 };
 
+type BulkForm = {
+  open: boolean;
+  count: string;
+  start_number: string;
+  prefix: string;
+  building: string;
+  unit_type: string;
+  bedrooms: string;
+  floor: string;
+  status: string;
+};
+
+const emptyBulkForm: BulkForm = {
+  open: false,
+  count: "",
+  start_number: "",
+  prefix: "Unit",
+  building: "",
+  unit_type: "",
+  bedrooms: "",
+  floor: "",
+  status: "vacant",
+};
+
 const tone: Record<string, string> = {
   active: "bg-emerald-500/12 text-emerald-600",
   occupied: "bg-emerald-500/12 text-emerald-600",
@@ -164,6 +193,8 @@ function slug(value: string) {
 function LandlordActions({ landlord }: { landlord: Landlord }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const triggerId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -206,31 +237,41 @@ function LandlordActions({ landlord }: { landlord: Landlord }) {
       <div className="relative sm:hidden" ref={menuRef}>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Landlord actions"
+          id={triggerId}
+          aria-haspopup="menu"
+          aria-controls={menuId}
           aria-expanded={open}
+          aria-label={`Actions for ${landlord.name || "landlord"}`}
+          onClick={() => setOpen((v) => !v)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
-          Actions <MoreVertical className="size-4" />
+          Actions <MoreVertical className="size-4" aria-hidden="true" />
         </button>
         {open && (
-          <div className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-border bg-card p-1 shadow-lg">
+          <div
+            id={menuId}
+            role="menu"
+            aria-labelledby={triggerId}
+            className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-border bg-card p-1 shadow-lg"
+          >
             <Link
               to="/landlords/$id"
               params={{ id: landlord.id }}
+              role="menuitem"
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
               onClick={() => setOpen(false)}
             >
-              <Eye className="size-3.5" /> View landlord profile
+              <Eye className="size-3.5" aria-hidden="true" /> View landlord profile
             </Link>
             <Link
               to="/landlords/$id/edit"
               params={{ id: landlord.id }}
               search={{ page: 1, limit: 10 }}
+              role="menuitem"
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
               onClick={() => setOpen(false)}
             >
-              <Pencil className="size-3.5" /> Edit landlord
+              <Pencil className="size-3.5" aria-hidden="true" /> Edit landlord
             </Link>
           </div>
         )}
@@ -252,6 +293,7 @@ function PropertyDetailPage() {
   const fetchPeople = useServerFn(listAssignableUsers);
   const saveUnit = useServerFn(upsertUnit);
   const removeUnit = useServerFn(deleteUnit);
+  const runBulkCreate = useServerFn(createBulkUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -261,6 +303,7 @@ function PropertyDetailPage() {
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
+  const [bulkForm, setBulkForm] = useState<BulkForm>({ ...emptyBulkForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -333,6 +376,29 @@ function PropertyDetailPage() {
       await invalidate();
     },
     onError: (err: Error) => toast.error(err.message || "Could not remove unit"),
+  });
+
+  const bulkCreate = useMutation({
+    mutationFn: () =>
+      runBulkCreate({
+        data: {
+          property_id: id,
+          count: Number(bulkForm.count),
+          start_number: Number(bulkForm.start_number),
+          prefix: bulkForm.prefix.trim() || null,
+          building: bulkForm.building.trim() || null,
+          unit_type: bulkForm.unit_type.trim() || null,
+          bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
+          floor: bulkForm.floor.trim() || null,
+          status: bulkForm.status,
+        },
+      } as never),
+    onSuccess: async (res) => {
+      toast.success(`${res.created} units created`);
+      setBulkForm({ ...emptyBulkForm });
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not bulk-create units"),
   });
 
   const propertyDelete = useMutation({
@@ -618,8 +684,14 @@ function PropertyDetailPage() {
     doc.save(`smatrapay-${slug(property?.["name"] ?? "property")}-${name}.pdf`);
   };
 
+  const configuredUnitCount =
+    property?.["number_of_units"] != null ? Number(property["number_of_units"]) : null;
+  const actualUnitCount = units.length;
+  const unitCountMissing = configuredUnitCount == null;
+  const unitCountMismatch = configuredUnitCount != null && configuredUnitCount !== actualUnitCount;
+
   const stats = [
-    { label: "Units", value: Number(property?.["number_of_units"] ?? 0), icon: Layers },
+    { label: "Units", value: configuredUnitCount ?? "—", icon: Layers },
     { label: "Current residents", value: residentsCurrent.length, icon: UsersIcon },
     { label: "Past assignments", value: previous.length, icon: UserCog },
   ];
@@ -741,6 +813,31 @@ function PropertyDetailPage() {
               ))}
             </div>
           </div>
+          {(unitCountMissing || unitCountMismatch) && (
+            <div
+              className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
+                unitCountMismatch
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 font-medium">
+                {unitCountMissing
+                  ? "Number of units is not set for this property."
+                  : `Configured unit count (${configuredUnitCount}) does not match the actual unit records (${actualUnitCount}).`}
+              </div>
+              <Link
+                to="/properties/$id/edit"
+                params={{ id }}
+                className={`font-semibold hover:underline ${
+                  unitCountMismatch ? "text-destructive" : "text-amber-800"
+                }`}
+              >
+                Edit property
+              </Link>
+            </div>
+          )}
 
           <section className="rounded-2xl border border-border bg-card">
             <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
@@ -783,6 +880,21 @@ function PropertyDetailPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() =>
+                      setBulkForm({
+                        ...emptyBulkForm,
+                        open: true,
+                        prefix: "Unit",
+                        count: String(Math.max(0, (configuredUnitCount ?? 0) - actualUnitCount)),
+                        start_number: String(actualUnitCount + 1),
+                      })
+                    }
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
+                    <Plus className="size-4" /> Bulk Add Units
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setUnitForm({ ...emptyUnitForm, open: true })}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
                   >
@@ -794,12 +906,15 @@ function PropertyDetailPage() {
 
             <div className="overflow-x-auto">
               {tab === "units" && (
-                <table className="w-full min-w-[900px] text-left text-sm">
+                <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Unit</th>
                       <th className="px-4 py-3 font-semibold">Building</th>
                       <th className="px-4 py-3 font-semibold">Type</th>
+                      <th className="px-4 py-3 font-semibold">Electricity meter</th>
+                      <th className="px-4 py-3 font-semibold">Water meter</th>
+                      <th className="px-4 py-3 font-semibold">Gas meter</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
                       <th className="px-4 py-3 font-semibold">Current assignments</th>
                       <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -808,8 +923,23 @@ function PropertyDetailPage() {
                   <tbody>
                     {!visibleUnits.length && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                          No units yet. Use “Add Unit” to create one.
+                        <td colSpan={9} className="px-4 py-10 text-center">
+                          <p className="text-sm font-semibold text-foreground">
+                            {term
+                              ? "No units match your search."
+                              : actualUnitCount === 0
+                                ? configuredUnitCount == null
+                                  ? "No unit count is configured for this property. Add units to get started."
+                                  : configuredUnitCount === 0
+                                    ? "This property has no configured units."
+                                    : `This property is configured for ${configuredUnitCount} units, but no units have been added yet.`
+                              : "No units match your search."}
+                          </p>
+                          {!term && actualUnitCount === 0 && configuredUnitCount != null && configuredUnitCount > 0 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Use “Add Unit” to create the expected unit records.
+                            </p>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -825,6 +955,15 @@ function PropertyDetailPage() {
                           <td className="px-4 py-3 text-muted-foreground">
                             {u.unit_type || "—"}
                             {u.bedrooms != null && ` · ${u.bedrooms} bed`}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.electricity_meter_no || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.water_meter_no || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.gas_meter_no || "—"}
                           </td>
                           <td className="px-4 py-3">
                             <Pill value={u.status} />
@@ -887,6 +1026,14 @@ function PropertyDetailPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1.5">
+                              <Link
+                                to="/units/$unitId"
+                                params={{ unitId: u.id }}
+                                className="rounded-lg border border-border p-2 hover:bg-accent/10"
+                                aria-label={`View unit ${u.unit_number}`}
+                              >
+                                <Eye className="size-4" />
+                              </Link>
                               <button
                                 type="button"
                                 onClick={() => setAssignFor(u)}
@@ -1217,6 +1364,131 @@ function PropertyDetailPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
             >
               {unitMutation.isPending && <Loader2 className="size-4 animate-spin" />} Save unit
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {bulkForm.open && (
+        <Modal title="Bulk Add Units" onClose={() => !bulkCreate.isPending && setBulkForm({ ...emptyBulkForm })}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const count = Number(bulkForm.count);
+              const start = Number(bulkForm.start_number);
+              if (!Number.isInteger(count) || count < 1 || count > 500) {
+                toast.error("How many must be a number between 1 and 500");
+                return;
+              }
+              if (!Number.isInteger(start) || start < 0) {
+                toast.error("Start at must be a non-negative number");
+                return;
+              }
+              bulkCreate.mutate();
+            }}
+          >
+            <p className="text-sm text-muted-foreground">
+              Create multiple units at once (e.g. Unit 1 through Unit 10), then assign meters in the table below.
+            </p>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Add under
+              </label>
+              <select disabled className={inputClass}>
+                <option>{property?.["name"] ?? "This property"}</option>
+              </select>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  How many
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  className={inputClass}
+                  value={bulkForm.count}
+                  onChange={(e) => setBulkForm((p) => ({ ...p, count: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Start at
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  className={inputClass}
+                  value={bulkForm.start_number}
+                  onChange={(e) => setBulkForm((p) => ({ ...p, start_number: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Name prefix
+              </label>
+              <input
+                className={inputClass}
+                placeholder="Unit"
+                value={bulkForm.prefix}
+                onChange={(e) => setBulkForm((p) => ({ ...p, prefix: e.target.value }))}
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Preview:{" "}
+                <span className="text-foreground">
+                  {bulkForm.prefix || "Unit"} {Number(bulkForm.start_number || 0)}{" "}
+                  … {bulkForm.prefix || "Unit"}{" "}
+                  {Math.max(0, Number(bulkForm.start_number || 0) + Math.max(0, Number(bulkForm.count || 0)) - 1)}
+                </span>
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                className={inputClass}
+                placeholder="Building"
+                value={bulkForm.building}
+                onChange={(e) => setBulkForm((p) => ({ ...p, building: e.target.value }))}
+              />
+              <input
+                className={inputClass}
+                placeholder="Unit type"
+                value={bulkForm.unit_type}
+                onChange={(e) => setBulkForm((p) => ({ ...p, unit_type: e.target.value }))}
+              />
+              <input
+                className={inputClass}
+                placeholder="Bedrooms"
+                type="number"
+                value={bulkForm.bedrooms}
+                onChange={(e) => setBulkForm((p) => ({ ...p, bedrooms: e.target.value }))}
+              />
+              <input
+                className={inputClass}
+                placeholder="Floor"
+                value={bulkForm.floor}
+                onChange={(e) => setBulkForm((p) => ({ ...p, floor: e.target.value }))}
+              />
+              <select
+                className={inputClass}
+                value={bulkForm.status}
+                onChange={(e) => setBulkForm((p) => ({ ...p, status: e.target.value }))}
+              >
+                <option value="vacant">Vacant</option>
+                <option value="occupied">Occupied</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={bulkCreate.isPending}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
+              Create {Number(bulkForm.count || 0) > 0 ? bulkForm.count : "0"} units
             </button>
           </form>
         </Modal>

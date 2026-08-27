@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -192,6 +192,8 @@ function LandlordsPage() {
   const RowActions = ({ row }: { row: Row }) => {
     const [open, setOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const menuId = useId();
+    const triggerId = useId();
     const isActive = row.status === "active";
     const nextStatus = isActive ? "inactive" : "active";
 
@@ -262,36 +264,47 @@ function LandlordsPage() {
         <div className="relative sm:hidden" ref={menuRef}>
           <button
             type="button"
+            id={triggerId}
+            aria-haspopup="menu"
+            aria-controls={menuId}
+            aria-expanded={open}
+            aria-label={`Actions for ${row.name || "landlord"}`}
             disabled={busy}
             onClick={() => setOpen((v) => !v)}
-            aria-label="Landlord actions"
-            aria-expanded={open}
             className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
           >
-            <MoreVertical className="size-3.5" />
+            <MoreVertical className="size-3.5" aria-hidden="true" />
           </button>
           {open && (
-            <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-border bg-card p-1 shadow-lg">
+            <div
+              id={menuId}
+              role="menu"
+              aria-labelledby={triggerId}
+              className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-border bg-card p-1 shadow-lg"
+            >
               <Link
                 to="/landlords/$id"
                 params={{ id: row.id }}
                 search={{ page: 1, limit: 10 }}
+                role="menuitem"
                 className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
                 onClick={() => setOpen(false)}
               >
-                <Eye className="size-3.5" /> View
+                <Eye className="size-3.5" aria-hidden="true" /> View
               </Link>
               <Link
                 to="/landlords/$id/edit"
                 params={{ id: row.id }}
                 search={{ page: 1, limit: 10 }}
+                role="menuitem"
                 className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
                 onClick={() => setOpen(false)}
               >
-                <Pencil className="size-3.5" /> Edit
+                <Pencil className="size-3.5" aria-hidden="true" /> Edit
               </Link>
               <button
                 type="button"
+                role="menuitem"
                 disabled={busy}
                 onClick={() => {
                   setOpen(false);
@@ -299,11 +312,12 @@ function LandlordsPage() {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-foreground hover:bg-accent/10 disabled:opacity-50"
               >
-                <Power className={`size-3.5 ${isActive ? "text-emerald-600" : ""}`} />
+                <Power className={`size-3.5 ${isActive ? "text-emerald-600" : ""}`} aria-hidden="true" />
                 {isActive ? "Deactivate" : "Activate"}
               </button>
               <button
                 type="button"
+                role="menuitem"
                 disabled={busy}
                 onClick={() => {
                   setOpen(false);
@@ -311,7 +325,7 @@ function LandlordsPage() {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
               >
-                <Trash2 className="size-3.5" /> Delete
+                <Trash2 className="size-3.5" aria-hidden="true" /> Delete
               </button>
             </div>
           )}

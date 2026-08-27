@@ -168,6 +168,51 @@ export const getProperty = createServerFn({ method: "GET" })
     return { property, landlord: property.landlord ?? null, units: units ?? [], assignments, people };
   });
 
+export const getUnit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ unitId: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: unit, error } = await supabase
+      .from("units")
+      .select("*")
+      .eq("id", data.unitId)
+      .single();
+    if (error) throw new Error(error.message);
+    if (!unit) throw new Error("Unit not found");
+
+    const { data: property, error: pErr } = await supabase
+      .from("properties")
+      .select("id, name")
+      .eq("id", unit.property_id)
+      .single();
+    if (pErr) throw new Error(pErr.message);
+
+    const { data: assignments, error: aErr } = await supabase
+      .from("unit_assignments")
+      .select("*")
+      .eq("unit_id", data.unitId)
+      .order("start_date", { ascending: false });
+    if (aErr) throw new Error(aErr.message);
+
+    const userIds = [...new Set((assignments ?? []).map((a) => a.user_id))];
+    let people: any[] = [];
+    if (userIds.length) {
+      const { data: rows, error: pplErr } = await supabase
+        .from("users")
+        .select("id, name, email, phone, status")
+        .in("id", userIds);
+      if (pplErr) throw new Error(pplErr.message);
+      people = rows ?? [];
+    }
+
+    return { unit, property, assignments: assignments ?? [], people };
+  });
+
+
+
 export const createProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => propertyInput.parse(data))
@@ -277,6 +322,68 @@ export const upsertUnit = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
+
+export const createBulkUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        property_id: uuid,
+        count: z.number().int().min(1).max(500),
+        start_number: z.number().int().min(0).max(1000000),
+        prefix: text(60),
+        building: text(120),
+        unit_type: text(60),
+        bedrooms: z.number().int().min(0).max(50).nullable().optional(),
+        floor: text(30),
+        status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
+        electricity_prefix: text(40),
+        water_prefix: text(40),
+        gas_prefix: text(40),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    const { data: existing, error: existingError } = await supabase
+      .from("units")
+      .select("unit_number")
+      .eq("property_id", data.property_id);
+    if (existingError) throw new Error(existingError.message);
+    const existingNumbers = new Set((existing ?? []).map((u: any) => u.unit_number));
+
+    const status = data.status ?? "vacant";
+    const rows = [];
+    for (let i = 0; i < data.count; i++) {
+      const number = data.start_number + i;
+      const unitNumber = data.prefix ? `${data.prefix} ${number}` : String(number);
+      if (existingNumbers.has(unitNumber)) {
+        throw new Error(`Unit ${unitNumber} already exists in this property`);
+      }
+      rows.push({
+        property_id: data.property_id,
+        unit_number: unitNumber,
+        building: data.building ?? null,
+        unit_type: data.unit_type ?? null,
+        bedrooms: data.bedrooms ?? null,
+        floor: data.floor ?? null,
+        status,
+        electricity_meter_no: data.electricity_prefix ? `${data.electricity_prefix}${number}` : null,
+        water_meter_no: data.water_prefix ? `${data.water_prefix}${number}` : null,
+        gas_meter_no: data.gas_prefix ? `${data.gas_prefix}${number}` : null,
+        created_by: userId,
+        updated_by: userId,
+      });
+    }
+
+    const { error } = await supabase.from("units").insert(rows as never);
+    if (error) throw new Error(error.message);
+    return { created: rows.length };
+  });
+
+
 
 export const deleteUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
