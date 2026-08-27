@@ -176,30 +176,58 @@ function ResidentDetailPage() {
 
   const isActive = resident?.status === "active";
 
-  const auditEvents = resident
-    ? [
-        {
-          key: "created",
-          action: "created" as const,
-          actor: resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System",
-          label: "Record created",
-          detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
-          at: resident.created_at,
-          icon: <UserCheck className="size-4" />,
-        },
-        {
-          key: "updated",
-          action: "updated" as const,
-          actor: resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System",
-          label: "Record last updated",
-          detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
-          at: resident.updated_at,
-          icon: <Pencil className="size-4" />,
-        },
-      ]
-        .filter((e) => e.at)
-        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-    : [];
+  const assignmentEvents = (assignmentAudit?.logs ?? []).map((log) => {
+    const labels: Record<string, string> = {
+      assigned: "Unit assigned",
+      moved: "Unit assignment moved",
+      ended: "Unit assignment ended",
+      updated: "Unit assignment updated",
+      removed: "Unit assignment removed",
+    };
+    const parts: string[] = [];
+    if (log.old_unit) parts.push(`From ${log.old_unit}`);
+    if (log.new_unit) parts.push(`To ${log.new_unit}`);
+    const changed = Object.keys(log.changes ?? {}).filter((k) => k !== "unit_id");
+    if (changed.length) parts.push(`Changed: ${changed.join(", ").replace(/_/g, " ")}`);
+    return {
+      key: log.id,
+      action: log.action,
+      actor: log.actor,
+      label: labels[log.action] ?? "Unit assignment change",
+      detail: parts.join(" · ") || "No unit details recorded",
+      at: log.created_at,
+      icon: <DoorOpen className="size-4" />,
+    };
+  });
+
+  const auditEvents = (
+    resident
+      ? [
+          {
+            key: "created",
+            action: "created",
+            actor: resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System",
+            label: "Record created",
+            detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
+            at: resident.created_at,
+            icon: <UserCheck className="size-4" />,
+          },
+          {
+            key: "updated",
+            action: "updated",
+            actor: resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System",
+            label: "Record last updated",
+            detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
+            at: resident.updated_at,
+            icon: <Pencil className="size-4" />,
+          },
+          ...assignmentEvents,
+        ]
+      : assignmentEvents
+  )
+    .filter((e) => e.at)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
 
   const filteredAuditEvents = auditEvents.filter((event) => {
     const q = auditQuery.trim().toLowerCase();
