@@ -264,13 +264,16 @@ function LandlordsPage() {
         <div className="relative sm:hidden" ref={menuRef}>
           <button
             type="button"
+            id={triggerId}
+            aria-haspopup="menu"
+            aria-controls={menuId}
+            aria-expanded={open}
+            aria-label={`Actions for ${row.name || "landlord"}`}
             disabled={busy}
             onClick={() => setOpen((v) => !v)}
-            aria-label="Landlord actions"
-            aria-expanded={open}
             className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
           >
-            <MoreVertical className="size-3.5" />
+            <MoreVertical className="size-3.5" aria-hidden="true" />
           </button>
           {open && (
             <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-border bg-card p-1 shadow-lg">
