@@ -54,6 +54,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         items: [
           { label: "Resident Management", icon: Users, to: "/residents" },
           { label: "Landlord Management", icon: Building2, to: "/landlords" },
+          { label: "Property Management", icon: Home, to: "/properties" },
           { label: "Vendor Management", icon: Store, to: "/vendors" },
           { label: "Agent Management", icon: UserCheck, to: "/agents" },
           { label: "Service Provider", icon: Briefcase, to: "/service-providers" },
@@ -65,9 +66,9 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         items: [
           { label: "Meter Management", icon: Gauge },
           { label: "Price Management", icon: BadgeDollarSign },
-          { label: "Property Management", icon: Home },
         ],
       },
+
       {
         heading: "REPORTS",
         items: [{ label: "Reports & Analysis", icon: BarChart3 }],
