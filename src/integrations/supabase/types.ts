@@ -26,7 +26,9 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          landlord_id: string | null
           name: string
+          number_of_units: number | null
           postal_code: string | null
           property_type: string
           state: string | null
@@ -46,7 +48,9 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          landlord_id?: string | null
           name: string
+          number_of_units?: number | null
           postal_code?: string | null
           property_type?: string
           state?: string | null
@@ -66,7 +70,9 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          landlord_id?: string | null
           name?: string
+          number_of_units?: number | null
           postal_code?: string | null
           property_type?: string
           state?: string | null
@@ -75,7 +81,15 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unit_assignments: {
         Row: {
