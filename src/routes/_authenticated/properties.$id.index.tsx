@@ -89,6 +89,7 @@ type Person = { id: string; name: string | null; email: string | null; phone: st
 
 const TABS = [
   { id: "units", label: "Units", icon: Layers },
+  { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
   { id: "landlords", label: "Landlords", icon: Building2 },
   { id: "audit", label: "Status & Audit Logs", icon: ClipboardList },
