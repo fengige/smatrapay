@@ -644,7 +644,7 @@ export const assignUnit = createServerFn({ method: "POST" })
     // Re-check availability at save time so a concurrent assignment cannot be overwritten.
     const { data: conflicting, error: cErr } = await supabase
       .from("unit_assignments")
-      .select("id, user_id, end_date")
+      .select("id, user_id, start_date, end_date")
       .eq("unit_id", data.unit_id)
       .eq("role", data.role);
     if (cErr) throw new Error(cErr.message);
