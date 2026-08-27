@@ -222,9 +222,8 @@ function PropertiesPage() {
       "Code",
       "City",
       "Status",
-      "Buildings",
-      "Units",
       "Unit types",
+      "Units",
       "Current residents",
       "Current landlords",
     ];
@@ -233,9 +232,8 @@ function PropertiesPage() {
       row.property.code ?? "",
       row.property.city ?? "",
       row.property.status,
-      row.buildings.join(" | "),
-      String(row.units.length),
       row.unitTypes.join(" | "),
+      String(row.units.length),
       String(row.residents),
       String(row.landlords),
     ]);
@@ -307,7 +305,7 @@ function PropertiesPage() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by property, code, city, building or unit type"
+                  placeholder="Search by property, code, city or unit type"
                   className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
                 />
               </div>
@@ -351,7 +349,7 @@ function PropertiesPage() {
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Property</th>
-                  <th className="px-4 py-3 font-semibold">Buildings</th>
+                  <th className="px-4 py-3 font-semibold">Unit Type</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
                   <th className="px-4 py-3 font-semibold">Landlords</th>
@@ -392,7 +390,7 @@ function PropertiesPage() {
                       </p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {row.buildings.join(", ") || "—"}
+                      {row.unitTypes.join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{row.units.length}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.residents}</td>
