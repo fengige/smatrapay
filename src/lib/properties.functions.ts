@@ -466,6 +466,45 @@ export const deleteAssignment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const listUserAssignments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ userId: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: assignments, error } = await supabase
+      .from("unit_assignments")
+      .select("id, unit_id, role, start_date, end_date, notes, created_at")
+      .eq("user_id", data.userId)
+      .order("start_date", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const unitIds = [...new Set((assignments ?? []).map((a) => a.unit_id))];
+    let units: any[] = [];
+    if (unitIds.length) {
+      const { data: rows, error: uErr } = await supabase
+        .from("units")
+        .select("id, property_id, unit_number, building, unit_type, status")
+        .in("id", unitIds);
+      if (uErr) throw new Error(uErr.message);
+      units = rows ?? [];
+    }
+
+    const propertyIds = [...new Set(units.map((u) => u.property_id))];
+    let properties: any[] = [];
+    if (propertyIds.length) {
+      const { data: rows, error: pErr } = await supabase
+        .from("properties")
+        .select("id, name, code, city, status")
+        .in("id", propertyIds);
+      if (pErr) throw new Error(pErr.message);
+      properties = rows ?? [];
+    }
+
+    return { assignments: assignments ?? [], units, properties };
+  });
+
 export const listAssignableUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
