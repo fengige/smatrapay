@@ -214,7 +214,7 @@ function LandlordsPage() {
   };
 
   const SortHeader = ({ label, sortBy }: { label: string; sortBy: SortKey }) => (
-    <th className="px-4 py-3 font-semibold">
+    <th className="px-3 py-2 font-semibold">
       <button
         type="button"
         onClick={() => toggleSort(sortBy)}
