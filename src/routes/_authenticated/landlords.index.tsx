@@ -317,6 +317,7 @@ function LandlordsPage() {
               </button>
               <button
                 type="button"
+                role="menuitem"
                 disabled={busy}
                 onClick={() => {
                   setOpen(false);
@@ -324,7 +325,7 @@ function LandlordsPage() {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
               >
-                <Trash2 className="size-3.5" /> Delete
+                <Trash2 className="size-3.5" aria-hidden="true" /> Delete
               </button>
             </div>
           )}
