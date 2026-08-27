@@ -27,6 +27,7 @@ export type Database = {
           id: string
           name: string
           postal_code: string | null
+          property_type: string
           state: string | null
           status: Database["public"]["Enums"]["property_status"]
           updated_at: string
@@ -44,6 +45,7 @@ export type Database = {
           id?: string
           name: string
           postal_code?: string | null
+          property_type?: string
           state?: string | null
           status?: Database["public"]["Enums"]["property_status"]
           updated_at?: string
@@ -61,6 +63,7 @@ export type Database = {
           id?: string
           name?: string
           postal_code?: string | null
+          property_type?: string
           state?: string | null
           status?: Database["public"]["Enums"]["property_status"]
           updated_at?: string
