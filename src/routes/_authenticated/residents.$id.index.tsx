@@ -30,7 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
-import { listAssignmentAuditLogs } from "@/lib/properties.functions";
+import { listAssignmentAuditLogs, listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/residents/$id/")({
