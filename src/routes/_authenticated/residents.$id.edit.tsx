@@ -2,10 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowLeft, AtSign, Loader2, Phone, Save, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, AtSign, Building2, Loader2, Phone, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { getUserById, updateUser } from "@/lib/users.functions";
+import {
+  assignUnit,
+  endAssignment,
+  listProperties,
+  listUserAssignments,
+} from "@/lib/properties.functions";
 import { editUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
