@@ -566,6 +566,20 @@ function PropertyDetailPage() {
         <p className="p-6 text-sm text-destructive">{(error as Error).message}</p>
       ) : (
         <div className="space-y-5">
+          {successBanner && (
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-700">
+              <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+              <div className="flex-1 text-sm font-medium">{successBanner}</div>
+              <button
+                type="button"
+                onClick={dismissSuccess}
+                className="rounded-md p-1 hover:bg-emerald-500/20"
+                aria-label="Dismiss"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          )}
           <div className="rounded-2xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-center gap-3">
               <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
