@@ -382,6 +382,31 @@ function PropertyDetailPage() {
     onError: (err: Error) => toast.error(err.message || "Could not remove unit"),
   });
 
+  const bulkCreate = useMutation({
+    mutationFn: () =>
+      runBulkCreate({
+        data: {
+          property_id: id,
+          count: Number(bulkForm.count),
+          start_number: Number(bulkForm.start_number),
+          building: bulkForm.building.trim() || null,
+          unit_type: bulkForm.unit_type.trim() || null,
+          bedrooms: bulkForm.bedrooms ? Number(bulkForm.bedrooms) : null,
+          floor: bulkForm.floor.trim() || null,
+          status: bulkForm.status,
+          electricity_prefix: bulkForm.electricity_prefix.trim() || null,
+          water_prefix: bulkForm.water_prefix.trim() || null,
+          gas_prefix: bulkForm.gas_prefix.trim() || null,
+        },
+      } as never),
+    onSuccess: async (res) => {
+      toast.success(`${res.created} units created`);
+      setBulkForm({ ...emptyBulkForm });
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not bulk-create units"),
+  });
+
   const propertyDelete = useMutation({
     mutationFn: () => removeProperty({ data: { id } } as never),
     onSuccess: () => {
