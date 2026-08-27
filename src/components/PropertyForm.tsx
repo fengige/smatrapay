@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 
 export type PropertyFormValues = {
+  property_type: "building" | "zone";
   name: string;
   code: string;
   address_line1: string;
@@ -15,6 +16,7 @@ export type PropertyFormValues = {
 };
 
 export const emptyProperty: PropertyFormValues = {
+  property_type: "building",
   name: "",
   code: "",
   address_line1: "",
@@ -66,7 +68,7 @@ export function PropertyForm({
   const [values, setValues] = useState<PropertyFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const set = (key: keyof PropertyFormValues, value: string) =>
+  const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
   const submit = (event: React.FormEvent) => {
@@ -84,6 +86,36 @@ export function PropertyForm({
     <form onSubmit={submit} className="space-y-5">
       <section className="rounded-2xl border border-border bg-card p-5">
         <h2 className="text-sm font-bold text-foreground">Property details</h2>
+        <div
+          role="tablist"
+          aria-label="Property type"
+          className="mt-4 grid w-full max-w-md grid-cols-2 gap-1 rounded-xl bg-muted p-1"
+        >
+          {(
+            [
+              { value: "building", label: "Building" },
+              { value: "zone", label: "Zone" },
+            ] as const
+          ).map((option) => {
+            const selected = values.property_type === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => set("property_type", option.value)}
+                className={
+                  selected
+                    ? "rounded-lg bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition-colors"
+                    : "rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                }
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Property name *" error={errors["name"]}>
             <input
@@ -104,7 +136,7 @@ export function PropertyForm({
           <Field label="Status">
             <select
               value={values.status}
-              onChange={(e) => set("status", e.target.value)}
+              onChange={(e) => set("status", e.target.value as "active" | "archived")}
               className={inputClass}
             >
               <option value="active">Active</option>

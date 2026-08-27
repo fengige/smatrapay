@@ -33,7 +33,11 @@ export const Route = createFileRoute("/_authenticated/properties/$id/edit")({
 });
 
 function clean(values: PropertyFormValues) {
-  const out: Record<string, unknown> = { name: values.name, status: values.status };
+  const out: Record<string, unknown> = {
+    name: values.name,
+    status: values.status,
+    property_type: values.property_type,
+  };
   for (const key of [
     "code",
     "address_line1",
@@ -88,6 +92,7 @@ function EditPropertyPage() {
       {property && (
         <PropertyForm
           initial={{
+            property_type: (property["property_type"] as "building" | "zone") ?? "building",
             name: property["name"] ?? "",
             code: property["code"] ?? "",
             address_line1: property["address_line1"] ?? "",
