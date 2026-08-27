@@ -395,8 +395,9 @@ function ResidentsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
-                            to="/users/$id"
+                            to="/residents/$id"
                             params={{ id: r.id }}
+                            search={{ page: 1, limit: 10 }}
                             aria-label="View resident"
                             className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
                           >
