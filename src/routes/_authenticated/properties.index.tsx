@@ -119,11 +119,8 @@ function PropertiesPage() {
   const navigate = useNavigate({ from: "/properties/" });
 
   const [search, setSearch] = useState("");
-  const [building, setBuilding] = useState("all");
   const [unitType, setUnitType] = useState("all");
   const [status, setStatus] = useState("all");
-  const [moveInFrom, setMoveInFrom] = useState("");
-  const [moveInTo, setMoveInTo] = useState("");
 
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
@@ -132,7 +129,7 @@ function PropertiesPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, building, unitType, status, moveInFrom, moveInTo]);
+  }, [search, unitType, status]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["properties", "list"],
@@ -143,10 +140,6 @@ function PropertiesPage() {
   const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
   const assignments = useMemo(() => (data?.assignments ?? []) as unknown as Assignment[], [data]);
 
-  const buildingOptions = useMemo(
-    () => [...new Set(units.map((u) => (u.building ?? "").trim()).filter(Boolean))].sort(),
-    [units],
-  );
   const unitTypeOptions = useMemo(
     () => [...new Set(units.map((u) => (u.unit_type ?? "").trim()).filter(Boolean))].sort(),
     [units],
@@ -192,10 +185,7 @@ function PropertiesPage() {
     const term = search.trim().toLowerCase();
     return rows.filter((row) => {
       if (status !== "all" && row.property.status !== status) return false;
-      if (building !== "all" && !row.buildings.includes(building)) return false;
       if (unitType !== "all" && !row.unitTypes.includes(unitType)) return false;
-      if (moveInFrom && !row.startDates.some((d) => d >= moveInFrom)) return false;
-      if (moveInTo && !row.startDates.some((d) => d <= moveInTo)) return false;
       if (!term) return true;
       return [
         row.property.name,
@@ -210,7 +200,7 @@ function PropertiesPage() {
         .toLowerCase()
         .includes(term);
     });
-  }, [rows, search, status, building, unitType, moveInFrom, moveInTo]);
+  }, [rows, search, status, unitType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
@@ -263,11 +253,8 @@ function PropertiesPage() {
 
   const resetFilters = () => {
     setSearch("");
-    setBuilding("all");
     setUnitType("all");
     setStatus("all");
-    setMoveInFrom("");
-    setMoveInTo("");
   };
 
   return (
@@ -335,19 +322,6 @@ function PropertiesPage() {
                 <option value="archived">Archived</option>
               </select>
               <select
-                value={building}
-                onChange={(e) => setBuilding(e.target.value)}
-                aria-label="Filter by building"
-                className={inputClass}
-              >
-                <option value="all">All buildings</option>
-                {buildingOptions.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-              <select
                 value={unitType}
                 onChange={(e) => setUnitType(e.target.value)}
                 aria-label="Filter by unit type"
@@ -362,23 +336,6 @@ function PropertiesPage() {
               </select>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Move-in between
-              </span>
-              <input
-                type="date"
-                value={moveInFrom}
-                aria-label="Move-in from"
-                onChange={(e) => setMoveInFrom(e.target.value)}
-                className={inputClass}
-              />
-              <input
-                type="date"
-                value={moveInTo}
-                aria-label="Move-in to"
-                onChange={(e) => setMoveInTo(e.target.value)}
-                className={inputClass}
-              />
               <button
                 type="button"
                 onClick={resetFilters}
