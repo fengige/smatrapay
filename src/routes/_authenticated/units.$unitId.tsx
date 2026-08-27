@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,14 +8,16 @@ import {
   Building2,
   Droplets,
   Flame,
+  History,
   Home,
   Layers,
   Loader2,
   Pencil,
+  Trash2,
   X,
   Zap,
 } from "lucide-react";
-import { getUnit, updateUnitDetails } from "@/lib/properties.functions";
+import { deleteUnit, getUnit, updateUnitDetails } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/units/$unitId")({
@@ -84,13 +86,24 @@ type Person = {
   status: string;
 };
 
+type AuditLog = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  changes: Record<string, { old: unknown; new: unknown }>;
+  created_at: string;
+};
+
 function UnitDetailPage() {
   const { unitId } = Route.useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchUnit = useServerFn(getUnit);
   const saveUnit = useServerFn(updateUnitDetails);
+  const removeUnit = useServerFn(deleteUnit);
   const [edit, setEdit] = useState<EditForm | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { data, isLoading, error } = useQuery({
     queryKey: ["units", unitId],
     queryFn: () => fetchUnit({ data: { unitId } }),
