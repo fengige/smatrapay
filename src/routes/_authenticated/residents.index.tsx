@@ -246,7 +246,7 @@ function ResidentsPage() {
       if (av === bv) return 0;
       return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
     });
-  }, [residents, search, statusFilter, sortKey, sortDir]);
+  }, [residents, search, statusFilter, propertyFilter, unitFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
