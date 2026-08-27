@@ -370,6 +370,35 @@ function ResidentsPage() {
               />
             </div>
             <select
+              value={propertyFilter}
+              onChange={(e) => {
+                setPropertyFilter(e.target.value);
+                setUnitFilter("all");
+              }}
+              aria-label="Filter by property"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">All properties</option>
+              {propertyOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={unitFilter}
+              onChange={(e) => setUnitFilter(e.target.value)}
+              aria-label="Filter by unit"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">All units</option>
+              {unitOptions.map((unit) => (
+                <option key={unit} value={unit}>
+                  Unit {unit}
+                </option>
+              ))}
+            </select>
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
