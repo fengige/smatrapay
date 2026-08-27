@@ -209,6 +209,7 @@ function PropertyDetailPage() {
   });
 
   const property = (data?.property ?? null) as Record<string, string | null> | null;
+  const landlord = (data?.landlord ?? null) as Landlord | null;
   const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
   const assignments = useMemo(() => (data?.assignments ?? []) as unknown as Assignment[], [data]);
   const people = useMemo(() => (data?.people ?? []) as unknown as Person[], [data]);
