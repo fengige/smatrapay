@@ -17,7 +17,7 @@ import {
   KeyRound,
   Loader2,
   Mail,
-  MapPin,
+  
   Pencil,
   Phone,
   Receipt,
@@ -30,7 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
-import { listUserAssignments } from "@/lib/properties.functions";
+import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
@@ -87,18 +87,6 @@ function dateTime(value: string | null | undefined) {
   });
 }
 
-function tenureLabel(moveIn: string | null | undefined) {
-  if (!moveIn) return "—";
-  const start = new Date(moveIn).getTime();
-  if (Number.isNaN(start)) return "—";
-  const months = Math.max(0, Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24 * 30.44)));
-  if (months < 1) return "Less than a month";
-  const years = Math.floor(months / 12);
-  const rest = months % 12;
-  return [years ? `${years} yr${years > 1 ? "s" : ""}` : null, rest ? `${rest} mo` : null]
-    .filter(Boolean)
-    .join(" ");
-}
 
 function LandlordDetailPage() {
   const { id } = Route.useParams();
@@ -107,6 +95,7 @@ function LandlordDetailPage() {
 
   const fetchLandlord = useServerFn(getUserById);
   const fetchAssignments = useServerFn(listUserAssignments);
+  const fetchOwnedProperties = useServerFn(listLandlordProperties);
   const saveLandlord = useServerFn(updateUser);
   const removeLandlord = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -131,6 +120,20 @@ function LandlordDetailPage() {
   const { data: assignmentData, isLoading: assignmentsLoading } = useQuery({
     queryKey: ["landlord-assignments", id],
     queryFn: () => fetchAssignments({ data: { userId: id } }),
+  });
+
+  const { data: ownedData, isLoading: ownedLoading } = useQuery({
+    queryKey: ["landlord-properties", id],
+    queryFn: () => fetchOwnedProperties({ data: { landlordId: id } }),
+  });
+
+  const ownedProperties = (ownedData?.properties ?? []).map((p) => {
+    const units = (ownedData?.units ?? []).filter((u) => u.property_id === p.id);
+    return {
+      ...p,
+      unitCount: units.length,
+      occupiedCount: units.filter((u) => u.status === "occupied").length,
+    };
   });
 
   const assignedUnits = (assignmentData?.assignments ?? []).map((a) => {
@@ -468,27 +471,87 @@ function LandlordDetailPage() {
 
               {tab === "property" && (
               <Section title="My Properties" icon={<Building2 className="size-4 text-primary" />}>
-                <dl className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
-                  <Detail label="Property" value={landlord.property ?? "Unassigned"} />
-                  <Detail label="Building" value={landlord.building ?? "—"} />
-                  <Detail label="Unit / house no." value={landlord.unit_number ?? "—"} />
-                  <Detail label="Move-in date" value={date(landlord.move_in_date)} />
-                  <Detail label="Tenure" value={tenureLabel(landlord.move_in_date)} />
-                  <Detail label="Account status" value={landlord.status} />
-                  <Detail
-                    label="Email verified"
-                    value={landlord.email_verified_at ? date(landlord.email_verified_at) : "Not verified"}
-                  />
-                  <Detail label="Landlord ID" value={landlord.id.slice(0, 8)} mono />
-                </dl>
-                {landlord.property || landlord.unit_number ? (
-                  <div className="flex items-center gap-2 border-t border-border px-6 py-4 text-sm text-muted-foreground">
-                    <MapPin className="size-4 text-primary" />
-                    {[landlord.property, landlord.building, landlord.unit_number]
-                      .filter(Boolean)
-                      .join(" · ")}
+                {ownedLoading ? (
+                  <div className="flex justify-center p-10 text-muted-foreground">
+                    <Loader2 className="size-5 animate-spin" />
                   </div>
-                ) : null}
+                ) : ownedProperties.length === 0 ? (
+                  <EmptyTabState
+                    icon={<Building2 className="size-8" />}
+                    title="No properties owned"
+                    description="This landlord is not linked to any properties yet. Assign them as the landlord when creating or editing a property."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
+                          <th className="px-4 py-2.5 font-semibold">Property</th>
+                          <th className="px-4 py-2.5 font-semibold">Code</th>
+                          <th className="px-4 py-2.5 font-semibold">Type</th>
+                          <th className="px-4 py-2.5 font-semibold">Location</th>
+                          <th className="px-4 py-2.5 font-semibold">Units</th>
+                          <th className="px-4 py-2.5 font-semibold">Occupied</th>
+                          <th className="px-4 py-2.5 font-semibold">Status</th>
+                          <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ownedProperties.map((p) => (
+                          <tr key={p.id} className="border-t border-border">
+                            <td className="px-4 py-2.5">
+                              <p className="font-medium text-foreground">{p.name}</p>
+                              {p.description && (
+                                <p className="max-w-56 truncate text-xs text-muted-foreground">
+                                  {p.description}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
+                              {p.code ?? "—"}
+                            </td>
+                            <td className="px-4 py-2.5 capitalize text-muted-foreground">
+                              {[p.property_type, p.subtype].filter(Boolean).join(" · ") || "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted-foreground">
+                              {[p.city, p.state].filter(Boolean).join(", ") || "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted-foreground">
+                              {p.unitCount || p.number_of_units || 0}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted-foreground">{p.occupiedCount}</td>
+                            <td className="px-4 py-2.5">
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
+                                  p.status === "active"
+                                    ? "bg-emerald-500/10 text-emerald-600"
+                                    : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-right">
+                              <Link
+                                to="/properties/$id"
+                                params={{ id: p.id }}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+                              >
+                                View
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+                      <Building2 className="size-3.5 text-primary" />
+                      {ownedProperties.length}{" "}
+                      {ownedProperties.length === 1 ? "property" : "properties"} owned ·{" "}
+                      {ownedProperties.reduce((sum, p) => sum + p.unitCount, 0)} units total
+                    </div>
+                  </div>
+                )}
               </Section>
               )}
 
