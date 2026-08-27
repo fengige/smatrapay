@@ -239,9 +239,6 @@ function ResidentsPage() {
       if (sortKey === "property") {
         av = (assignmentDisplayString(a)?.properties ?? []).join(", ") ?? "";
         bv = (assignmentDisplayString(b)?.properties ?? []).join(", ") ?? "";
-      } else if (sortKey === "unit_number") {
-        av = (assignmentDisplayString(a)?.units ?? []).join(", ") ?? "";
-        bv = (assignmentDisplayString(b)?.units ?? []).join(", ") ?? "";
       } else {
         av = String(a[sortKey] ?? "").toLowerCase();
         bv = String(b[sortKey] ?? "").toLowerCase();
