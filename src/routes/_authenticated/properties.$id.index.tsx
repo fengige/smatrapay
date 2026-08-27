@@ -163,11 +163,13 @@ function PropertyDetailPage() {
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
+  const runImport = useServerFn(importAssignments);
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
   const [unitForm, setUnitForm] = useState<UnitForm>({ ...emptyUnitForm });
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["properties", id],
