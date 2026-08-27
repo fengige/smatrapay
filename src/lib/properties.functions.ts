@@ -347,7 +347,7 @@ const unitLabel = (prefix: string | null | undefined, n: number) =>
   prefix ? `${prefix} ${n}` : String(n);
 
 function planBulk(
-  input: { count: number; start_number: number; prefix?: string | null; mode?: string },
+  input: { count: number; start_number: number; prefix?: string | null | undefined; mode?: string | undefined },
   existingNumbers: Set<string>,
 ) {
   const mode = input.mode ?? "fail";
