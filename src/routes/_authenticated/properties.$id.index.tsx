@@ -1077,7 +1077,17 @@ function AssignForm({
           toast.error("Select a person to assign");
           return;
         }
-        onSubmit({ user_id: userId, role, start_date: startDate, notes: notes.trim() || null });
+        if (endDate && endDate < startDate) {
+          toast.error("End date must be on or after the start date");
+          return;
+        }
+        onSubmit({
+          user_id: userId,
+          role,
+          start_date: startDate,
+          end_date: endDate || null,
+          notes: notes.trim() || null,
+        });
       }}
     >
       <select
