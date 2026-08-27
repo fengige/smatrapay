@@ -595,3 +595,28 @@ export const listAssignableUsers = createServerFn({ method: "GET" })
       people: (users ?? []).map((u) => ({ ...u, role: roleById.get(u.id) ?? "resident" })),
     };
   });
+
+export const listLandlords = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: roles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "landlord");
+    if (rolesError) throw new Error(rolesError.message);
+
+    const ids = [...new Set((roles ?? []).map((r) => r.user_id))];
+    if (!ids.length) return { landlords: [] as { id: string; name: string | null; email: string | null }[] };
+
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, name, email")
+      .in("id", ids)
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    return { landlords: users ?? [] };
+  });
