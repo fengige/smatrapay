@@ -254,6 +254,7 @@ function ResidentsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/residents/new"
+            search={{ page: 1, limit: 10 }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="size-4" /> Add Resident
@@ -404,6 +405,7 @@ function ResidentsPage() {
                           <Link
                             to="/residents/$id/edit"
                             params={{ id: r.id }}
+                            search={{ page: 1, limit: 10 }}
                             aria-label="Edit resident"
                             className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
                           >
