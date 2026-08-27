@@ -422,8 +422,7 @@ function ResidentsPage() {
                 <tr>
                   <SortHeader label="Resident" sortBy="name" />
                   <SortHeader label="Phone" sortBy="phone" />
-                  <SortHeader label="Property" sortBy="property" />
-                  <SortHeader label="Unit" sortBy="unit_number" />
+                  <SortHeader label="My Property" sortBy="property" />
                   <SortHeader label="Status" sortBy="status" />
                   <SortHeader label="Created" sortBy="created_at" />
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
