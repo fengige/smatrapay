@@ -326,6 +326,78 @@ function PropertyDetailPage() {
 
   const visibleAudit = auditEvents.filter((e) => match([e.actor, e.action, e.detail]));
 
+  const unitState = (status: string) =>
+    status === "archived" ? "archived" : status === "maintenance" ? "blocked" : "active";
+
+  const timeline = useMemo(() => {
+    const rows: {
+      unit: string;
+      building: string;
+      date: string;
+      state: string;
+      event: string;
+      detail: string;
+    }[] = [];
+    for (const u of units) {
+      rows.push({
+        unit: u.unit_number,
+        building: u.building ?? "",
+        date: u.created_at,
+        state: "active",
+        event: "Unit created",
+        detail: [u.unit_type, u.floor ? `floor ${u.floor}` : ""].filter(Boolean).join(" · ") || "—",
+      });
+      const unitAssignments = assignments
+        .filter((a) => a.unit_id === u.id)
+        .sort((a, b) => (a.start_date < b.start_date ? -1 : 1));
+      for (const a of unitAssignments) {
+        rows.push({
+          unit: u.unit_number,
+          building: u.building ?? "",
+          date: a.start_date,
+          state: "active",
+          event: a.role === "resident" ? "Resident assigned" : "Landlord assigned",
+          detail: `${label(a.user_id)}${a.notes ? ` — ${a.notes}` : ""}`,
+        });
+        if (a.end_date) {
+          rows.push({
+            unit: u.unit_number,
+            building: u.building ?? "",
+            date: a.end_date,
+            state: "archived",
+            event: "Assignment ended",
+            detail: `${label(a.user_id)} (${a.role})`,
+          });
+        }
+      }
+      rows.push({
+        unit: u.unit_number,
+        building: u.building ?? "",
+        date: u.updated_at,
+        state: unitState(u.status),
+        event: "Current status",
+        detail: u.status,
+      });
+    }
+    return rows.sort((a, b) =>
+      a.unit === b.unit ? (a.date < b.date ? -1 : 1) : a.unit.localeCompare(b.unit),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units, assignments, personById]);
+
+  const visibleTimeline = timeline.filter((r) =>
+    match([r.unit, r.building, r.state, r.event, r.detail]),
+  );
+  const timelineByUnit = useMemo(() => {
+    const map = new Map<string, typeof visibleTimeline>();
+    for (const row of visibleTimeline) {
+      const list = map.get(row.unit) ?? [];
+      list.push(row);
+      map.set(row.unit, list);
+    }
+    return [...map.entries()];
+  }, [visibleTimeline]);
+
   const exportSet = () => {
     if (tab === "units") {
       return {
