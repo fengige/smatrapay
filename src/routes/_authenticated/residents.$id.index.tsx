@@ -9,13 +9,19 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock,
+  CreditCard,
   DoorOpen,
+  Download,
+  FileText,
+  Gauge,
   KeyRound,
   Loader2,
   Mail,
   MapPin,
   Pencil,
   Phone,
+  Receipt,
+  Search,
   ShieldCheck,
   Trash2,
   UserCheck,
@@ -105,7 +111,13 @@ function ResidentDetailPage() {
 
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
-  const [tab, setTab] = useState<"property" | "history" | "notes" | "audit">("property");
+  const [tab, setTab] = useState<
+    "property" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
+  >("property");
+  const [auditQuery, setAuditQuery] = useState("");
+  const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
+  const [auditFrom, setAuditFrom] = useState("");
+  const [auditTo, setAuditTo] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
@@ -161,6 +173,8 @@ function ResidentDetailPage() {
     ? [
         {
           key: "created",
+          action: "created" as const,
+          actor: resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System",
           label: "Record created",
           detail: `By ${resident.created_by ? `user ${resident.created_by.slice(0, 8)}` : "System"}`,
           at: resident.created_at,
@@ -168,6 +182,8 @@ function ResidentDetailPage() {
         },
         {
           key: "updated",
+          action: "updated" as const,
+          actor: resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System",
           label: "Record last updated",
           detail: `By ${resident.updated_by ? `user ${resident.updated_by.slice(0, 8)}` : "System"}`,
           at: resident.updated_at,
@@ -177,6 +193,65 @@ function ResidentDetailPage() {
         .filter((e) => e.at)
         .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
     : [];
+
+  const filteredAuditEvents = auditEvents.filter((event) => {
+    const q = auditQuery.trim().toLowerCase();
+    if (
+      q &&
+      !event.actor.toLowerCase().includes(q) &&
+      !event.label.toLowerCase().includes(q) &&
+      !event.detail.toLowerCase().includes(q)
+    )
+      return false;
+    if (auditAction !== "all" && event.action !== auditAction) return false;
+    if (auditFrom && new Date(event.at) < new Date(`${auditFrom}T00:00:00`)) return false;
+    if (auditTo && new Date(event.at) > new Date(`${auditTo}T23:59:59`)) return false;
+    return true;
+  });
+
+  const exportAuditCsv = () => {
+    const rows = [
+      ["Timestamp", "Action", "Actor", "Detail"],
+      ...filteredAuditEvents.map((e) => [dateTime(e.at), e.label, e.actor, e.detail]),
+    ];
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-logs-${resident?.id?.slice(0, 8) ?? "resident"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredAuditEvents.length} audit event(s) to CSV`);
+  };
+
+  const exportAuditPdf = async () => {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Resident Audit Logs", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Resident: ${resident?.name ?? resident?.email ?? "—"} (${id.slice(0, 8)})`, 14, 26);
+    doc.text(`Exported: ${dateTime(new Date().toISOString())}`, 14, 32);
+    let y = 44;
+    if (filteredAuditEvents.length === 0) {
+      doc.text("No audit events match the current filters.", 14, y);
+    }
+    for (const e of filteredAuditEvents) {
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.text(`${dateTime(e.at)} — ${e.label}`, 14, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Actor: ${e.actor} · ${e.detail}`, 14, y + 6);
+      y += 14;
+    }
+    doc.save(`audit-logs-${resident?.id?.slice(0, 8) ?? "resident"}.pdf`);
+    toast.success(`Exported ${filteredAuditEvents.length} audit event(s) to PDF`);
+  };
 
   const timeline = resident
     ? [
@@ -352,6 +427,9 @@ function ResidentDetailPage() {
                 {(
                   [
                     ["property", "Property & Unit"],
+                    ["invoices", "Invoices"],
+                    ["payments", "Payment History"],
+                    ["meters", "Meters"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
                     ["audit", "Audit Logs"],
@@ -444,24 +522,123 @@ function ResidentDetailPage() {
               </Section>
               )}
 
+              {tab === "invoices" && (
+                <Section title="Invoices" icon={<Receipt className="size-4 text-primary" />}>
+                  <EmptyTabState
+                    icon={<Receipt className="size-8" />}
+                    title="No invoices yet"
+                    description="Utility and rent invoices issued to this resident will appear here once billing is connected."
+                  />
+                </Section>
+              )}
+
+              {tab === "payments" && (
+                <Section title="Payment History" icon={<CreditCard className="size-4 text-primary" />}>
+                  <EmptyTabState
+                    icon={<CreditCard className="size-8" />}
+                    title="No payments recorded"
+                    description="Token purchases and invoice payments made by this resident will appear here."
+                  />
+                </Section>
+              )}
+
+              {tab === "meters" && (
+                <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
+                  <EmptyTabState
+                    icon={<Gauge className="size-8" />}
+                    title="No meters assigned"
+                    description="Water and electricity meters linked to this resident's unit will appear here."
+                  />
+                </Section>
+              )}
+
               {tab === "audit" && (
                 <Section title="Audit Logs" icon={<ShieldCheck className="size-4 text-primary" />}>
-                  <ol className="divide-y divide-border">
-                    {auditEvents.map((event) => (
-                      <li key={event.key} className="flex items-start gap-3 px-6 py-4">
-                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          {event.icon}
-                        </span>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-foreground">{event.label}</p>
-                          <p className="text-xs text-muted-foreground">{event.detail}</p>
-                        </div>
-                        <span className="shrink-0 text-xs text-muted-foreground/80">
-                          {dateTime(event.at)}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                  <div className="flex flex-wrap items-end gap-3 border-b border-border px-6 py-4">
+                    <div className="min-w-48 flex-1">
+                      <label className="text-xs font-medium text-muted-foreground">Search</label>
+                      <div className="relative mt-1">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          type="text"
+                          value={auditQuery}
+                          onChange={(e) => setAuditQuery(e.target.value)}
+                          placeholder="Actor, action or detail…"
+                          className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Action type</label>
+                      <select
+                        value={auditAction}
+                        onChange={(e) => setAuditAction(e.target.value as typeof auditAction)}
+                        className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        <option value="all">All actions</option>
+                        <option value="created">Created</option>
+                        <option value="updated">Updated</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">From</label>
+                      <input
+                        type="date"
+                        value={auditFrom}
+                        onChange={(e) => setAuditFrom(e.target.value)}
+                        className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">To</label>
+                      <input
+                        type="date"
+                        value={auditTo}
+                        onChange={(e) => setAuditTo(e.target.value)}
+                        className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={exportAuditCsv}
+                        disabled={filteredAuditEvents.length === 0}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+                      >
+                        <Download className="size-4" /> CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportAuditPdf}
+                        disabled={filteredAuditEvents.length === 0}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+                      >
+                        <FileText className="size-4" /> PDF
+                      </button>
+                    </div>
+                  </div>
+                  {filteredAuditEvents.length === 0 ? (
+                    <p className="p-6 text-sm text-muted-foreground">
+                      No audit events match the current filters.
+                    </p>
+                  ) : (
+                    <ol className="divide-y divide-border">
+                      {filteredAuditEvents.map((event) => (
+                        <li key={event.key} className="flex items-start gap-3 px-6 py-4">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            {event.icon}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">{event.label}</p>
+                            <p className="text-xs text-muted-foreground">{event.detail}</p>
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground/80">
+                            {dateTime(event.at)}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
                 </Section>
               )}
             </div>
@@ -554,6 +731,26 @@ function ResidentDetailPage() {
         </div>
       ) : null}
     </PortalLayout>
+  );
+}
+
+function EmptyTabState({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 p-10 text-center">
+      <span className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+    </div>
   );
 }
 

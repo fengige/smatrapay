@@ -22,6 +22,8 @@ import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
+import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
+import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
 import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_authenticated/resident/dashboard'
 import { Route as AuthenticatedResidentsIndexRouteImport } from './routes/_authenticated/residents.index'
 import { Route as AuthenticatedResidentsNewRouteImport } from './routes/_authenticated/residents.new'
@@ -30,6 +32,8 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
+import { Route as AuthenticatedLandlordsIdIndexRouteImport } from './routes/_authenticated/landlords.$id.index'
+import { Route as AuthenticatedLandlordsIdEditRouteImport } from './routes/_authenticated/landlords.$id.edit'
 import { Route as AuthenticatedResidentsIdIndexRouteImport } from './routes/_authenticated/residents.$id.index'
 import { Route as AuthenticatedResidentsIdEditRouteImport } from './routes/_authenticated/residents.$id.edit'
 import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authenticated/users.$id.index'
@@ -105,6 +109,18 @@ const AuthenticatedLandlordDashboardRoute =
     path: '/landlord/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLandlordsIndexRoute =
+  AuthenticatedLandlordsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedLandlordsRoute,
+  } as any)
+const AuthenticatedLandlordsNewRoute =
+  AuthenticatedLandlordsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedLandlordsRoute,
+  } as any)
 const AuthenticatedResidentDashboardRoute =
   AuthenticatedResidentDashboardRouteImport.update({
     id: '/resident/dashboard',
@@ -150,6 +166,18 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLandlordsIdIndexRoute =
+  AuthenticatedLandlordsIdIndexRouteImport.update({
+    id: '/$id/',
+    path: '/$id/',
+    getParentRoute: () => AuthenticatedLandlordsRoute,
+  } as any)
+const AuthenticatedLandlordsIdEditRoute =
+  AuthenticatedLandlordsIdEditRouteImport.update({
+    id: '/$id/edit',
+    path: '/$id/edit',
+    getParentRoute: () => AuthenticatedLandlordsRoute,
+  } as any)
 const AuthenticatedResidentsIdIndexRoute =
   AuthenticatedResidentsIdIndexRouteImport.update({
     id: '/$id/',
@@ -190,7 +218,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/agents': typeof AuthenticatedAgentsRoute
-  '/landlords': typeof AuthenticatedLandlordsRoute
+  '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
@@ -198,18 +226,22 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
   '/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id/': typeof AuthenticatedUsersIdIndexRoute
 }
@@ -218,23 +250,26 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/agents': typeof AuthenticatedAgentsRoute
-  '/landlords': typeof AuthenticatedLandlordsRoute
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/landlords': typeof AuthenticatedLandlordsIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/landlords/$id': typeof AuthenticatedLandlordsIdIndexRoute
   '/residents/$id': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id': typeof AuthenticatedUsersIdIndexRoute
 }
@@ -245,7 +280,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
-  '/_authenticated/landlords': typeof AuthenticatedLandlordsRoute
+  '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
@@ -253,18 +288,22 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/_authenticated/residents/new': typeof AuthenticatedResidentsNewRoute
   '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/_authenticated/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/_authenticated/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
   '/_authenticated/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/_authenticated/users/$id/': typeof AuthenticatedUsersIdIndexRoute
 }
@@ -283,18 +322,22 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/agent/dashboard'
     | '/landlord/dashboard'
+    | '/landlords/new'
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
     | '/users/$id'
     | '/users/new'
     | '/vendor/dashboard'
+    | '/landlords/'
     | '/residents/'
     | '/users/'
+    | '/landlords/$id/edit'
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/landlords/$id/'
     | '/residents/$id/'
     | '/users/$id/'
   fileRoutesByTo: FileRoutesByTo
@@ -303,23 +346,26 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/agents'
-    | '/landlords'
     | '/service-providers'
     | '/vendors'
     | '/admin/dashboard'
     | '/agent/dashboard'
     | '/landlord/dashboard'
+    | '/landlords/new'
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
     | '/users/new'
     | '/vendor/dashboard'
+    | '/landlords'
     | '/residents'
     | '/users'
+    | '/landlords/$id/edit'
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/landlords/$id'
     | '/residents/$id'
     | '/users/$id'
   id:
@@ -337,18 +383,22 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/landlord/dashboard'
+    | '/_authenticated/landlords/new'
     | '/_authenticated/resident/dashboard'
     | '/_authenticated/residents/new'
     | '/_authenticated/service-provider/dashboard'
     | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
     | '/_authenticated/vendor/dashboard'
+    | '/_authenticated/landlords/'
     | '/_authenticated/residents/'
     | '/_authenticated/users/'
+    | '/_authenticated/landlords/$id/edit'
     | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/_authenticated/landlords/$id/'
     | '/_authenticated/residents/$id/'
     | '/_authenticated/users/$id/'
   fileRoutesById: FileRoutesById
@@ -455,6 +505,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLandlordDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/landlords/': {
+      id: '/_authenticated/landlords/'
+      path: '/'
+      fullPath: '/landlords/'
+      preLoaderRoute: typeof AuthenticatedLandlordsIndexRouteImport
+      parentRoute: typeof AuthenticatedLandlordsRoute
+    }
+    '/_authenticated/landlords/new': {
+      id: '/_authenticated/landlords/new'
+      path: '/new'
+      fullPath: '/landlords/new'
+      preLoaderRoute: typeof AuthenticatedLandlordsNewRouteImport
+      parentRoute: typeof AuthenticatedLandlordsRoute
+    }
     '/_authenticated/resident/dashboard': {
       id: '/_authenticated/resident/dashboard'
       path: '/resident/dashboard'
@@ -511,6 +575,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/landlords/$id/': {
+      id: '/_authenticated/landlords/$id/'
+      path: '/$id'
+      fullPath: '/landlords/$id/'
+      preLoaderRoute: typeof AuthenticatedLandlordsIdIndexRouteImport
+      parentRoute: typeof AuthenticatedLandlordsRoute
+    }
+    '/_authenticated/landlords/$id/edit': {
+      id: '/_authenticated/landlords/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/landlords/$id/edit'
+      preLoaderRoute: typeof AuthenticatedLandlordsIdEditRouteImport
+      parentRoute: typeof AuthenticatedLandlordsRoute
+    }
     '/_authenticated/residents/$id/': {
       id: '/_authenticated/residents/$id/'
       path: '/$id'
@@ -555,6 +633,26 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedLandlordsRouteChildren {
+  AuthenticatedLandlordsNewRoute: typeof AuthenticatedLandlordsNewRoute
+  AuthenticatedLandlordsIndexRoute: typeof AuthenticatedLandlordsIndexRoute
+  AuthenticatedLandlordsIdEditRoute: typeof AuthenticatedLandlordsIdEditRoute
+  AuthenticatedLandlordsIdIndexRoute: typeof AuthenticatedLandlordsIdIndexRoute
+}
+
+const AuthenticatedLandlordsRouteChildren: AuthenticatedLandlordsRouteChildren =
+  {
+    AuthenticatedLandlordsNewRoute: AuthenticatedLandlordsNewRoute,
+    AuthenticatedLandlordsIndexRoute: AuthenticatedLandlordsIndexRoute,
+    AuthenticatedLandlordsIdEditRoute: AuthenticatedLandlordsIdEditRoute,
+    AuthenticatedLandlordsIdIndexRoute: AuthenticatedLandlordsIdIndexRoute,
+  }
+
+const AuthenticatedLandlordsRouteWithChildren =
+  AuthenticatedLandlordsRoute._addFileChildren(
+    AuthenticatedLandlordsRouteChildren,
+  )
 
 interface AuthenticatedResidentsRouteChildren {
   AuthenticatedResidentsNewRoute: typeof AuthenticatedResidentsNewRoute
@@ -606,7 +704,7 @@ const AuthenticatedUsersRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
-  AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRoute
+  AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
   AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
@@ -621,7 +719,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
-  AuthenticatedLandlordsRoute: AuthenticatedLandlordsRoute,
+  AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
   AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
