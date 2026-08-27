@@ -983,8 +983,8 @@ function PropertyDetailPage() {
                       <tr>
                         <td colSpan={9} className="px-4 py-10 text-center">
                           <p className="text-sm font-semibold text-foreground">
-                            {term
-                              ? "No units match your search."
+                            {term || unitStatusFilter !== "all"
+                              ? "No units match your search or filters."
                               : actualUnitCount === 0
                                 ? configuredUnitCount == null
                                   ? "No unit count is configured for this property. Add units to get started."
