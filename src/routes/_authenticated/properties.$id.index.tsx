@@ -135,6 +135,34 @@ const emptyUnitForm: UnitForm = {
   status: "vacant",
 };
 
+type BulkForm = {
+  open: boolean;
+  count: string;
+  start_number: string;
+  building: string;
+  unit_type: string;
+  bedrooms: string;
+  floor: string;
+  status: string;
+  electricity_prefix: string;
+  water_prefix: string;
+  gas_prefix: string;
+};
+
+const emptyBulkForm: BulkForm = {
+  open: false,
+  count: "",
+  start_number: "",
+  building: "",
+  unit_type: "",
+  bedrooms: "",
+  floor: "",
+  status: "vacant",
+  electricity_prefix: "",
+  water_prefix: "",
+  gas_prefix: "",
+};
+
 const tone: Record<string, string> = {
   active: "bg-emerald-500/12 text-emerald-600",
   occupied: "bg-emerald-500/12 text-emerald-600",
