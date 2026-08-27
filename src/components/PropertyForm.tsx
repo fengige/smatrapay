@@ -165,6 +165,8 @@ export function PropertyForm({
     setStep(target);
   };
 
+  const isLast = step === STEPS.length - 1;
+
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     if (pending) return;
@@ -175,10 +177,13 @@ export function PropertyForm({
       if (failing !== undefined) setStep(failing);
       return;
     }
+    if (!isLast) {
+      // Stop premature auto-submission: only the Review step can actually submit.
+      goToStep(step + 1);
+      return;
+    }
     onSubmit({ ...values, name: values.name.trim() });
   };
-
-  const isLast = step === STEPS.length - 1;
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-4xl space-y-6">
