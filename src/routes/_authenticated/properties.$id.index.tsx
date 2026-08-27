@@ -93,11 +93,13 @@ type Assignment = {
 
 type Person = { id: string; name: string | null; email: string | null; phone: string | null; status: string; role?: string };
 
+type Landlord = Person;
+
 const TABS = [
   { id: "units", label: "Units", icon: Layers },
   { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
-  { id: "landlords", label: "Landlord", icon: Building2 },
+  { id: "landlords", label: "Landlord detail", icon: Building2 },
   { id: "audit", label: "Status & Audit Logs", icon: ClipboardList },
 ] as const;
 
