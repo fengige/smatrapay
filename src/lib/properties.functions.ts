@@ -26,6 +26,8 @@ const propertyInput = z.object({
   }),
   building_category: z.enum(["residential", "commercial"]).nullable().optional(),
   subtype: text(60),
+  number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
+  landlord_id: uuid.nullable().optional(),
 })
   .superRefine((val, ctx) => {
     if (val.property_type === "building") {
@@ -170,6 +172,8 @@ export const updateProperty = createServerFn({ method: "POST" })
         property_type: z.enum(["building", "zone"]).optional(),
         building_category: z.enum(["residential", "commercial"]).nullable().optional(),
         subtype: text(60),
+        number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
+        landlord_id: uuid.nullable().optional(),
       })
       .superRefine((val, ctx) => {
         if (val.property_type === "building") {
