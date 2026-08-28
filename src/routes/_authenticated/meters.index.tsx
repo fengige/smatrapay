@@ -708,6 +708,15 @@ function MetersPage() {
         </div>
       )}
 
+      {showImport && (
+        <ImportMetersDialog
+          onClose={() => setShowImport(false)}
+          onImported={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["meters"] });
+          }}
+        />
+      )}
+
       {(showAdd || editing) && (
         <MeterDialog
           meter={editing}
