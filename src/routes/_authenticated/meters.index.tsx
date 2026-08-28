@@ -710,25 +710,53 @@ function StatCard({
   );
 }
 
-function AddMeterDialog({
+const IDENTIFIER_RE = /^[A-Za-z0-9][A-Za-z0-9/_-]*$/;
+
+function identifierError(label: string, value: string) {
+  const v = value.trim();
+  if (!v) return `${label} is required`;
+  if (v.length < 4) return `${label} must be at least 4 characters`;
+  if (v.length > 64) return `${label} must be at most 64 characters`;
+  if (!IDENTIFIER_RE.test(v)) return `${label} may only contain letters, numbers, - _ /`;
+  return null;
+}
+
+function MeterDialog({
+  meter,
   landlords,
+  existing,
   onClose,
   onSaved,
 }: {
+  meter: MeterRow | null;
   landlords: { id: string; name: string }[];
+  existing: MeterRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
-  const saveMeter = useServerFn(addMeter);
+  const isEdit = Boolean(meter);
+  const createMeter = useServerFn(addMeter);
+  const editMeter = useServerFn(updateMeter);
 
-  const [vendorId, setVendorId] = useState("");
-  const [landlordId, setLandlordId] = useState("");
-  const [meterNumber, setMeterNumber] = useState("");
-  const [serialNumber, setSerialNumber] = useState("");
-  const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">("electricity");
-  const [initialReading, setInitialReading] = useState("0");
-  const [pricePerUnit, setPricePerUnit] = useState("0");
-  const [sts, setSts] = useState({ sgc: "", krn: "", ti: "", ea: "", ken: "" });
+  const [vendorId, setVendorId] = useState(meter?.vendor_id ?? "");
+  const [landlordId, setLandlordId] = useState(meter?.landlord_id ?? "");
+  const [meterNumber, setMeterNumber] = useState(meter?.meter_number ?? "");
+  const [serialNumber, setSerialNumber] = useState(meter?.serial_number ?? "");
+  const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">(
+    (meter?.type as "electricity" | "water" | "gas") ?? "electricity",
+  );
+  const [initialReading, setInitialReading] = useState(String(meter?.initial_reading ?? "0"));
+  const [pricePerUnit, setPricePerUnit] = useState(String(meter?.price_per_unit ?? "0"));
+  const [status, setStatus] = useState<"active" | "inactive">(
+    meter?.status === "inactive" ? "inactive" : "active",
+  );
+  const [sts, setSts] = useState({
+    sgc: meter?.sgc != null ? String(meter.sgc) : "",
+    krn: meter?.krn != null ? String(meter.krn) : "",
+    ti: meter?.ti != null ? String(meter.ti) : "",
+    ea: meter?.ea != null ? String(meter.ea) : "",
+    ken: meter?.ken != null ? String(meter.ken) : "",
+  });
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -738,33 +766,63 @@ function AddMeterDialog({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  const others = useMemo(
+    () => existing.filter((m) => m.id !== meter?.id),
+    [existing, meter?.id],
+  );
+
+  const meterNumberError = useMemo(() => {
+    const base = identifierError("Meter number", meterNumber);
+    if (base) return base;
+    const v = meterNumber.trim().toLowerCase();
+    if (others.some((m) => m.meter_number.toLowerCase() === v))
+      return "This meter number is already registered";
+    return null;
+  }, [meterNumber, others]);
+
+  const serialNumberError = useMemo(() => {
+    const base = identifierError("Serial number", serialNumber);
+    if (base) return base;
+    const v = serialNumber.trim().toLowerCase();
+    if (others.some((m) => m.serial_number.toLowerCase() === v))
+      return "This serial number is already registered";
+    if (v && v === meterNumber.trim().toLowerCase())
+      return "Serial number must differ from the meter number";
+    return null;
+  }, [serialNumber, meterNumber, others]);
+
+  const vendorError = vendorId.trim() ? null : "Vendor is required";
+  const hasErrors = Boolean(meterNumberError || serialNumberError || vendorError);
+
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!vendorId.trim()) throw new Error("Please enter a vendor");
-      if (!meterNumber.trim()) throw new Error("Please enter a meter number");
-      if (!serialNumber.trim()) throw new Error("Please enter a serial number");
-      await saveMeter({
-        data: {
-          vendor_id: vendorId.trim(),
-          landlord_id: landlordId || null,
-          meter_number: meterNumber.trim(),
-          serial_number: serialNumber.trim(),
-          type: meterType,
-          initial_reading: initialReading,
-          price_per_unit: pricePerUnit,
-          sgc: sts.sgc,
-          krn: sts.krn,
-          ti: sts.ti,
-          ea: sts.ea,
-          ken: sts.ken,
-        },
-      } as never);
+      if (hasErrors) throw new Error(vendorError || meterNumberError || serialNumberError || "");
+      const payload = {
+        vendor_id: vendorId.trim(),
+        landlord_id: landlordId || null,
+        meter_number: meterNumber.trim(),
+        serial_number: serialNumber.trim(),
+        type: meterType,
+        initial_reading: initialReading,
+        price_per_unit: pricePerUnit,
+        status,
+        sgc: sts.sgc,
+        krn: sts.krn,
+        ti: sts.ti,
+        ea: sts.ea,
+        ken: sts.ken,
+      };
+      if (isEdit && meter) await editMeter({ data: { ...payload, id: meter.id } } as never);
+      else await createMeter({ data: payload } as never);
     },
     onSuccess: () => onSaved(),
-    onError: (err: Error) => toast.error(err.message || "Could not add meter"),
+    onError: (err: Error) =>
+      toast.error(err.message || (isEdit ? "Could not update meter" : "Could not add meter")),
   });
 
   const field = "h-11 w-full rounded-xl border bg-background px-3 text-sm";
+  const fieldError = (msg: string | null) =>
+    msg ? `${field} border-destructive focus:border-destructive` : field;
 
   return (
     <div
@@ -778,9 +836,14 @@ function AddMeterDialog({
     >
       <div className="my-8 w-full max-w-lg rounded-2xl border bg-card p-6 shadow-lg">
         <h2 id="add-meter-title" className="text-lg font-bold">
-          Add Meter
+          {isEdit ? "Edit Meter" : "Add Meter"}
         </h2>
-        <p className="text-sm text-muted-foreground">Register a meter in the meter registry.</p>
+        <p className="text-sm text-muted-foreground">
+          {isEdit
+            ? "Update the meter details. Meter and serial numbers must stay unique."
+            : "Register a meter in the meter registry."}
+        </p>
+
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
