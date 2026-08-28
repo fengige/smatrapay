@@ -47,6 +47,7 @@ import {
   upsertUnit,
 } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { AddressEditDialog } from "@/components/AddressEditDialog";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({
@@ -323,6 +324,7 @@ function PropertyDetailPage() {
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addressEditOpen, setAddressEditOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(
     success === "created" ? "Property created successfully." : success === "updated" ? "Property updated successfully." : null,
   );
@@ -989,13 +991,13 @@ function PropertyDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <Link
-                      to="/properties/$id/edit"
-                      params={{ id }}
+                    <button
+                      type="button"
+                      onClick={() => setAddressEditOpen(true)}
                       className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold hover:bg-accent/10"
                     >
                       <Pencil className="size-4" /> Edit address
-                    </Link>
+                    </button>
                   </div>
                   <dl className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {[
@@ -1842,6 +1844,12 @@ function PropertyDetailPage() {
           </div>
         </Modal>
       )}
+
+      <AddressEditDialog
+        property={property}
+        open={addressEditOpen}
+        onOpenChange={setAddressEditOpen}
+      />
     </PortalLayout>
   );
 }
