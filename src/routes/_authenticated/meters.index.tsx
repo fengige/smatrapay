@@ -47,7 +47,11 @@ function parseSearch(search: Record<string, unknown>) {
       : "all";
   const landlordId = typeof search["landlord"] === "string" ? search["landlord"] : "all";
   const q = typeof search["q"] === "string" ? search["q"] : "";
-  return { page, limit, type, landlordId, q };
+  const status =
+    search["status"] === "active" || search["status"] === "inactive"
+      ? (search["status"] as string)
+      : "all";
+  return { page, limit, type, landlordId, q, status };
 }
 
 export const Route = createFileRoute("/_authenticated/meters/")({
@@ -106,7 +110,14 @@ function MetersPage() {
   const queryClient = useQueryClient();
   const fetchMeters = useServerFn(listMeters);
 
-  const { page: currentPage, limit: pageSize, type, landlordId, q: search } = Route.useSearch();
+  const {
+    page: currentPage,
+    limit: pageSize,
+    type,
+    landlordId,
+    q: search,
+    status: statusFilter,
+  } = Route.useSearch();
   const navigate = useNavigate({ from: "/meters/" });
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
@@ -115,6 +126,8 @@ function MetersPage() {
   const setLandlordId = (landlordId: string) =>
     navigate({ search: (prev) => ({ ...prev, page: 1, landlordId }) });
   const setSearch = (q: string) => navigate({ search: (prev) => ({ ...prev, page: 1, q }) });
+  const setStatusFilter = (status: string) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, status }) });
 
   const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -126,7 +139,7 @@ function MetersPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, type, landlordId]);
+  }, [search, type, landlordId, statusFilter]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["meters"],
@@ -148,7 +161,7 @@ function MetersPage() {
         .toLowerCase()
         .includes(q);
     });
-  }, [meters, search, type, landlordId]);
+  }, [meters, search, type, landlordId, statusFilter]);
 
   const sortedRows = useMemo(
     () =>
@@ -367,6 +380,16 @@ function MetersPage() {
               ))}
             </select>
             <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter by meter status"
+              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <select
               value={landlordId}
               onChange={(e) => setLandlordId(e.target.value)}
               aria-label="Filter by landlord"
@@ -380,13 +403,14 @@ function MetersPage() {
                 </option>
               ))}
             </select>
-            {(search || type !== "all" || landlordId !== "all") && (
+            {(search || type !== "all" || landlordId !== "all" || statusFilter !== "all") && (
               <button
                 type="button"
                 onClick={() => {
                   setSearch("");
                   setType("all");
                   setLandlordId("all");
+                  setStatusFilter("all");
                 }}
                 className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
