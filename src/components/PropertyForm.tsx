@@ -536,17 +536,17 @@ export function PropertyForm({
               className={inputClass}
             />
           </Field>
-          <Field label="State / County">
-            <input
-              value={values.state}
-              onChange={(e) => set("state", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
           <Field label="Country">
             <input
               value={values.country}
               onChange={(e) => set("country", e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="State / County">
+            <input
+              value={values.state}
+              onChange={(e) => set("state", e.target.value)}
               className={inputClass}
             />
           </Field>
