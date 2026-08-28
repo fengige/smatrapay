@@ -298,7 +298,7 @@ export const updateProperty = createServerFn({ method: "POST" })
         address_line2: text(200),
         city: text(120),
         state: text(120),
-        country: text(120),
+        country: z.string().trim().min(1, "Country is required").optional(),
         postal_code: text(30),
         description: text(2000),
         status: z.enum(["active", "archived"]).optional(),
@@ -330,6 +330,24 @@ export const updateProperty = createServerFn({ method: "POST" })
             code: z.ZodIssueCode.custom,
             path: ["landlord_id"],
             message: "A landlord is required when units are greater than 0",
+          });
+        }
+        if (val.country && !COUNTRY_OPTIONS.includes(val.country)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["country"],
+            message: "Please select a valid country",
+          });
+        }
+        if (
+          val.country &&
+          STATE_MAP[val.country] &&
+          (!val.state || !STATE_MAP[val.country].includes(val.state))
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["state"],
+            message: `Please select a valid state/county for ${val.country}`,
           });
         }
       })
