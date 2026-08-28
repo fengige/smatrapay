@@ -350,7 +350,7 @@ export type MeterAuditEntry = {
   action: string;
   created_at: string;
   actor_name: string | null;
-  changes: Record<string, { old: unknown; new: unknown }>;
+  changes: Record<string, { old: string | null; new: string | null }>;
 };
 
 /** Change history for a single meter (reading, price, type, status). */
@@ -387,7 +387,15 @@ export const listMeterAuditLogs = createServerFn({ method: "GET" })
             (actorById.get(r.actor_id)?.email as string) ??
             null)
           : null,
-        changes: (r.changes ?? {}) as Record<string, { old: unknown; new: unknown }>,
+        changes: Object.fromEntries(
+          Object.entries((r.changes ?? {}) as Record<string, any>).map(([k, v]) => [
+            k,
+            {
+              old: v?.old === null || v?.old === undefined ? null : String(v.old),
+              new: v?.new === null || v?.new === undefined ? null : String(v.new),
+            },
+          ]),
+        ),
       })) satisfies MeterAuditEntry[],
     };
   });
