@@ -47,6 +47,7 @@ import {
   upsertUnit,
 } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { AddressEditDialog } from "@/components/AddressEditDialog";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({
@@ -989,13 +990,13 @@ function PropertyDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <Link
-                      to="/properties/$id/edit"
-                      params={{ id }}
+                    <button
+                      type="button"
+                      onClick={() => setAddressEditOpen(true)}
                       className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold hover:bg-accent/10"
                     >
                       <Pencil className="size-4" /> Edit address
-                    </Link>
+                    </button>
                   </div>
                   <dl className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {[

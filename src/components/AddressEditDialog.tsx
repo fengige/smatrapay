@@ -171,7 +171,7 @@ export function AddressEditDialog({
             >
               {COUNTRY_GROUPS.map((group) => (
                 <optgroup key={group.label} label={group.label}>
-                  {group.options.map((c) => (
+                  {group.countries.map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
