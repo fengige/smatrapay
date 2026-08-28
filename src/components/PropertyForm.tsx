@@ -28,6 +28,33 @@ export const COMMERCIAL_TYPES = [
   "Land",
 ] as const;
 
+export const COUNTRY_OPTIONS = [
+  "Kenya",
+  "Uganda",
+  "Tanzania",
+  "Rwanda",
+  "Burundi",
+  "Ethiopia",
+  "Somalia",
+  "South Sudan",
+  "Sudan",
+  "Nigeria",
+  "South Africa",
+  "Ghana",
+  "Zambia",
+  "Zimbabwe",
+  "Malawi",
+  "Mozambique",
+  "Botswana",
+  "Namibia",
+  "United Kingdom",
+  "United States",
+  "Canada",
+  "Australia",
+  "India",
+  "United Arab Emirates",
+] as const;
+
 export type PropertyFormValues = {
   property_type: "building" | "zone";
   building_category: "residential" | "commercial" | "";
@@ -56,7 +83,7 @@ export const emptyProperty: PropertyFormValues = {
   address_line2: "",
   city: "",
   state: "",
-  country: "",
+  country: "Kenya",
   postal_code: "",
   description: "",
   status: "active",
@@ -537,11 +564,17 @@ export function PropertyForm({
             />
           </Field>
           <Field label="Country">
-            <input
+            <select
               value={values.country}
               onChange={(e) => set("country", e.target.value)}
               className={inputClass}
-            />
+            >
+              {COUNTRY_OPTIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="State / County">
             <input
