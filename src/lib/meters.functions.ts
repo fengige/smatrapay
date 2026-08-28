@@ -57,11 +57,22 @@ const numOrZero = z
     return Number.isFinite(n) ? n : 0;
   });
 
+/** Meter / serial identifiers: alphanumeric with dashes, underscores or slashes. */
+const IDENTIFIER_RE = /^[A-Za-z0-9][A-Za-z0-9/_-]*$/;
+
+const identifier = (label: string) =>
+  z
+    .string()
+    .trim()
+    .min(4, `${label} must be at least 4 characters`)
+    .max(64, `${label} must be at most 64 characters`)
+    .regex(IDENTIFIER_RE, `${label} may only contain letters, numbers, - _ /`);
+
 const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
   landlord_id: uuid.nullable().optional(),
-  meter_number: z.string().trim().min(1, "Meter number is required").max(255),
-  serial_number: z.string().trim().min(1, "Serial number is required").max(255),
+  meter_number: identifier("Meter number"),
+  serial_number: identifier("Serial number"),
   type: z.enum(["electricity", "water", "gas"]),
   initial_reading: numOrZero,
   price_per_unit: numOrZero,
@@ -72,6 +83,43 @@ const meterInput = z.object({
   ea: intOrNull,
   ken: intOrNull,
 });
+
+const meterUpdateInput = meterInput.extend({ id: uuid });
+
+/**
+ * Reject a meter number / serial number that is already used by another meter.
+ * `excludeId` skips the row being edited.
+ */
+async function assertMeterIdentifiersFree(
+  supabase: any,
+  values: { meter_number: string; serial_number: string },
+  excludeId?: string,
+) {
+  if (values.meter_number.toLowerCase() === values.serial_number.toLowerCase()) {
+    throw new Error("Meter number and serial number must be different");
+  }
+
+  let query = supabase
+    .from("meters")
+    .select("id, meter_number, serial_number")
+    .or(
+      `meter_number.ilike.${values.meter_number},serial_number.ilike.${values.serial_number}`,
+    );
+  if (excludeId) query = query.neq("id", excludeId);
+
+  const { data: clashes, error } = await query;
+  if (error) throw new Error(error.message);
+
+  for (const row of clashes ?? []) {
+    if (String(row.meter_number).toLowerCase() === values.meter_number.toLowerCase()) {
+      throw new Error(`Meter number ${values.meter_number} is already registered`);
+    }
+    if (String(row.serial_number).toLowerCase() === values.serial_number.toLowerCase()) {
+      throw new Error(`Serial number ${values.serial_number} is already registered`);
+    }
+  }
+}
+
 
 /** All meters from the meters registry, plus landlord options. */
 export const listMeters = createServerFn({ method: "GET" })
