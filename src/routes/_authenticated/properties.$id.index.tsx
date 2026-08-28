@@ -41,6 +41,7 @@ import {
   deleteProperty,
   deleteUnit,
   endAssignment,
+  getAddressAuditLogs,
   getProperty,
   importAssignments,
   listAssignableUsers,
@@ -292,6 +293,7 @@ function PropertyDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchProperty = useServerFn(getProperty);
+  const fetchAddressLogs = useServerFn(getAddressAuditLogs);
   const fetchPeople = useServerFn(listAssignableUsers);
   const saveUnit = useServerFn(upsertUnit);
   const removeUnit = useServerFn(deleteUnit);
@@ -346,6 +348,11 @@ function PropertyDetailPage() {
       !/not found/i.test((err as Error)?.message ?? "") && count < 2,
   });
   const notFound = /not found/i.test((error as Error | null)?.message ?? "");
+  const addressLogsQuery = useQuery({
+    queryKey: ["address-audit-logs", id],
+    queryFn: () => fetchAddressLogs({ data: { propertyId: id } }),
+    enabled: tab === "address",
+  });
   const peopleQuery = useQuery({
     queryKey: ["assignable-people"],
     queryFn: () => fetchPeople(),
@@ -1034,6 +1041,66 @@ function PropertyDetailPage() {
                         .filter(Boolean)
                         .join(", ") || "No address recorded for this property yet."}
                     </p>
+                  </div>
+
+                  <div className="mt-6 rounded-xl border border-border bg-background p-5">
+                    <div className="flex items-center gap-2">
+                      <History className="size-4 text-primary" />
+                      <h3 className="text-sm font-bold text-foreground">Address change history</h3>
+                    </div>
+                    {addressLogsQuery.isLoading ? (
+                      <p className="mt-3 text-xs text-muted-foreground">Loading history…</p>
+                    ) : addressLogsQuery.error ? (
+                      <p className="mt-3 text-xs text-destructive">Could not load history.</p>
+                    ) : (addressLogsQuery.data?.logs ?? []).length === 0 ? (
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        No address changes recorded yet.
+                      </p>
+                    ) : (
+                      <ul className="mt-3 space-y-3">
+                        {(addressLogsQuery.data?.logs ?? []).map((log) => {
+                          const actor = addressLogsQuery.data?.actors.find(
+                            (a) => a.id === log.actor_id,
+                          );
+                          const changes = (log.changes ?? {}) as Record<
+                            string,
+                            { old: string | null; new: string | null }
+                          >;
+                          return (
+                            <li
+                              key={log.id}
+                              className="rounded-lg border border-border bg-muted/30 p-3"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-foreground">
+                                  {actor?.name || actor?.email || "System"}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(log.created_at).toLocaleString()}
+                                </span>
+                              </div>
+                              <ul className="mt-2 space-y-1">
+                                {Object.entries(changes).map(([field, diff]) => (
+                                  <li key={field} className="text-xs text-muted-foreground">
+                                    <span className="font-medium text-foreground capitalize">
+                                      {field.replace(/_/g, " ")}
+                                    </span>
+                                    {" changed from "}
+                                    <span className="font-medium text-foreground">
+                                      {diff.old || "—"}
+                                    </span>
+                                    {" to "}
+                                    <span className="font-medium text-foreground">
+                                      {diff.new || "—"}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 </div>
               )}

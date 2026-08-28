@@ -10,6 +10,20 @@ const dateStr = z
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/);
 
+export type AddressAuditLog = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  changes: Record<string, { old: string | null; new: string | null }>;
+  created_at: string;
+};
+
+export type AddressAuditActor = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
 const propertyInput = z.object({
   name: z.string().trim().min(2).max(140),
   code: text(40),
@@ -384,6 +398,61 @@ export const deleteProperty = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function adjustPropertyUnitCount(
+  supabase: any,
+  propertyId: string,
+  delta: number,
+  actorId: string,
+) {
+  const { data: property, error: findErr } = await supabase
+    .from("properties")
+    .select("number_of_units")
+    .eq("id", propertyId)
+    .single();
+  if (findErr) throw new Error(findErr.message);
+  const current = property?.number_of_units ?? 0;
+  const { error } = await supabase
+    .from("properties")
+    .update({ number_of_units: Math.max(0, current + delta), updated_by: actorId } as never)
+    .eq("id", propertyId);
+  if (error) throw new Error(error.message);
+}
+
+export const getAddressAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ propertyId: uuid }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+    const { data: logs, error } = await supabase
+      .from("address_audit_logs" as never)
+      .select("id, actor_id, action, changes, created_at")
+      .eq("property_id", data.propertyId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const typedLogs = (logs ?? []) as AddressAuditLog[];
+    const actorIds = [
+      ...new Set(
+        typedLogs
+          .map((l) => l.actor_id)
+          .filter((v): v is string => !!v),
+      ),
+    ];
+    let actors: AddressAuditActor[] = [];
+    if (actorIds.length) {
+      const { data: rows, error: actErr } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", actorIds);
+      if (actErr) throw new Error(actErr.message);
+      actors = (rows ?? []) as AddressAuditActor[];
+    }
+
+    return { logs: typedLogs, actors };
+  });
+
 export const upsertUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => unitInput.extend({ id: uuid.optional() }).parse(data))
@@ -405,6 +474,7 @@ export const upsertUnit = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    await adjustPropertyUnitCount(supabase, patch.property_id, 1, userId);
     return { id: row.id };
   });
 
@@ -525,6 +595,7 @@ export const createBulkUnits = createServerFn({ method: "POST" })
 
     const { error } = await supabase.from("units").insert(rows as never);
     if (error) throw new Error(error.message);
+    await adjustPropertyUnitCount(supabase, data.property_id, rows.length, userId);
     return {
       created: rows.length,
       skipped: plan.conflicts.length,
@@ -593,8 +664,19 @@ export const deleteUnit = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { error } = await context.supabase.from("units").delete().eq("id", data.id);
+    const { supabase, userId } = context;
+
+    const { data: unit, error: findErr } = await supabase
+      .from("units")
+      .select("property_id")
+      .eq("id", data.id)
+      .single();
+    if (findErr) throw new Error(findErr.message);
+    if (!unit) throw new Error("Unit not found");
+
+    const { error } = await supabase.from("units").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await adjustPropertyUnitCount(supabase, unit.property_id, -1, userId);
     return { ok: true };
   });
 
