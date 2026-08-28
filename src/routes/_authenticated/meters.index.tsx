@@ -27,6 +27,7 @@ import {
   addMeter,
   bulkMeterAction,
   listMeters,
+  listMeterAuditLogs,
   updateMeter,
   type MeterRow,
 } from "@/lib/meters.functions";
@@ -680,7 +681,9 @@ function MetersPage() {
               ))}
               {selectedMeters.length > 20 && <li>+{selectedMeters.length - 20} more…</li>}
             </ul>
-            <div className="mt-6 flex justify-end gap-3">
+            {isEdit && meter && <MeterHistory meterId={meter.id} />}
+
+        <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 disabled={bulk.isPending}
@@ -1093,6 +1096,8 @@ function MeterDialog({
           </div>
         </fieldset>
 
+        {isEdit && meter && <MeterHistory meterId={meter.id} />}
+
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
@@ -1113,5 +1118,54 @@ function MeterDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+const HISTORY_LABELS: Record<string, string> = {
+  initial_reading: "Reading",
+  price_per_unit: "Price per unit",
+  type: "Type",
+  status: "Status",
+};
+
+function MeterHistory({ meterId }: { meterId: string }) {
+  const fetchLogs = useServerFn(listMeterAuditLogs);
+  const { data, isLoading } = useQuery({
+    queryKey: ["meter-audit", meterId],
+    queryFn: () => fetchLogs({ data: { meter_id: meterId } }),
+  });
+  const logs = data?.logs ?? [];
+
+  return (
+    <section className="mt-6 rounded-xl border border-border bg-background p-4">
+      <h3 className="text-xs font-bold tracking-wide uppercase text-muted-foreground">
+        Change history
+      </h3>
+      {isLoading ? (
+        <p className="mt-2 text-sm text-muted-foreground">Loading history…</p>
+      ) : logs.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">No changes recorded yet.</p>
+      ) : (
+        <ol className="mt-3 max-h-56 space-y-3 overflow-y-auto pr-1">
+          {logs.map((log) => (
+            <li key={log.id} className="border-l-2 border-primary/40 pl-3">
+              <p className="text-xs text-muted-foreground">
+                {new Date(log.created_at).toLocaleString()} ·{" "}
+                <span className="font-medium text-foreground">{log.actor_name ?? "System"}</span>
+              </p>
+              <ul className="mt-1 space-y-0.5 text-xs">
+                {Object.entries(log.changes).map(([field, diff]) => (
+                  <li key={field}>
+                    <span className="font-medium">{HISTORY_LABELS[field] ?? field}:</span>{" "}
+                    <span className="text-muted-foreground line-through">{diff.old ?? "—"}</span>{" "}
+                    → <span className="font-semibold">{diff.new ?? "—"}</span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }
