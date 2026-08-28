@@ -619,17 +619,11 @@ export function PropertyForm({
             />
           </Field>
           <Field label="Country">
-            <select
+            <CountryPicker
               value={values.country}
-              onChange={(e) => set("country", e.target.value)}
-              className={inputClass}
-            >
-              {COUNTRY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              onChange={(country) => set("country", country)}
+              placeholder="Select country"
+            />
           </Field>
           <Field label="State / County">
             <input
