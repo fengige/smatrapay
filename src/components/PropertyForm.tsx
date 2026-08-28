@@ -241,6 +241,21 @@ export function PropertyForm({
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
+  // Legacy records (e.g. Country = Kenya with no county) must pick a valid
+  // state/county before they can be saved again.
+  const [legacyStateNotice, setLegacyStateNotice] = useState(
+    Boolean(initial.country && STATE_MAP[initial.country] && !initial.state.trim()),
+  );
+  useEffect(() => {
+    if (!legacyStateNotice) return;
+    setStep(2);
+    setErrors({ state: `Select a valid state/county for ${initial.country}` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (legacyStateNotice && values.state.trim()) setLegacyStateNotice(false);
+  }, [legacyStateNotice, values.state]);
+
   const validateStep = (index: number) => {
     const next: Record<string, string> = {};
     if (index === 0) {
