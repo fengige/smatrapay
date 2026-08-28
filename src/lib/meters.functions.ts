@@ -19,6 +19,8 @@ export type MeterRow = {
   vendor_id: string;
   landlord_id: string | null;
   landlord_name: string | null;
+  agent_id: string | null;
+  agent_name: string | null;
   meter_number: string;
   serial_number: string;
   type: MeterType | string;
@@ -35,7 +37,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, landlord_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, landlord_id, agent_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
@@ -71,6 +73,7 @@ const identifier = (label: string) =>
 const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
   landlord_id: uuid.nullable().optional(),
+  agent_id: uuid.nullable().optional(),
   meter_number: identifier("Meter number"),
   serial_number: identifier("Serial number"),
   type: z.enum(["electricity", "water", "gas"]),
@@ -208,6 +211,7 @@ export const addMeter = createServerFn({ method: "POST" })
       .insert({
         vendor_id: data.vendor_id,
         landlord_id: data.landlord_id ?? null,
+        agent_id: data.agent_id ?? null,
         meter_number: data.meter_number,
         serial_number: data.serial_number,
         type: data.type,
@@ -252,6 +256,7 @@ export const updateMeter = createServerFn({ method: "POST" })
       .update({
         vendor_id: data.vendor_id,
         landlord_id: data.landlord_id ?? null,
+        agent_id: data.agent_id ?? null,
         meter_number: data.meter_number,
         serial_number: data.serial_number,
         type: data.type,
