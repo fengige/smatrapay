@@ -1030,10 +1030,15 @@ function PropertyDetailPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setUnitForm({ ...emptyUnitForm, open: true })}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    onClick={() => {
+                      setRemoveStep("form");
+                      setRemovePreview(null);
+                      setRemoveCount("1");
+                      setRemoveOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-destructive px-3.5 py-2 text-sm font-semibold text-destructive-foreground hover:opacity-90"
                   >
-                    <Plus className="size-4" /> Add Unit
+                    <Minus className="size-4" /> Remove Bulk Units
                   </button>
                 </>
               )}
