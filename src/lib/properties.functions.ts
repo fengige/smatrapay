@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { COUNTRY_OPTIONS, STATE_MAP } from "@/lib/countries";
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().max(max).nullable().optional();
