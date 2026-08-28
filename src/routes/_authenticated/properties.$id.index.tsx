@@ -975,6 +975,67 @@ function PropertyDetailPage() {
             </div>
 
             <div className="overflow-x-auto">
+              {tab === "address" && (
+                <div className="p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <MapPin className="size-5" />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">Address details</h3>
+                        <p className="text-xs text-muted-foreground">
+                          Location information recorded for this property.
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      to="/properties/$id/edit"
+                      params={{ id }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold hover:bg-accent/10"
+                    >
+                      <Pencil className="size-4" /> Edit address
+                    </Link>
+                  </div>
+                  <dl className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {[
+                      { label: "Address line 1", value: property?.["address_line1"] },
+                      { label: "Address line 2", value: property?.["address_line2"] },
+                      { label: "City / Town", value: property?.["city"] },
+                      { label: "Country", value: property?.["country"] },
+                      { label: "State / County", value: property?.["state"] },
+                      { label: "Postal code", value: property?.["postal_code"] },
+                    ].map((row) => (
+                      <div key={row.label} className="rounded-xl border border-border bg-background p-4">
+                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {row.label}
+                        </dt>
+                        <dd className="mt-1.5 text-sm font-semibold text-foreground">
+                          {row.value || "—"}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Full address
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium text-foreground">
+                      {[
+                        property?.["address_line1"],
+                        property?.["address_line2"],
+                        property?.["city"],
+                        property?.["state"],
+                        property?.["postal_code"],
+                        property?.["country"],
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "No address recorded for this property yet."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {tab === "units" && (
                 <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
