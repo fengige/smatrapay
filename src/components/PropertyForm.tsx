@@ -106,6 +106,68 @@ function Field({
 const inputClass =
   "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none transition-all duration-200 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-primary focus:ring-4 focus:ring-primary/10";
 
+function CountryPicker({
+  value,
+  onChange,
+  placeholder = "Select country",
+}: {
+  value: string;
+  onChange: (country: string) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = value || placeholder;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className={cn(
+            inputClass,
+            "flex items-center justify-between text-left",
+            !value && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">{selected}</span>
+          <ChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start">
+        <Command className="w-full">
+          <CommandInput placeholder="Search country…" />
+          <CommandList>
+            <CommandEmpty>No country found.</CommandEmpty>
+            {COUNTRY_GROUPS.map((group) => (
+              <CommandGroup key={group.label} heading={group.label}>
+                {group.countries.map((country) => (
+                  <CommandItem
+                    key={country}
+                    value={country}
+                    onSelect={() => {
+                      onChange(country);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 size-4 shrink-0",
+                        value === country ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    {country}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function PropertyForm({
   initial,
   submitLabel,
