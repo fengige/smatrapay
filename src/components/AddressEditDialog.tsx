@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, MapPin } from "lucide-react";
+import { AlertTriangle, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { updateProperty } from "@/lib/properties.functions";
@@ -47,6 +47,7 @@ export function AddressEditDialog({
     state: "",
     postal_code: "",
   });
+  const [pendingCountry, setPendingCountry] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,13 +60,55 @@ export function AddressEditDialog({
         state: property["state"] ?? "",
         postal_code: property["postal_code"] ?? "",
       });
+      setPendingCountry(null);
       setFormError(null);
     }
   }, [open, property]);
 
+  const selectCountryValue = pendingCountry ?? form.country;
   const stateOptions = useMemo(
     () => (form.country ? STATE_MAP[form.country] : undefined),
     [form.country],
+  );
+
+  const handleCountryChange = (country: string) => {
+    if (country === form.country) {
+      setPendingCountry(null);
+      return;
+    }
+    if (!form.state.trim() || STATE_MAP[country]?.includes(form.state)) {
+      setForm((f) => ({
+        ...f,
+        country,
+        state: STATE_MAP[country]?.includes(f.state) ? f.state : "",
+      }));
+      setPendingCountry(null);
+    } else {
+      setPendingCountry(country);
+    }
+  };
+
+  const confirmCountryChange = () => {
+    if (!pendingCountry) return;
+    setForm((f) => ({ ...f, country: pendingCountry, state: "" }));
+    setPendingCountry(null);
+  };
+
+  const cancelCountryChange = () => setPendingCountry(null);
+
+  const fullAddress = useMemo(
+    () =>
+      [
+        form.address_line1,
+        form.address_line2,
+        form.city,
+        form.state,
+        form.postal_code,
+        form.country,
+      ]
+        .filter(Boolean)
+        .join(", ") || "No address entered yet.",
+    [form],
   );
 
   const mutation = useMutation({
@@ -77,6 +120,9 @@ export function AddressEditDialog({
       });
       onOpenChange(false);
       await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["address-audit-logs", property?.["id"]],
+      });
     },
     onError: (err: Error) => {
       setFormError(err.message || "Could not save address");
@@ -159,15 +205,8 @@ export function AddressEditDialog({
             </label>
             <select
               className={inputClass}
-              value={form.country}
-              onChange={(e) => {
-                const country = e.target.value;
-                setForm((f) => ({
-                  ...f,
-                  country,
-                  state: STATE_MAP[country]?.includes(f.state) ? f.state : "",
-                }));
-              }}
+              value={selectCountryValue}
+              onChange={(e) => handleCountryChange(e.target.value)}
             >
               {COUNTRY_GROUPS.map((group) => (
                 <optgroup key={group.label} label={group.label}>
@@ -179,6 +218,34 @@ export function AddressEditDialog({
                 </optgroup>
               ))}
             </select>
+
+            {pendingCountry && (
+              <div className="mt-2 rounded-lg border border-border bg-accent/10 p-3">
+                <p className="flex items-start gap-2 text-xs text-foreground">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                  <span>
+                    Changing the country to <strong>{pendingCountry}</strong> will reset your
+                    State / County selection. Continue?
+                  </span>
+                </p>
+                <div className="mt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelCountryChange}
+                    className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold hover:bg-accent/10"
+                  >
+                    Keep current
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmCountryChange}
+                    className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    Continue & reset
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-muted-foreground">
@@ -215,6 +282,13 @@ export function AddressEditDialog({
               onChange={(e) => set("postal_code")(e.target.value)}
             />
           </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Live address preview
+          </p>
+          <p className="mt-1.5 text-sm font-medium text-foreground">{fullAddress}</p>
         </div>
 
         {formError && (
