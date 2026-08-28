@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { deleteUnit, getUnit, updateUnitDetails } from "@/lib/properties.functions";
+import { listUnitMeters } from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/units/$unitId")({
@@ -316,6 +317,8 @@ function UnitDetailPage() {
               </div>
             )}
           </div>
+
+          <AssignedMeters unitId={unitId} />
 
           <section className="rounded-2xl border border-border bg-card">
             <div className="border-b border-border p-4">
@@ -634,5 +637,73 @@ function StatCard({
       </div>
       <p className="mt-1.5 text-2xl font-bold text-foreground">{value}</p>
     </div>
+  );
+}
+
+function AssignedMeters({ unitId }: { unitId: string }) {
+  const fetchUnitMeters = useServerFn(listUnitMeters);
+  const { data, isLoading } = useQuery({
+    queryKey: ["unit-meters", unitId],
+    queryFn: () => fetchUnitMeters({ data: { unit_id: unitId } }),
+  });
+  const meters = data?.meters ?? [];
+
+  return (
+    <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-bold tracking-wide uppercase">Assigned meters</h2>
+        <Link to="/meters" className="text-xs font-semibold text-primary hover:underline">
+          Meter registry
+        </Link>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading meters…</p>
+      ) : meters.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No meter from the registry is linked to this unit yet. Link one from the meter registry.
+        </p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {meters.map((m) => (
+            <li key={m.id} className="rounded-xl border border-border bg-background p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold capitalize">{m.type}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    m.status === "active"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {m.status}
+                </span>
+              </div>
+              <dl className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between gap-2">
+                  <dt>Meter no.</dt>
+                  <dd className="font-medium text-foreground">{m.meter_number}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt>Serial</dt>
+                  <dd className="font-medium text-foreground">{m.serial_number}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt>Vendor</dt>
+                  <dd className="font-medium text-foreground">{m.vendor_id || "—"}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt>Price / unit</dt>
+                  <dd className="font-medium text-foreground">{m.price_per_unit.toFixed(2)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt>Initial reading</dt>
+                  <dd className="font-medium text-foreground">{m.initial_reading.toFixed(2)}</dd>
+                </div>
+              </dl>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
