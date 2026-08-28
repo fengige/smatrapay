@@ -432,24 +432,25 @@ export const getAddressAuditLogs = createServerFn({ method: "GET" })
       .limit(100);
     if (error) throw new Error(error.message);
 
+    const typedLogs = (logs ?? []) as AddressAuditLog[];
     const actorIds = [
       ...new Set(
-        ((logs ?? []) as { actor_id: string | null }[])
+        typedLogs
           .map((l) => l.actor_id)
           .filter((v): v is string => !!v),
       ),
     ];
-    let actors: any[] = [];
+    let actors: AddressAuditActor[] = [];
     if (actorIds.length) {
       const { data: rows, error: actErr } = await supabase
         .from("users")
         .select("id, name, email")
         .in("id", actorIds);
       if (actErr) throw new Error(actErr.message);
-      actors = rows ?? [];
+      actors = (rows ?? []) as AddressAuditActor[];
     }
 
-    return { logs: logs ?? [], actors };
+    return { logs: typedLogs, actors };
   });
 
 export const upsertUnit = createServerFn({ method: "POST" })
