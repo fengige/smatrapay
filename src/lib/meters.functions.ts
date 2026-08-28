@@ -447,10 +447,15 @@ export const METER_CSV_HEADERS = [
   "ken",
 ] as const;
 
+export type MeterDuplicateMode = "reject" | "skip" | "update";
+
 export type MeterImportResult = {
   imported: number;
+  updated: number;
+  skipped: number;
   failed: number;
   errors: { row: number; meter_number: string; message: string }[];
+  duplicates: { row: number; meter_number: string; serial_number: string; reason: string }[];
 };
 
 const importRow = z.object({
@@ -471,7 +476,11 @@ const importRow = z.object({
   ken: z.string().trim().default(""),
 });
 
-const importInput = z.object({ rows: z.array(importRow).min(1).max(2000) });
+const importInput = z.object({
+  rows: z.array(importRow).min(1).max(2000),
+  duplicate_mode: z.enum(["reject", "skip", "update"]).default("reject"),
+});
+
 
 /** Import meters from parsed CSV rows, validating and enforcing uniqueness server-side. */
 export const importMeters = createServerFn({ method: "POST" })
@@ -483,15 +492,24 @@ export const importMeters = createServerFn({ method: "POST" })
 
     const { data: existing, error: exErr } = await supabase
       .from("meters")
-      .select("meter_number, serial_number");
+      .select("id, meter_number, serial_number");
     if (exErr) throw new Error(exErr.message);
 
-    const takenMeters = new Set(
-      (existing ?? []).map((r: any) => String(r.meter_number).toLowerCase()),
-    );
-    const takenSerials = new Set(
-      (existing ?? []).map((r: any) => String(r.serial_number).toLowerCase()),
-    );
+    const mode = data.duplicate_mode ?? "reject";
+
+    // Existing registry lookups (case-insensitive).
+    const meterByNumber = new Map<string, { id: string; serial: string }>();
+    const meterBySerial = new Map<string, { id: string; number: string }>();
+    for (const r of (existing ?? []) as any[]) {
+      meterByNumber.set(String(r.meter_number).toLowerCase(), {
+        id: r.id,
+        serial: String(r.serial_number ?? ""),
+      });
+      meterBySerial.set(String(r.serial_number).toLowerCase(), {
+        id: r.id,
+        number: String(r.meter_number ?? ""),
+      });
+    }
 
     // Resolve landlord / agent emails to user ids.
     const emails = [
@@ -511,7 +529,14 @@ export const importMeters = createServerFn({ method: "POST" })
     }
 
     const errors: MeterImportResult["errors"] = [];
+    const duplicates: MeterImportResult["duplicates"] = [];
     const toInsert: any[] = [];
+    const toUpdate: { id: string; values: any }[] = [];
+    let skipped = 0;
+
+    // Identifiers used earlier in this same file.
+    const seenMeters = new Set<string>();
+    const seenSerials = new Set<string>();
 
     for (const r of data.rows) {
       try {
@@ -533,10 +558,41 @@ export const importMeters = createServerFn({ method: "POST" })
         const mKey = parsed.meter_number.toLowerCase();
         const sKey = parsed.serial_number.toLowerCase();
         if (mKey === sKey) throw new Error("Meter number and serial number must be different");
-        if (takenMeters.has(mKey))
-          throw new Error(`Meter number ${parsed.meter_number} is already registered`);
-        if (takenSerials.has(sKey))
-          throw new Error(`Serial number ${parsed.serial_number} is already registered`);
+        if (seenMeters.has(mKey))
+          throw new Error(`Meter number ${parsed.meter_number} appears twice in this file`);
+        if (seenSerials.has(sKey))
+          throw new Error(`Serial number ${parsed.serial_number} appears twice in this file`);
+
+        const byNumber = meterByNumber.get(mKey);
+        const bySerial = meterBySerial.get(sKey);
+
+        if (byNumber || bySerial) {
+          const reason = byNumber
+            ? `Meter number ${parsed.meter_number} is already registered`
+            : `Serial number ${parsed.serial_number} is already registered`;
+
+          if (mode === "reject") throw new Error(reason);
+
+          if (mode === "skip") {
+            duplicates.push({
+              row: r.row,
+              meter_number: parsed.meter_number,
+              serial_number: parsed.serial_number,
+              reason,
+            });
+            skipped += 1;
+            seenMeters.add(mKey);
+            seenSerials.add(sKey);
+            continue;
+          }
+
+          // update mode — both identifiers must point at the same meter.
+          if (byNumber && bySerial && byNumber.id !== bySerial.id) {
+            throw new Error(
+              `Meter number ${parsed.meter_number} and serial number ${parsed.serial_number} belong to different meters`,
+            );
+          }
+        }
 
         let landlord_id: string | null = null;
         if (r.landlord_email) {
@@ -549,14 +605,13 @@ export const importMeters = createServerFn({ method: "POST" })
           if (!agent_id) throw new Error(`No user found for agent ${r.agent_email}`);
         }
 
-        takenMeters.add(mKey);
-        takenSerials.add(sKey);
+        seenMeters.add(mKey);
+        seenSerials.add(sKey);
 
-        toInsert.push({
+        const values = {
           vendor_id: parsed.vendor_id,
           landlord_id,
           agent_id,
-          unit_id: null,
           meter_number: parsed.meter_number,
           serial_number: parsed.serial_number,
           type: parsed.type,
@@ -568,7 +623,25 @@ export const importMeters = createServerFn({ method: "POST" })
           ti: parsed.ti,
           ea: parsed.ea,
           ken: parsed.ken,
-        });
+        };
+
+        const existingId = byNumber?.id ?? bySerial?.id;
+        if (mode === "update" && existingId) {
+          duplicates.push({
+            row: r.row,
+            meter_number: parsed.meter_number,
+            serial_number: parsed.serial_number,
+            reason: "Existing meter will be updated",
+          });
+          toUpdate.push({ id: existingId, values });
+          // Keep the lookup fresh so later rows see the new identifiers.
+          meterByNumber.set(mKey, { id: existingId, serial: parsed.serial_number });
+          meterBySerial.set(sKey, { id: existingId, number: parsed.meter_number });
+        } else {
+          toInsert.push({ ...values, unit_id: null });
+          meterByNumber.set(mKey, { id: "pending", serial: parsed.serial_number });
+          meterBySerial.set(sKey, { id: "pending", number: parsed.meter_number });
+        }
       } catch (e: any) {
         const message =
           e?.issues?.[0]?.message ?? e?.message ?? "Row could not be validated";
@@ -585,5 +658,27 @@ export const importMeters = createServerFn({ method: "POST" })
       imported = count ?? toInsert.length;
     }
 
-    return { imported, failed: errors.length, errors } satisfies MeterImportResult;
+    let updated = 0;
+    for (const u of toUpdate) {
+      const { error } = await supabase.from("meters").update(u.values as never).eq("id", u.id);
+      if (error) {
+        errors.push({
+          row: 0,
+          meter_number: u.values.meter_number,
+          message: error.message,
+        });
+      } else {
+        updated += 1;
+      }
+    }
+
+    return {
+      imported,
+      updated,
+      skipped,
+      failed: errors.length,
+      errors,
+      duplicates,
+    } satisfies MeterImportResult;
   });
+

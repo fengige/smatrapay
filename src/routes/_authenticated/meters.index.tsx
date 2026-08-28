@@ -1263,16 +1263,22 @@ function ImportMetersDialog({
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [dupMode, setDupMode] = useState<"reject" | "skip" | "update">("reject");
+  const [confirmUpdate, setConfirmUpdate] = useState(false);
   const [result, setResult] = useState<{
     imported: number;
+    updated: number;
+    skipped: number;
     failed: number;
     errors: { row: number; meter_number: string; message: string }[];
+    duplicates: { row: number; meter_number: string; serial_number: string; reason: string }[];
   } | null>(null);
 
   const importMutation = useMutation({
     mutationFn: async () =>
       runImport({
         data: {
+          duplicate_mode: dupMode,
           rows: rows.map((r, i) => ({
             row: i + 2,
             meter_number: r["meter_number"] ?? "",
@@ -1296,10 +1302,13 @@ function ImportMetersDialog({
       setResult(res);
       await onImported();
       if (res.imported) toast.success(`${res.imported} meter${res.imported === 1 ? "" : "s"} imported`);
-      if (res.failed) toast.error(`${res.failed} row${res.failed === 1 ? "" : "s"} skipped`);
+      if (res.updated) toast.success(`${res.updated} existing meter${res.updated === 1 ? "" : "s"} updated`);
+      if (res.skipped) toast.message(`${res.skipped} duplicate row${res.skipped === 1 ? "" : "s"} skipped`);
+      if (res.failed) toast.error(`${res.failed} row${res.failed === 1 ? "" : "s"} failed`);
     },
     onError: (err: Error) => toast.error(err.message || "Import failed"),
   });
+
 
   const onFile = async (file: File) => {
     setResult(null);
@@ -1341,8 +1350,10 @@ function ImportMetersDialog({
               Import meters from CSV
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Duplicate meter numbers and serial numbers are validated and rejected on the server.
+              Meter number and serial number uniqueness is validated on the server. Choose how
+              duplicates are handled below.
             </p>
+
           </div>
           <button
             type="button"
@@ -1380,6 +1391,60 @@ function ImportMetersDialog({
 
           {parseError && <p className="text-sm text-destructive">{parseError}</p>}
 
+          {!result && (
+            <fieldset className="rounded-xl border border-border p-3">
+              <legend className="px-1 text-xs font-semibold uppercase text-muted-foreground">
+                Duplicate handling
+              </legend>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    ["reject", "Reject", "Fail rows whose meter/serial already exists"],
+                    ["skip", "Skip", "Leave existing meters untouched and ignore those rows"],
+                    ["update", "Update", "Overwrite matching meters with the CSV values"],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <label
+                    key={value}
+                    className={`cursor-pointer rounded-lg border p-2.5 text-xs ${
+                      dupMode === value ? "border-primary bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <input
+                        type="radio"
+                        name="duplicate-mode"
+                        value={value}
+                        checked={dupMode === value}
+                        onChange={() => {
+                          setDupMode(value);
+                          setConfirmUpdate(false);
+                        }}
+                      />
+                      {label}
+                    </span>
+                    <span className="mt-1 block text-muted-foreground">{hint}</span>
+                  </label>
+                ))}
+              </div>
+              {dupMode === "update" && (
+                <label className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-2.5 text-xs text-destructive">
+                  <input
+                    type="checkbox"
+                    checked={confirmUpdate}
+                    onChange={(e) => setConfirmUpdate(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    I confirm that existing meters matching these meter numbers or serial numbers
+                    should be overwritten with the values in this file.
+                  </span>
+                </label>
+              )}
+            </fieldset>
+          )}
+
+
           {rows.length > 0 && !result && (
             <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-left text-xs">
@@ -1414,12 +1479,22 @@ function ImportMetersDialog({
           {result && (
             <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-3 text-sm">
               <p className="font-semibold">
-                {result.imported} imported · {result.failed} skipped
+                {result.imported} imported · {result.updated} updated · {result.skipped} skipped ·{" "}
+                {result.failed} failed
               </p>
+              {result.duplicates.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                  {result.duplicates.map((d) => (
+                    <li key={`dup-${d.row}-${d.meter_number}`}>
+                      Row {d.row} ({d.meter_number} / {d.serial_number}): {d.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {result.errors.length > 0 && (
                 <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-destructive">
-                  {result.errors.map((e) => (
-                    <li key={`${e.row}-${e.meter_number}`}>
+                  {result.errors.map((e, i) => (
+                    <li key={`${e.row}-${e.meter_number}-${i}`}>
                       Row {e.row}
                       {e.meter_number ? ` (${e.meter_number})` : ""}: {e.message}
                     </li>
@@ -1442,15 +1517,21 @@ function ImportMetersDialog({
           {!result && (
             <button
               type="button"
-              disabled={!rows.length || importMutation.isPending}
+              disabled={
+                !rows.length ||
+                importMutation.isPending ||
+                (dupMode === "update" && !confirmUpdate)
+              }
               onClick={() => importMutation.mutate()}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {importMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              Import {rows.length || ""} meter{rows.length === 1 ? "" : "s"}
+              {dupMode === "update" ? "Import & update" : "Import"} {rows.length || ""} meter
+              {rows.length === 1 ? "" : "s"}
             </button>
           )}
         </div>
+
       </div>
     </div>
   );
