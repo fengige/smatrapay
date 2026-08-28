@@ -1088,7 +1088,50 @@ export const addMeter = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const bulkMeterInput = z.object({
+  action: z.enum(["delete", "deactivate", "activate"]),
+  meters: z
+    .array(z.object({ unit_id: uuid, type: z.enum(["electricity", "water", "gas"]) }))
+    .min(1)
+    .max(500),
+});
+
+/** Delete / deactivate / activate many meters at once. */
+export const bulkMeterAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkMeterInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    // Group all changes per unit so each unit is updated once.
+    const perUnit = new Map<string, Record<string, unknown>>();
+    for (const m of data.meters) {
+      const patch = perUnit.get(m.unit_id) ?? {};
+      if (data.action === "delete") {
+        patch[`${m.type}_meter_no`] = null;
+        patch[`${m.type}_meter_active`] = true;
+      } else {
+        patch[`${m.type}_meter_active`] = data.action === "activate";
+      }
+      perUnit.set(m.unit_id, patch);
+    }
+
+    let affected = 0;
+    for (const [unitId, patch] of perUnit) {
+      const { error } = await supabase
+        .from("units")
+        .update({ ...patch, updated_by: userId } as never)
+        .eq("id", unitId);
+      if (error) throw new Error(error.message);
+      affected += 1;
+    }
+
+    return { ok: true, meters: data.meters.length, units: affected };
+  });
+
 /** All meters across units, with property and landlord context. */
+
 
 export const listMeters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -1099,7 +1142,7 @@ export const listMeters = createServerFn({ method: "GET" })
     const { data: units, error } = await supabase
       .from("units")
       .select(
-        "id, property_id, unit_number, unit_type, floor, status, electricity_meter_no, water_meter_no, gas_meter_no",
+        "id, property_id, unit_number, unit_type, floor, status, electricity_meter_no, water_meter_no, gas_meter_no, electricity_meter_active, water_meter_active, gas_meter_active",
       )
       .order("unit_number", { ascending: true });
     if (error) throw new Error(error.message);
@@ -1141,6 +1184,7 @@ export const listMeters = createServerFn({ method: "GET" })
       landlord_name: string | null;
       type: "electricity" | "water" | "gas";
       serial: string;
+      active: boolean;
     };
 
     const meters: Meter[] = [];
@@ -1155,14 +1199,15 @@ export const listMeters = createServerFn({ method: "GET" })
         property_name: (prop?.name as string) ?? "—",
         landlord_name: (landlord?.name as string) ?? (landlord?.email as string) ?? null,
       };
-      const entries: [Meter["type"], string | null][] = [
-        ["electricity", u.electricity_meter_no],
-        ["water", u.water_meter_no],
-        ["gas", u.gas_meter_no],
+      const anyUnit = u as unknown as Record<string, unknown>;
+      const entries: [Meter["type"], string | null, boolean][] = [
+        ["electricity", u.electricity_meter_no, anyUnit["electricity_meter_active"] !== false],
+        ["water", u.water_meter_no, anyUnit["water_meter_active"] !== false],
+        ["gas", u.gas_meter_no, anyUnit["gas_meter_active"] !== false],
       ];
-      for (const [type, serial] of entries) {
+      for (const [type, serial, active] of entries) {
         if (serial && String(serial).trim()) {
-          meters.push({ ...base, key: `${u.id}-${type}`, type, serial: String(serial).trim() });
+          meters.push({ ...base, key: `${u.id}-${type}`, type, serial: String(serial).trim(), active });
         }
       }
     }
