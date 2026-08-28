@@ -48,3 +48,47 @@ export const STATE_MAP: Record<string, string[]> = {
   India: ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"],
   "United Arab Emirates": ["Abu Dhabi", "Ajman", "Dubai", "Fujairah", "Ras Al Khaimah", "Sharjah", "Umm Al Quwain"],
 };
+
+const COUNTRY_ALIASES: Record<string, string> = {
+  ke: "Kenya",
+  ken: "Kenya",
+  uk: "United Kingdom",
+  gb: "United Kingdom",
+  "great britain": "United Kingdom",
+  us: "United States",
+  usa: "United States",
+  "united states of america": "United States",
+  uae: "United Arab Emirates",
+  tz: "Tanzania",
+  ug: "Uganda",
+};
+
+const squash = (value: string) => value.trim().replace(/\s+/g, " ");
+const key = (value: string) => squash(value).toLowerCase();
+
+/** Trim, collapse whitespace and match a country to the canonical dropdown option. */
+export function normalizeCountry(input: unknown): string {
+  if (typeof input !== "string") return "";
+  const cleaned = squash(input);
+  if (!cleaned) return "";
+  const k = key(cleaned);
+  const alias = COUNTRY_ALIASES[k];
+  if (alias) return alias;
+  const match = COUNTRY_OPTIONS.find((option) => option.toLowerCase() === k);
+  return match ?? cleaned;
+}
+
+/** Trim, collapse whitespace and match a state/county to the canonical option for a country. */
+export function normalizeState(country: unknown, input: unknown): string {
+  if (typeof input !== "string") return "";
+  const cleaned = squash(input);
+  if (!cleaned) return "";
+  const canonicalCountry = normalizeCountry(country);
+  const states = canonicalCountry ? STATE_MAP[canonicalCountry] : undefined;
+  if (!states) return cleaned;
+  const k = key(cleaned);
+  const match = states.find(
+    (state) => state.toLowerCase() === k || state.toLowerCase() === k.replace(/\s+county$/, ""),
+  );
+  return match ?? cleaned;
+}
