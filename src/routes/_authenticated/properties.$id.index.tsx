@@ -1153,7 +1153,16 @@ function PropertyDetailPage() {
                           const actor = addressLogsQuery.data?.actors.find(
                             (a) => a.id === log.actor_id,
                           );
-                          const changes = (log.changes ?? {}) as Record<
+                          const raw = (log.changes ?? {}) as Record<string, any>;
+                          const isUnitEvent =
+                            log.action === "units_bulk_remove" ||
+                            log.action === "units_bulk_restore";
+                          const removed = log.action === "units_bulk_remove";
+                          const unitCount = raw["units_removed"] ?? raw["units_restored"] ?? 0;
+                          const unitNumbers: string[] = Array.isArray(raw["unit_numbers"])
+                            ? raw["unit_numbers"]
+                            : [];
+                          const changes = raw as Record<
                             string,
                             { old: string | null; new: string | null }
                           >;
@@ -1170,23 +1179,40 @@ function PropertyDetailPage() {
                                   {new Date(log.created_at).toLocaleString()}
                                 </span>
                               </div>
-                              <ul className="mt-2 space-y-1">
-                                {Object.entries(changes).map(([field, diff]) => (
-                                  <li key={field} className="text-xs text-muted-foreground">
-                                    <span className="font-medium text-foreground capitalize">
-                                      {field.replace(/_/g, " ")}
-                                    </span>
-                                    {" changed from "}
+                              {isUnitEvent ? (
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                  <p>
                                     <span className="font-medium text-foreground">
-                                      {diff.old || "—"}
-                                    </span>
-                                    {" to "}
-                                    <span className="font-medium text-foreground">
-                                      {diff.new || "—"}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
+                                      {removed ? "Removed" : "Restored"} {unitCount} unit
+                                      {unitCount === 1 ? "" : "s"}
+                                    </span>{" "}
+                                    in bulk
+                                  </p>
+                                  {unitNumbers.length > 0 && (
+                                    <p className="mt-1 break-words">
+                                      Units: {unitNumbers.join(", ")}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <ul className="mt-2 space-y-1">
+                                  {Object.entries(changes).map(([field, diff]) => (
+                                    <li key={field} className="text-xs text-muted-foreground">
+                                      <span className="font-medium text-foreground capitalize">
+                                        {field.replace(/_/g, " ")}
+                                      </span>
+                                      {" changed from "}
+                                      <span className="font-medium text-foreground">
+                                        {diff?.old || "—"}
+                                      </span>
+                                      {" to "}
+                                      <span className="font-medium text-foreground">
+                                        {diff?.new || "—"}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </li>
                           );
                         })}
