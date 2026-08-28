@@ -401,6 +401,22 @@ export function PropertyForm({
         })}
       </ol>
 
+      {legacyStateNotice ? (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-foreground"
+        >
+          <MapPin className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold">Missing state / county</p>
+            <p className="text-muted-foreground">
+              This property has Country set to {initial.country} but no state/county saved. Select a valid
+              option in the Address step before saving.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div key={step} className="fade-swap">
 
       <section className={step === 0 ? "rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8" : "hidden"}>
