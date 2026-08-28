@@ -18,6 +18,7 @@ import {
   PowerOff,
   Search,
   Trash2,
+  Upload,
   X,
   Zap,
 } from "lucide-react";
@@ -28,6 +29,8 @@ import {
   bulkMeterAction,
   listMeters,
   listMeterAuditLogs,
+  importMeters,
+  METER_CSV_HEADERS,
   updateMeter,
   type MeterRow,
 } from "@/lib/meters.functions";
@@ -134,6 +137,7 @@ function MetersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<MeterRow | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
@@ -315,6 +319,13 @@ function MetersPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="size-4" /> Add Meter
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <Upload className="size-4" /> Import CSV
           </button>
           <button
             type="button"
@@ -706,6 +717,15 @@ function MetersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showImport && (
+        <ImportMetersDialog
+          onClose={() => setShowImport(false)}
+          onImported={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["meters"] });
+          }}
+        />
       )}
 
       {(showAdd || editing) && (
@@ -1165,5 +1185,273 @@ function MeterHistory({ meterId }: { meterId: string }) {
         </ol>
       )}
     </section>
+  );
+}
+
+
+/* ---------------- CSV import ---------------- */
+
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  const clean = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  for (let i = 0; i < clean.length; i++) {
+    const c = clean[i];
+    if (quoted) {
+      if (c === '"') {
+        if (clean[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else quoted = false;
+      } else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") {
+      row.push(field);
+      field = "";
+    } else if (c === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else field += c;
+  }
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((c) => c.trim() !== ""));
+}
+
+const HEADER_ALIASES: Record<string, string> = {
+  "meter number": "meter_number",
+  meterno: "meter_number",
+  "serial number": "serial_number",
+  serail_number: "serial_number",
+  "serail number": "serial_number",
+  vendor: "vendor_id",
+  landlord: "landlord_email",
+  agent: "agent_email",
+  "initial reading": "initial_reading",
+  "price per unit": "price_per_unit",
+};
+
+function normalizeHeader(h: string) {
+  const key = h.trim().toLowerCase();
+  return HEADER_ALIASES[key] ?? key.replace(/\s+/g, "_");
+}
+
+function downloadTemplate() {
+  const csv = `${METER_CSV_HEADERS.join(",")}\nMTR-0001,SN-0001,electricity,Kenya Power,landlord@example.com,,0,25.50,active,,,,,`;
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "smatrapay-meters-template.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function ImportMetersDialog({
+  onClose,
+  onImported,
+}: {
+  onClose: () => void;
+  onImported: () => Promise<void> | void;
+}) {
+  const runImport = useServerFn(importMeters);
+  const [fileName, setFileName] = useState("");
+  const [rows, setRows] = useState<Record<string, string>[]>([]);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    imported: number;
+    failed: number;
+    errors: { row: number; meter_number: string; message: string }[];
+  } | null>(null);
+
+  const importMutation = useMutation({
+    mutationFn: async () =>
+      runImport({
+        data: {
+          rows: rows.map((r, i) => ({
+            row: i + 2,
+            meter_number: r["meter_number"] ?? "",
+            serial_number: r["serial_number"] ?? "",
+            type: r["type"] ?? "",
+            vendor_id: r["vendor_id"] ?? "",
+            landlord_email: r["landlord_email"] ?? "",
+            agent_email: r["agent_email"] ?? "",
+            initial_reading: r["initial_reading"] ?? "",
+            price_per_unit: r["price_per_unit"] ?? "",
+            status: r["status"] ?? "",
+            sgc: r["sgc"] ?? "",
+            krn: r["krn"] ?? "",
+            ti: r["ti"] ?? "",
+            ea: r["ea"] ?? "",
+            ken: r["ken"] ?? "",
+          })),
+        },
+      } as never),
+    onSuccess: async (res: any) => {
+      setResult(res);
+      await onImported();
+      if (res.imported) toast.success(`${res.imported} meter${res.imported === 1 ? "" : "s"} imported`);
+      if (res.failed) toast.error(`${res.failed} row${res.failed === 1 ? "" : "s"} skipped`);
+    },
+    onError: (err: Error) => toast.error(err.message || "Import failed"),
+  });
+
+  const onFile = async (file: File) => {
+    setResult(null);
+    setParseError(null);
+    setFileName(file.name);
+    const table = parseCsv(await file.text());
+    if (table.length < 2) {
+      setRows([]);
+      setParseError("The file has no data rows.");
+      return;
+    }
+    const headers = (table[0] ?? []).map(normalizeHeader);
+    if (!headers.includes("meter_number") || !headers.includes("serial_number")) {
+      setRows([]);
+      setParseError("CSV must include meter_number and serial_number columns.");
+      return;
+    }
+    setRows(
+      table.slice(1).map((r) =>
+        Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? "").trim()])),
+      ),
+    );
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-meters-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !importMutation.isPending) onClose();
+      }}
+    >
+      <div className="w-full max-w-2xl rounded-2xl border bg-card p-6 shadow-lg">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="import-meters-title" className="text-lg font-bold">
+              Import meters from CSV
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Duplicate meter numbers and serial numbers are validated and rejected on the server.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close import dialog"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-accent/10"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10">
+              <Upload className="size-4" /> Choose CSV
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onFile(f);
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={downloadTemplate}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+            >
+              <Download className="size-4" /> Download template
+            </button>
+            {fileName && <span className="text-sm text-muted-foreground">{fileName}</span>}
+          </div>
+
+          {parseError && <p className="text-sm text-destructive">{parseError}</p>}
+
+          {rows.length > 0 && !result && (
+            <div className="overflow-hidden rounded-xl border border-border">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold uppercase">Meter no</th>
+                    <th className="px-3 py-2 font-semibold uppercase">Serial</th>
+                    <th className="px-3 py-2 font-semibold uppercase">Type</th>
+                    <th className="px-3 py-2 font-semibold uppercase">Vendor</th>
+                    <th className="px-3 py-2 font-semibold uppercase">Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {rows.slice(0, 8).map((r, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2">{r["meter_number"]}</td>
+                      <td className="px-3 py-2">{r["serial_number"]}</td>
+                      <td className="px-3 py-2">{r["type"]}</td>
+                      <td className="px-3 py-2">{r["vendor_id"]}</td>
+                      <td className="px-3 py-2">{r["price_per_unit"]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="border-t border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                {rows.length} row{rows.length === 1 ? "" : "s"} ready to import
+                {rows.length > 8 ? " (showing first 8)" : ""}
+              </p>
+            </div>
+          )}
+
+          {result && (
+            <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-3 text-sm">
+              <p className="font-semibold">
+                {result.imported} imported · {result.failed} skipped
+              </p>
+              {result.errors.length > 0 && (
+                <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-destructive">
+                  {result.errors.map((e) => (
+                    <li key={`${e.row}-${e.meter_number}`}>
+                      Row {e.row}
+                      {e.meter_number ? ` (${e.meter_number})` : ""}: {e.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={importMutation.isPending}
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
+          >
+            {result ? "Close" : "Cancel"}
+          </button>
+          {!result && (
+            <button
+              type="button"
+              disabled={!rows.length || importMutation.isPending}
+              onClick={() => importMutation.mutate()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              {importMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+              Import {rows.length || ""} meter{rows.length === 1 ? "" : "s"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

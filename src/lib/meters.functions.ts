@@ -425,3 +425,165 @@ export const listUnitMeters = createServerFn({ method: "GET" })
       })),
     };
   });
+
+/* ------------------------------------------------------------------ *
+ * CSV import
+ * ------------------------------------------------------------------ */
+
+export const METER_CSV_HEADERS = [
+  "meter_number",
+  "serial_number",
+  "type",
+  "vendor_id",
+  "landlord_email",
+  "agent_email",
+  "initial_reading",
+  "price_per_unit",
+  "status",
+  "sgc",
+  "krn",
+  "ti",
+  "ea",
+  "ken",
+] as const;
+
+export type MeterImportResult = {
+  imported: number;
+  failed: number;
+  errors: { row: number; meter_number: string; message: string }[];
+};
+
+const importRow = z.object({
+  row: z.number().int().min(1),
+  meter_number: z.string().trim().default(""),
+  serial_number: z.string().trim().default(""),
+  type: z.string().trim().default(""),
+  vendor_id: z.string().trim().default(""),
+  landlord_email: z.string().trim().default(""),
+  agent_email: z.string().trim().default(""),
+  initial_reading: z.string().trim().default(""),
+  price_per_unit: z.string().trim().default(""),
+  status: z.string().trim().default(""),
+  sgc: z.string().trim().default(""),
+  krn: z.string().trim().default(""),
+  ti: z.string().trim().default(""),
+  ea: z.string().trim().default(""),
+  ken: z.string().trim().default(""),
+});
+
+const importInput = z.object({ rows: z.array(importRow).min(1).max(2000) });
+
+/** Import meters from parsed CSV rows, validating and enforcing uniqueness server-side. */
+export const importMeters = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => importInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: existing, error: exErr } = await supabase
+      .from("meters")
+      .select("meter_number, serial_number");
+    if (exErr) throw new Error(exErr.message);
+
+    const takenMeters = new Set(
+      (existing ?? []).map((r: any) => String(r.meter_number).toLowerCase()),
+    );
+    const takenSerials = new Set(
+      (existing ?? []).map((r: any) => String(r.serial_number).toLowerCase()),
+    );
+
+    // Resolve landlord / agent emails to user ids.
+    const emails = [
+      ...new Set(
+        data.rows
+          .flatMap((r) => [r.landlord_email, r.agent_email])
+          .map((e) => e.toLowerCase())
+          .filter(Boolean),
+      ),
+    ];
+    let userByEmail = new Map<string, string>();
+    if (emails.length) {
+      const { data: users } = await supabase.from("users").select("id, email").in("email", emails);
+      userByEmail = new Map(
+        (users ?? []).map((u: any) => [String(u.email ?? "").toLowerCase(), u.id as string]),
+      );
+    }
+
+    const errors: MeterImportResult["errors"] = [];
+    const toInsert: any[] = [];
+
+    for (const r of data.rows) {
+      try {
+        const parsed = meterInput.parse({
+          vendor_id: r.vendor_id,
+          meter_number: r.meter_number,
+          serial_number: r.serial_number,
+          type: r.type.toLowerCase(),
+          initial_reading: r.initial_reading,
+          price_per_unit: r.price_per_unit,
+          status: r.status ? r.status.toLowerCase() : undefined,
+          sgc: r.sgc,
+          krn: r.krn,
+          ti: r.ti,
+          ea: r.ea,
+          ken: r.ken,
+        });
+
+        const mKey = parsed.meter_number.toLowerCase();
+        const sKey = parsed.serial_number.toLowerCase();
+        if (mKey === sKey) throw new Error("Meter number and serial number must be different");
+        if (takenMeters.has(mKey))
+          throw new Error(`Meter number ${parsed.meter_number} is already registered`);
+        if (takenSerials.has(sKey))
+          throw new Error(`Serial number ${parsed.serial_number} is already registered`);
+
+        let landlord_id: string | null = null;
+        if (r.landlord_email) {
+          landlord_id = userByEmail.get(r.landlord_email.toLowerCase()) ?? null;
+          if (!landlord_id) throw new Error(`No user found for landlord ${r.landlord_email}`);
+        }
+        let agent_id: string | null = null;
+        if (r.agent_email) {
+          agent_id = userByEmail.get(r.agent_email.toLowerCase()) ?? null;
+          if (!agent_id) throw new Error(`No user found for agent ${r.agent_email}`);
+        }
+
+        takenMeters.add(mKey);
+        takenSerials.add(sKey);
+
+        toInsert.push({
+          vendor_id: parsed.vendor_id,
+          landlord_id,
+          agent_id,
+          unit_id: null,
+          meter_number: parsed.meter_number,
+          serial_number: parsed.serial_number,
+          type: parsed.type,
+          initial_reading: parsed.initial_reading,
+          price_per_unit: parsed.price_per_unit,
+          status: parsed.status ?? "active",
+          sgc: parsed.sgc,
+          krn: parsed.krn,
+          ti: parsed.ti,
+          ea: parsed.ea,
+          ken: parsed.ken,
+        });
+      } catch (e: any) {
+        const message =
+          e?.issues?.[0]?.message ?? e?.message ?? "Row could not be validated";
+        errors.push({ row: r.row, meter_number: r.meter_number, message });
+      }
+    }
+
+    let imported = 0;
+    if (toInsert.length) {
+      const { error, count } = await supabase
+        .from("meters")
+        .insert(toInsert as never, { count: "exact" });
+      if (error) throw new Error(error.message);
+      imported = count ?? toInsert.length;
+    }
+
+    return { imported, failed: errors.length, errors } satisfies MeterImportResult;
+  });
