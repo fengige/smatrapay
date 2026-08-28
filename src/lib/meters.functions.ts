@@ -137,65 +137,78 @@ export const listMeters = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    const landlordIds = [
-      ...new Set((rows ?? []).map((r: any) => r.landlord_id).filter((v: any): v is string => !!v)),
+    const referencedIds = [
+      ...new Set(
+        (rows ?? [])
+          .flatMap((r: any) => [r.landlord_id, r.agent_id])
+          .filter((v: any): v is string => !!v),
+      ),
     ];
 
-    let landlordRows: any[] = [];
-    if (landlordIds.length) {
+    let personRows: any[] = [];
+    if (referencedIds.length) {
       const { data: l, error: lErr } = await supabase
         .from("users")
         .select("id, name, email")
-        .in("id", landlordIds);
+        .in("id", referencedIds);
       if (lErr) throw new Error(lErr.message);
-      landlordRows = l ?? [];
+      personRows = l ?? [];
     }
-    const landlordById = new Map(landlordRows.map((l) => [l.id, l]));
+    const personById = new Map(personRows.map((l) => [l.id, l]));
 
-    // Every landlord available for assignment in the Add Meter dialog.
-    const { data: landlordRoleRows } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "landlord");
-    const optionIds = [...new Set((landlordRoleRows ?? []).map((r: any) => r.user_id as string))];
-    let landlordOptions: { id: string; name: string }[] = [];
-    if (optionIds.length) {
-      const { data: opts } = await supabase
-        .from("users")
-        .select("id, name, email")
-        .in("id", optionIds);
-      landlordOptions = (opts ?? []).map((u: any) => ({
+    // Landlord / agent options for the meter dialog.
+    const loadOptions = async (role: "landlord" | "agent", fallback: string) => {
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", role);
+      const ids = [...new Set((roleRows ?? []).map((r: any) => r.user_id as string))];
+      if (!ids.length) return [] as { id: string; name: string }[];
+      const { data: opts } = await supabase.from("users").select("id, name, email").in("id", ids);
+      const list = (opts ?? []).map((u: any) => ({
         id: u.id as string,
-        name: (u.name as string) || (u.email as string) || "Unnamed landlord",
+        name: (u.name as string) || (u.email as string) || fallback,
       }));
-      landlordOptions.sort((a, b) => a.name.localeCompare(b.name));
-    }
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      return list;
+    };
 
-    const meters: MeterRow[] = (rows ?? []).map((r: any) => {
-      const landlord = r.landlord_id ? landlordById.get(r.landlord_id) : null;
-      return {
-        id: r.id,
-        vendor_id: r.vendor_id ?? "",
-        landlord_id: r.landlord_id ?? null,
-        landlord_name: (landlord?.name as string) ?? (landlord?.email as string) ?? null,
-        meter_number: r.meter_number ?? "",
-        serial_number: r.serial_number ?? "",
-        type: (r.type ?? "").toLowerCase(),
-        initial_reading: Number(r.initial_reading ?? 0),
-        price_per_unit: Number(r.price_per_unit ?? 0),
-        status: (r.status ?? "active").toLowerCase(),
-        sgc: r.sgc ?? null,
-        krn: r.krn ?? null,
-        ti: r.ti ?? null,
-        ea: r.ea ?? null,
-        ken: r.ken ?? null,
-        created_at: r.created_at,
-        updated_at: r.updated_at,
-      };
-    });
+    const [landlordOptions, agentOptions] = await Promise.all([
+      loadOptions("landlord", "Unnamed landlord"),
+      loadOptions("agent", "Unnamed agent"),
+    ]);
 
-    return { meters, landlords: landlordOptions };
+    const displayName = (id: string | null) => {
+      if (!id) return null;
+      const p = personById.get(id);
+      return ((p?.name as string) || (p?.email as string) || null) as string | null;
+    };
+
+    const meters: MeterRow[] = (rows ?? []).map((r: any) => ({
+      id: r.id,
+      vendor_id: r.vendor_id ?? "",
+      landlord_id: r.landlord_id ?? null,
+      landlord_name: displayName(r.landlord_id ?? null),
+      agent_id: r.agent_id ?? null,
+      agent_name: displayName(r.agent_id ?? null),
+      meter_number: r.meter_number ?? "",
+      serial_number: r.serial_number ?? "",
+      type: (r.type ?? "").toLowerCase(),
+      initial_reading: Number(r.initial_reading ?? 0),
+      price_per_unit: Number(r.price_per_unit ?? 0),
+      status: (r.status ?? "active").toLowerCase(),
+      sgc: r.sgc ?? null,
+      krn: r.krn ?? null,
+      ti: r.ti ?? null,
+      ea: r.ea ?? null,
+      ken: r.ken ?? null,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    }));
+
+    return { meters, landlords: landlordOptions, agents: agentOptions };
   });
+
 
 export const addMeter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
