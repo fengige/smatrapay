@@ -447,10 +447,15 @@ export const METER_CSV_HEADERS = [
   "ken",
 ] as const;
 
+export type MeterDuplicateMode = "reject" | "skip" | "update";
+
 export type MeterImportResult = {
   imported: number;
+  updated: number;
+  skipped: number;
   failed: number;
   errors: { row: number; meter_number: string; message: string }[];
+  duplicates: { row: number; meter_number: string; serial_number: string; reason: string }[];
 };
 
 const importRow = z.object({
@@ -471,7 +476,11 @@ const importRow = z.object({
   ken: z.string().trim().default(""),
 });
 
-const importInput = z.object({ rows: z.array(importRow).min(1).max(2000) });
+const importInput = z.object({
+  rows: z.array(importRow).min(1).max(2000),
+  duplicate_mode: z.enum(["reject", "skip", "update"]).default("reject"),
+});
+
 
 /** Import meters from parsed CSV rows, validating and enforcing uniqueness server-side. */
 export const importMeters = createServerFn({ method: "POST" })
