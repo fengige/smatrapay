@@ -106,6 +106,71 @@ export type Database = {
         }
         Relationships: []
       }
+      meters: {
+        Row: {
+          created_at: string
+          ea: number | null
+          id: string
+          initial_reading: number
+          ken: number | null
+          krn: number | null
+          landlord_id: string | null
+          meter_number: string
+          price_per_unit: number
+          serial_number: string
+          sgc: number | null
+          status: string
+          ti: number | null
+          type: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          ea?: number | null
+          id?: string
+          initial_reading?: number
+          ken?: number | null
+          krn?: number | null
+          landlord_id?: string | null
+          meter_number: string
+          price_per_unit?: number
+          serial_number: string
+          sgc?: number | null
+          status?: string
+          ti?: number | null
+          type: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          ea?: number | null
+          id?: string
+          initial_reading?: number
+          ken?: number | null
+          krn?: number | null
+          landlord_id?: string | null
+          meter_number?: string
+          price_per_unit?: number
+          serial_number?: string
+          sgc?: number | null
+          status?: string
+          ti?: number | null
+          type?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meters_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           address_line1: string | null
