@@ -13,7 +13,7 @@ export const COUNTRY_GROUPS = [
   },
 ] as const;
 
-export const COUNTRY_OPTIONS = COUNTRY_GROUPS.flatMap((g) => g.countries);
+export const COUNTRY_OPTIONS: string[] = COUNTRY_GROUPS.flatMap((g) => [...g.countries]);
 
 export const STATE_MAP: Record<string, string[]> = {
   Kenya: [
