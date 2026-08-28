@@ -98,6 +98,7 @@ type SortKey =
   | "type"
   | "vendor_id"
   | "landlord_name"
+  | "agent_name"
   | "price_per_unit"
   | "status";
 
@@ -134,6 +135,7 @@ function MetersPage() {
 
   const meters = data?.meters ?? [];
   const landlords = data?.landlords ?? [];
+  const agents = data?.agents ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -227,6 +229,7 @@ function MetersPage() {
         "Type",
         "Vendor",
         "Landlord",
+        "Agent",
         "Initial reading",
         "Price per unit",
         "Status",
@@ -242,6 +245,7 @@ function MetersPage() {
         typeMeta(m.type).label,
         m.vendor_id,
         m.landlord_name ?? "—",
+        m.agent_name ?? "—",
         money(m.initial_reading),
         money(m.price_per_unit),
         m.status,
@@ -443,6 +447,7 @@ function MetersPage() {
                   <SortHeader label="Type" sortBy="type" />
                   <SortHeader label="Vendor" sortBy="vendor_id" />
                   <SortHeader label="Landlord" sortBy="landlord_name" />
+                  <SortHeader label="Agent" sortBy="agent_name" />
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
                   <SortHeader label="Status" sortBy="status" />
@@ -454,20 +459,20 @@ function MetersPage() {
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-8 text-center text-destructive">
+                    <td colSpan={11} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Use “Add Meter” to register one.
                     </td>
                   </tr>
@@ -528,6 +533,9 @@ function MetersPage() {
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                           {m.landlord_name ?? "Unassigned"}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                          {m.agent_name ?? "—"}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-foreground">
                           {money(m.price_per_unit)}
@@ -670,6 +678,7 @@ function MetersPage() {
         <MeterDialog
           meter={editing}
           landlords={landlords}
+          agents={agents}
           existing={meters}
           onClose={() => {
             setShowAdd(false);
@@ -724,12 +733,14 @@ function identifierError(label: string, value: string) {
 function MeterDialog({
   meter,
   landlords,
+  agents,
   existing,
   onClose,
   onSaved,
 }: {
   meter: MeterRow | null;
   landlords: { id: string; name: string }[];
+  agents: { id: string; name: string }[];
   existing: MeterRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
@@ -740,6 +751,7 @@ function MeterDialog({
 
   const [vendorId, setVendorId] = useState(meter?.vendor_id ?? "");
   const [landlordId, setLandlordId] = useState(meter?.landlord_id ?? "");
+  const [agentId, setAgentId] = useState(meter?.agent_id ?? "");
   const [meterNumber, setMeterNumber] = useState(meter?.meter_number ?? "");
   const [serialNumber, setSerialNumber] = useState(meter?.serial_number ?? "");
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">(
@@ -800,6 +812,7 @@ function MeterDialog({
       const payload = {
         vendor_id: vendorId.trim(),
         landlord_id: landlordId || null,
+        agent_id: agentId || null,
         meter_number: meterNumber.trim(),
         serial_number: serialNumber.trim(),
         type: meterType,
@@ -874,6 +887,24 @@ function MeterDialog({
               {landlords.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-agent">
+              Agent
+            </label>
+            <select
+              id="meter-agent"
+              value={agentId}
+              onChange={(e) => setAgentId(e.target.value)}
+              className={field}
+            >
+              <option value="">Unassigned</option>
+              {agents.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
                 </option>
               ))}
             </select>
