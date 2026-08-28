@@ -1477,12 +1477,22 @@ function ImportMetersDialog({
           {result && (
             <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-3 text-sm">
               <p className="font-semibold">
-                {result.imported} imported · {result.failed} skipped
+                {result.imported} imported · {result.updated} updated · {result.skipped} skipped ·{" "}
+                {result.failed} failed
               </p>
+              {result.duplicates.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                  {result.duplicates.map((d) => (
+                    <li key={`dup-${d.row}-${d.meter_number}`}>
+                      Row {d.row} ({d.meter_number} / {d.serial_number}): {d.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {result.errors.length > 0 && (
                 <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-destructive">
-                  {result.errors.map((e) => (
-                    <li key={`${e.row}-${e.meter_number}`}>
+                  {result.errors.map((e, i) => (
+                    <li key={`${e.row}-${e.meter_number}-${i}`}>
                       Row {e.row}
                       {e.meter_number ? ` (${e.meter_number})` : ""}: {e.message}
                     </li>
@@ -1505,15 +1515,21 @@ function ImportMetersDialog({
           {!result && (
             <button
               type="button"
-              disabled={!rows.length || importMutation.isPending}
+              disabled={
+                !rows.length ||
+                importMutation.isPending ||
+                (dupMode === "update" && !confirmUpdate)
+              }
               onClick={() => importMutation.mutate()}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {importMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              Import {rows.length || ""} meter{rows.length === 1 ? "" : "s"}
+              {dupMode === "update" ? "Import & update" : "Import"} {rows.length || ""} meter
+              {rows.length === 1 ? "" : "s"}
             </button>
           )}
         </div>
+
       </div>
     </div>
   );
