@@ -2021,11 +2021,45 @@ function PropertyDetailPage() {
                     </dd>
                   </div>
                 </dl>
-                {removePreview.labels.length > 0 && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Units: {removePreview.labels.join(", ")}
-                    {removePreview.willRemove > removePreview.labels.length ? " …" : ""}
-                  </p>
+                {removePreview.items.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Units to be removed ({removePreview.items.length})
+                    </p>
+                    <div className="max-h-64 overflow-auto rounded-lg border border-border">
+                      <table className="w-full min-w-[520px] text-left text-xs">
+                        <thead className="sticky top-0 bg-muted/60 text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">Unit</th>
+                            <th className="px-3 py-2 font-semibold">Type</th>
+                            <th className="px-3 py-2 font-semibold">Floor</th>
+                            <th className="px-3 py-2 font-semibold">Status</th>
+                            <th className="px-3 py-2 font-semibold">Meters (E / W / G)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {removePreview.items.map((u) => (
+                            <tr key={u.id} className="border-t border-border">
+                              <td className="px-3 py-2 font-medium text-foreground">
+                                {u.unit_number}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {u.unit_type || "—"}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">{u.floor || "—"}</td>
+                              <td className="px-3 py-2 capitalize text-muted-foreground">
+                                {u.status}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {u.electricity_meter_no || "—"} / {u.water_meter_no || "—"} /{" "}
+                                {u.gas_meter_no || "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
               </div>
 
