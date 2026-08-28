@@ -1142,7 +1142,7 @@ export const listMeters = createServerFn({ method: "GET" })
     const { data: units, error } = await supabase
       .from("units")
       .select(
-        "id, property_id, unit_number, unit_type, floor, status, electricity_meter_no, water_meter_no, gas_meter_no",
+        "id, property_id, unit_number, unit_type, floor, status, electricity_meter_no, water_meter_no, gas_meter_no, electricity_meter_active, water_meter_active, gas_meter_active",
       )
       .order("unit_number", { ascending: true });
     if (error) throw new Error(error.message);
@@ -1184,6 +1184,7 @@ export const listMeters = createServerFn({ method: "GET" })
       landlord_name: string | null;
       type: "electricity" | "water" | "gas";
       serial: string;
+      active: boolean;
     };
 
     const meters: Meter[] = [];
@@ -1198,14 +1199,15 @@ export const listMeters = createServerFn({ method: "GET" })
         property_name: (prop?.name as string) ?? "—",
         landlord_name: (landlord?.name as string) ?? (landlord?.email as string) ?? null,
       };
-      const entries: [Meter["type"], string | null][] = [
-        ["electricity", u.electricity_meter_no],
-        ["water", u.water_meter_no],
-        ["gas", u.gas_meter_no],
+      const anyUnit = u as unknown as Record<string, unknown>;
+      const entries: [Meter["type"], string | null, boolean][] = [
+        ["electricity", u.electricity_meter_no, anyUnit["electricity_meter_active"] !== false],
+        ["water", u.water_meter_no, anyUnit["water_meter_active"] !== false],
+        ["gas", u.gas_meter_no, anyUnit["gas_meter_active"] !== false],
       ];
-      for (const [type, serial] of entries) {
+      for (const [type, serial, active] of entries) {
         if (serial && String(serial).trim()) {
-          meters.push({ ...base, key: `${u.id}-${type}`, type, serial: String(serial).trim() });
+          meters.push({ ...base, key: `${u.id}-${type}`, type, serial: String(serial).trim(), active });
         }
       }
     }
