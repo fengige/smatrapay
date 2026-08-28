@@ -1016,14 +1016,12 @@ function MeterDialog({
           </button>
           <button
             type="button"
-            disabled={
-              mutation.isPending || !vendorId.trim() || !meterNumber.trim() || !serialNumber.trim()
-            }
+            disabled={mutation.isPending || hasErrors}
             onClick={() => mutation.mutate()}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            Save Meter
+            {isEdit ? "Save Changes" : "Save Meter"}
           </button>
         </div>
       </div>
