@@ -1844,6 +1844,12 @@ function PropertyDetailPage() {
           </div>
         </Modal>
       )}
+
+      <AddressEditDialog
+        property={property}
+        open={addressEditOpen}
+        onOpenChange={setAddressEditOpen}
+      />
     </PortalLayout>
   );
 }
