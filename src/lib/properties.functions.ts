@@ -849,7 +849,10 @@ export const restoreBulkUnits = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase, userId } = context;
 
-    const rows = data.units.map((u) => ({ ...u, property_id: data.property_id }));
+    const rows: Record<string, any>[] = data.units.map((u) => ({
+      ...(u as Record<string, any>),
+      property_id: data.property_id,
+    }));
     const { error } = await supabase.from("units").insert(rows as never);
     if (error) throw new Error(error.message);
     await adjustPropertyUnitCount(supabase, data.property_id, rows.length, userId);
