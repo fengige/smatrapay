@@ -272,8 +272,16 @@ export function PropertyForm({
         next["landlord_id"] = "A landlord is required when units are greater than 0";
       }
     }
-    if (index === 2 && values.postal_code && values.postal_code.trim().length > 30)
-      next["postal_code"] = "Postal code is too long";
+    if (index === 2) {
+      if (!values.country.trim()) next["country"] = "Country is required";
+      if (!values.state.trim()) {
+        next["state"] = "State / County is required";
+      } else if (values.country && STATE_MAP[values.country] && !STATE_MAP[values.country].includes(values.state)) {
+        next["state"] = `Please select a valid state/county for ${values.country}`;
+      }
+      if (values.postal_code && values.postal_code.trim().length > 30)
+        next["postal_code"] = "Postal code is too long";
+    }
     return next;
   };
 
