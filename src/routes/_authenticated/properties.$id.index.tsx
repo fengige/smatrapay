@@ -486,19 +486,37 @@ function PropertyDetailPage() {
     onError: (err: Error) => toast.error(err.message || "Could not preview removal"),
   });
 
+  const restoreUnits = useMutation({
+    mutationFn: (units: Record<string, any>[]) =>
+      runRestoreUnits({ data: { property_id: id, units } } as never),
+    onSuccess: async (res: any) => {
+      toast.success(`${res.restored} unit${res.restored === 1 ? "" : "s"} restored`);
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not restore units"),
+  });
+
   const bulkRemove = useMutation({
     mutationFn: () =>
       runBulkRemove({
         data: { property_id: id, count: Number(removeCount) },
       } as never),
     onSuccess: async (res: any) => {
+      const snapshot = (res.snapshot ?? []) as Record<string, any>[];
       toast.success(`${res.removed} unit${res.removed === 1 ? "" : "s"} removed`, {
+        duration: 15000,
         description: [
           res.firstLabel ? `${res.firstLabel} … ${res.lastLabel}` : null,
           res.blocked ? `${res.blocked} occupied/assigned unit(s) left untouched` : null,
         ]
           .filter(Boolean)
           .join(" · "),
+        action: snapshot.length
+          ? {
+              label: "Undo",
+              onClick: () => restoreUnits.mutate(snapshot),
+            }
+          : undefined,
       });
       closeRemove();
       await invalidate();
