@@ -1263,16 +1263,22 @@ function ImportMetersDialog({
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [dupMode, setDupMode] = useState<"reject" | "skip" | "update">("reject");
+  const [confirmUpdate, setConfirmUpdate] = useState(false);
   const [result, setResult] = useState<{
     imported: number;
+    updated: number;
+    skipped: number;
     failed: number;
     errors: { row: number; meter_number: string; message: string }[];
+    duplicates: { row: number; meter_number: string; serial_number: string; reason: string }[];
   } | null>(null);
 
   const importMutation = useMutation({
     mutationFn: async () =>
       runImport({
         data: {
+          duplicate_mode: dupMode,
           rows: rows.map((r, i) => ({
             row: i + 2,
             meter_number: r["meter_number"] ?? "",
@@ -1296,10 +1302,13 @@ function ImportMetersDialog({
       setResult(res);
       await onImported();
       if (res.imported) toast.success(`${res.imported} meter${res.imported === 1 ? "" : "s"} imported`);
-      if (res.failed) toast.error(`${res.failed} row${res.failed === 1 ? "" : "s"} skipped`);
+      if (res.updated) toast.success(`${res.updated} existing meter${res.updated === 1 ? "" : "s"} updated`);
+      if (res.skipped) toast.message(`${res.skipped} duplicate row${res.skipped === 1 ? "" : "s"} skipped`);
+      if (res.failed) toast.error(`${res.failed} row${res.failed === 1 ? "" : "s"} failed`);
     },
     onError: (err: Error) => toast.error(err.message || "Import failed"),
   });
+
 
   const onFile = async (file: File) => {
     setResult(null);
