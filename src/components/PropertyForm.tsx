@@ -276,8 +276,11 @@ export function PropertyForm({
       if (!values.country.trim()) next["country"] = "Country is required";
       if (!values.state.trim()) {
         next["state"] = "State / County is required";
-      } else if (values.country && STATE_MAP[values.country] && !STATE_MAP[values.country].includes(values.state)) {
-        next["state"] = `Please select a valid state/county for ${values.country}`;
+      } else if (values.country) {
+        const states = STATE_MAP[values.country];
+        if (states && !states.includes(values.state)) {
+          next["state"] = `Please select a valid state/county for ${values.country}`;
+        }
       }
       if (values.postal_code && values.postal_code.trim().length > 30)
         next["postal_code"] = "Postal code is too long";
