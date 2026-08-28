@@ -43,6 +43,7 @@ import {
   deleteProperty,
   deleteUnit,
   previewBulkRemoveUnits,
+  restoreBulkUnits,
   endAssignment,
   getAddressAuditLogs,
   getProperty,
@@ -304,6 +305,7 @@ function PropertyDetailPage() {
   const runBulkPreview = useServerFn(previewBulkUnits);
   const runBulkRemove = useServerFn(deleteBulkUnits);
   const runBulkRemovePreview = useServerFn(previewBulkRemoveUnits);
+  const runRestoreUnits = useServerFn(restoreBulkUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -339,6 +341,16 @@ function PropertyDetailPage() {
     firstLabel: string | null;
     lastLabel: string | null;
     labels: string[];
+    items: {
+      id: string;
+      unit_number: string;
+      unit_type: string | null;
+      floor: string | null;
+      status: string;
+      electricity_meter_no: string | null;
+      water_meter_no: string | null;
+      gas_meter_no: string | null;
+    }[];
   }>(null);
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -485,19 +497,37 @@ function PropertyDetailPage() {
     onError: (err: Error) => toast.error(err.message || "Could not preview removal"),
   });
 
+  const restoreUnits = useMutation({
+    mutationFn: (units: Record<string, any>[]) =>
+      runRestoreUnits({ data: { property_id: id, units } } as never),
+    onSuccess: async (res: any) => {
+      toast.success(`${res.restored} unit${res.restored === 1 ? "" : "s"} restored`);
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not restore units"),
+  });
+
   const bulkRemove = useMutation({
     mutationFn: () =>
       runBulkRemove({
         data: { property_id: id, count: Number(removeCount) },
       } as never),
     onSuccess: async (res: any) => {
+      const snapshot = (res.snapshot ?? []) as Record<string, any>[];
       toast.success(`${res.removed} unit${res.removed === 1 ? "" : "s"} removed`, {
+        duration: 15000,
         description: [
           res.firstLabel ? `${res.firstLabel} … ${res.lastLabel}` : null,
           res.blocked ? `${res.blocked} occupied/assigned unit(s) left untouched` : null,
         ]
           .filter(Boolean)
           .join(" · "),
+        action: snapshot.length
+          ? {
+              label: "Undo",
+              onClick: () => restoreUnits.mutate(snapshot),
+            }
+          : undefined,
       });
       closeRemove();
       await invalidate();
@@ -1123,7 +1153,16 @@ function PropertyDetailPage() {
                           const actor = addressLogsQuery.data?.actors.find(
                             (a) => a.id === log.actor_id,
                           );
-                          const changes = (log.changes ?? {}) as Record<
+                          const raw = (log.changes ?? {}) as Record<string, any>;
+                          const isUnitEvent =
+                            log.action === "units_bulk_remove" ||
+                            log.action === "units_bulk_restore";
+                          const removed = log.action === "units_bulk_remove";
+                          const unitCount = raw["units_removed"] ?? raw["units_restored"] ?? 0;
+                          const unitNumbers: string[] = Array.isArray(raw["unit_numbers"])
+                            ? raw["unit_numbers"]
+                            : [];
+                          const changes = raw as Record<
                             string,
                             { old: string | null; new: string | null }
                           >;
@@ -1140,23 +1179,40 @@ function PropertyDetailPage() {
                                   {new Date(log.created_at).toLocaleString()}
                                 </span>
                               </div>
-                              <ul className="mt-2 space-y-1">
-                                {Object.entries(changes).map(([field, diff]) => (
-                                  <li key={field} className="text-xs text-muted-foreground">
-                                    <span className="font-medium text-foreground capitalize">
-                                      {field.replace(/_/g, " ")}
-                                    </span>
-                                    {" changed from "}
+                              {isUnitEvent ? (
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                  <p>
                                     <span className="font-medium text-foreground">
-                                      {diff.old || "—"}
-                                    </span>
-                                    {" to "}
-                                    <span className="font-medium text-foreground">
-                                      {diff.new || "—"}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
+                                      {removed ? "Removed" : "Restored"} {unitCount} unit
+                                      {unitCount === 1 ? "" : "s"}
+                                    </span>{" "}
+                                    in bulk
+                                  </p>
+                                  {unitNumbers.length > 0 && (
+                                    <p className="mt-1 break-words">
+                                      Units: {unitNumbers.join(", ")}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <ul className="mt-2 space-y-1">
+                                  {Object.entries(changes).map(([field, diff]) => (
+                                    <li key={field} className="text-xs text-muted-foreground">
+                                      <span className="font-medium text-foreground capitalize">
+                                        {field.replace(/_/g, " ")}
+                                      </span>
+                                      {" changed from "}
+                                      <span className="font-medium text-foreground">
+                                        {diff?.old || "—"}
+                                      </span>
+                                      {" to "}
+                                      <span className="font-medium text-foreground">
+                                        {diff?.new || "—"}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </li>
                           );
                         })}
@@ -1991,11 +2047,45 @@ function PropertyDetailPage() {
                     </dd>
                   </div>
                 </dl>
-                {removePreview.labels.length > 0 && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Units: {removePreview.labels.join(", ")}
-                    {removePreview.willRemove > removePreview.labels.length ? " …" : ""}
-                  </p>
+                {removePreview.items.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Units to be removed ({removePreview.items.length})
+                    </p>
+                    <div className="max-h-64 overflow-auto rounded-lg border border-border">
+                      <table className="w-full min-w-[520px] text-left text-xs">
+                        <thead className="sticky top-0 bg-muted/60 text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">Unit</th>
+                            <th className="px-3 py-2 font-semibold">Type</th>
+                            <th className="px-3 py-2 font-semibold">Floor</th>
+                            <th className="px-3 py-2 font-semibold">Status</th>
+                            <th className="px-3 py-2 font-semibold">Meters (E / W / G)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {removePreview.items.map((u) => (
+                            <tr key={u.id} className="border-t border-border">
+                              <td className="px-3 py-2 font-medium text-foreground">
+                                {u.unit_number}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {u.unit_type || "—"}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">{u.floor || "—"}</td>
+                              <td className="px-3 py-2 capitalize text-muted-foreground">
+                                {u.status}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {u.electricity_meter_no || "—"} / {u.water_meter_no || "—"} /{" "}
+                                {u.gas_meter_no || "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
               </div>
 
