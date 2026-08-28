@@ -324,6 +324,7 @@ function PropertyDetailPage() {
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addressEditOpen, setAddressEditOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(
     success === "created" ? "Property created successfully." : success === "updated" ? "Property updated successfully." : null,
   );
