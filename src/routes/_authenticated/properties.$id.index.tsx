@@ -18,6 +18,7 @@ import {
   Loader2,
   Mail,
   MapPin,
+  Minus,
   MoreVertical,
   Pencil,
   Phone,
@@ -38,8 +39,10 @@ import {
   createBulkUnits,
   previewBulkUnits,
   deleteAssignment,
+  deleteBulkUnits,
   deleteProperty,
   deleteUnit,
+  previewBulkRemoveUnits,
   endAssignment,
   getAddressAuditLogs,
   getProperty,
@@ -299,6 +302,8 @@ function PropertyDetailPage() {
   const removeUnit = useServerFn(deleteUnit);
   const runBulkCreate = useServerFn(createBulkUnits);
   const runBulkPreview = useServerFn(previewBulkUnits);
+  const runBulkRemove = useServerFn(deleteBulkUnits);
+  const runBulkRemovePreview = useServerFn(previewBulkRemoveUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -322,6 +327,18 @@ function PropertyDetailPage() {
     lastLabel: string | null;
     appendFirstLabel: string | null;
     appendLastLabel: string | null;
+  }>(null);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeStep, setRemoveStep] = useState<"form" | "confirm">("form");
+  const [removeCount, setRemoveCount] = useState("1");
+  const [removePreview, setRemovePreview] = useState<null | {
+    total: number;
+    blocked: number;
+    removableCount: number;
+    willRemove: number;
+    firstLabel: string | null;
+    lastLabel: string | null;
+    labels: string[];
   }>(null);
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -447,6 +464,45 @@ function PropertyDetailPage() {
       await invalidate();
     },
     onError: (err: Error) => toast.error(err.message || "Could not bulk-create units"),
+  });
+
+  const closeRemove = () => {
+    setRemoveOpen(false);
+    setRemoveStep("form");
+    setRemoveCount("1");
+    setRemovePreview(null);
+  };
+
+  const removePreviewMutation = useMutation({
+    mutationFn: () =>
+      runBulkRemovePreview({
+        data: { property_id: id, count: Number(removeCount) },
+      } as never),
+    onSuccess: (res: any) => {
+      setRemovePreview(res);
+      setRemoveStep("confirm");
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not preview removal"),
+  });
+
+  const bulkRemove = useMutation({
+    mutationFn: () =>
+      runBulkRemove({
+        data: { property_id: id, count: Number(removeCount) },
+      } as never),
+    onSuccess: async (res: any) => {
+      toast.success(`${res.removed} unit${res.removed === 1 ? "" : "s"} removed`, {
+        description: [
+          res.firstLabel ? `${res.firstLabel} … ${res.lastLabel}` : null,
+          res.blocked ? `${res.blocked} occupied/assigned unit(s) left untouched` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
+      closeRemove();
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not bulk-remove units"),
   });
 
   const propertyDelete = useMutation({
@@ -974,10 +1030,15 @@ function PropertyDetailPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setUnitForm({ ...emptyUnitForm, open: true })}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    onClick={() => {
+                      setRemoveStep("form");
+                      setRemovePreview(null);
+                      setRemoveCount("1");
+                      setRemoveOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-destructive px-3.5 py-2 text-sm font-semibold text-destructive-foreground hover:opacity-90"
                   >
-                    <Plus className="size-4" /> Add Unit
+                    <Minus className="size-4" /> Remove Bulk Units
                   </button>
                 </>
               )}
@@ -1196,7 +1257,7 @@ function PropertyDetailPage() {
                           </p>
                           {!term && actualUnitCount === 0 && configuredUnitCount != null && configuredUnitCount > 0 && (
                             <p className="mt-1 text-xs text-muted-foreground">
-                              Use “Add Unit” to create the expected unit records.
+                              Use “Bulk Add Units” to create the expected unit records.
                             </p>
                           )}
                         </td>
@@ -1845,6 +1906,136 @@ function PropertyDetailPage() {
                   {bulkCreate.isPending && <Loader2 className="size-4 animate-spin" />}
                   Confirm & create{" "}
                   {bulkMode === "append" ? Number(bulkForm.count || 0) : bulkPreview.willCreate} units
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {removeOpen && (
+        <Modal
+          title={removeStep === "confirm" ? "Confirm bulk removal" : "Remove Bulk Units"}
+          onClose={() => !bulkRemove.isPending && !removePreviewMutation.isPending && closeRemove()}
+        >
+          <form
+            className={`space-y-4 ${removeStep === "confirm" ? "hidden" : ""}`}
+            onSubmit={(e) => {
+              e.preventDefault();
+              const count = Number(removeCount);
+              if (!Number.isInteger(count) || count < 1 || count > 1000) {
+                toast.error("How many must be a number between 1 and 1000");
+                return;
+              }
+              removePreviewMutation.mutate();
+            }}
+          >
+            <p className="text-sm text-muted-foreground">
+              Remove multiple units at once. Units are removed starting from the highest unit
+              numbers. Occupied units and units with an active assignment are never removed.
+            </p>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Remove from
+              </label>
+              <select disabled className={inputClass}>
+                <option>{property?.["name"] ?? "This property"}</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                How many
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                className={inputClass}
+                value={removeCount}
+                onChange={(e) => setRemoveCount(e.target.value)}
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                This property currently has {actualUnitCount} unit
+                {actualUnitCount === 1 ? "" : "s"}.
+              </p>
+            </div>
+            <button
+              type="submit"
+              disabled={removePreviewMutation.isPending || actualUnitCount === 0}
+              aria-busy={removePreviewMutation.isPending}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {removePreviewMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+              Review removal of {Number(removeCount || 0) > 0 ? removeCount : "0"} units
+            </button>
+          </form>
+
+          {removeStep === "confirm" && removePreview && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-background p-4 text-sm">
+                <p className="font-semibold text-foreground">
+                  {removePreview.willRemove} unit(s) will be permanently removed from{" "}
+                  {property?.["name"] ?? "this property"}
+                </p>
+                <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Range</dt>
+                    <dd className="text-foreground">
+                      {removePreview.firstLabel ?? "—"} … {removePreview.lastLabel ?? "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold uppercase tracking-wide">Remaining after</dt>
+                    <dd className="text-foreground">
+                      {removePreview.total - removePreview.willRemove}
+                    </dd>
+                  </div>
+                </dl>
+                {removePreview.labels.length > 0 && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Units: {removePreview.labels.join(", ")}
+                    {removePreview.willRemove > removePreview.labels.length ? " …" : ""}
+                  </p>
+                )}
+              </div>
+
+              {removePreview.blocked > 0 && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                  <p className="font-semibold text-amber-700">
+                    {removePreview.blocked} unit(s) are occupied or actively assigned
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700/90">
+                    They will be left untouched. End their assignments first if you need to remove
+                    them.
+                  </p>
+                </div>
+              )}
+
+              {removePreview.willRemove < Number(removeCount) && removePreview.willRemove > 0 && (
+                <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                  Only {removePreview.willRemove} of the requested {removeCount} unit(s) are
+                  removable right now.
+                </div>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={bulkRemove.isPending}
+                  onClick={() => setRemoveStep("form")}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={bulkRemove.isPending || removePreview.willRemove === 0}
+                  aria-busy={bulkRemove.isPending}
+                  onClick={() => bulkRemove.mutate()}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                >
+                  {bulkRemove.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Confirm & remove {removePreview.willRemove} units
                 </button>
               </div>
             </div>

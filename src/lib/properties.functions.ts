@@ -680,6 +680,116 @@ export const deleteUnit = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const bulkRemoveInput = z.object({
+  property_id: uuid,
+  count: z.number().int().min(1).max(1000),
+});
+
+function unitNumberSortValue(unitNumber: string) {
+  const match = unitNumber.match(/(\d+)\s*$/);
+  return {
+    prefix: match ? unitNumber.slice(0, match.index) : unitNumber,
+    num: match ? Number(match[1]) : Number.NaN,
+  };
+}
+
+function compareUnitNumbersDesc(a: string, b: string) {
+  const pa = unitNumberSortValue(a);
+  const pb = unitNumberSortValue(b);
+  const prefixCmp = pb.prefix.localeCompare(pa.prefix);
+  if (prefixCmp !== 0) return prefixCmp;
+  if (!Number.isNaN(pa.num) && !Number.isNaN(pb.num) && pa.num !== pb.num) {
+    return pb.num - pa.num;
+  }
+  return b.localeCompare(a);
+}
+
+async function selectRemovableUnits(
+  supabase: any,
+  propertyId: string,
+  count: number,
+) {
+  const { data: units, error } = await supabase
+    .from("units")
+    .select("id, unit_number, status")
+    .eq("property_id", propertyId);
+  if (error) throw new Error(error.message);
+  const all = (units ?? []) as { id: string; unit_number: string; status: string }[];
+
+  const unitIds = all.map((u) => u.id);
+  let activeUnitIds = new Set<string>();
+  if (unitIds.length) {
+    const { data: active, error: actErr } = await supabase
+      .from("unit_assignments")
+      .select("unit_id")
+      .in("unit_id", unitIds)
+      .is("end_date", null);
+    if (actErr) throw new Error(actErr.message);
+    activeUnitIds = new Set(
+      ((active ?? []) as { unit_id: string }[]).map((a) => a.unit_id),
+    );
+  }
+
+  const removable = all
+    .filter((u) => !activeUnitIds.has(u.id) && u.status !== "occupied")
+    .sort((a, b) => compareUnitNumbersDesc(a.unit_number, b.unit_number));
+
+  return {
+    total: all.length,
+    blocked: all.length - removable.length,
+    selected: removable.slice(0, count),
+    removableCount: removable.length,
+  };
+}
+
+export const previewBulkRemoveUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkRemoveInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const res = await selectRemovableUnits(context.supabase, data.property_id, data.count);
+    const labels = res.selected.map((u) => u.unit_number);
+    return {
+      total: res.total,
+      blocked: res.blocked,
+      removableCount: res.removableCount,
+      willRemove: res.selected.length,
+      firstLabel: labels[labels.length - 1] ?? null,
+      lastLabel: labels[0] ?? null,
+      labels: labels.slice(0, 20),
+    };
+  });
+
+export const deleteBulkUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkRemoveInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    const res = await selectRemovableUnits(supabase, data.property_id, data.count);
+    if (!res.selected.length) {
+      throw new Error(
+        res.total
+          ? "No removable units — every unit is occupied or has an active assignment."
+          : "This property has no units to remove.",
+      );
+    }
+
+    const ids = res.selected.map((u) => u.id);
+    const { error } = await supabase.from("units").delete().in("id", ids);
+    if (error) throw new Error(error.message);
+    await adjustPropertyUnitCount(supabase, data.property_id, -ids.length, userId);
+
+    const labels = res.selected.map((u) => u.unit_number);
+    return {
+      removed: ids.length,
+      blocked: res.blocked,
+      firstLabel: labels[labels.length - 1] ?? null,
+      lastLabel: labels[0] ?? null,
+    };
+  });
+
 function overlaps(
   aStart: string,
   aEnd: string | null,
