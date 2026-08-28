@@ -11,6 +11,7 @@ import {
   Droplets,
   Flame,
   Gauge,
+  Pencil,
   Loader2,
   Plus,
   RefreshCw,
@@ -22,7 +23,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { addMeter, bulkMeterAction, listMeters } from "@/lib/meters.functions";
+import {
+  addMeter,
+  bulkMeterAction,
+  listMeters,
+  updateMeter,
+  type MeterRow,
+} from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 const DEFAULT_LIMIT = 10;
@@ -111,7 +118,7 @@ function MetersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
-  const [editing, setEditing] = useState<(typeof meterRowType)["_t"] | null>(null);
+  const [editing, setEditing] = useState<MeterRow | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
 
@@ -439,25 +446,28 @@ function MetersPage() {
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
                   <SortHeader label="Status" sortBy="status" />
+                  <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={9} className="px-3 py-8 text-center text-destructive">
+                    <td colSpan={10} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Use “Add Meter” to register one.
                     </td>
                   </tr>
@@ -535,6 +545,16 @@ function MetersPage() {
                           >
                             {m.status}
                           </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setEditing(m)}
+                            aria-label={`Edit meter ${m.meter_number}`}
+                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -646,14 +666,21 @@ function MetersPage() {
         </div>
       )}
 
-      {showAdd && (
-        <AddMeterDialog
+      {(showAdd || editing) && (
+        <MeterDialog
+          meter={editing}
           landlords={landlords}
-          onClose={() => setShowAdd(false)}
-          onSaved={async () => {
+          existing={meters}
+          onClose={() => {
             setShowAdd(false);
+            setEditing(null);
+          }}
+          onSaved={async () => {
+            const wasEdit = Boolean(editing);
+            setShowAdd(false);
+            setEditing(null);
             await queryClient.invalidateQueries({ queryKey: ["meters"] });
-            toast.success("Meter added");
+            toast.success(wasEdit ? "Meter updated" : "Meter added");
           }}
         />
       )}
