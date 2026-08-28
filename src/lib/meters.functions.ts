@@ -201,13 +201,7 @@ export const addMeter = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase } = context;
 
-    const { data: existing, error: exErr } = await supabase
-      .from("meters")
-      .select("id")
-      .eq("meter_number", data.meter_number)
-      .maybeSingle();
-    if (exErr) throw new Error(exErr.message);
-    if (existing) throw new Error(`Meter number ${data.meter_number} already exists`);
+    await assertMeterIdentifiersFree(supabase, data);
 
     const { data: inserted, error } = await supabase
       .from("meters")
@@ -228,10 +222,57 @@ export const addMeter = createServerFn({ method: "POST" })
       } as never)
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === "23505") throw new Error("Meter number or serial number already exists");
+      throw new Error(error.message);
+    }
 
     return { ok: true, id: inserted?.id as string };
   });
+
+export const updateMeter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => meterUpdateInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: current, error: curErr } = await supabase
+      .from("meters")
+      .select("id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (curErr) throw new Error(curErr.message);
+    if (!current) throw new Error("Meter not found");
+
+    await assertMeterIdentifiersFree(supabase, data, data.id);
+
+    const { error } = await supabase
+      .from("meters")
+      .update({
+        vendor_id: data.vendor_id,
+        landlord_id: data.landlord_id ?? null,
+        meter_number: data.meter_number,
+        serial_number: data.serial_number,
+        type: data.type,
+        initial_reading: data.initial_reading,
+        price_per_unit: data.price_per_unit,
+        status: data.status ?? "active",
+        sgc: data.sgc,
+        krn: data.krn,
+        ti: data.ti,
+        ea: data.ea,
+        ken: data.ken,
+      } as never)
+      .eq("id", data.id);
+    if (error) {
+      if (error.code === "23505") throw new Error("Meter number or serial number already exists");
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
 
 const bulkMeterInput = z.object({
   action: z.enum(["delete", "deactivate", "activate"]),
