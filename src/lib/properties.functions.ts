@@ -1088,7 +1088,50 @@ export const addMeter = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const bulkMeterInput = z.object({
+  action: z.enum(["delete", "deactivate", "activate"]),
+  meters: z
+    .array(z.object({ unit_id: uuid, type: z.enum(["electricity", "water", "gas"]) }))
+    .min(1)
+    .max(500),
+});
+
+/** Delete / deactivate / activate many meters at once. */
+export const bulkMeterAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkMeterInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    // Group all changes per unit so each unit is updated once.
+    const perUnit = new Map<string, Record<string, unknown>>();
+    for (const m of data.meters) {
+      const patch = perUnit.get(m.unit_id) ?? {};
+      if (data.action === "delete") {
+        patch[`${m.type}_meter_no`] = null;
+        patch[`${m.type}_meter_active`] = true;
+      } else {
+        patch[`${m.type}_meter_active`] = data.action === "activate";
+      }
+      perUnit.set(m.unit_id, patch);
+    }
+
+    let affected = 0;
+    for (const [unitId, patch] of perUnit) {
+      const { error } = await supabase
+        .from("units")
+        .update({ ...patch, updated_by: userId } as never)
+        .eq("id", unitId);
+      if (error) throw new Error(error.message);
+      affected += 1;
+    }
+
+    return { ok: true, meters: data.meters.length, units: affected };
+  });
+
 /** All meters across units, with property and landlord context. */
+
 
 export const listMeters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
