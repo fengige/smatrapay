@@ -652,12 +652,12 @@ export function PropertyForm({
                 <dd className="mt-1 text-sm font-medium text-foreground">{values.city || "—"}</dd>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">State / County</dt>
-                <dd className="mt-1 text-sm font-medium text-foreground">{values.state || "—"}</dd>
-              </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Country</dt>
                 <dd className="mt-1 text-sm font-medium text-foreground">{values.country || "—"}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">State / County</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{values.state || "—"}</dd>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Postal Code</dt>
