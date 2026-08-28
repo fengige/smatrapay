@@ -28,6 +28,33 @@ export const COMMERCIAL_TYPES = [
   "Land",
 ] as const;
 
+export const COUNTRY_OPTIONS = [
+  "Kenya",
+  "Uganda",
+  "Tanzania",
+  "Rwanda",
+  "Burundi",
+  "Ethiopia",
+  "Somalia",
+  "South Sudan",
+  "Sudan",
+  "Nigeria",
+  "South Africa",
+  "Ghana",
+  "Zambia",
+  "Zimbabwe",
+  "Malawi",
+  "Mozambique",
+  "Botswana",
+  "Namibia",
+  "United Kingdom",
+  "United States",
+  "Canada",
+  "Australia",
+  "India",
+  "United Arab Emirates",
+] as const;
+
 export type PropertyFormValues = {
   property_type: "building" | "zone";
   building_category: "residential" | "commercial" | "";
