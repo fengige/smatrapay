@@ -652,7 +652,11 @@ function AssignedMeters({ unitId }: { unitId: string }) {
     <section className="mt-6 rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-sm font-bold tracking-wide uppercase">Assigned meters</h2>
-        <Link to="/meters" className="text-xs font-semibold text-primary hover:underline">
+        <Link
+          to="/meters"
+          search={{ page: 1, limit: 25, type: "all", landlordId: "all", q: "", status: "all" }}
+          className="text-xs font-semibold text-primary hover:underline"
+        >
           Meter registry
         </Link>
       </div>
