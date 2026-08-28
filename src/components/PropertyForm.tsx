@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ArrowRight, Building2, Check, ClipboardCheck, Loader2, MapPin, Save, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, ChevronDown, ClipboardCheck, Loader2, MapPin, Save, UserRound } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { listLandlords } from "@/lib/properties.functions";
+import { COUNTRY_GROUPS, STATE_MAP } from "@/lib/countries";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 
 const STEPS = [
   { id: "property", label: "Property Details", icon: Building2 },
@@ -28,32 +32,6 @@ export const COMMERCIAL_TYPES = [
   "Land",
 ] as const;
 
-export const COUNTRY_OPTIONS = [
-  "Kenya",
-  "Uganda",
-  "Tanzania",
-  "Rwanda",
-  "Burundi",
-  "Ethiopia",
-  "Somalia",
-  "South Sudan",
-  "Sudan",
-  "Nigeria",
-  "South Africa",
-  "Ghana",
-  "Zambia",
-  "Zimbabwe",
-  "Malawi",
-  "Mozambique",
-  "Botswana",
-  "Namibia",
-  "United Kingdom",
-  "United States",
-  "Canada",
-  "Australia",
-  "India",
-  "United Arab Emirates",
-] as const;
 
 export type PropertyFormValues = {
   property_type: "building" | "zone";
@@ -114,6 +92,128 @@ function Field({
 const inputClass =
   "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none transition-all duration-200 placeholder:text-muted-foreground/70 hover:border-muted-foreground/30 focus:border-primary focus:ring-4 focus:ring-primary/10";
 
+function OptionPicker({
+  value,
+  options,
+  onChange,
+  placeholder = "Select…",
+  searchPlaceholder = "Search…",
+  emptyMessage = "No option found.",
+}: {
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = value || placeholder;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className={cn(
+            inputClass,
+            "flex items-center justify-between text-left",
+            !value && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">{selected}</span>
+          <ChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start">
+        <Command className="w-full">
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option}
+                  value={option}
+                  onSelect={() => {
+                    onChange(option);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 size-4 shrink-0",
+                      value === option ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {option}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function CountryPicker({
+  value,
+  onChange,
+  placeholder = "Select country",
+}: {
+  value: string;
+  onChange: (country: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <OptionPicker
+      value={value}
+      options={COUNTRY_GROUPS.flatMap((g) => g.countries)}
+      onChange={onChange}
+      placeholder={placeholder}
+      searchPlaceholder="Search country…"
+      emptyMessage="No country found."
+    />
+  );
+}
+
+function StatePicker({
+  country,
+  value,
+  onChange,
+  placeholder = "State / County",
+}: {
+  country: string;
+  value: string;
+  onChange: (state: string) => void;
+  placeholder?: string;
+}) {
+  const options = country ? STATE_MAP[country] : undefined;
+  if (!options) {
+    return (
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={inputClass}
+        placeholder={placeholder}
+      />
+    );
+  }
+  return (
+    <OptionPicker
+      value={value}
+      options={options}
+      onChange={onChange}
+      placeholder={`Select ${placeholder.toLowerCase()}`}
+      searchPlaceholder={`Search ${placeholder.toLowerCase()}…`}
+      emptyMessage={`No ${placeholder.toLowerCase()} found.`}
+    />
+  );
+}
+
+
 export function PropertyForm({
   initial,
   submitLabel,
@@ -172,8 +272,19 @@ export function PropertyForm({
         next["landlord_id"] = "A landlord is required when units are greater than 0";
       }
     }
-    if (index === 2 && values.postal_code && values.postal_code.trim().length > 30)
-      next["postal_code"] = "Postal code is too long";
+    if (index === 2) {
+      if (!values.country.trim()) next["country"] = "Country is required";
+      if (!values.state.trim()) {
+        next["state"] = "State / County is required";
+      } else if (values.country) {
+        const states = STATE_MAP[values.country];
+        if (states && !states.includes(values.state)) {
+          next["state"] = `Please select a valid state/county for ${values.country}`;
+        }
+      }
+      if (values.postal_code && values.postal_code.trim().length > 30)
+        next["postal_code"] = "Postal code is too long";
+    }
     return next;
   };
 
@@ -563,24 +674,24 @@ export function PropertyForm({
               className={inputClass}
             />
           </Field>
-          <Field label="Country">
-            <select
+          <Field label="Country *" error={errors["country"]}>
+            <CountryPicker
               value={values.country}
-              onChange={(e) => set("country", e.target.value)}
-              className={inputClass}
-            >
-              {COUNTRY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              onChange={(country) => {
+                set("country", country);
+                const allowed = country ? STATE_MAP[country] : undefined;
+                if (allowed && !allowed.includes(values.state)) {
+                  set("state", "");
+                }
+              }}
+              placeholder="Select country"
+            />
           </Field>
-          <Field label="State / County">
-            <input
+          <Field label="State / County *" error={errors["state"]}>
+            <StatePicker
+              country={values.country}
               value={values.state}
-              onChange={(e) => set("state", e.target.value)}
-              className={inputClass}
+              onChange={(state) => set("state", state)}
             />
           </Field>
           <Field label="Postal code" error={errors["postal_code"]}>
