@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Download,
   Droplets,
-  Eye,
   Flame,
   Gauge,
   Loader2,
@@ -23,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { addMeter, bulkMeterAction, listMeters } from "@/lib/properties.functions";
+import { addMeter, bulkMeterAction, listMeters } from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 const DEFAULT_LIMIT = 10;
@@ -39,9 +38,9 @@ function parseSearch(search: Record<string, unknown>) {
     typeof search["type"] === "string" && (TYPES as readonly string[]).includes(search["type"])
       ? search["type"]
       : "all";
-  const propertyId = typeof search["property"] === "string" ? search["property"] : "all";
+  const landlordId = typeof search["landlord"] === "string" ? search["landlord"] : "all";
   const q = typeof search["q"] === "string" ? search["q"] : "";
-  return { page, limit, type, propertyId, q };
+  return { page, limit, type, landlordId, q };
 }
 
 export const Route = createFileRoute("/_authenticated/meters/")({
@@ -52,12 +51,12 @@ export const Route = createFileRoute("/_authenticated/meters/")({
       {
         name: "description",
         content:
-          "Monitor every electricity, water and gas meter across SmatraPay properties, with unit, property and landlord context.",
+          "Manage the SmatraPay meter registry: vendor, landlord, meter and serial numbers, tariffs and STS key settings.",
       },
       { property: "og:title", content: "Meter Management · SmatraPay" },
       {
         property: "og:description",
-        content: "Search and filter the hardware asset registry of meters by serial, type and property.",
+        content: "Search, filter and maintain every registered electricity, water and gas meter.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -75,30 +74,41 @@ const TYPE_META = {
   gas: { label: "Gas", icon: Flame, tone: "bg-orange-500/12 text-orange-600" },
 } as const;
 
-const statusTone: Record<string, string> = {
-  vacant: "bg-muted text-muted-foreground",
-  occupied: "bg-emerald-500/12 text-emerald-600",
-  maintenance: "bg-amber-500/15 text-amber-600",
-  archived: "bg-destructive/12 text-destructive",
-};
+function typeMeta(type: string) {
+  return TYPE_META[type as keyof typeof TYPE_META] ?? {
+    label: type ? type.charAt(0).toUpperCase() + type.slice(1) : "Other",
+    icon: Gauge,
+    tone: "bg-muted text-muted-foreground",
+  };
+}
 
-type SortKey = "serial" | "type" | "unit_number" | "property_name" | "unit_status";
+const money = (n: number) =>
+  new Intl.NumberFormat("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+type SortKey =
+  | "meter_number"
+  | "serial_number"
+  | "type"
+  | "vendor_id"
+  | "landlord_name"
+  | "price_per_unit"
+  | "status";
 
 function MetersPage() {
   const queryClient = useQueryClient();
   const fetchMeters = useServerFn(listMeters);
 
-  const { page: currentPage, limit: pageSize, type, propertyId, q: search } = Route.useSearch();
+  const { page: currentPage, limit: pageSize, type, landlordId, q: search } = Route.useSearch();
   const navigate = useNavigate({ from: "/meters/" });
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
     navigate({ search: (prev) => ({ ...prev, page: 1, limit }) });
   const setType = (t: string) => navigate({ search: (prev) => ({ ...prev, page: 1, type: t }) });
-  const setPropertyId = (propertyId: string) =>
-    navigate({ search: (prev) => ({ ...prev, page: 1, propertyId }) });
+  const setLandlordId = (landlordId: string) =>
+    navigate({ search: (prev) => ({ ...prev, page: 1, landlordId }) });
   const setSearch = (q: string) => navigate({ search: (prev) => ({ ...prev, page: 1, q }) });
 
-  const [sortKey, setSortKey] = useState<SortKey>("serial");
+  const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -107,7 +117,7 @@ function MetersPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, type, propertyId]);
+  }, [search, type, landlordId]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["meters"],
@@ -115,29 +125,33 @@ function MetersPage() {
   });
 
   const meters = data?.meters ?? [];
-  const properties = data?.properties ?? [];
-  const units = data?.units ?? [];
+  const landlords = data?.landlords ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return meters.filter((m) => {
       if (type !== "all" && m.type !== type) return false;
-      if (propertyId !== "all" && m.property_id !== propertyId) return false;
+      if (landlordId !== "all" && (m.landlord_id ?? "none") !== landlordId) return false;
       if (!q) return true;
-      return [m.serial, m.unit_number, m.property_name, m.landlord_name ?? ""]
+      return [m.meter_number, m.serial_number, m.vendor_id, m.landlord_name ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [meters, search, type, propertyId]);
+  }, [meters, search, type, landlordId]);
 
   const sortedRows = useMemo(
     () =>
       [...filtered].sort((a, b) => {
-        const av = String(a[sortKey] ?? "").toLowerCase();
-        const bv = String(b[sortKey] ?? "").toLowerCase();
-        if (av === bv) return 0;
-        return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
+        const av = a[sortKey];
+        const bv = b[sortKey];
+        if (typeof av === "number" && typeof bv === "number") {
+          return sortDir === "asc" ? av - bv : bv - av;
+        }
+        const as = String(av ?? "").toLowerCase();
+        const bs = String(bv ?? "").toLowerCase();
+        if (as === bs) return 0;
+        return sortDir === "asc" ? (as > bs ? 1 : -1) : as > bs ? -1 : 1;
       }),
     [filtered, sortKey, sortDir],
   );
@@ -146,30 +160,25 @@ function MetersPage() {
   const page = Math.min(currentPage, totalPages);
   const paged = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
-  const pagedKeys = paged.map((m) => m.key);
-  const allPagedSelected = pagedKeys.length > 0 && pagedKeys.every((k) => selected.includes(k));
-  const toggleRow = (key: string) =>
-    setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const pagedIds = paged.map((m) => m.id);
+  const allPagedSelected = pagedIds.length > 0 && pagedIds.every((k) => selected.includes(k));
+  const toggleRow = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]));
   const togglePage = () =>
     setSelected((prev) =>
       allPagedSelected
-        ? prev.filter((k) => !pagedKeys.includes(k))
-        : [...new Set([...prev, ...pagedKeys])],
+        ? prev.filter((k) => !pagedIds.includes(k))
+        : [...new Set([...prev, ...pagedIds])],
     );
   const selectedMeters = useMemo(
-    () => meters.filter((m) => selected.includes(m.key)),
+    () => meters.filter((m) => selected.includes(m.id)),
     [meters, selected],
   );
 
   const runBulk = useServerFn(bulkMeterAction);
   const bulk = useMutation({
     mutationFn: async (action: "delete" | "deactivate" | "activate") =>
-      runBulk({
-        data: {
-          action,
-          meters: selectedMeters.map((m) => ({ unit_id: m.unit_id, type: m.type })),
-        },
-      } as never),
+      runBulk({ data: { action, ids: selectedMeters.map((m) => m.id) } } as never),
     onSuccess: async (_res, action) => {
       const n = selectedMeters.length;
       setConfirm(null);
@@ -204,14 +213,35 @@ function MetersPage() {
 
   const exportCsv = () => {
     const rows = [
-      ["Meter serial", "Type", "Unit", "Property", "Landlord", "Unit status"],
+      [
+        "Meter number",
+        "Serial number",
+        "Type",
+        "Vendor",
+        "Landlord",
+        "Initial reading",
+        "Price per unit",
+        "Status",
+        "SGC",
+        "KRN",
+        "TI",
+        "EA",
+        "KEN",
+      ],
       ...sortedRows.map((m) => [
-        m.serial,
-        TYPE_META[m.type].label,
-        m.unit_number,
-        m.property_name,
+        m.meter_number,
+        m.serial_number,
+        typeMeta(m.type).label,
+        m.vendor_id,
         m.landlord_name ?? "—",
-        m.unit_status,
+        money(m.initial_reading),
+        money(m.price_per_unit),
+        m.status,
+        m.sgc ?? "",
+        m.krn ?? "",
+        m.ti ?? "",
+        m.ea ?? "",
+        m.ken ?? "",
       ]),
     ];
     const csv = rows
@@ -296,7 +326,7 @@ function MetersPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search serial / unit / property"
+                placeholder="Search meter no / serial / vendor"
                 aria-label="Search meters"
                 className="w-full bg-background px-2.5 py-1.5 text-sm outline-none placeholder:text-muted-foreground/70"
               />
@@ -325,25 +355,26 @@ function MetersPage() {
               ))}
             </select>
             <select
-              value={propertyId}
-              onChange={(e) => setPropertyId(e.target.value)}
-              aria-label="Filter by property"
+              value={landlordId}
+              onChange={(e) => setLandlordId(e.target.value)}
+              aria-label="Filter by landlord"
               className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
             >
-              <option value="all">All properties</option>
-              {properties.map((p: { id: string; name: string }) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
+              <option value="all">All landlords</option>
+              <option value="none">Unassigned</option>
+              {landlords.map((l: { id: string; name: string }) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
                 </option>
               ))}
             </select>
-            {(search || type !== "all" || propertyId !== "all") && (
+            {(search || type !== "all" || landlordId !== "all") && (
               <button
                 type="button"
                 onClick={() => {
                   setSearch("");
                   setType("all");
-                  setPropertyId("all");
+                  setLandlordId("all");
                 }}
                 className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
@@ -354,9 +385,7 @@ function MetersPage() {
 
           {selected.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary/5 px-3 py-2 text-sm">
-              <span className="font-medium text-foreground">
-                {selected.length} selected
-              </span>
+              <span className="font-medium text-foreground">{selected.length} selected</span>
               <button
                 type="button"
                 onClick={() => setConfirm("deactivate")}
@@ -389,7 +418,7 @@ function MetersPage() {
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="w-10 px-3 py-2">
@@ -401,50 +430,58 @@ function MetersPage() {
                       className="size-4 accent-primary"
                     />
                   </th>
-                  <SortHeader label="Meter" sortBy="serial" />
+                  <SortHeader label="Meter no." sortBy="meter_number" />
+                  <SortHeader label="Serial" sortBy="serial_number" />
                   <SortHeader label="Type" sortBy="type" />
-                  <SortHeader label="Unit" sortBy="unit_number" />
-                  <SortHeader label="Property" sortBy="property_name" />
-                  <SortHeader label="Unit status" sortBy="unit_status" />
-                  <th className="px-3 py-2 font-semibold uppercase tracking-wide">Meter state</th>
-                  <th className="px-3 py-2 text-right font-semibold">Actions</th>
+                  <SortHeader label="Vendor" sortBy="vendor_id" />
+                  <SortHeader label="Landlord" sortBy="landlord_name" />
+                  <SortHeader label="Price / unit" sortBy="price_per_unit" />
+                  <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
+                  <SortHeader label="Status" sortBy="status" />
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-destructive">
+                    <td colSpan={9} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
-                      No meters match your filters. Add meter numbers on a unit to see them here.
+                    <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                      No meters match your filters. Use “Add Meter” to register one.
                     </td>
                   </tr>
                 ) : (
                   paged.map((m) => {
-                    const meta = TYPE_META[m.type];
+                    const meta = typeMeta(m.type);
                     const Icon = meta.icon;
+                    const sts = [
+                      m.sgc != null ? `SGC ${m.sgc}` : null,
+                      m.krn != null ? `KRN ${m.krn}` : null,
+                      m.ti != null ? `TI ${m.ti}` : null,
+                      m.ea != null ? `EA ${m.ea}` : null,
+                      m.ken != null ? `KEN ${m.ken}` : null,
+                    ].filter(Boolean);
                     return (
                       <tr
-                        key={m.key}
-                        className={`border-t border-border/70 ${selected.includes(m.key) ? "bg-primary/5" : ""}`}
+                        key={m.id}
+                        className={`border-t border-border/70 ${selected.includes(m.id) ? "bg-primary/5" : ""}`}
                       >
                         <td className="px-3 py-2.5">
                           <input
                             type="checkbox"
-                            aria-label={`Select meter ${m.serial}`}
-                            checked={selected.includes(m.key)}
-                            onChange={() => toggleRow(m.key)}
+                            aria-label={`Select meter ${m.meter_number}`}
+                            checked={selected.includes(m.id)}
+                            onChange={() => toggleRow(m.id)}
                             className="size-4 accent-primary"
                           />
                         </td>
@@ -456,12 +493,17 @@ function MetersPage() {
                               <Icon className="size-4" />
                             </span>
                             <div className="min-w-0">
-                              <div className="truncate font-medium text-foreground">{m.serial}</div>
+                              <div className="truncate font-medium text-foreground">
+                                {m.meter_number}
+                              </div>
                               <div className="truncate text-xs text-muted-foreground">
-                                {m.landlord_name ?? "No landlord"}
+                                Initial {money(m.initial_reading)}
                               </div>
                             </div>
                           </div>
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                          {m.serial_number}
                         </td>
                         <td className="px-3 py-2.5">
                           <span
@@ -471,54 +513,27 @@ function MetersPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
-                          <Link
-                            to="/units/$unitId"
-                            params={{ unitId: m.unit_id }}
-                            className="hover:text-foreground hover:underline"
-                          >
-                            Unit {m.unit_number}
-                          </Link>
+                          {m.vendor_id || "—"}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
-                          <Link
-                            to="/properties/$id"
-                            params={{ id: m.property_id }}
-                            className="hover:text-foreground hover:underline"
-                          >
-                            {m.property_name}
-                          </Link>
+                          {m.landlord_name ?? "Unassigned"}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap text-foreground">
+                          {money(m.price_per_unit)}
+                        </td>
+                        <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                          {sts.length ? sts.join(" · ") : "—"}
                         </td>
                         <td className="px-3 py-2.5">
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                              statusTone[m.unit_status] ?? "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {m.unit_status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                              m.active
+                              m.status === "active"
                                 ? "bg-emerald-500/12 text-emerald-600"
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            {m.active ? "Active" : "Inactive"}
+                            {m.status}
                           </span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center justify-end gap-1">
-                            <Link
-                              to="/units/$unitId"
-                              params={{ unitId: m.unit_id }}
-                              aria-label="View unit"
-                              className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
-                            >
-                              <Eye className="size-3.5" />
-                            </Link>
-                          </div>
                         </td>
                       </tr>
                     );
@@ -590,15 +605,15 @@ function MetersPage() {
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {confirm === "delete"
-                ? "The selected meter serial numbers will be removed from their units. This cannot be undone."
+                ? "The selected meters will be permanently removed from the registry. This cannot be undone."
                 : confirm === "deactivate"
                   ? "The selected meters stay on record but are marked inactive."
                   : "The selected meters will be marked active again."}
             </p>
             <ul className="mt-3 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
               {selectedMeters.slice(0, 20).map((m) => (
-                <li key={m.key}>
-                  {m.serial} · {TYPE_META[m.type].label} · Unit {m.unit_number}
+                <li key={m.id}>
+                  {m.meter_number} · {typeMeta(m.type).label} · {m.serial_number}
                 </li>
               ))}
               {selectedMeters.length > 20 && <li>+{selectedMeters.length - 20} more…</li>}
@@ -632,8 +647,7 @@ function MetersPage() {
 
       {showAdd && (
         <AddMeterDialog
-          properties={properties}
-          units={units}
+          landlords={landlords}
           onClose={() => setShowAdd(false)}
           onSaved={async () => {
             setShowAdd(false);
@@ -669,26 +683,24 @@ function StatCard({
 }
 
 function AddMeterDialog({
-  properties,
-  units,
+  landlords,
   onClose,
   onSaved,
 }: {
-  properties: { id: string; name: string }[];
-  units: { id: string; property_id: string; unit_number: string }[];
+  landlords: { id: string; name: string }[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
   const saveMeter = useServerFn(addMeter);
 
-  const [propertyId, setPropertyId] = useState<string>("");
-  const [unitId, setUnitId] = useState<string>("");
+  const [vendorId, setVendorId] = useState("");
+  const [landlordId, setLandlordId] = useState("");
+  const [meterNumber, setMeterNumber] = useState("");
+  const [serialNumber, setSerialNumber] = useState("");
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">("electricity");
-  const [serial, setSerial] = useState<string>("");
-
-  useEffect(() => {
-    setUnitId("");
-  }, [propertyId]);
+  const [initialReading, setInitialReading] = useState("0");
+  const [pricePerUnit, setPricePerUnit] = useState("0");
+  const [sts, setSts] = useState({ sgc: "", krn: "", ti: "", ea: "", ken: "" });
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -698,27 +710,37 @@ function AddMeterDialog({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const unitChoices = useMemo(
-    () => units.filter((u) => u.property_id === propertyId).sort((a, b) => a.unit_number.localeCompare(b.unit_number)),
-    [units, propertyId],
-  );
-
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!unitId) throw new Error("Please select a unit");
-      if (!serial.trim()) throw new Error("Please enter a meter serial number");
-      await saveMeter({ data: { unit_id: unitId, type: meterType, serial: serial.trim() } } as never);
+      if (!vendorId.trim()) throw new Error("Please enter a vendor");
+      if (!meterNumber.trim()) throw new Error("Please enter a meter number");
+      if (!serialNumber.trim()) throw new Error("Please enter a serial number");
+      await saveMeter({
+        data: {
+          vendor_id: vendorId.trim(),
+          landlord_id: landlordId || null,
+          meter_number: meterNumber.trim(),
+          serial_number: serialNumber.trim(),
+          type: meterType,
+          initial_reading: initialReading,
+          price_per_unit: pricePerUnit,
+          sgc: sts.sgc,
+          krn: sts.krn,
+          ti: sts.ti,
+          ea: sts.ea,
+          ken: sts.ken,
+        },
+      } as never);
     },
-    onSuccess: () => {
-      setSerial("");
-      onSaved();
-    },
+    onSuccess: () => onSaved(),
     onError: (err: Error) => toast.error(err.message || "Could not add meter"),
   });
 
+  const field = "h-11 w-full rounded-xl border bg-background px-3 text-sm";
+
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -726,52 +748,67 @@ function AddMeterDialog({
       aria-modal="true"
       aria-labelledby="add-meter-title"
     >
-      <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
+      <div className="my-8 w-full max-w-lg rounded-2xl border bg-card p-6 shadow-lg">
         <h2 id="add-meter-title" className="text-lg font-bold">
           Add Meter
         </h2>
-        <p className="text-sm text-muted-foreground">Assign a meter serial number to a unit.</p>
+        <p className="text-sm text-muted-foreground">Register a meter in the meter registry.</p>
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-property">
-              Property
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-vendor">
+              Vendor
+            </label>
+            <input
+              id="meter-vendor"
+              value={vendorId}
+              onChange={(e) => setVendorId(e.target.value)}
+              placeholder="e.g. STRON"
+              className={field}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-landlord">
+              Landlord
             </label>
             <select
-              id="meter-property"
-              value={propertyId}
-              onChange={(e) => setPropertyId(e.target.value)}
-              className="h-11 w-full rounded-xl border bg-background px-3 text-sm"
+              id="meter-landlord"
+              value={landlordId}
+              onChange={(e) => setLandlordId(e.target.value)}
+              className={field}
             >
-              <option value="">Select property</option>
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
+              <option value="">Unassigned</option>
+              {landlords.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
                 </option>
               ))}
             </select>
           </div>
-
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-unit">
-              Unit
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-number">
+              Meter Number
             </label>
-            <select
-              id="meter-unit"
-              value={unitId}
-              onChange={(e) => setUnitId(e.target.value)}
-              disabled={!propertyId || unitChoices.length === 0}
-              className="h-11 w-full rounded-xl border bg-background px-3 text-sm disabled:opacity-50"
-            >
-              <option value="">{unitChoices.length ? "Select unit" : "No units available"}</option>
-              {unitChoices.map((u) => (
-                <option key={u.id} value={u.id}>
-                  Unit {u.unit_number}
-                </option>
-              ))}
-            </select>
+            <input
+              id="meter-number"
+              value={meterNumber}
+              onChange={(e) => setMeterNumber(e.target.value)}
+              placeholder="e.g. 01234567890"
+              className={field}
+            />
           </div>
-
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-serial">
+              Serial Number
+            </label>
+            <input
+              id="meter-serial"
+              value={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+              placeholder="e.g. EM-2026-001"
+              className={field}
+            />
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-type">
               Meter Type
@@ -780,28 +817,72 @@ function AddMeterDialog({
               id="meter-type"
               value={meterType}
               onChange={(e) => setMeterType(e.target.value as typeof meterType)}
-              className="h-11 w-full rounded-xl border bg-background px-3 text-sm"
+              className={field}
             >
               <option value="electricity">Electricity</option>
               <option value="water">Water</option>
               <option value="gas">Gas</option>
             </select>
           </div>
-
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-serial">
-              Serial Number
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-price">
+              Price per unit
             </label>
             <input
-              id="meter-serial"
-              type="text"
-              value={serial}
-              onChange={(e) => setSerial(e.target.value)}
-              placeholder="e.g. EM-2026-001"
-              className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              id="meter-price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={pricePerUnit}
+              onChange={(e) => setPricePerUnit(e.target.value)}
+              className={field}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-initial">
+              Initial reading
+            </label>
+            <input
+              id="meter-initial"
+              type="number"
+              step="0.01"
+              min="0"
+              value={initialReading}
+              onChange={(e) => setInitialReading(e.target.value)}
+              className={field}
             />
           </div>
         </div>
+
+        <fieldset className="mt-5 rounded-xl border border-border p-4">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            STS settings (optional)
+          </legend>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {(
+              [
+                ["sgc", "SGC"],
+                ["krn", "KRN"],
+                ["ti", "TI"],
+                ["ea", "EA"],
+                ["ken", "KEN"],
+              ] as const
+            ).map(([key, label]) => (
+              <div key={key}>
+                <label className="mb-1 block text-xs font-medium" htmlFor={`meter-${key}`}>
+                  {label}
+                </label>
+                <input
+                  id={`meter-${key}`}
+                  type="number"
+                  value={sts[key]}
+                  onChange={(e) => setSts((prev) => ({ ...prev, [key]: e.target.value }))}
+                  className="h-10 w-full rounded-lg border bg-background px-2 text-sm"
+                />
+              </div>
+            ))}
+          </div>
+        </fieldset>
 
         <div className="mt-6 flex justify-end gap-3">
           <button
@@ -813,7 +894,9 @@ function AddMeterDialog({
           </button>
           <button
             type="button"
-            disabled={mutation.isPending || !unitId || !serial.trim()}
+            disabled={
+              mutation.isPending || !vendorId.trim() || !meterNumber.trim() || !serialNumber.trim()
+            }
             onClick={() => mutation.mutate()}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
