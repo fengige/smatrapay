@@ -305,6 +305,7 @@ function PropertyDetailPage() {
   const runBulkPreview = useServerFn(previewBulkUnits);
   const runBulkRemove = useServerFn(deleteBulkUnits);
   const runBulkRemovePreview = useServerFn(previewBulkRemoveUnits);
+  const runRestoreUnits = useServerFn(restoreBulkUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
