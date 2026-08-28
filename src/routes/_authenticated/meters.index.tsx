@@ -155,6 +155,7 @@ function MetersPage() {
     return meters.filter((m) => {
       if (type !== "all" && m.type !== type) return false;
       if (landlordId !== "all" && (m.landlord_id ?? "none") !== landlordId) return false;
+      if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (!q) return true;
       return [m.meter_number, m.serial_number, m.vendor_id, m.landlord_name ?? ""]
         .join(" ")
