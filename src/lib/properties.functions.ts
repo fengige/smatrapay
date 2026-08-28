@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { COUNTRY_OPTIONS, STATE_MAP } from "@/lib/countries";
+import { COUNTRY_OPTIONS, STATE_MAP, normalizeCountry, normalizeState } from "@/lib/countries";
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -30,6 +30,11 @@ const propertyInput = z.object({
   number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
   landlord_id: uuid.nullable().optional(),
 })
+  .transform((val) => ({
+    ...val,
+    country: normalizeCountry(val.country),
+    state: val.state == null ? val.state : normalizeState(val.country, val.state) || null,
+  }))
   .superRefine((val, ctx) => {
     if (val.property_type === "building") {
       if (!val.building_category) {
@@ -310,6 +315,11 @@ export const updateProperty = createServerFn({ method: "POST" })
         number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
         landlord_id: uuid.nullable().optional(),
       })
+      .transform((val) => ({
+        ...val,
+        country: val.country == null ? val.country : normalizeCountry(val.country),
+        state: val.state == null ? val.state : normalizeState(val.country, val.state) || null,
+      }))
       .superRefine((val, ctx) => {
         if (val.property_type === "building") {
           if (!val.building_category) {
