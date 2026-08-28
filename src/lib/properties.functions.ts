@@ -704,6 +704,15 @@ function compareUnitNumbersDesc(a: string, b: string) {
   return b.localeCompare(a);
 }
 
+const UNIT_SNAPSHOT_COLUMNS =
+  "id, property_id, unit_number, building, unit_type, bedrooms, floor, status, notes, created_by, updated_by, electricity_meter_no, water_meter_no, gas_meter_no, electricity_meter_active, water_meter_active, gas_meter_active";
+
+type UnitSnapshot = Record<string, any> & {
+  id: string;
+  unit_number: string;
+  status: string;
+};
+
 async function selectRemovableUnits(
   supabase: any,
   propertyId: string,
@@ -711,10 +720,10 @@ async function selectRemovableUnits(
 ) {
   const { data: units, error } = await supabase
     .from("units")
-    .select("id, unit_number, status")
+    .select(UNIT_SNAPSHOT_COLUMNS)
     .eq("property_id", propertyId);
   if (error) throw new Error(error.message);
-  const all = (units ?? []) as { id: string; unit_number: string; status: string }[];
+  const all = (units ?? []) as UnitSnapshot[];
 
   const unitIds = all.map((u) => u.id);
   let activeUnitIds = new Set<string>();
@@ -742,6 +751,34 @@ async function selectRemovableUnits(
   };
 }
 
+function unitItem(u: UnitSnapshot) {
+  return {
+    id: u.id,
+    unit_number: u.unit_number,
+    unit_type: u["unit_type"] ?? null,
+    floor: u["floor"] ?? null,
+    status: u.status,
+    electricity_meter_no: u["electricity_meter_no"] ?? null,
+    water_meter_no: u["water_meter_no"] ?? null,
+    gas_meter_no: u["gas_meter_no"] ?? null,
+  };
+}
+
+async function logUnitsAudit(
+  supabase: any,
+  propertyId: string,
+  actorId: string,
+  action: string,
+  changes: Record<string, unknown>,
+) {
+  await supabase.from("address_audit_logs" as never).insert({
+    property_id: propertyId,
+    actor_id: actorId,
+    action,
+    changes,
+  } as never);
+}
+
 export const previewBulkRemoveUnits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => bulkRemoveInput.parse(data))
@@ -757,6 +794,7 @@ export const previewBulkRemoveUnits = createServerFn({ method: "POST" })
       firstLabel: labels[labels.length - 1] ?? null,
       lastLabel: labels[0] ?? null,
       labels: labels.slice(0, 20),
+      items: res.selected.map(unitItem),
     };
   });
 
@@ -782,12 +820,47 @@ export const deleteBulkUnits = createServerFn({ method: "POST" })
     await adjustPropertyUnitCount(supabase, data.property_id, -ids.length, userId);
 
     const labels = res.selected.map((u) => u.unit_number);
+    await logUnitsAudit(supabase, data.property_id, userId, "units_bulk_remove", {
+      units_removed: ids.length,
+      unit_numbers: labels,
+    });
+
     return {
       removed: ids.length,
       blocked: res.blocked,
       firstLabel: labels[labels.length - 1] ?? null,
       lastLabel: labels[0] ?? null,
+      items: res.selected.map(unitItem),
+      snapshot: res.selected as Record<string, any>[],
     };
+  });
+
+export const restoreBulkUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        property_id: uuid,
+        units: z.array(z.record(z.string(), z.any())).min(1).max(1000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    const rows = data.units.map((u) => ({ ...u, property_id: data.property_id }));
+    const { error } = await supabase.from("units").insert(rows as never);
+    if (error) throw new Error(error.message);
+    await adjustPropertyUnitCount(supabase, data.property_id, rows.length, userId);
+
+    const labels = rows.map((r) => String(r["unit_number"] ?? ""));
+    await logUnitsAudit(supabase, data.property_id, userId, "units_bulk_restore", {
+      units_restored: rows.length,
+      unit_numbers: labels,
+    });
+
+    return { restored: rows.length };
   });
 
 function overlaps(
