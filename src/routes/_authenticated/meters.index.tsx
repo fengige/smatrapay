@@ -1350,8 +1350,10 @@ function ImportMetersDialog({
               Import meters from CSV
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Duplicate meter numbers and serial numbers are validated and rejected on the server.
+              Meter number and serial number uniqueness is validated on the server. Choose how
+              duplicates are handled below.
             </p>
+
           </div>
           <button
             type="button"
