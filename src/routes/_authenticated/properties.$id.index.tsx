@@ -302,6 +302,8 @@ function PropertyDetailPage() {
   const removeUnit = useServerFn(deleteUnit);
   const runBulkCreate = useServerFn(createBulkUnits);
   const runBulkPreview = useServerFn(previewBulkUnits);
+  const runBulkRemove = useServerFn(deleteBulkUnits);
+  const runBulkRemovePreview = useServerFn(previewBulkRemoveUnits);
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
@@ -325,6 +327,18 @@ function PropertyDetailPage() {
     lastLabel: string | null;
     appendFirstLabel: string | null;
     appendLastLabel: string | null;
+  }>(null);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeStep, setRemoveStep] = useState<"form" | "confirm">("form");
+  const [removeCount, setRemoveCount] = useState("1");
+  const [removePreview, setRemovePreview] = useState<null | {
+    total: number;
+    blocked: number;
+    removableCount: number;
+    willRemove: number;
+    firstLabel: string | null;
+    lastLabel: string | null;
+    labels: string[];
   }>(null);
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
