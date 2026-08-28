@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS meters_serial_number_key ON public.meters (serial_number);
