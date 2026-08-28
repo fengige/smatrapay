@@ -17,6 +17,7 @@ import {
   Layers,
   Loader2,
   Mail,
+  MapPin,
   MoreVertical,
   Pencil,
   Phone,
