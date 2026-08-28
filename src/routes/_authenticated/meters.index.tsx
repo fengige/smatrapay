@@ -111,6 +111,7 @@ function MetersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<(typeof meterRowType)["_t"] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
 
