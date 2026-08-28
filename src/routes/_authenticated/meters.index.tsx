@@ -15,13 +15,15 @@ import {
   Loader2,
   Plus,
   RefreshCw,
+  PowerOff,
   Search,
+  Trash2,
   X,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { addMeter, listMeters } from "@/lib/properties.functions";
+import { addMeter, bulkMeterAction, listMeters } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 const DEFAULT_LIMIT = 10;
@@ -99,6 +101,8 @@ function MetersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("serial");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
 
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
@@ -141,6 +145,44 @@ function MetersPage() {
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const page = Math.min(currentPage, totalPages);
   const paged = sortedRows.slice((page - 1) * pageSize, page * pageSize);
+
+  const pagedKeys = paged.map((m) => m.key);
+  const allPagedSelected = pagedKeys.length > 0 && pagedKeys.every((k) => selected.includes(k));
+  const toggleRow = (key: string) =>
+    setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const togglePage = () =>
+    setSelected((prev) =>
+      allPagedSelected
+        ? prev.filter((k) => !pagedKeys.includes(k))
+        : [...new Set([...prev, ...pagedKeys])],
+    );
+  const selectedMeters = useMemo(
+    () => meters.filter((m) => selected.includes(m.key)),
+    [meters, selected],
+  );
+
+  const runBulk = useServerFn(bulkMeterAction);
+  const bulk = useMutation({
+    mutationFn: async (action: "delete" | "deactivate" | "activate") =>
+      runBulk({
+        data: {
+          action,
+          meters: selectedMeters.map((m) => ({ unit_id: m.unit_id, type: m.type })),
+        },
+      } as never),
+    onSuccess: async (_res, action) => {
+      const n = selectedMeters.length;
+      setConfirm(null);
+      setSelected([]);
+      await queryClient.invalidateQueries({ queryKey: ["meters"] });
+      toast.success(
+        action === "delete"
+          ? `${n} meter${n === 1 ? "" : "s"} deleted`
+          : `${n} meter${n === 1 ? "" : "s"} ${action === "activate" ? "activated" : "deactivated"}`,
+      );
+    },
+    onError: (err: Error) => toast.error(err.message || "Bulk action failed"),
+  });
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -310,35 +352,81 @@ function MetersPage() {
             )}
           </div>
 
+          {selected.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary/5 px-3 py-2 text-sm">
+              <span className="font-medium text-foreground">
+                {selected.length} selected
+              </span>
+              <button
+                type="button"
+                onClick={() => setConfirm("deactivate")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
+              >
+                <PowerOff className="size-3.5" /> Deactivate
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirm("activate")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
+              >
+                <Gauge className="size-3.5" /> Activate
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirm("delete")}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground hover:opacity-90"
+              >
+                <Trash2 className="size-3.5" /> Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelected([])}
+                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
+                  <th className="w-10 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all meters on this page"
+                      checked={allPagedSelected}
+                      onChange={togglePage}
+                      className="size-4 accent-primary"
+                    />
+                  </th>
                   <SortHeader label="Meter" sortBy="serial" />
                   <SortHeader label="Type" sortBy="type" />
                   <SortHeader label="Unit" sortBy="unit_number" />
                   <SortHeader label="Property" sortBy="property_name" />
                   <SortHeader label="Unit status" sortBy="unit_status" />
+                  <th className="px-3 py-2 font-semibold uppercase tracking-wide">Meter state</th>
                   <th className="px-3 py-2 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-8 text-center text-destructive">
+                    <td colSpan={8} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Add meter numbers on a unit to see them here.
                     </td>
                   </tr>
@@ -347,7 +435,19 @@ function MetersPage() {
                     const meta = TYPE_META[m.type];
                     const Icon = meta.icon;
                     return (
-                      <tr key={m.key} className="border-t border-border/70">
+                      <tr
+                        key={m.key}
+                        className={`border-t border-border/70 ${selected.includes(m.key) ? "bg-primary/5" : ""}`}
+                      >
+                        <td className="px-3 py-2.5">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select meter ${m.serial}`}
+                            checked={selected.includes(m.key)}
+                            onChange={() => toggleRow(m.key)}
+                            className="size-4 accent-primary"
+                          />
+                        </td>
                         <td className="px-3 py-2.5">
                           <div className="flex min-w-0 items-center gap-2.5">
                             <span
@@ -395,6 +495,17 @@ function MetersPage() {
                             }`}
                           >
                             {m.unit_status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                              m.active
+                                ? "bg-emerald-500/12 text-emerald-600"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {m.active ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td className="px-3 py-2.5">
@@ -462,6 +573,62 @@ function MetersPage() {
           </div>
         </section>
       </div>
+
+      {confirm && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-meter-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !bulk.isPending) setConfirm(null);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
+            <h2 id="bulk-meter-title" className="text-lg font-bold capitalize">
+              {confirm} {selected.length} meter{selected.length === 1 ? "" : "s"}?
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {confirm === "delete"
+                ? "The selected meter serial numbers will be removed from their units. This cannot be undone."
+                : confirm === "deactivate"
+                  ? "The selected meters stay on record but are marked inactive."
+                  : "The selected meters will be marked active again."}
+            </p>
+            <ul className="mt-3 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+              {selectedMeters.slice(0, 20).map((m) => (
+                <li key={m.key}>
+                  {m.serial} · {TYPE_META[m.type].label} · Unit {m.unit_number}
+                </li>
+              ))}
+              {selectedMeters.length > 20 && <li>+{selectedMeters.length - 20} more…</li>}
+            </ul>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={bulk.isPending}
+                onClick={() => setConfirm(null)}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={bulk.isPending}
+                onClick={() => bulk.mutate(confirm)}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+                  confirm === "delete"
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                {bulk.isPending && <Loader2 className="size-4 animate-spin" />}
+                <span className="capitalize">{confirm}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAdd && (
         <AddMeterDialog
