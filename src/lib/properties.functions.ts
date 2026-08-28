@@ -341,11 +341,8 @@ export const updateProperty = createServerFn({ method: "POST" })
             message: "Please select a valid country",
           });
         }
-        if (
-          val.country &&
-          STATE_MAP[val.country] &&
-          (!val.state || !STATE_MAP[val.country].includes(val.state))
-        ) {
+        const states = val.country ? STATE_MAP[val.country] : undefined;
+        if (states && (!val.state || !states.includes(val.state))) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["state"],
