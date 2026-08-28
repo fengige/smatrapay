@@ -108,6 +108,7 @@ export type Database = {
       }
       meters: {
         Row: {
+          agent_id: string | null
           created_at: string
           ea: number | null
           id: string
@@ -126,6 +127,7 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          agent_id?: string | null
           created_at?: string
           ea?: number | null
           id?: string
@@ -144,6 +146,7 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          agent_id?: string | null
           created_at?: string
           ea?: number | null
           id?: string
@@ -162,6 +165,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "meters_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meters_landlord_id_fkey"
             columns: ["landlord_id"]
