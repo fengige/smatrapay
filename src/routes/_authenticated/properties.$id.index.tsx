@@ -466,6 +466,45 @@ function PropertyDetailPage() {
     onError: (err: Error) => toast.error(err.message || "Could not bulk-create units"),
   });
 
+  const closeRemove = () => {
+    setRemoveOpen(false);
+    setRemoveStep("form");
+    setRemoveCount("1");
+    setRemovePreview(null);
+  };
+
+  const removePreviewMutation = useMutation({
+    mutationFn: () =>
+      runBulkRemovePreview({
+        data: { property_id: id, count: Number(removeCount) },
+      } as never),
+    onSuccess: (res: any) => {
+      setRemovePreview(res);
+      setRemoveStep("confirm");
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not preview removal"),
+  });
+
+  const bulkRemove = useMutation({
+    mutationFn: () =>
+      runBulkRemove({
+        data: { property_id: id, count: Number(removeCount) },
+      } as never),
+    onSuccess: async (res: any) => {
+      toast.success(`${res.removed} unit${res.removed === 1 ? "" : "s"} removed`, {
+        description: [
+          res.firstLabel ? `${res.firstLabel} … ${res.lastLabel}` : null,
+          res.blocked ? `${res.blocked} occupied/assigned unit(s) left untouched` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
+      closeRemove();
+      await invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not bulk-remove units"),
+  });
+
   const propertyDelete = useMutation({
     mutationFn: () => removeProperty({ data: { id } } as never),
     onSuccess: () => {
