@@ -21,6 +21,8 @@ export type MeterRow = {
   landlord_name: string | null;
   agent_id: string | null;
   agent_name: string | null;
+  unit_id: string | null;
+  unit_label: string | null;
   meter_number: string;
   serial_number: string;
   type: MeterType | string;
@@ -37,7 +39,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, landlord_id, agent_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
@@ -74,6 +76,7 @@ const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
   landlord_id: uuid.nullable().optional(),
   agent_id: uuid.nullable().optional(),
+  unit_id: uuid.nullable().optional(),
   meter_number: identifier("Meter number"),
   serial_number: identifier("Serial number"),
   type: z.enum(["electricity", "water", "gas"]),
@@ -178,6 +181,20 @@ export const listMeters = createServerFn({ method: "GET" })
       loadOptions("agent", "Unnamed agent"),
     ]);
 
+    // Unit options (with property names) for optionally linking a meter to a unit.
+    const { data: unitRows } = await supabase
+      .from("units")
+      .select("id, unit_number, property_id, properties(name)")
+      .order("unit_number", { ascending: true });
+    const unitOptions = (unitRows ?? []).map((u: any) => ({
+      id: u.id as string,
+      unit_number: (u.unit_number as string) ?? "",
+      property_id: (u.property_id as string) ?? null,
+      property_name: (u.properties?.name as string) ?? null,
+      label: `${u.properties?.name ? `${u.properties.name} · ` : ""}Unit ${u.unit_number}`,
+    }));
+    const unitById = new Map(unitOptions.map((u) => [u.id, u]));
+
     const displayName = (id: string | null) => {
       if (!id) return null;
       const p = personById.get(id);
@@ -191,6 +208,8 @@ export const listMeters = createServerFn({ method: "GET" })
       landlord_name: displayName(r.landlord_id ?? null),
       agent_id: r.agent_id ?? null,
       agent_name: displayName(r.agent_id ?? null),
+      unit_id: r.unit_id ?? null,
+      unit_label: r.unit_id ? (unitById.get(r.unit_id)?.label ?? null) : null,
       meter_number: r.meter_number ?? "",
       serial_number: r.serial_number ?? "",
       type: (r.type ?? "").toLowerCase(),
@@ -206,7 +225,12 @@ export const listMeters = createServerFn({ method: "GET" })
       updated_at: r.updated_at,
     }));
 
-    return { meters, landlords: landlordOptions, agents: agentOptions };
+    return {
+      meters,
+      landlords: landlordOptions,
+      agents: agentOptions,
+      units: unitOptions,
+    };
   });
 
 
@@ -225,6 +249,7 @@ export const addMeter = createServerFn({ method: "POST" })
         vendor_id: data.vendor_id,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
+        unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
         serial_number: data.serial_number,
         type: data.type,
@@ -270,6 +295,7 @@ export const updateMeter = createServerFn({ method: "POST" })
         vendor_id: data.vendor_id,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
+        unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
         serial_number: data.serial_number,
         type: data.type,
@@ -317,4 +343,77 @@ export const bulkMeterAction = createServerFn({ method: "POST" })
     }
 
     return { ok: true, meters: data.ids.length };
+  });
+
+export type MeterAuditEntry = {
+  id: string;
+  action: string;
+  created_at: string;
+  actor_name: string | null;
+  changes: Record<string, { old: unknown; new: unknown }>;
+};
+
+/** Change history for a single meter (reading, price, type, status). */
+export const listMeterAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ meter_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("meter_audit_logs")
+      .select("id, action, changes, created_at, actor_id")
+      .eq("meter_id", data.meter_id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const actorIds = [
+      ...new Set((rows ?? []).map((r: any) => r.actor_id).filter((v: any): v is string => !!v)),
+    ];
+    let actors: any[] = [];
+    if (actorIds.length) {
+      const { data: a } = await supabase.from("users").select("id, name, email").in("id", actorIds);
+      actors = a ?? [];
+    }
+    const actorById = new Map(actors.map((a) => [a.id, a]));
+
+    return {
+      logs: (rows ?? []).map((r: any) => ({
+        id: r.id as string,
+        action: (r.action as string) ?? "update",
+        created_at: r.created_at as string,
+        actor_name: r.actor_id
+          ? ((actorById.get(r.actor_id)?.name as string) ??
+            (actorById.get(r.actor_id)?.email as string) ??
+            null)
+          : null,
+        changes: (r.changes ?? {}) as Record<string, { old: unknown; new: unknown }>,
+      })) satisfies MeterAuditEntry[],
+    };
+  });
+
+/** Meters linked to a specific unit. */
+export const listUnitMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ unit_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("meters")
+      .select(METER_COLUMNS)
+      .eq("unit_id", data.unit_id)
+      .order("type", { ascending: true });
+    if (error) throw new Error(error.message);
+    return {
+      meters: (rows ?? []).map((r: any) => ({
+        id: r.id as string,
+        vendor_id: (r.vendor_id as string) ?? "",
+        meter_number: (r.meter_number as string) ?? "",
+        serial_number: (r.serial_number as string) ?? "",
+        type: ((r.type as string) ?? "").toLowerCase(),
+        initial_reading: Number(r.initial_reading ?? 0),
+        price_per_unit: Number(r.price_per_unit ?? 0),
+        status: ((r.status as string) ?? "active").toLowerCase(),
+      })),
+    };
   });
