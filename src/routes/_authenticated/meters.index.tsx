@@ -1389,6 +1389,60 @@ function ImportMetersDialog({
 
           {parseError && <p className="text-sm text-destructive">{parseError}</p>}
 
+          {!result && (
+            <fieldset className="rounded-xl border border-border p-3">
+              <legend className="px-1 text-xs font-semibold uppercase text-muted-foreground">
+                Duplicate handling
+              </legend>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    ["reject", "Reject", "Fail rows whose meter/serial already exists"],
+                    ["skip", "Skip", "Leave existing meters untouched and ignore those rows"],
+                    ["update", "Update", "Overwrite matching meters with the CSV values"],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <label
+                    key={value}
+                    className={`cursor-pointer rounded-lg border p-2.5 text-xs ${
+                      dupMode === value ? "border-primary bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <input
+                        type="radio"
+                        name="duplicate-mode"
+                        value={value}
+                        checked={dupMode === value}
+                        onChange={() => {
+                          setDupMode(value);
+                          setConfirmUpdate(false);
+                        }}
+                      />
+                      {label}
+                    </span>
+                    <span className="mt-1 block text-muted-foreground">{hint}</span>
+                  </label>
+                ))}
+              </div>
+              {dupMode === "update" && (
+                <label className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-2.5 text-xs text-destructive">
+                  <input
+                    type="checkbox"
+                    checked={confirmUpdate}
+                    onChange={(e) => setConfirmUpdate(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    I confirm that existing meters matching these meter numbers or serial numbers
+                    should be overwritten with the values in this file.
+                  </span>
+                </label>
+              )}
+            </fieldset>
+          )}
+
+
           {rows.length > 0 && !result && (
             <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-left text-xs">
