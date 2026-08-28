@@ -681,9 +681,7 @@ function MetersPage() {
               ))}
               {selectedMeters.length > 20 && <li>+{selectedMeters.length - 20} more…</li>}
             </ul>
-            {isEdit && meter && <MeterHistory meterId={meter.id} />}
-
-        <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 disabled={bulk.isPending}
