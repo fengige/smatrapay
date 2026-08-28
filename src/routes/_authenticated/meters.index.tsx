@@ -855,8 +855,10 @@ function MeterDialog({
               value={vendorId}
               onChange={(e) => setVendorId(e.target.value)}
               placeholder="e.g. STRON"
-              className={field}
+              aria-invalid={Boolean(vendorError)}
+              className={fieldError(vendorError)}
             />
+            {vendorError && <p className="mt-1 text-xs text-destructive">{vendorError}</p>}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-landlord">
@@ -885,8 +887,15 @@ function MeterDialog({
               value={meterNumber}
               onChange={(e) => setMeterNumber(e.target.value)}
               placeholder="e.g. 01234567890"
-              className={field}
+              aria-invalid={Boolean(meterNumberError)}
+              aria-describedby="meter-number-error"
+              className={fieldError(meterNumberError)}
             />
+            {meterNumberError && (
+              <p id="meter-number-error" className="mt-1 text-xs text-destructive">
+                {meterNumberError}
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-serial">
@@ -897,9 +906,31 @@ function MeterDialog({
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
               placeholder="e.g. EM-2026-001"
-              className={field}
+              aria-invalid={Boolean(serialNumberError)}
+              aria-describedby="meter-serial-error"
+              className={fieldError(serialNumberError)}
             />
+            {serialNumberError && (
+              <p id="meter-serial-error" className="mt-1 text-xs text-destructive">
+                {serialNumberError}
+              </p>
+            )}
           </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-status">
+              Status
+            </label>
+            <select
+              id="meter-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
+              className={field}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-type">
               Meter Type
