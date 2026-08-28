@@ -340,6 +340,16 @@ function PropertyDetailPage() {
     firstLabel: string | null;
     lastLabel: string | null;
     labels: string[];
+    items: {
+      id: string;
+      unit_number: string;
+      unit_type: string | null;
+      floor: string | null;
+      status: string;
+      electricity_meter_no: string | null;
+      water_meter_no: string | null;
+      gas_meter_no: string | null;
+    }[];
   }>(null);
   const [assignFor, setAssignFor] = useState<Unit | null>(null);
   const [importOpen, setImportOpen] = useState(false);
