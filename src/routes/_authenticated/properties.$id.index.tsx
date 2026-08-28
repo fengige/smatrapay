@@ -43,6 +43,7 @@ import {
   deleteProperty,
   deleteUnit,
   previewBulkRemoveUnits,
+  restoreBulkUnits,
   endAssignment,
   getAddressAuditLogs,
   getProperty,
