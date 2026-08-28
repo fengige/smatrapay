@@ -1,0 +1,427 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const uuid = z.string().uuid();
+
+async function assertAdmin(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!isAdmin) throw new Error("Admin access required");
+}
+
+export type MeterType = "electricity" | "water" | "gas";
+
+export type MeterRow = {
+  id: string;
+  vendor_id: string;
+  landlord_id: string | null;
+  landlord_name: string | null;
+  agent_id: string | null;
+  agent_name: string | null;
+  unit_id: string | null;
+  unit_label: string | null;
+  meter_number: string;
+  serial_number: string;
+  type: MeterType | string;
+  initial_reading: number;
+  price_per_unit: number;
+  status: string;
+  sgc: number | null;
+  krn: number | null;
+  ti: number | null;
+  ea: number | null;
+  ken: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const METER_COLUMNS =
+  "id, vendor_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
+
+const intOrNull = z
+  .union([z.number().int(), z.string().trim()])
+  .nullable()
+  .optional()
+  .transform((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.trunc(n) : null;
+  });
+
+const numOrZero = z
+  .union([z.number(), z.string().trim()])
+  .nullable()
+  .optional()
+  .transform((v) => {
+    if (v === null || v === undefined || v === "") return 0;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  });
+
+/** Meter / serial identifiers: alphanumeric with dashes, underscores or slashes. */
+const IDENTIFIER_RE = /^[A-Za-z0-9][A-Za-z0-9/_-]*$/;
+
+const identifier = (label: string) =>
+  z
+    .string()
+    .trim()
+    .min(4, `${label} must be at least 4 characters`)
+    .max(64, `${label} must be at most 64 characters`)
+    .regex(IDENTIFIER_RE, `${label} may only contain letters, numbers, - _ /`);
+
+const meterInput = z.object({
+  vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
+  landlord_id: uuid.nullable().optional(),
+  agent_id: uuid.nullable().optional(),
+  unit_id: uuid.nullable().optional(),
+  meter_number: identifier("Meter number"),
+  serial_number: identifier("Serial number"),
+  type: z.enum(["electricity", "water", "gas"]),
+  initial_reading: numOrZero,
+  price_per_unit: numOrZero,
+  status: z.enum(["active", "inactive"]).optional(),
+  sgc: intOrNull,
+  krn: intOrNull,
+  ti: intOrNull,
+  ea: intOrNull,
+  ken: intOrNull,
+});
+
+const meterUpdateInput = meterInput.extend({ id: uuid });
+
+/**
+ * Reject a meter number / serial number that is already used by another meter.
+ * `excludeId` skips the row being edited.
+ */
+async function assertMeterIdentifiersFree(
+  supabase: any,
+  values: { meter_number: string; serial_number: string },
+  excludeId?: string,
+) {
+  if (values.meter_number.toLowerCase() === values.serial_number.toLowerCase()) {
+    throw new Error("Meter number and serial number must be different");
+  }
+
+  let query = supabase
+    .from("meters")
+    .select("id, meter_number, serial_number")
+    .or(
+      `meter_number.ilike.${values.meter_number},serial_number.ilike.${values.serial_number}`,
+    );
+  if (excludeId) query = query.neq("id", excludeId);
+
+  const { data: clashes, error } = await query;
+  if (error) throw new Error(error.message);
+
+  for (const row of clashes ?? []) {
+    if (String(row.meter_number).toLowerCase() === values.meter_number.toLowerCase()) {
+      throw new Error(`Meter number ${values.meter_number} is already registered`);
+    }
+    if (String(row.serial_number).toLowerCase() === values.serial_number.toLowerCase()) {
+      throw new Error(`Serial number ${values.serial_number} is already registered`);
+    }
+  }
+}
+
+
+/** All meters from the meters registry, plus landlord options. */
+export const listMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: rows, error } = await supabase
+      .from("meters")
+      .select(METER_COLUMNS)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const referencedIds = [
+      ...new Set(
+        (rows ?? [])
+          .flatMap((r: any) => [r.landlord_id, r.agent_id])
+          .filter((v: any): v is string => !!v),
+      ),
+    ];
+
+    let personRows: any[] = [];
+    if (referencedIds.length) {
+      const { data: l, error: lErr } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", referencedIds);
+      if (lErr) throw new Error(lErr.message);
+      personRows = l ?? [];
+    }
+    const personById = new Map(personRows.map((l) => [l.id, l]));
+
+    // Landlord / agent options for the meter dialog.
+    const loadOptions = async (role: "landlord" | "agent", fallback: string) => {
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", role);
+      const ids = [...new Set((roleRows ?? []).map((r: any) => r.user_id as string))];
+      if (!ids.length) return [] as { id: string; name: string }[];
+      const { data: opts } = await supabase.from("users").select("id, name, email").in("id", ids);
+      const list = (opts ?? []).map((u: any) => ({
+        id: u.id as string,
+        name: (u.name as string) || (u.email as string) || fallback,
+      }));
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      return list;
+    };
+
+    const [landlordOptions, agentOptions] = await Promise.all([
+      loadOptions("landlord", "Unnamed landlord"),
+      loadOptions("agent", "Unnamed agent"),
+    ]);
+
+    // Unit options (with property names) for optionally linking a meter to a unit.
+    const { data: unitRows } = await supabase
+      .from("units")
+      .select("id, unit_number, property_id, properties(name)")
+      .order("unit_number", { ascending: true });
+    const unitOptions = (unitRows ?? []).map((u: any) => ({
+      id: u.id as string,
+      unit_number: (u.unit_number as string) ?? "",
+      property_id: (u.property_id as string) ?? null,
+      property_name: (u.properties?.name as string) ?? null,
+      label: `${u.properties?.name ? `${u.properties.name} · ` : ""}Unit ${u.unit_number}`,
+    }));
+    const unitById = new Map(unitOptions.map((u) => [u.id, u]));
+
+    const displayName = (id: string | null) => {
+      if (!id) return null;
+      const p = personById.get(id);
+      return ((p?.name as string) || (p?.email as string) || null) as string | null;
+    };
+
+    const meters: MeterRow[] = (rows ?? []).map((r: any) => ({
+      id: r.id,
+      vendor_id: r.vendor_id ?? "",
+      landlord_id: r.landlord_id ?? null,
+      landlord_name: displayName(r.landlord_id ?? null),
+      agent_id: r.agent_id ?? null,
+      agent_name: displayName(r.agent_id ?? null),
+      unit_id: r.unit_id ?? null,
+      unit_label: r.unit_id ? (unitById.get(r.unit_id)?.label ?? null) : null,
+      meter_number: r.meter_number ?? "",
+      serial_number: r.serial_number ?? "",
+      type: (r.type ?? "").toLowerCase(),
+      initial_reading: Number(r.initial_reading ?? 0),
+      price_per_unit: Number(r.price_per_unit ?? 0),
+      status: (r.status ?? "active").toLowerCase(),
+      sgc: r.sgc ?? null,
+      krn: r.krn ?? null,
+      ti: r.ti ?? null,
+      ea: r.ea ?? null,
+      ken: r.ken ?? null,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    }));
+
+    return {
+      meters,
+      landlords: landlordOptions,
+      agents: agentOptions,
+      units: unitOptions,
+    };
+  });
+
+
+export const addMeter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => meterInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    await assertMeterIdentifiersFree(supabase, data);
+
+    const { data: inserted, error } = await supabase
+      .from("meters")
+      .insert({
+        vendor_id: data.vendor_id,
+        landlord_id: data.landlord_id ?? null,
+        agent_id: data.agent_id ?? null,
+        unit_id: data.unit_id ?? null,
+        meter_number: data.meter_number,
+        serial_number: data.serial_number,
+        type: data.type,
+        initial_reading: data.initial_reading,
+        price_per_unit: data.price_per_unit,
+        status: data.status ?? "active",
+        sgc: data.sgc,
+        krn: data.krn,
+        ti: data.ti,
+        ea: data.ea,
+        ken: data.ken,
+      } as never)
+      .select("id")
+      .single();
+    if (error) {
+      if (error.code === "23505") throw new Error("Meter number or serial number already exists");
+      throw new Error(error.message);
+    }
+
+    return { ok: true, id: inserted?.id as string };
+  });
+
+export const updateMeter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => meterUpdateInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: current, error: curErr } = await supabase
+      .from("meters")
+      .select("id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (curErr) throw new Error(curErr.message);
+    if (!current) throw new Error("Meter not found");
+
+    await assertMeterIdentifiersFree(supabase, data, data.id);
+
+    const { error } = await supabase
+      .from("meters")
+      .update({
+        vendor_id: data.vendor_id,
+        landlord_id: data.landlord_id ?? null,
+        agent_id: data.agent_id ?? null,
+        unit_id: data.unit_id ?? null,
+        meter_number: data.meter_number,
+        serial_number: data.serial_number,
+        type: data.type,
+        initial_reading: data.initial_reading,
+        price_per_unit: data.price_per_unit,
+        status: data.status ?? "active",
+        sgc: data.sgc,
+        krn: data.krn,
+        ti: data.ti,
+        ea: data.ea,
+        ken: data.ken,
+      } as never)
+      .eq("id", data.id);
+    if (error) {
+      if (error.code === "23505") throw new Error("Meter number or serial number already exists");
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
+
+const bulkMeterInput = z.object({
+  action: z.enum(["delete", "deactivate", "activate"]),
+  ids: z.array(uuid).min(1).max(500),
+});
+
+/** Delete / deactivate / activate many meters at once. */
+export const bulkMeterAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkMeterInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    if (data.action === "delete") {
+      const { error } = await supabase.from("meters").delete().in("id", data.ids);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase
+        .from("meters")
+        .update({ status: data.action === "activate" ? "active" : "inactive" } as never)
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true, meters: data.ids.length };
+  });
+
+export type MeterAuditEntry = {
+  id: string;
+  action: string;
+  created_at: string;
+  actor_name: string | null;
+  changes: Record<string, { old: string | null; new: string | null }>;
+};
+
+/** Change history for a single meter (reading, price, type, status). */
+export const listMeterAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ meter_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("meter_audit_logs")
+      .select("id, action, changes, created_at, actor_id")
+      .eq("meter_id", data.meter_id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const actorIds = [
+      ...new Set((rows ?? []).map((r: any) => r.actor_id).filter((v: any): v is string => !!v)),
+    ];
+    let actors: any[] = [];
+    if (actorIds.length) {
+      const { data: a } = await supabase.from("users").select("id, name, email").in("id", actorIds);
+      actors = a ?? [];
+    }
+    const actorById = new Map(actors.map((a) => [a.id, a]));
+
+    return {
+      logs: (rows ?? []).map((r: any) => ({
+        id: r.id as string,
+        action: (r.action as string) ?? "update",
+        created_at: r.created_at as string,
+        actor_name: r.actor_id
+          ? ((actorById.get(r.actor_id)?.name as string) ??
+            (actorById.get(r.actor_id)?.email as string) ??
+            null)
+          : null,
+        changes: Object.fromEntries(
+          Object.entries((r.changes ?? {}) as Record<string, any>).map(([k, v]) => [
+            k,
+            {
+              old: v?.old === null || v?.old === undefined ? null : String(v.old),
+              new: v?.new === null || v?.new === undefined ? null : String(v.new),
+            },
+          ]),
+        ),
+      })) satisfies MeterAuditEntry[],
+    };
+  });
+
+/** Meters linked to a specific unit. */
+export const listUnitMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ unit_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("meters")
+      .select(METER_COLUMNS)
+      .eq("unit_id", data.unit_id)
+      .order("type", { ascending: true });
+    if (error) throw new Error(error.message);
+    return {
+      meters: (rows ?? []).map((r: any) => ({
+        id: r.id as string,
+        vendor_id: (r.vendor_id as string) ?? "",
+        meter_number: (r.meter_number as string) ?? "",
+        serial_number: (r.serial_number as string) ?? "",
+        type: ((r.type as string) ?? "").toLowerCase(),
+        initial_reading: Number(r.initial_reading ?? 0),
+        price_per_unit: Number(r.price_per_unit ?? 0),
+        status: ((r.status as string) ?? "active").toLowerCase(),
+      })),
+    };
+  });

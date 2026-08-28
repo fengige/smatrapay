@@ -106,8 +106,44 @@ export type Database = {
         }
         Relationships: []
       }
+      meter_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          meter_id: string
+        }
+        Insert: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          meter_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          meter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_audit_logs_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meters: {
         Row: {
+          agent_id: string | null
           created_at: string
           ea: number | null
           id: string
@@ -122,10 +158,12 @@ export type Database = {
           status: string
           ti: number | null
           type: string
+          unit_id: string | null
           updated_at: string
           vendor_id: string
         }
         Insert: {
+          agent_id?: string | null
           created_at?: string
           ea?: number | null
           id?: string
@@ -140,10 +178,12 @@ export type Database = {
           status?: string
           ti?: number | null
           type: string
+          unit_id?: string | null
           updated_at?: string
           vendor_id: string
         }
         Update: {
+          agent_id?: string | null
           created_at?: string
           ea?: number | null
           id?: string
@@ -158,15 +198,30 @@ export type Database = {
           status?: string
           ti?: number | null
           type?: string
+          unit_id?: string | null
           updated_at?: string
           vendor_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "meters_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "meters_landlord_id_fkey"
             columns: ["landlord_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meters_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
