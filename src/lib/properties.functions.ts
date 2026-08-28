@@ -30,6 +30,11 @@ const propertyInput = z.object({
   number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
   landlord_id: uuid.nullable().optional(),
 })
+  .transform((val) => ({
+    ...val,
+    country: normalizeCountry(val.country),
+    state: val.state == null ? val.state : normalizeState(val.country, val.state) || null,
+  }))
   .superRefine((val, ctx) => {
     if (val.property_type === "building") {
       if (!val.building_category) {
