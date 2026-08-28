@@ -663,18 +663,24 @@ export function PropertyForm({
               className={inputClass}
             />
           </Field>
-          <Field label="Country">
+          <Field label="Country *" error={errors["country"]}>
             <CountryPicker
               value={values.country}
-              onChange={(country) => set("country", country)}
+              onChange={(country) => {
+                set("country", country);
+                const allowed = country ? STATE_MAP[country] : undefined;
+                if (allowed && !allowed.includes(values.state)) {
+                  set("state", "");
+                }
+              }}
               placeholder="Select country"
             />
           </Field>
-          <Field label="State / County">
-            <input
+          <Field label="State / County *" error={errors["state"]}>
+            <StatePicker
+              country={values.country}
               value={values.state}
-              onChange={(e) => set("state", e.target.value)}
-              className={inputClass}
+              onChange={(state) => set("state", state)}
             />
           </Field>
           <Field label="Postal code" error={errors["postal_code"]}>
