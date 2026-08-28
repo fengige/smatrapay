@@ -107,6 +107,7 @@ type Landlord = Person & { profile_image: string | null };
 
 const TABS = [
   { id: "units", label: "Units", icon: Layers },
+  { id: "address", label: "Address", icon: MapPin },
   { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
   { id: "landlords", label: "Landlord detail", icon: Building2 },
