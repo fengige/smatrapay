@@ -54,14 +54,16 @@ const propertyInput = z.object({
         message: "A landlord is required when units are greater than 0",
       });
     }
-    if (!COUNTRY_OPTIONS.includes(val.country)) {
+    const countryOptions = COUNTRY_OPTIONS;
+    if (!countryOptions.includes(val.country)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["country"],
         message: "Please select a valid country",
       });
     }
-    if (val.country && STATE_MAP[val.country] && (!val.state || !STATE_MAP[val.country].includes(val.state))) {
+    const states = val.country ? STATE_MAP[val.country] : undefined;
+    if (states && (!val.state || !states.includes(val.state))) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["state"],
