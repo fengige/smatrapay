@@ -908,7 +908,11 @@ function PropertyDetailPage() {
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
+            <div
+              className={`flex-wrap items-center gap-3 border-b border-border p-4 ${
+                tab === "address" ? "hidden" : "flex"
+              }`}
+            >
               <div className="flex min-w-[220px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
                 <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
                   <Search className="size-4" />
