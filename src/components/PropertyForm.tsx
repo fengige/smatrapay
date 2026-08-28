@@ -583,13 +583,6 @@ export function PropertyForm({
               className={inputClass}
             />
           </Field>
-          <Field label="State / County">
-            <input
-              value={values.state}
-              onChange={(e) => set("state", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
           <Field label="Postal code" error={errors["postal_code"]}>
             <input
               value={values.postal_code}
