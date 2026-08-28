@@ -318,6 +318,13 @@ function MetersPage() {
           </button>
           <button
             type="button"
+            onClick={() => setShowImport(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <Upload className="size-4" /> Import CSV
+          </button>
+          <button
+            type="button"
             onClick={exportCsv}
             disabled={!sortedRows.length}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
