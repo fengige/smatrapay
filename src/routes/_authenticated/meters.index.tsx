@@ -874,6 +874,7 @@ function MeterDialog({
       if (hasErrors) throw new Error(vendorError || meterNumberError || serialNumberError || "");
       const payload = {
         vendor_id: vendorId.trim(),
+        supplier_id: supplierId || null,
         landlord_id: landlordId || null,
         agent_id: agentId || null,
         unit_id: unitId || null,
@@ -936,6 +937,24 @@ function MeterDialog({
               className={fieldError(vendorError)}
             />
             {vendorError && <p className="mt-1 text-xs text-destructive">{vendorError}</p>}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
+              Supplier <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="meter-supplier"
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className={field}
+            >
+              <option value="">No supplier</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-landlord">
