@@ -198,6 +198,7 @@ export type Database = {
           serial_number: string
           sgc: number | null
           status: string
+          supplier_id: string | null
           ti: number | null
           type: string
           unit_id: string | null
@@ -218,6 +219,7 @@ export type Database = {
           serial_number: string
           sgc?: number | null
           status?: string
+          supplier_id?: string | null
           ti?: number | null
           type: string
           unit_id?: string | null
@@ -238,6 +240,7 @@ export type Database = {
           serial_number?: string
           sgc?: number | null
           status?: string
+          supplier_id?: string | null
           ti?: number | null
           type?: string
           unit_id?: string | null
@@ -257,6 +260,13 @@ export type Database = {
             columns: ["landlord_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meters_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "meter_suppliers"
             referencedColumns: ["id"]
           },
           {

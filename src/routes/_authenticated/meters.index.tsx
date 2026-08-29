@@ -156,6 +156,7 @@ function MetersPage() {
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
   const unitOptions = data?.units ?? [];
+  const supplierOptions = data?.suppliers ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -734,6 +735,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           units={unitOptions}
+          suppliers={supplierOptions}
           existing={meters}
           onClose={() => {
             setShowAdd(false);
@@ -790,6 +792,7 @@ function MeterDialog({
   landlords,
   agents,
   units,
+  suppliers,
   existing,
   onClose,
   onSaved,
@@ -798,6 +801,7 @@ function MeterDialog({
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
   units: { id: string; label: string }[];
+  suppliers: { id: string; name: string }[];
   existing: MeterRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
@@ -807,6 +811,7 @@ function MeterDialog({
   const editMeter = useServerFn(updateMeter);
 
   const [vendorId, setVendorId] = useState(meter?.vendor_id ?? "");
+  const [supplierId, setSupplierId] = useState(meter?.supplier_id ?? "");
   const [landlordId, setLandlordId] = useState(meter?.landlord_id ?? "");
   const [agentId, setAgentId] = useState(meter?.agent_id ?? "");
   const [unitId, setUnitId] = useState(meter?.unit_id ?? "");
@@ -869,6 +874,7 @@ function MeterDialog({
       if (hasErrors) throw new Error(vendorError || meterNumberError || serialNumberError || "");
       const payload = {
         vendor_id: vendorId.trim(),
+        supplier_id: supplierId || null,
         landlord_id: landlordId || null,
         agent_id: agentId || null,
         unit_id: unitId || null,
@@ -931,6 +937,24 @@ function MeterDialog({
               className={fieldError(vendorError)}
             />
             {vendorError && <p className="mt-1 text-xs text-destructive">{vendorError}</p>}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
+              Supplier <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="meter-supplier"
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className={field}
+            >
+              <option value="">No supplier</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-landlord">

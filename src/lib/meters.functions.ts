@@ -17,6 +17,8 @@ export type MeterType = "electricity" | "water" | "gas";
 export type MeterRow = {
   id: string;
   vendor_id: string;
+  supplier_id: string | null;
+  supplier_name: string | null;
   landlord_id: string | null;
   landlord_name: string | null;
   agent_id: string | null;
@@ -39,7 +41,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, supplier_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
@@ -74,6 +76,7 @@ const identifier = (label: string) =>
 
 const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
+  supplier_id: uuid.nullable().optional(),
   landlord_id: uuid.nullable().optional(),
   agent_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
@@ -181,6 +184,18 @@ export const listMeters = createServerFn({ method: "GET" })
       loadOptions("agent", "Unnamed agent"),
     ]);
 
+    // Active supplier options for the meter dialog.
+    const { data: supplierRows } = await supabase
+      .from("meter_suppliers")
+      .select("id, company_name")
+      .eq("status", "Active")
+      .order("company_name", { ascending: true });
+    const supplierOptions = (supplierRows ?? []).map((s: any) => ({
+      id: s.id as string,
+      name: (s.company_name as string) ?? "",
+    }));
+    const supplierById = new Map(supplierOptions.map((s) => [s.id, s]));
+
     // Unit options (with property names) for optionally linking a meter to a unit.
     const { data: unitRows } = await supabase
       .from("units")
@@ -204,6 +219,8 @@ export const listMeters = createServerFn({ method: "GET" })
     const meters: MeterRow[] = (rows ?? []).map((r: any) => ({
       id: r.id,
       vendor_id: r.vendor_id ?? "",
+      supplier_id: r.supplier_id ?? null,
+      supplier_name: r.supplier_id ? (supplierById.get(r.supplier_id)?.name ?? null) : null,
       landlord_id: r.landlord_id ?? null,
       landlord_name: displayName(r.landlord_id ?? null),
       agent_id: r.agent_id ?? null,
@@ -230,6 +247,7 @@ export const listMeters = createServerFn({ method: "GET" })
       landlords: landlordOptions,
       agents: agentOptions,
       units: unitOptions,
+      suppliers: supplierOptions,
     };
   });
 
@@ -247,6 +265,7 @@ export const addMeter = createServerFn({ method: "POST" })
       .from("meters")
       .insert({
         vendor_id: data.vendor_id,
+        supplier_id: data.supplier_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
@@ -293,6 +312,7 @@ export const updateMeter = createServerFn({ method: "POST" })
       .from("meters")
       .update({
         vendor_id: data.vendor_id,
+        supplier_id: data.supplier_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
