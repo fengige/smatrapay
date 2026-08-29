@@ -823,3 +823,63 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
 
     return { ok: true, created: toInsert.length };
   });
+
+/* ------------------------------------------------------------------ *
+ * Bulk add meters — form options (suppliers + vendor/landlord/agent users)
+ * ------------------------------------------------------------------ */
+
+export type BulkMeterOptions = {
+  suppliers: { id: string; name: string; utility_type: string }[];
+  vendors: { id: string; name: string }[];
+  landlords: { id: string; name: string }[];
+  agents: { id: string; name: string }[];
+};
+
+/** Lightweight option lists for the dedicated Bulk Add Meters page. */
+export const listBulkMeterOptions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const loadRole = async (role: "vendor" | "landlord" | "agent", fallback: string) => {
+      const { data: roleRows, error } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", role);
+      if (error) throw new Error(error.message);
+      const ids = [...new Set((roleRows ?? []).map((r: any) => r.user_id as string))];
+      if (!ids.length) return [] as { id: string; name: string }[];
+      const { data: users } = await supabase.from("users").select("id, name, email").in("id", ids);
+      const list = (users ?? []).map((u: any) => ({
+        id: u.id as string,
+        name: (u.name as string) || (u.email as string) || fallback,
+      }));
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      return list;
+    };
+
+    const [vendors, landlords, agents] = await Promise.all([
+      loadRole("vendor", "Unnamed vendor"),
+      loadRole("landlord", "Unnamed landlord"),
+      loadRole("agent", "Unnamed agent"),
+    ]);
+
+    const { data: supplierRows, error: sErr } = await supabase
+      .from("meter_suppliers")
+      .select("id, company_name, utility_type")
+      .eq("status", "Active")
+      .order("company_name", { ascending: true });
+    if (sErr) throw new Error(sErr.message);
+
+    return {
+      suppliers: (supplierRows ?? []).map((s: any) => ({
+        id: s.id as string,
+        name: (s.company_name as string) ?? "",
+        utility_type: (s.utility_type as string) ?? "",
+      })),
+      vendors,
+      landlords,
+      agents,
+    } satisfies BulkMeterOptions;
+  });
