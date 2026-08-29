@@ -1585,3 +1585,360 @@ function ImportMetersDialog({
     </div>
   );
 }
+
+type BulkRow = {
+  meter_number: string;
+  serial_number: string;
+  sgc: string;
+  krn: string;
+  ti: string;
+  ea: string;
+  ken: string;
+};
+
+const emptyBulkRow = (): BulkRow => ({
+  meter_number: "",
+  serial_number: "",
+  sgc: "",
+  krn: "",
+  ti: "",
+  ea: "",
+  ken: "",
+});
+
+function BulkAddMetersDialog({
+  vendors,
+  landlords,
+  agents,
+  suppliers,
+  onClose,
+  onSaved,
+}: {
+  vendors: { id: string; name: string }[];
+  landlords: { id: string; name: string }[];
+  agents: { id: string; name: string }[];
+  suppliers: { id: string; name: string }[];
+  onClose: () => void;
+  onSaved: (count: number) => void | Promise<void>;
+}) {
+  const bulkCreate = useServerFn(bulkAddMeters);
+
+  const [supplierId, setSupplierId] = useState("");
+  const [ownerType, setOwnerType] = useState<"vendor" | "landlord" | "agent">("vendor");
+  const [ownerId, setOwnerId] = useState("");
+  const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">("electricity");
+  const [pricePerUnit, setPricePerUnit] = useState("0");
+  const [initialReading, setInitialReading] = useState("0");
+  const [count, setCount] = useState("5");
+  const [rows, setRows] = useState<BulkRow[]>([]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    setOwnerId("");
+  }, [ownerType]);
+
+  const ownerOptions =
+    ownerType === "vendor" ? vendors : ownerType === "landlord" ? landlords : agents;
+
+  const generateRows = () => {
+    const n = Math.max(1, Math.min(500, Number(count) || 0));
+    setRows((prev) =>
+      Array.from({ length: n }, (_, i) => prev[i] ?? emptyBulkRow()),
+    );
+  };
+
+  const setRow = (i: number, key: keyof BulkRow, value: string) =>
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+
+  const rowErrors = useMemo(
+    () =>
+      rows.map((r, i) => {
+        const base = identifierError("Meter number", r.meter_number);
+        if (base) return base;
+        const key = r.meter_number.trim().toLowerCase();
+        const dup = rows.some((o, j) => j !== i && o.meter_number.trim().toLowerCase() === key);
+        if (dup) return "Duplicate meter number in this batch";
+        if (r.serial_number.trim()) {
+          const sErr = identifierError("Serial number", r.serial_number);
+          if (sErr) return sErr;
+          if (r.serial_number.trim().toLowerCase() === key)
+            return "Serial number must differ from the meter number";
+        }
+        return null;
+      }),
+    [rows],
+  );
+
+  const ownerError = ownerId ? null : "Select who the meters belong to";
+  const canSave = rows.length > 0 && !ownerError && rowErrors.every((e) => !e);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const res = await bulkCreate({
+        data: {
+          supplier_id: supplierId || null,
+          owner_type: ownerType,
+          owner_id: ownerId,
+          type: meterType,
+          price_per_unit: pricePerUnit,
+          initial_reading: initialReading,
+          rows: rows.map((r) => ({
+            meter_number: r.meter_number.trim(),
+            serial_number: r.serial_number.trim(),
+            sgc: r.sgc,
+            krn: r.krn,
+            ti: r.ti,
+            ea: r.ea,
+            ken: r.ken,
+          })),
+        },
+      } as never);
+      return (res as { created: number }).created;
+    },
+    onSuccess: (created) => onSaved(created),
+    onError: (err: Error) => toast.error(err.message || "Could not add meters"),
+  });
+
+  const field = "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm";
+  const cell = "h-9 w-full rounded-lg border border-border bg-background px-2 text-sm";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bulk-add-meters-title"
+    >
+      <div className="my-8 w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <h2 id="bulk-add-meters-title" className="text-lg font-bold">
+          Bulk Add Meters
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Pick a supplier and owner, choose how many meters, then fill in each meter row.
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-supplier">
+              Supplier <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="bulk-supplier"
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className={field}
+            >
+              <option value="">No supplier</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-owner-type">
+              User type
+            </label>
+            <select
+              id="bulk-owner-type"
+              value={ownerType}
+              onChange={(e) => setOwnerType(e.target.value as typeof ownerType)}
+              className={field}
+            >
+              <option value="vendor">Vendor</option>
+              <option value="landlord">Landlord</option>
+              <option value="agent">Agent</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-owner">
+              {ownerType === "vendor" ? "Vendor" : ownerType === "landlord" ? "Landlord" : "Agent"}
+            </label>
+            <select
+              id="bulk-owner"
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
+              aria-invalid={Boolean(ownerError)}
+              className={field}
+            >
+              <option value="">Select a user</option>
+              {ownerOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            {ownerError && <p className="mt-1 text-xs text-destructive">{ownerError}</p>}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-type">
+              Meter type
+            </label>
+            <select
+              id="bulk-type"
+              value={meterType}
+              onChange={(e) => setMeterType(e.target.value as typeof meterType)}
+              className={field}
+            >
+              <option value="electricity">Electricity</option>
+              <option value="water">Water</option>
+              <option value="gas">Gas</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-price">
+              Price per unit
+            </label>
+            <input
+              id="bulk-price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={pricePerUnit}
+              onChange={(e) => setPricePerUnit(e.target.value)}
+              className={field}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-initial">
+              Initial reading
+            </label>
+            <input
+              id="bulk-initial"
+              type="number"
+              step="0.01"
+              min="0"
+              value={initialReading}
+              onChange={(e) => setInitialReading(e.target.value)}
+              className={field}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-muted/30 p-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-count">
+              Number of meters
+            </label>
+            <input
+              id="bulk-count"
+              type="number"
+              min={1}
+              max={500}
+              value={count}
+              onChange={(e) => setCount(e.target.value)}
+              className="h-11 w-40 rounded-xl border border-border bg-background px-3 text-sm"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={generateRows}
+            className="h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Generate rows
+          </button>
+          {rows.length > 0 && (
+            <span className="text-sm text-muted-foreground">{rows.length} rows ready</span>
+          )}
+        </div>
+
+        {rows.length > 0 && (
+          <div className="mt-4 max-h-[45vh] overflow-auto rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-2 text-left">#</th>
+                  <th className="px-2 py-2 text-left">Meter number</th>
+                  <th className="px-2 py-2 text-left">Serial no (optional)</th>
+                  <th className="px-2 py-2 text-left">SGC</th>
+                  <th className="px-2 py-2 text-left">KRN</th>
+                  <th className="px-2 py-2 text-left">TI</th>
+                  <th className="px-2 py-2 text-left">EA</th>
+                  <th className="px-2 py-2 text-left">KEN</th>
+                  <th className="px-2 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i} className="border-t border-border/70 align-top">
+                    <td className="px-2 py-2 text-muted-foreground">{i + 1}</td>
+                    <td className="px-2 py-2">
+                      <input
+                        value={r.meter_number}
+                        onChange={(e) => setRow(i, "meter_number", e.target.value)}
+                        aria-label={`Meter number row ${i + 1}`}
+                        aria-invalid={Boolean(rowErrors[i])}
+                        className={`${cell} ${rowErrors[i] ? "border-destructive" : ""}`}
+                      />
+                      {rowErrors[i] && (
+                        <p className="mt-1 text-xs text-destructive">{rowErrors[i]}</p>
+                      )}
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        value={r.serial_number}
+                        onChange={(e) => setRow(i, "serial_number", e.target.value)}
+                        aria-label={`Serial number row ${i + 1}`}
+                        className={cell}
+                      />
+                    </td>
+                    {(["sgc", "krn", "ti", "ea", "ken"] as const).map((k) => (
+                      <td key={k} className="px-2 py-2">
+                        <input
+                          value={r[k]}
+                          onChange={(e) => setRow(i, k, e.target.value)}
+                          aria-label={`${k.toUpperCase()} row ${i + 1}`}
+                          className={`${cell} w-20`}
+                        />
+                      </td>
+                    ))}
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setRows((prev) => prev.filter((_, j) => j !== i))}
+                        aria-label={`Remove row ${i + 1}`}
+                        className="rounded-lg border border-border p-1.5 hover:bg-accent/10"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!canSave || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+            Create {rows.length || ""} Meter{rows.length === 1 ? "" : "s"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
