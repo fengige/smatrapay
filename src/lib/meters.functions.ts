@@ -219,6 +219,8 @@ export const listMeters = createServerFn({ method: "GET" })
     const meters: MeterRow[] = (rows ?? []).map((r: any) => ({
       id: r.id,
       vendor_id: r.vendor_id ?? "",
+      supplier_id: r.supplier_id ?? null,
+      supplier_name: r.supplier_id ? (supplierById.get(r.supplier_id)?.name ?? null) : null,
       landlord_id: r.landlord_id ?? null,
       landlord_name: displayName(r.landlord_id ?? null),
       agent_id: r.agent_id ?? null,
