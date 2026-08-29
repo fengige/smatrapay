@@ -814,47 +814,64 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
           message,
         });
 
-      if (mKey === sKey) return fail("Meter number and serial number must be different");
-      if (serial.length < 4 || !IDENTIFIER_RE.test(serial))
-        return fail("Serial number may only contain letters, numbers, - _ / (min 4 characters)");
-      if (seenMeters.has(mKey)) return fail("Duplicate meter number within this batch");
-      if (seenSerials.has(sKey)) return fail("Duplicate serial number within this batch");
+      if (mKey === sKey) {
+        fail("Meter number and serial number must be different");
+        continue;
+      }
+      if (serial.length < 4 || !IDENTIFIER_RE.test(serial)) {
+        fail("Serial number may only contain letters, numbers, - _ / (min 4 characters)");
+        continue;
+      }
+      if (seenMeters.has(mKey)) {
+        fail("Duplicate meter number within this batch");
+        continue;
+      }
+      if (seenSerials.has(sKey)) {
+        fail("Duplicate serial number within this batch");
+        continue;
+      }
 
       const meterMatch = byMeter.get(mKey);
       const serialMatch = bySerial.get(sKey);
 
       if (meterMatch || serialMatch) {
-        if (data.duplicate_mode === "reject")
-          return fail(
+        if (data.duplicate_mode === "reject") {
+          fail(
             meterMatch
               ? `Meter number ${r.meter_number} is already registered`
               : `Serial number ${serial} is already registered`,
           );
+          continue;
+        }
         if (data.duplicate_mode === "skip") {
           seenMeters.add(mKey);
           seenSerials.add(sKey);
-          return results.push({
+          results.push({
             row: rowNo,
             meter_number: r.meter_number,
             serial_number: serial,
             status: "skipped",
             message: "Already registered — skipped",
           });
+          continue;
         }
         // update mode
-        if (meterMatch && serialMatch && meterMatch.id !== serialMatch.id)
-          return fail("Meter number and serial number match two different existing meters");
+        if (meterMatch && serialMatch && meterMatch.id !== serialMatch.id) {
+          fail("Meter number and serial number match two different existing meters");
+          continue;
+        }
         const target = meterMatch ?? serialMatch!;
         seenMeters.add(mKey);
         seenSerials.add(sKey);
         toUpdate.push({ id: target.id, values: baseValues(r, serial) });
-        return results.push({
+        results.push({
           row: rowNo,
           meter_number: r.meter_number,
           serial_number: serial,
           status: "updated",
           message: "Existing meter updated",
         });
+        continue;
       }
 
       seenMeters.add(mKey);
@@ -867,7 +884,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
         status: "created",
         message: "Created",
       });
-    });
+    }
 
     const failedRows = results.filter((r) => r.status === "failed");
     if (failedRows.length) {
