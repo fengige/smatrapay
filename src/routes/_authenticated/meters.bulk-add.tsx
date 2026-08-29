@@ -1,11 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Download, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-import { bulkAddMeters, listBulkMeterOptions } from "@/lib/meters.functions";
+import {
+  bulkAddMeters,
+  listBulkMeterOptions,
+  type BulkAddResult,
+} from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/meters/bulk-add")({
@@ -30,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/meters/bulk-add")({
 });
 
 const IDENTIFIER_RE = /^[A-Za-z0-9][A-Za-z0-9/_-]*$/;
+const TEMPLATE_HEADERS = ["meter_number", "serial_no", "sgc", "krn", "ti", "ea", "ken"] as const;
 
 function identifierError(label: string, value: string) {
   const v = value.trim();
@@ -68,12 +73,14 @@ const emptyRow = (): Row => ({
 });
 
 type RowErrors = Partial<Record<keyof Row, string>>;
+type DuplicateMode = "reject" | "skip" | "update";
 
 function BulkAddMetersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const loadOptions = useServerFn(listBulkMeterOptions);
   const bulkCreate = useServerFn(bulkAddMeters);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["bulk-meter-options"],
@@ -92,10 +99,18 @@ function BulkAddMetersPage() {
   const [count, setCount] = useState("1");
   const [rows, setRows] = useState<Row[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("reject");
+  const [confirmUpdate, setConfirmUpdate] = useState(false);
+  const [review, setReview] = useState(false);
+  const [result, setResult] = useState<BulkAddResult | null>(null);
 
   useEffect(() => {
     setOwnerId("");
   }, [ownerType]);
+
+  useEffect(() => {
+    if (duplicateMode !== "update") setConfirmUpdate(false);
+  }, [duplicateMode]);
 
   const ownerOptions =
     ownerType === "vendor"
@@ -118,6 +133,67 @@ function BulkAddMetersPage() {
 
   const setRow = (i: number, key: keyof Row, value: string) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+
+  /* ------------------------------ CSV template ------------------------------ */
+
+  const downloadTemplate = () => {
+    const sample = ["MTR-000001", "SRL-000001", "123456", "1", "0", "1", "9"];
+    const csv = [TEMPLATE_HEADERS.join(","), sample.join(",")].join("\n");
+    const url = URL.createObjectURL(
+      new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "smatrapay-bulk-add-meters-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onTemplateFile = async (file: File) => {
+    const text = await file.text();
+    const lines = text
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/)
+      .filter((l) => l.trim());
+    if (lines.length < 2) {
+      toast.error("The CSV has no data rows");
+      return;
+    }
+    const split = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+    const header = split(lines[0]!).map((h) => h.toLowerCase());
+    const idx = (name: string) => header.indexOf(name);
+    const cols = {
+      meter_number: idx("meter_number"),
+      serial: idx("serial_no") >= 0 ? idx("serial_no") : idx("serial_number"),
+      sgc: idx("sgc"),
+      krn: idx("krn"),
+      ti: idx("ti"),
+      ea: idx("ea"),
+      ken: idx("ken"),
+    };
+    if (cols.meter_number < 0) {
+      toast.error("CSV must include a meter_number column");
+      return;
+    }
+    const parsed: Row[] = lines.slice(1, 501).map((line) => {
+      const c = split(line);
+      const get = (i: number) => (i >= 0 ? (c[i] ?? "") : "");
+      return {
+        meter_number: get(cols.meter_number),
+        serial_number: get(cols.serial),
+        sgc: get(cols.sgc),
+        krn: get(cols.krn),
+        ti: get(cols.ti),
+        ea: get(cols.ea),
+        ken: get(cols.ken),
+      };
+    });
+    setRows(parsed);
+    setCount(String(parsed.length));
+    toast.success(`${parsed.length} row${parsed.length === 1 ? "" : "s"} loaded from CSV`);
+  };
+
+  /* ------------------------------ validation ------------------------------ */
 
   const headerErrors = useMemo(
     () => ({
@@ -144,9 +220,7 @@ function BulkAddMetersPage() {
         if (r.serial_number.trim()) {
           const sErr = identifierError("Serial no", r.serial_number);
           if (sErr) errs.serial_number = sErr;
-          else if (
-            r.serial_number.trim().toLowerCase() === r.meter_number.trim().toLowerCase()
-          )
+          else if (r.serial_number.trim().toLowerCase() === r.meter_number.trim().toLowerCase())
             errs.serial_number = "Must differ from the meter number";
           else if (
             rows.some(
@@ -168,8 +242,11 @@ function BulkAddMetersPage() {
   );
 
   const headerValid = Object.values(headerErrors).every((e) => !e);
-  const rowsValid = rows.length > 0 && rowErrors.every((e) => Object.keys(e).length === 0);
-  const canSubmit = headerValid && rowsValid;
+  const invalidRows = rowErrors
+    .map((e, i) => ({ index: i, errors: Object.values(e).filter(Boolean) as string[] }))
+    .filter((r) => r.errors.length > 0);
+  const rowsValid = rows.length > 0 && invalidRows.length === 0;
+  const canSubmit = headerValid && rowsValid && (duplicateMode !== "update" || confirmUpdate);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -181,6 +258,8 @@ function BulkAddMetersPage() {
           type: meterType as "electricity" | "water" | "gas",
           price_per_unit: 0,
           initial_reading: 0,
+          duplicate_mode: duplicateMode,
+          confirm_update: duplicateMode === "update" ? confirmUpdate : false,
           rows: rows.map((r) => ({
             meter_number: r.meter_number.trim(),
             serial_number: r.serial_number.trim(),
@@ -192,17 +271,22 @@ function BulkAddMetersPage() {
           })),
         },
       } as never);
-      return (res as { created: number }).created;
+      return res as BulkAddResult;
     },
-    onSuccess: async (created) => {
+    onSuccess: async (res) => {
       await queryClient.invalidateQueries({ queryKey: ["meters"] });
-      toast.success(`${created} meter${created === 1 ? "" : "s"} added successfully`);
-      navigate({ to: "/meters" });
+      setResult(res);
+      setReview(false);
+      toast.success(
+        `${res.created} meter${res.created === 1 ? "" : "s"} added` +
+          (res.updated ? `, ${res.updated} updated` : "") +
+          (res.skipped ? `, ${res.skipped} skipped` : ""),
+      );
     },
     onError: (err: Error) => toast.error(err.message || "Could not add meters"),
   });
 
-  const submit = () => {
+  const openReview = () => {
     setSubmitted(true);
     if (!headerValid) {
       toast.error("Complete the required fields above");
@@ -212,18 +296,13 @@ function BulkAddMetersPage() {
       toast.error("Generate the meter rows first");
       return;
     }
-    if (!rowsValid) {
-      toast.error("Fix the highlighted meter rows");
-      return;
-    }
-    mutation.mutate();
+    setReview(true);
   };
 
   const field = "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm";
   const cell = "h-9 w-full min-w-24 rounded-lg border border-border bg-background px-2 text-sm";
-  const errText = "mt-1 block text-xs text-destructive";
-
-  const show = (e: string | null) => (submitted && e ? <span className={errText}>{e}</span> : null);
+  const show = (e: string | null) =>
+    submitted && e ? <span className="mt-1 block text-xs text-destructive">{e}</span> : null;
 
   return (
     <PortalLayout
@@ -231,12 +310,39 @@ function BulkAddMetersPage() {
       title="Bulk Add Meters"
       description="Register many meters at once for one supplier and one owner"
       actions={
-        <Link
-          to="/meters"
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
-        >
-          <ArrowLeft className="size-4" /> Back to Meter Management
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <Download className="size-4" /> CSV template
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <Upload className="size-4" /> Fill from CSV
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onTemplateFile(f);
+              e.target.value = "";
+            }}
+          />
+          <Link
+            to="/meters"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <ArrowLeft className="size-4" /> Back
+          </Link>
+        </div>
       }
     >
       <div className="rounded-2xl border border-border bg-card p-5">
@@ -360,6 +466,33 @@ function BulkAddMetersPage() {
               </div>
               {show(headerErrors.count)}
             </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="dup-mode">
+                If a meter already exists
+              </label>
+              <select
+                id="dup-mode"
+                className={field}
+                value={duplicateMode}
+                onChange={(e) => setDuplicateMode(e.target.value as DuplicateMode)}
+              >
+                <option value="reject">Reject the batch (default)</option>
+                <option value="skip">Skip existing meter / serial numbers</option>
+                <option value="update">Update matching meters</option>
+              </select>
+              {duplicateMode === "update" && (
+                <label className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={confirmUpdate}
+                    onChange={(e) => setConfirmUpdate(e.target.checked)}
+                  />
+                  I confirm existing meters with matching numbers should be overwritten.
+                </label>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -430,6 +563,40 @@ function BulkAddMetersPage() {
         </div>
       )}
 
+      {result && (
+        <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            Result — {result.created} created, {result.updated} updated, {result.skipped} skipped
+          </h2>
+          <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto text-sm">
+            {result.results.map((r) => (
+              <li key={r.row} className="flex flex-wrap gap-2">
+                <span className="text-muted-foreground">Row {r.row}</span>
+                <span className="font-medium">{r.meter_number}</span>
+                <span
+                  className={
+                    r.status === "skipped"
+                      ? "text-amber-600"
+                      : r.status === "failed"
+                        ? "text-destructive"
+                        : "text-emerald-600"
+                  }
+                >
+                  {r.message}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/meters" })}
+            className="mt-4 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Go to Meter Management
+          </button>
+        </div>
+      )}
+
       <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
         <Link
           to="/meters"
@@ -439,18 +606,93 @@ function BulkAddMetersPage() {
         </Link>
         <button
           type="button"
-          onClick={submit}
-          disabled={mutation.isPending || (submitted && !canSubmit)}
+          onClick={openReview}
+          disabled={mutation.isPending}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
-          {mutation.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Plus className="size-4" />
-          )}
-          {mutation.isPending ? "Adding meters…" : `Add ${rows.length || ""} Meters`.trim()}
+          <Plus className="size-4" />
+          Review &amp; Add {rows.length || ""} Meters
         </button>
       </div>
+
+      {review && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReview(false);
+          }}
+        >
+          <div className="my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <h2 id="review-title" className="text-lg font-bold">
+              Review before creating
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {rows.length} meter{rows.length === 1 ? "" : "s"} · {meterType} ·{" "}
+              {suppliers.find((s) => s.id === supplierId)?.name ?? "No supplier"} ·{" "}
+              {ownerType}: {ownerOptions.find((o) => o.id === ownerId)?.name ?? "—"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Duplicates:{" "}
+              {duplicateMode === "reject"
+                ? "reject the whole batch"
+                : duplicateMode === "skip"
+                  ? "skip existing meter / serial numbers"
+                  : "update matching meters (confirmed)"}
+            </p>
+
+            {invalidRows.length ? (
+              <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+                <p className="text-sm font-semibold text-destructive">
+                  {invalidRows.length} row{invalidRows.length === 1 ? "" : "s"} need attention
+                </p>
+                <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto text-xs text-destructive">
+                  {invalidRows.map((r) => (
+                    <li key={r.index}>
+                      Row {r.index + 1}: {r.errors.join("; ")}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4 text-sm">
+                All rows passed validation and are ready to be created.
+              </div>
+            )}
+
+            {duplicateMode === "update" && !confirmUpdate && (
+              <p className="mt-3 text-sm text-destructive">
+                Tick the confirmation checkbox to allow updating existing meters.
+              </p>
+            )}
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setReview(false)}
+                className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent/10"
+              >
+                Back to edit
+              </button>
+              <button
+                type="button"
+                onClick={() => mutation.mutate()}
+                disabled={!canSubmit || mutation.isPending}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {mutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {mutation.isPending ? "Adding meters…" : "Add Meters"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PortalLayout>
   );
 }
