@@ -137,6 +137,7 @@ function MetersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<MeterRow | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
