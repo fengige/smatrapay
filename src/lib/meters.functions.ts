@@ -800,7 +800,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
       ken: r.ken,
     });
 
-    data.rows.forEach((r, i) => {
+    for (const [i, r] of data.rows.entries()) {
       const rowNo = i + 1;
       const mKey = r.meter_number.toLowerCase();
       const serial = (r.serial_number || `${r.meter_number}-S`).trim();
