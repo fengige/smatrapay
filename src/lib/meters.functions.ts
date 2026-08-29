@@ -247,6 +247,7 @@ export const listMeters = createServerFn({ method: "GET" })
       meters,
       landlords: landlordOptions,
       agents: agentOptions,
+      vendors: vendorOptions,
       units: unitOptions,
       suppliers: supplierOptions,
     };
