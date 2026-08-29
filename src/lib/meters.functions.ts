@@ -76,6 +76,7 @@ const identifier = (label: string) =>
 
 const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
+  supplier_id: uuid.nullable().optional(),
   landlord_id: uuid.nullable().optional(),
   agent_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
