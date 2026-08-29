@@ -28,6 +28,7 @@ import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authe
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
+import { Route as AuthenticatedMeterSuppliersIndexRouteImport } from './routes/_authenticated/meter-suppliers.index'
 import { Route as AuthenticatedMetersIndexRouteImport } from './routes/_authenticated/meters.index'
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
 import { Route as AuthenticatedPropertiesNewRouteImport } from './routes/_authenticated/properties.new'
@@ -151,6 +152,12 @@ const AuthenticatedLandlordsNewRoute =
     id: '/new',
     path: '/new',
     getParentRoute: () => AuthenticatedLandlordsRoute,
+  } as any)
+const AuthenticatedMeterSuppliersIndexRoute =
+  AuthenticatedMeterSuppliersIndexRouteImport.update({
+    id: '/meter-suppliers/',
+    path: '/meter-suppliers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMetersIndexRoute =
   AuthenticatedMetersIndexRouteImport.update({
@@ -307,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/landlords/': typeof AuthenticatedLandlordsIndexRoute
+  '/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters/': typeof AuthenticatedMetersIndexRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/landlords': typeof AuthenticatedLandlordsIndexRoute
+  '/meter-suppliers': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters': typeof AuthenticatedMetersIndexRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
@@ -388,6 +397,7 @@ export interface FileRoutesById {
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/landlords/': typeof AuthenticatedLandlordsIndexRoute
+  '/_authenticated/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/_authenticated/meters/': typeof AuthenticatedMetersIndexRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
@@ -432,6 +442,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/vendor/dashboard'
     | '/landlords/'
+    | '/meter-suppliers/'
     | '/meters/'
     | '/properties/'
     | '/residents/'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/vendor/dashboard'
     | '/landlords'
+    | '/meter-suppliers'
     | '/meters'
     | '/properties'
     | '/residents'
@@ -512,6 +524,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users/new'
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/landlords/'
+    | '/_authenticated/meter-suppliers/'
     | '/_authenticated/meters/'
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
@@ -673,6 +686,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/landlords/new'
       preLoaderRoute: typeof AuthenticatedLandlordsNewRouteImport
       parentRoute: typeof AuthenticatedLandlordsRoute
+    }
+    '/_authenticated/meter-suppliers/': {
+      id: '/_authenticated/meter-suppliers/'
+      path: '/meter-suppliers'
+      fullPath: '/meter-suppliers/'
+      preLoaderRoute: typeof AuthenticatedMeterSuppliersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/meters/': {
       id: '/_authenticated/meters/'
@@ -935,6 +955,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
   AuthenticatedUnitsUnitIdRoute: typeof AuthenticatedUnitsUnitIdRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
+  AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
 }
 
@@ -955,6 +976,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedServiceProviderDashboardRoute,
   AuthenticatedUnitsUnitIdRoute: AuthenticatedUnitsUnitIdRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
+  AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
 }
 
