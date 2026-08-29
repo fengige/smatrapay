@@ -247,6 +247,7 @@ export const listMeters = createServerFn({ method: "GET" })
       landlords: landlordOptions,
       agents: agentOptions,
       units: unitOptions,
+      suppliers: supplierOptions,
     };
   });
 
