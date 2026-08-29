@@ -704,3 +704,122 @@ export const importMeters = createServerFn({ method: "POST" })
     } satisfies MeterImportResult;
   });
 
+
+/* ------------------------------------------------------------------ *
+ * Bulk add meters
+ * ------------------------------------------------------------------ */
+
+const bulkAddRow = z.object({
+  meter_number: identifier("Meter number"),
+  serial_number: z.string().trim().default(""),
+  sgc: intOrNull,
+  krn: intOrNull,
+  ti: intOrNull,
+  ea: intOrNull,
+  ken: intOrNull,
+});
+
+const bulkAddInput = z.object({
+  supplier_id: uuid.nullable().optional(),
+  owner_type: z.enum(["vendor", "landlord", "agent"]),
+  owner_id: uuid,
+  type: z.enum(["electricity", "water", "gas"]),
+  price_per_unit: numOrZero,
+  initial_reading: numOrZero,
+  rows: z.array(bulkAddRow).min(1).max(500),
+});
+
+/** Create many meters at once for one supplier + one owner (vendor / landlord / agent). */
+export const bulkAddMeters = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => bulkAddInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: existing, error: exErr } = await supabase
+      .from("meters")
+      .select("meter_number, serial_number");
+    if (exErr) throw new Error(exErr.message);
+
+    const takenMeters = new Set<string>();
+    const takenSerials = new Set<string>();
+    for (const r of (existing ?? []) as any[]) {
+      takenMeters.add(String(r.meter_number ?? "").toLowerCase());
+      takenSerials.add(String(r.serial_number ?? "").toLowerCase());
+    }
+
+    const errors: { row: number; meter_number: string; message: string }[] = [];
+    const toInsert: any[] = [];
+
+    data.rows.forEach((r, i) => {
+      const rowNo = i + 1;
+      const mKey = r.meter_number.toLowerCase();
+      const serial = (r.serial_number || `${r.meter_number}-S`).trim();
+      const sKey = serial.toLowerCase();
+
+      if (takenMeters.has(mKey)) {
+        errors.push({
+          row: rowNo,
+          meter_number: r.meter_number,
+          message: `Meter number ${r.meter_number} is already registered`,
+        });
+        return;
+      }
+      if (takenSerials.has(sKey)) {
+        errors.push({
+          row: rowNo,
+          meter_number: r.meter_number,
+          message: `Serial number ${serial} is already registered`,
+        });
+        return;
+      }
+      if (mKey === sKey) {
+        errors.push({
+          row: rowNo,
+          meter_number: r.meter_number,
+          message: "Meter number and serial number must be different",
+        });
+        return;
+      }
+      if (serial.length < 4 || !IDENTIFIER_RE.test(serial)) {
+        errors.push({
+          row: rowNo,
+          meter_number: r.meter_number,
+          message: "Serial number may only contain letters, numbers, - _ / (min 4 characters)",
+        });
+        return;
+      }
+
+      takenMeters.add(mKey);
+      takenSerials.add(sKey);
+
+      toInsert.push({
+        vendor_id: data.owner_id,
+        supplier_id: data.supplier_id ?? null,
+        landlord_id: data.owner_type === "landlord" ? data.owner_id : null,
+        agent_id: data.owner_type === "agent" ? data.owner_id : null,
+        unit_id: null,
+        meter_number: r.meter_number,
+        serial_number: serial,
+        type: data.type,
+        initial_reading: data.initial_reading,
+        price_per_unit: data.price_per_unit,
+        status: "active",
+        sgc: r.sgc,
+        krn: r.krn,
+        ti: r.ti,
+        ea: r.ea,
+        ken: r.ken,
+      });
+    });
+
+    if (errors.length) {
+      throw new Error(errors.map((e) => `Row ${e.row}: ${e.message}`).join("\n"));
+    }
+
+    const { error } = await supabase.from("meters").insert(toInsert as never);
+    if (error) throw new Error(error.message);
+
+    return { ok: true, created: toInsert.length };
+  });
