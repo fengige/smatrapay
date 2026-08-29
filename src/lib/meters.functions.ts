@@ -179,9 +179,10 @@ export const listMeters = createServerFn({ method: "GET" })
       return list;
     };
 
-    const [landlordOptions, agentOptions] = await Promise.all([
+    const [landlordOptions, agentOptions, vendorOptions] = await Promise.all([
       loadOptions("landlord", "Unnamed landlord"),
       loadOptions("agent", "Unnamed agent"),
+      loadOptions("vendor", "Unnamed vendor"),
     ]);
 
     // Active supplier options for the meter dialog.
