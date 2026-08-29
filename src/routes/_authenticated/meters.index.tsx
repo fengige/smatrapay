@@ -156,6 +156,7 @@ function MetersPage() {
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
   const unitOptions = data?.units ?? [];
+  const supplierOptions = data?.suppliers ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -734,6 +735,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           units={unitOptions}
+          suppliers={supplierOptions}
           existing={meters}
           onClose={() => {
             setShowAdd(false);
@@ -790,6 +792,7 @@ function MeterDialog({
   landlords,
   agents,
   units,
+  suppliers,
   existing,
   onClose,
   onSaved,
@@ -798,6 +801,7 @@ function MeterDialog({
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
   units: { id: string; label: string }[];
+  suppliers: { id: string; name: string }[];
   existing: MeterRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
@@ -807,6 +811,7 @@ function MeterDialog({
   const editMeter = useServerFn(updateMeter);
 
   const [vendorId, setVendorId] = useState(meter?.vendor_id ?? "");
+  const [supplierId, setSupplierId] = useState(meter?.supplier_id ?? "");
   const [landlordId, setLandlordId] = useState(meter?.landlord_id ?? "");
   const [agentId, setAgentId] = useState(meter?.agent_id ?? "");
   const [unitId, setUnitId] = useState(meter?.unit_id ?? "");
