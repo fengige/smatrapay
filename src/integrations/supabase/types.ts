@@ -141,6 +141,48 @@ export type Database = {
           },
         ]
       }
+      meter_suppliers: {
+        Row: {
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          license_number: string | null
+          phone_number: string | null
+          status: Database["public"]["Enums"]["supplier_status"]
+          updated_at: string
+          utility_type: Database["public"]["Enums"]["meter_utility_type"]
+          website_url: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          license_number?: string | null
+          phone_number?: string | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          updated_at?: string
+          utility_type: Database["public"]["Enums"]["meter_utility_type"]
+          website_url?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          license_number?: string | null
+          phone_number?: string | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          updated_at?: string
+          utility_type?: Database["public"]["Enums"]["meter_utility_type"]
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       meters: {
         Row: {
           agent_id: string | null
@@ -573,7 +615,9 @@ export type Database = {
         | "agent"
         | "service_provider"
       assignment_role: "resident" | "landlord"
+      meter_utility_type: "Electricity" | "Water" | "Gas" | "Multi-Utility"
       property_status: "active" | "archived"
+      supplier_status: "Active" | "Inactive" | "Suspended"
       unit_status: "vacant" | "occupied" | "maintenance" | "archived"
       user_status: "active" | "inactive" | "suspended" | "pending"
     }
@@ -714,7 +758,9 @@ export const Constants = {
         "service_provider",
       ],
       assignment_role: ["resident", "landlord"],
+      meter_utility_type: ["Electricity", "Water", "Gas", "Multi-Utility"],
       property_status: ["active", "archived"],
+      supplier_status: ["Active", "Inactive", "Suspended"],
       unit_status: ["vacant", "occupied", "maintenance", "archived"],
       user_status: ["active", "inactive", "suspended", "pending"],
     },
