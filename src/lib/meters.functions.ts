@@ -17,6 +17,8 @@ export type MeterType = "electricity" | "water" | "gas";
 export type MeterRow = {
   id: string;
   vendor_id: string;
+  supplier_id: string | null;
+  supplier_name: string | null;
   landlord_id: string | null;
   landlord_name: string | null;
   agent_id: string | null;
