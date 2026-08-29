@@ -26,6 +26,7 @@ import { toast } from "sonner";
 
 import {
   addMeter,
+  bulkAddMeters,
   bulkMeterAction,
   listMeters,
   listMeterAuditLogs,
