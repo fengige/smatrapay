@@ -729,6 +729,21 @@ function MetersPage() {
         </div>
       )}
 
+      {showBulkAdd && (
+        <BulkAddMetersDialog
+          vendors={vendors}
+          landlords={landlords}
+          agents={agents}
+          suppliers={supplierOptions}
+          onClose={() => setShowBulkAdd(false)}
+          onSaved={async (count: number) => {
+            setShowBulkAdd(false);
+            await queryClient.invalidateQueries({ queryKey: ["meters"] });
+            toast.success(`${count} meter${count === 1 ? "" : "s"} added`);
+          }}
+        />
+      )}
+
       {showImport && (
         <ImportMetersDialog
           onClose={() => setShowImport(false)}
