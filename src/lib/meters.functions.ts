@@ -265,6 +265,7 @@ export const addMeter = createServerFn({ method: "POST" })
       .from("meters")
       .insert({
         vendor_id: data.vendor_id,
+        supplier_id: data.supplier_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
@@ -311,6 +312,7 @@ export const updateMeter = createServerFn({ method: "POST" })
       .from("meters")
       .update({
         vendor_id: data.vendor_id,
+        supplier_id: data.supplier_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
