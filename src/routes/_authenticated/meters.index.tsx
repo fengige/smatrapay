@@ -156,6 +156,7 @@ function MetersPage() {
   const meters = data?.meters ?? [];
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
+  const vendors = data?.vendors ?? [];
   const unitOptions = data?.units ?? [];
   const supplierOptions = data?.suppliers ?? [];
 
