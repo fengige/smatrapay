@@ -184,6 +184,18 @@ export const listMeters = createServerFn({ method: "GET" })
       loadOptions("agent", "Unnamed agent"),
     ]);
 
+    // Active supplier options for the meter dialog.
+    const { data: supplierRows } = await supabase
+      .from("meter_suppliers")
+      .select("id, company_name")
+      .eq("status", "Active")
+      .order("company_name", { ascending: true });
+    const supplierOptions = (supplierRows ?? []).map((s: any) => ({
+      id: s.id as string,
+      name: (s.company_name as string) ?? "",
+    }));
+    const supplierById = new Map(supplierOptions.map((s) => [s.id, s]));
+
     // Unit options (with property names) for optionally linking a meter to a unit.
     const { data: unitRows } = await supabase
       .from("units")
