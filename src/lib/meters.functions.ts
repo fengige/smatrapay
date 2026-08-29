@@ -163,7 +163,7 @@ export const listMeters = createServerFn({ method: "GET" })
     const personById = new Map(personRows.map((l) => [l.id, l]));
 
     // Landlord / agent options for the meter dialog.
-    const loadOptions = async (role: "landlord" | "agent", fallback: string) => {
+    const loadOptions = async (role: "landlord" | "agent" | "vendor", fallback: string) => {
       const { data: roleRows } = await supabase
         .from("user_roles")
         .select("user_id")
