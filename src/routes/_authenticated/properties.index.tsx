@@ -165,6 +165,15 @@ function PropertiesPage() {
     return list.filter((s2) => routeIds.has(s2.route_id));
   }, [geo, routeId, zoneId, routes]);
 
+  const geoLabels = useMemo(() => {
+    const zoneMap = new Map((geo?.zones ?? []).map((z) => [z.zone_id, z.zone_name]));
+    const routeMap = new Map(
+      (geo?.routes ?? []).map((r) => [r.route_id, `${r.route_code} · ${r.route_name}`]),
+    );
+    const streetMap = new Map((geo?.streets ?? []).map((s2) => [s2.street_id, s2.street_name]));
+    return { zoneMap, routeMap, streetMap };
+  }, [geo]);
+
   const properties = useMemo(() => (data?.properties ?? []) as unknown as Property[], [data]);
   const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
   const assignments = useMemo(() => (data?.assignments ?? []) as unknown as Assignment[], [data]);
@@ -194,6 +203,11 @@ function PropertiesPage() {
       const currentAssignments = propertyAssignments.filter((a) => !a.end_date);
       return {
         property,
+        zoneName: property.zone_id ? (geoLabels.zoneMap.get(property.zone_id) ?? null) : null,
+        routeName: property.route_id ? (geoLabels.routeMap.get(property.route_id) ?? null) : null,
+        streetName: property.street_id
+          ? (geoLabels.streetMap.get(property.street_id) ?? null)
+          : null,
         units: propertyUnits,
         buildings: [...new Set(propertyUnits.map((u) => (u.building ?? "").trim()).filter(Boolean))],
         unitTypes: [
@@ -208,7 +222,7 @@ function PropertiesPage() {
         startDates: propertyAssignments.map((a) => a.start_date),
       };
     });
-  }, [properties, units, assignments]);
+  }, [properties, units, assignments, geoLabels]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -227,6 +241,9 @@ function PropertiesPage() {
         row.property.city,
         row.property.country,
         row.property.property_type,
+        row.zoneName,
+        row.routeName,
+        row.streetName,
         ...row.buildings,
         ...row.unitTypes,
       ]
@@ -256,6 +273,9 @@ function PropertiesPage() {
       "Property",
       "Type",
       "Code",
+      "Zone",
+      "Route",
+      "Street",
       "City",
       "Status",
       "Unit types",
@@ -267,6 +287,9 @@ function PropertiesPage() {
       row.property.name,
       row.property.property_type ?? "building",
       row.property.code ?? "",
+      row.zoneName ?? "",
+      row.routeName ?? "",
+      row.streetName ?? "",
       row.property.city ?? "",
       row.property.status,
       row.unitTypes.join(" | "),
@@ -454,6 +477,7 @@ function PropertiesPage() {
                 <tr>
                   <th className="px-4 py-3 font-semibold">Property</th>
                   <th className="px-4 py-3 font-semibold">Type</th>
+                  <th className="px-4 py-3 font-semibold">Zone / Route / Street</th>
                   <th className="px-4 py-3 font-semibold">Unit Type</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
@@ -465,21 +489,21 @@ function PropertiesPage() {
               <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     </td>
                   </tr>
                 )}
                 {!isLoading && error && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={9} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 )}
                 {!isLoading && !error && !paged.length && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                       No properties match these filters.
                     </td>
                   </tr>
@@ -509,6 +533,17 @@ function PropertiesPage() {
                         )}
                         {row.property.property_type ?? "building"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {row.zoneName || row.routeName || row.streetName ? (
+                        <div className="space-y-0.5">
+                          <p className="font-medium text-foreground">{row.zoneName ?? "—"}</p>
+                          <p className="text-xs">{row.routeName ?? "No route"}</p>
+                          <p className="text-xs">{row.streetName ?? "No street"}</p>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {row.unitTypes.join(", ") || "—"}
