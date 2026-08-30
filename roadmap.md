@@ -33,5 +33,5 @@
 - [x] Vendor management pages (list, details, edit, add)
 - [x] Agent management pages (list, details, edit, add)
 
-- [ ] Vendor details: meter assignment UI (register/unassign meters to a vendor)
-- [ ] Agent details: meter assignment UI (register/unassign meters to an agent)
+- [x] Vendor details: meter assignment UI (register/unassign meters to a vendor)
+- [x] Agent details: meter assignment UI (register/unassign meters to an agent)
