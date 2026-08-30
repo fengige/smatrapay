@@ -341,7 +341,7 @@ function MetersPage() {
             onClick={() => navigate({ to: "/meters/bulk-add" })}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
-            <Plus className="size-4" /> Bulk Add Meters
+            <Plus className="size-4" /> Add Meters
           </button>
           <button
             type="button"
@@ -538,7 +538,7 @@ function MetersPage() {
                 ) : paged.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
-                      No meters match your filters. Use “Bulk Add Meters” or “Import CSV” to register meters.
+                      No meters match your filters. Use “Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
                 ) : (
@@ -1787,7 +1787,7 @@ function BulkAddMetersDialog({
     >
       <div className="my-8 w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg">
         <h2 id="bulk-add-meters-title" className="text-lg font-bold">
-          Bulk Add Meters
+          Add Meters
         </h2>
         <p className="text-sm text-muted-foreground">
           Pick a supplier and owner, choose how many meters, then fill in each meter row.

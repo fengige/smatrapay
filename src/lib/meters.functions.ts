@@ -839,7 +839,7 @@ export type BulkMeterOptions = {
   agents: { id: string; name: string }[];
 };
 
-/** Lightweight option lists for the dedicated Bulk Add Meters page. */
+/** Lightweight option lists for the dedicated Add Meters page. */
 export const listBulkMeterOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
