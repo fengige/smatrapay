@@ -199,14 +199,14 @@ function ZonesPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto size-5 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && !rows.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   No zones match your search. Use “Add Zone” to create one.
                 </td>
               </tr>
@@ -293,7 +293,7 @@ function ZonesPage() {
               </tr>
               {expanded === z.zone_id && (
                 <tr key={`routes-${z.zone_id}`} className="border-t border-border/70 bg-muted/20">
-                  <td colSpan={6} className="p-3">
+                  <td colSpan={7} className="p-3">
                     <RouteManager zoneId={z.zone_id} zoneName={z.zone_name} />
                   </td>
                 </tr>
