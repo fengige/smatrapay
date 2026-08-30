@@ -535,70 +535,221 @@ function PosPage() {
 
         {/* Recent sales */}
         <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="text-sm font-bold">
-            {meter ? `Recent sales — ${meter.meter_number}` : "Recent sales"}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-bold">
+              {meter ? `Recent sales — ${meter.meter_number}` : "Recent sales"}
+            </h2>
+            {selected.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{selected.length} selected</span>
+                <button
+                  type="button"
+                  onClick={() => setSelected([])}
+                  className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkConfirm(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  <MessageSquare className="size-3.5" /> Re-send {selected.length} by SMS
+                </button>
+              </div>
+            )}
+          </div>
           {recent.isLoading ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
-          ) : (recent.data ?? []).length === 0 ? (
+          ) : recentRows.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No sales recorded yet.</p>
           ) : (
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs uppercase text-muted-foreground">
                   <tr>
+                    <th className="py-2 pr-3">
+                      <input
+                        type="checkbox"
+                        aria-label="Select all sales for SMS re-send"
+                        checked={selectable.length > 0 && selected.length === selectable.length}
+                        onChange={(e) => setSelected(e.target.checked ? selectable : [])}
+                      />
+                    </th>
                     <th className="py-2 pr-4">When</th>
                     <th className="py-2 pr-4">Token</th>
                     <th className="py-2 pr-4">Units</th>
                     <th className="py-2 pr-4">Amount</th>
                     <th className="py-2 pr-4">Reference</th>
                     <th className="py-2 pr-4">Status</th>
+                    <th className="py-2 pr-4">SMS</th>
                     <th className="py-2 text-right">Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(recent.data ?? []).slice(0, 20).map((t) => (
-                    <tr key={t.id} className="border-t border-border">
-                      <td className="py-2 pr-4">{new Date(t.created_at).toLocaleString()}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
-                      <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
-                      <td className="py-2 pr-4">{money(t.amount)}</td>
-                      <td className="py-2 pr-4">{t.reference ?? "—"}</td>
-                      <td className="py-2 pr-4 capitalize">{t.status}</td>
-                      <td className="py-2 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setReprint(t)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
-                          >
-                            <Printer className="size-3.5" /> Reprint
-                          </button>
-                          <button
-                            type="button"
+                  {recentRows.map((t) => {
+                    const log = latestLogByToken.get(t.id);
+                    return (
+                      <tr key={t.id} className="border-t border-border">
+                        <td className="py-2 pr-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select sale ${t.token} for SMS re-send`}
                             disabled={t.status === "revoked"}
-                            title={
-                              t.status === "revoked"
-                                ? "Revoked tokens cannot be re-sent"
-                                : "Re-send this receipt via SMS"
+                            checked={selected.includes(t.id)}
+                            onChange={(e) =>
+                              setSelected((prev) =>
+                                e.target.checked ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                              )
                             }
-                            onClick={() => {
-                              setSmsTarget(t);
-                              setSmsPhone(t.customer_phone ?? "");
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <MessageSquare className="size-3.5" /> SMS
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          />
+                        </td>
+                        <td className="py-2 pr-4">{new Date(t.created_at).toLocaleString()}</td>
+                        <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
+                        <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
+                        <td className="py-2 pr-4">{money(t.amount)}</td>
+                        <td className="py-2 pr-4">{t.reference ?? "—"}</td>
+                        <td className="py-2 pr-4 capitalize">{t.status}</td>
+                        <td className="py-2 pr-4">
+                          {log ? (
+                            <button
+                              type="button"
+                              onClick={() => setHistoryFor(t)}
+                              title={`${log.status} · ${log.phone} · ${new Date(log.created_at).toLocaleString()}${log.error ? ` · ${log.error}` : ""}`}
+                              className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${smsBadgeClass(log.status)}`}
+                            >
+                              {log.status}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not sent</span>
+                          )}
+                        </td>
+                        <td className="py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setReprint(t)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                            >
+                              <Printer className="size-3.5" /> Reprint
+                            </button>
+                            <button
+                              type="button"
+                              disabled={t.status === "revoked"}
+                              title={
+                                t.status === "revoked"
+                                  ? "Revoked tokens cannot be re-sent"
+                                  : "Re-send this receipt via SMS"
+                              }
+                              onClick={() => {
+                                setSmsTarget(t);
+                                setSmsPhone(t.customer_phone ?? "");
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <MessageSquare className="size-3.5" /> SMS
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </section>
+
+        {/* Bulk re-send confirmation */}
+        {bulkConfirm && (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm bulk SMS re-send"
+          >
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+              <h3 className="font-semibold">Re-send {selectedRows.length} receipt(s) by SMS</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Existing tokens are re-sent to the phone number on each sale. No new sales are created.
+              </p>
+              <ul className="mt-3 max-h-56 space-y-1 overflow-y-auto text-sm">
+                {selectedRows.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between gap-3 border-b border-border/60 py-1">
+                    <span className="font-mono text-xs">{t.token}</span>
+                    <span className={t.customer_phone ? "" : "text-destructive"}>
+                      {t.customer_phone ?? "No phone on file"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkConfirm(false)}
+                  disabled={bulkResend.isPending}
+                  className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => bulkResend.mutate()}
+                  disabled={bulkResend.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                >
+                  {bulkResend.isPending ? <Loader2 className="size-4 animate-spin" /> : <MessageSquare className="size-4" />}
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SMS delivery history */}
+        {historyFor && (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="SMS delivery history"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setHistoryFor(null);
+            }}
+          >
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+              <h3 className="font-semibold">SMS delivery history</h3>
+              <p className="mt-1 font-mono text-xs text-muted-foreground">{historyFor.token}</p>
+              <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto text-sm">
+                {(logsByToken.get(historyFor.id) ?? []).map((log) => (
+                  <li key={log.id} className="rounded-lg border border-border p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${smsBadgeClass(log.status)}`}>
+                        {log.status}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(log.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs">
+                      {log.phone} · by {log.actor_name ?? "system"}
+                    </p>
+                    {log.error && <p className="mt-1 text-xs text-destructive">{log.error}</p>}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setHistoryFor(null)}
+                  className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {reprint && (
