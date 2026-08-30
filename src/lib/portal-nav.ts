@@ -9,6 +9,7 @@ import {
   Grid2x2,
   Home,
   KeyRound,
+  MapPin,
   Receipt,
   Settings,
   ShoppingCart,
