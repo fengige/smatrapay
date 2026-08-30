@@ -1179,24 +1179,19 @@ function MeterDialog({
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-owner">
               User
             </label>
-            <select
+            <SearchSelect
               id="meter-owner"
               value={ownerId}
-              onChange={(e) => setOwnerId(e.target.value)}
-              onBlur={() => touch("owner")}
-              aria-invalid={Boolean(visible("owner", ownerError))}
-              className={fieldError(visible("owner", ownerError))}
-            >
-              <option value="">
-                Select {ownerType}
-                {ownerOptions.length === 0 ? " (none available)" : ""}
-              </option>
-              {ownerOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => {
+                setOwnerId(v);
+                touch("owner");
+              }}
+              invalid={Boolean(visible("owner", ownerError))}
+              placeholder={`Search ${ownerType}s${ownerOptions.length === 0 ? " (none available)" : ""}`}
+              emptyLabel="No users match your search"
+              options={ownerOptions.map((o) => ({ id: o.id, label: o.name }))}
+            />
+
             {visible("owner", ownerError) && (
               <p className="mt-1 text-xs text-destructive">{ownerError}</p>
             )}
