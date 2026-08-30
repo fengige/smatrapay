@@ -12,7 +12,7 @@ import {
   Search,
   Zap,
 } from "lucide-react";
-import PortalLayout from "@/components/PortalLayout";
+import { PortalLayout } from "@/components/PortalLayout";
 import { searchTokenMeters, type TokenMeterMatch } from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/_authenticated/token-management")({
@@ -117,15 +117,12 @@ function TokenManagementPage() {
   };
 
   return (
-    <PortalLayout>
+    <PortalLayout
+      roles={["admin"]}
+      title="Token Management"
+      description="Search a prepaid meter, then issue credit or an engineering token for the customer"
+    >
       <div className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-bold tracking-tight">Token Management</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Search a prepaid meter, then issue credit or an engineering token for the customer.
-          </p>
-        </header>
-
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           {/* Meter search */}
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
