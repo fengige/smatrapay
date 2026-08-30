@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import {
   assignMetersToAgent,
+  listAgentAssignmentHistory,
   listAgentMeters,
   listAssignableAgentMeters,
   unassignMetersFromAgent,
@@ -14,9 +15,22 @@ import {
 import {
   assignMetersToVendor,
   listAssignableVendorMeters,
+  listVendorAssignmentHistory,
   listVendorMeters,
   unassignMetersFromVendor,
 } from "@/lib/vendors.functions";
+
+type MeterResult = { id: string; meter_number: string; ok: boolean; reason?: string };
+
+type HistoryEntry = {
+  id: string;
+  meter_id: string;
+  meter_number: string;
+  serial_number: string | null;
+  action: "assigned" | "unassigned";
+  actor_name: string;
+  created_at: string;
+};
 
 type Kind = "agent" | "vendor";
 
@@ -57,6 +71,9 @@ export function MeterAssignmentPanel({
   const unassign = useServerFn(
     isAgent ? unassignMetersFromAgent : (unassignMetersFromVendor as never),
   );
+  const listHistory = useServerFn(
+    isAgent ? listAgentAssignmentHistory : (listVendorAssignmentHistory as never),
+  );
 
   const ownerArg = (extra: Record<string, unknown> = {}) =>
     (isAgent ? { agentId: ownerId, ...extra } : { vendorId: ownerId, ...extra }) as never;
@@ -77,11 +94,16 @@ export function MeterAssignmentPanel({
   const [confirmUnassign, setConfirmUnassign] = useState(false);
   const [search, setSearch] = useState("");
   const [pickerSelected, setPickerSelected] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [results, setResults] = useState<{ title: string; rows: MeterResult[] } | null>(null);
 
   useEffect(() => {
     if (!dialogOpen) {
       setSearch("");
       setPickerSelected([]);
+      setStatusFilter("all");
+      setTypeFilter("all");
     }
   }, [dialogOpen]);
 
@@ -103,25 +125,53 @@ export function MeterAssignmentPanel({
     enabled: dialogOpen,
   });
 
+  const allAssignable = assignableData?.meters ?? [];
+
+  const statusOptions = useMemo(
+    () => [...new Set(allAssignable.map((m) => m.status).filter(Boolean))].sort(),
+    [allAssignable],
+  );
+  const typeOptions = useMemo(
+    () => [...new Set(allAssignable.map((m) => m.type).filter(Boolean))].sort(),
+    [allAssignable],
+  );
+
   const assignable = useMemo(() => {
-    const all = assignableData?.meters ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return all;
-    return all.filter(
-      (m) =>
+    return allAssignable.filter((m) => {
+      if (statusFilter !== "all" && m.status !== statusFilter) return false;
+      if (typeFilter !== "all" && m.type !== typeFilter) return false;
+      if (!q) return true;
+      return (
         m.meter_number.toLowerCase().includes(q) ||
-        (m.serial_number ?? "").toLowerCase().includes(q),
-    );
-  }, [assignableData, search]);
+        (m.serial_number ?? "").toLowerCase().includes(q) ||
+        (m.type ?? "").toLowerCase().includes(q) ||
+        (m.status ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [allAssignable, search, statusFilter, typeFilter]);
+
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: [`${kind}-assignment-history`, ownerId],
+    queryFn: () =>
+      (listHistory as unknown as (o: { data: unknown }) => Promise<{ entries: HistoryEntry[] }>)({
+        data: ownerArg(),
+      }),
+  });
+
+  const history = historyData?.entries ?? [];
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ownedKey });
     queryClient.invalidateQueries({ queryKey: [`assignable-${kind}-meters`] });
+    queryClient.invalidateQueries({ queryKey: [`${kind}-assignment-history`, ownerId] });
   };
 
   const assignMutation = useMutation({
     mutationFn: () =>
-      (assign as unknown as (o: { data: unknown }) => Promise<{ assigned: number; skipped: string[] }>)({
+      (assign as unknown as (
+        o: { data: unknown },
+      ) => Promise<{ assigned: number; skipped: string[]; results: MeterResult[] }>)({
         data: ownerArg({ meterIds: pickerSelected }),
       }),
     onSuccess: (res) => {
@@ -131,6 +181,7 @@ export function MeterAssignmentPanel({
           ? { description: `Skipped (already registered): ${res.skipped.join(", ")}` }
           : undefined,
       );
+      setResults({ title: "Registration results", rows: res.results });
       refresh();
       setDialogOpen(false);
     },
@@ -139,11 +190,14 @@ export function MeterAssignmentPanel({
 
   const unassignMutation = useMutation({
     mutationFn: () =>
-      (unassign as unknown as (o: { data: unknown }) => Promise<{ unassigned: number }>)({
+      (unassign as unknown as (
+        o: { data: unknown },
+      ) => Promise<{ unassigned: number; results: MeterResult[] }>)({
         data: ownerArg({ meterIds: selected }),
       }),
     onSuccess: (res) => {
       toast.success(`${res.unassigned} meter${res.unassigned === 1 ? "" : "s"} unassigned`);
+      setResults({ title: "Unassign results", rows: res.results });
       setSelected([]);
       setConfirmUnassign(false);
       refresh();
