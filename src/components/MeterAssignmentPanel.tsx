@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Gauge, Loader2, Plus, Search, Unlink, X } from "lucide-react";
+import { Gauge, History, Loader2, Plus, Search, Unlink, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -40,6 +40,9 @@ type AssignableMeter = {
   serial_number: string;
   type: string;
   status: string;
+  landlord_id: string | null;
+  agent_id: string | null;
+  vendor_id: string | null;
 };
 
 type OwnedMeter = {
@@ -150,6 +153,20 @@ export function MeterAssignmentPanel({
       );
     });
   }, [allAssignable, search, statusFilter, typeFilter]);
+
+  const conflictOf = (m: AssignableMeter) => {
+    if (m.landlord_id) return "Held by a landlord";
+    if (isAgent && m.vendor_id) return "Held by a vendor";
+    if (!isAgent && m.agent_id) return "Held by an agent";
+    return null;
+  };
+
+  const blockedSelection = useMemo(
+    () =>
+      allAssignable.filter((m) => pickerSelected.includes(m.id) && conflictOf(m)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allAssignable, pickerSelected],
+  );
 
   const { data: historyData, isLoading: historyLoading } = useQuery({
     queryKey: [`${kind}-assignment-history`, ownerId],
@@ -380,6 +397,45 @@ export function MeterAssignmentPanel({
                   className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <label className="text-xs text-muted-foreground">
+                  Status
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="ml-2 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                  >
+                    <option value="all">All</option>
+                    {statusOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-muted-foreground">
+                  Model / type
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="ml-2 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                  >
+                    <option value="all">All</option>
+                    {typeOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {blockedSelection.length > 0 && (
+                <p className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                  {blockedSelection.length} selected meter
+                  {blockedSelection.length === 1 ? " is" : "s are"} already registered elsewhere:{" "}
+                  {blockedSelection.map((m) => `${m.meter_number} (${conflictOf(m)})`).join(", ")}
+                </p>
+              )}
             </div>
 
             <div className="min-h-40 flex-1 overflow-y-auto">
@@ -407,7 +463,10 @@ export function MeterAssignmentPanel({
                             setPickerSelected(
                               e.target.checked
                                 ? Array.from(
-                                    new Set([...pickerSelected, ...assignable.map((m) => m.id)]),
+                                    new Set([
+                                      ...pickerSelected,
+                                      ...assignable.filter((m) => !conflictOf(m)).map((m) => m.id),
+                                    ]),
                                   )
                                 : pickerSelected.filter(
                                     (id) => !assignable.some((m) => m.id === id),
@@ -430,6 +489,7 @@ export function MeterAssignmentPanel({
                             type="checkbox"
                             aria-label={`Select meter ${m.meter_number}`}
                             checked={pickerSelected.includes(m.id)}
+                            disabled={!!conflictOf(m)}
                             onChange={(e) =>
                               setPickerSelected((prev) =>
                                 e.target.checked
@@ -442,7 +502,14 @@ export function MeterAssignmentPanel({
                         <td className="px-4 py-3 font-medium text-foreground">{m.meter_number}</td>
                         <td className="px-4 py-3 text-muted-foreground">{m.serial_number}</td>
                         <td className="px-4 py-3 capitalize text-muted-foreground">{m.type}</td>
-                        <td className="px-4 py-3 capitalize text-muted-foreground">{m.status}</td>
+                        <td className="px-4 py-3 capitalize text-muted-foreground">
+                          {m.status}
+                          {conflictOf(m) && (
+                            <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-destructive">
+                              {conflictOf(m)}
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -462,7 +529,11 @@ export function MeterAssignmentPanel({
                 </button>
                 <button
                   type="button"
-                  disabled={pickerSelected.length === 0 || assignMutation.isPending}
+                  disabled={
+                    pickerSelected.length === 0 ||
+                    blockedSelection.length > 0 ||
+                    assignMutation.isPending
+                  }
                   onClick={() => assignMutation.mutate()}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
                 >
@@ -475,6 +546,94 @@ export function MeterAssignmentPanel({
           </div>
         </div>
       )}
+      {results && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={results.title}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
+        >
+          <div className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+            <header className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h4 className="text-base font-bold text-foreground">{results.title}</h4>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setResults(null)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </header>
+            <ul className="flex-1 divide-y divide-border overflow-y-auto">
+              {results.rows.map((r) => (
+                <li key={r.id} className="flex items-start justify-between gap-3 px-6 py-3 text-sm">
+                  <span className="font-medium text-foreground">{r.meter_number}</span>
+                  <span
+                    className={
+                      r.ok
+                        ? "text-xs font-semibold text-emerald-600"
+                        : "text-right text-xs text-destructive"
+                    }
+                  >
+                    {r.ok ? "Success" : (r.reason ?? "Skipped")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <footer className="border-t border-border px-6 py-4 text-right">
+              <button
+                type="button"
+                onClick={() => setResults(null)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                Done
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      <div className="border-t border-border">
+        <header className="flex items-center gap-2 px-6 py-4">
+          <History className="size-4 text-primary" />
+          <h4 className="text-sm font-bold text-foreground">Assignment history</h4>
+        </header>
+        {historyLoading ? (
+          <div className="flex justify-center pb-8 text-muted-foreground">
+            <Loader2 className="size-5 animate-spin" />
+          </div>
+        ) : history.length === 0 ? (
+          <p className="px-6 pb-6 text-xs text-muted-foreground">
+            No meter registrations or removals recorded yet.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {history.map((h) => (
+              <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 px-6 py-3">
+                <div className="text-sm">
+                  <span
+                    className={
+                      h.action === "assigned"
+                        ? "mr-2 rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-emerald-600"
+                        : "mr-2 rounded bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-destructive"
+                    }
+                  >
+                    {h.action}
+                  </span>
+                  <span className="font-medium text-foreground">{h.meter_number}</span>
+                  {h.serial_number && (
+                    <span className="ml-2 text-xs text-muted-foreground">{h.serial_number}</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {h.actor_name} · {new Date(h.created_at).toLocaleString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
