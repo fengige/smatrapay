@@ -98,6 +98,87 @@ export const updateZone = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export type ZoneDetail = ZoneRow & {
+  street_count: number;
+  routes: { route_id: number; route_code: string; route_name: string; status: string; street_count: number }[];
+};
+
+export const getZone = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: row, error } = await supabase
+      .from("zones")
+      .select("zone_id, zone_name, description, status, created_at, updated_at")
+      .eq("zone_id", data.zone_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Zone not found");
+
+    const { data: routeRows } = await supabase
+      .from("routes")
+      .select("route_id, route_code, route_name, status")
+      .eq("zone_id", data.zone_id)
+      .order("route_code", { ascending: true });
+
+    const routes = ((routeRows ?? []) as any[]).map((r) => ({
+      route_id: r.route_id,
+      route_code: r.route_code ?? "",
+      route_name: r.route_name ?? "",
+      status: r.status ?? "Active",
+      street_count: 0,
+    }));
+
+    const ids = routes.map((r) => r.route_id);
+    const counts = new Map<number, number>();
+    if (ids.length) {
+      const { data: streetRows } = await supabase
+        .from("streets")
+        .select("route_id")
+        .in("route_id", ids);
+      for (const s of (streetRows ?? []) as any[]) {
+        counts.set(s.route_id, (counts.get(s.route_id) ?? 0) + 1);
+      }
+    }
+    for (const r of routes) r.street_count = counts.get(r.route_id) ?? 0;
+
+    const zone: ZoneDetail = {
+      zone_id: (row as any).zone_id,
+      zone_name: (row as any).zone_name ?? "",
+      description: (row as any).description ?? null,
+      status: (row as any).status === "Inactive" ? "Inactive" : "Active",
+      route_count: routes.length,
+      street_count: routes.reduce((s, r) => s + r.street_count, 0),
+      created_at: (row as any).created_at,
+      updated_at: (row as any).updated_at,
+      routes,
+    };
+    return { zone };
+  });
+
+export const setZoneStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        zone_id: z.number().int().positive(),
+        status: z.enum(["Active", "Inactive"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { error } = await context.supabase
+      .from("zones")
+      .update({ status: data.status } as never)
+      .eq("zone_id", data.zone_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const deleteZone = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
