@@ -28,4 +28,4 @@
 - [x] Route Active/Inactive toggle in Zone page with validation
 
 - [x] Property CSV import with zone/route/street row validation
-- [ ] Show Zone/Route/Street names in property table and detail views
+- [x] Show Zone/Route/Street names in property table and detail views
