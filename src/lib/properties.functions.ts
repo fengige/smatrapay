@@ -311,6 +311,34 @@ export const getUnit = createServerFn({ method: "GET" })
 
 
 
+async function assertZoneRouteStreet(
+  supabase: any,
+  ids: { zone_id?: number | null; route_id?: number | null; street_id?: number | null },
+) {
+  if (ids.route_id) {
+    const { data: route } = await supabase
+      .from("routes")
+      .select("zone_id")
+      .eq("route_id", ids.route_id)
+      .maybeSingle();
+    if (!route) throw new Error("Selected route not found");
+    if (ids.zone_id && (route as any).zone_id !== ids.zone_id) {
+      throw new Error("The selected route does not belong to the selected zone");
+    }
+  }
+  if (ids.street_id) {
+    const { data: street } = await supabase
+      .from("streets")
+      .select("route_id")
+      .eq("street_id", ids.street_id)
+      .maybeSingle();
+    if (!street) throw new Error("Selected street not found");
+    if (ids.route_id && (street as any).route_id !== ids.route_id) {
+      throw new Error("The selected street does not belong to the selected route");
+    }
+  }
+}
+
 export const createProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => propertyInput.parse(data))
