@@ -495,13 +495,31 @@ function PosPage() {
                       <td className="py-2 pr-4">{t.reference ?? "—"}</td>
                       <td className="py-2 pr-4 capitalize">{t.status}</td>
                       <td className="py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setReprint(t)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
-                        >
-                          <Printer className="size-3.5" /> Reprint
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setReprint(t)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                          >
+                            <Printer className="size-3.5" /> Reprint
+                          </button>
+                          <button
+                            type="button"
+                            disabled={t.status === "revoked"}
+                            title={
+                              t.status === "revoked"
+                                ? "Revoked tokens cannot be re-sent"
+                                : "Re-send this receipt via SMS"
+                            }
+                            onClick={() => {
+                              setSmsTarget(t);
+                              setSmsPhone(t.customer_phone ?? "");
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <MessageSquare className="size-3.5" /> SMS
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
