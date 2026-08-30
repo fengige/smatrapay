@@ -525,22 +525,40 @@ function BulkAddMetersPage() {
         </div>
       )}
 
-      {rows.length > 0 && (
+      {(importing || rows.length > 0) && (
         <div className="mt-6 rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              Meter details ({rows.length})
+              {importing ? "Importing meters…" : `Meter details (${rows.length})`}
             </h2>
-            <button
-              type="button"
-              onClick={() => setRows([])}
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              Clear rows
-            </button>
+            {!importing && (
+              <button
+                type="button"
+                onClick={() => setRows([])}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Clear rows
+              </button>
+            )}
           </div>
 
-          <div className="mt-3 -mx-5 overflow-x-auto px-5">
+          {importing ? (
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-2">
+                  <div className="h-9 w-8 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 -mx-5 overflow-x-auto px-5">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr className="border-b border-border">
