@@ -967,14 +967,64 @@ function MeterDialog({
     ea: meter?.ea != null ? String(meter.ea) : "",
     ken: meter?.ken != null ? String(meter.ken) : "",
   });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  const touch = (key: string) => setTouched((prev) => ({ ...prev, [key]: true }));
+
+  const initialSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        vendorId,
+        supplierId,
+        landlordId,
+        agentId,
+        unitId,
+        meterNumber,
+        serialNumber,
+        meterType,
+        initialReading,
+        pricePerUnit,
+        status,
+        sts,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const isDirty =
+    JSON.stringify({
+      vendorId,
+      supplierId,
+      landlordId,
+      agentId,
+      unitId,
+      meterNumber,
+      serialNumber,
+      meterType,
+      initialReading,
+      pricePerUnit,
+      status,
+      sts,
+    }) !== initialSnapshot;
+
+  const attemptClose = () => {
+    if (mutation.isPending) return;
+    if (
+      isDirty &&
+      !window.confirm("You have unsaved changes. Discard them and close this dialog?")
+    )
+      return;
+    onClose();
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") attemptClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, isDirty, mutation.isPending]);
 
   const others = useMemo(
     () => existing.filter((m) => m.id !== meter?.id),
