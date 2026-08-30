@@ -606,6 +606,7 @@ function BulkAddMetersPage() {
               </tbody>
             </table>
           </div>
+        )}
         </div>
       )}
 
