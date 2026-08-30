@@ -236,14 +236,28 @@ function MetersPage() {
   });
 
   const runBulk = useServerFn(bulkMeterAction);
+  const runUnassign = useServerFn(bulkUnassignMeters);
   const bulk = useMutation({
-    mutationFn: async (action: "delete" | "deactivate" | "activate") =>
-      runBulk({ data: { action, ids: selectedMeters.map((m) => m.id) } } as never),
-    onSuccess: async (_res, action) => {
+    mutationFn: async (action: "delete" | "deactivate" | "activate" | "unassign") => {
+      const ids = selectedMeters.map((m) => m.id);
+      if (action === "unassign") return runUnassign({ data: { meter_ids: ids } } as never);
+      return runBulk({ data: { action, ids } } as never);
+    },
+    onSuccess: async (res: any, action) => {
       const n = selectedMeters.length;
       setConfirm(null);
       setSelected([]);
       await queryClient.invalidateQueries({ queryKey: ["meters"] });
+      if (action === "unassign") {
+        const done = Number(res?.unassigned ?? 0);
+        const skipped = Number(res?.skipped ?? 0);
+        toast.success(
+          `${done} meter${done === 1 ? "" : "s"} unassigned from units${
+            skipped ? ` · ${skipped} already unassigned` : ""
+          }`,
+        );
+        return;
+      }
       toast.success(
         action === "delete"
           ? `${n} meter${n === 1 ? "" : "s"} deleted`
@@ -252,6 +266,7 @@ function MetersPage() {
     },
     onError: (err: Error) => toast.error(err.message || "Bulk action failed"),
   });
+
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
