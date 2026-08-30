@@ -843,3 +843,211 @@ export const listBulkMeterOptions = createServerFn({ method: "GET" })
       agents,
     } satisfies BulkMeterOptions;
   });
+
+/* ------------------------------------------------------------------ *
+ * View / activate / assign
+ * ------------------------------------------------------------------ */
+
+export type MeterDetail = MeterRow & {
+  supplier: {
+    id: string;
+    company_name: string;
+    utility_type: string;
+    status: string;
+    contact_name: string | null;
+    email: string | null;
+    phone_number: string | null;
+  } | null;
+  unit: {
+    id: string;
+    unit_number: string;
+    property_id: string | null;
+    property_name: string | null;
+  } | null;
+  landlord: { id: string; name: string | null; email: string | null } | null;
+  agent: { id: string; name: string | null; email: string | null } | null;
+};
+
+/** Full details for a single meter, including supplier, unit and owner records. */
+export const getMeter = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    const { data: row, error } = await supabase
+      .from("meters")
+      .select(METER_COLUMNS)
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Meter not found");
+    const m = row as any;
+
+    let supplier: MeterDetail["supplier"] = null;
+    if (m.supplier_id) {
+      const { data: s } = await supabase
+        .from("meter_suppliers")
+        .select("id, company_name, utility_type, status, contact_name, email, phone_number")
+        .eq("id", m.supplier_id)
+        .maybeSingle();
+      if (s) supplier = s as never;
+    }
+
+    let unit: MeterDetail["unit"] = null;
+    if (m.unit_id) {
+      const { data: u } = await supabase
+        .from("units")
+        .select("id, unit_number, property_id, properties(name)")
+        .eq("id", m.unit_id)
+        .maybeSingle();
+      if (u) {
+        const uu = u as any;
+        unit = {
+          id: uu.id,
+          unit_number: uu.unit_number ?? "",
+          property_id: uu.property_id ?? null,
+          property_name: uu.properties?.name ?? null,
+        };
+      }
+    }
+
+    const personIds = [m.landlord_id, m.agent_id].filter((v: any): v is string => !!v);
+    let people: any[] = [];
+    if (personIds.length) {
+      const { data: p } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", [...new Set(personIds)]);
+      people = p ?? [];
+    }
+    const personById = new Map(people.map((p) => [p.id, p]));
+    const person = (id: string | null) => {
+      if (!id) return null;
+      const p = personById.get(id);
+      return p ? { id, name: p.name ?? null, email: p.email ?? null } : { id, name: null, email: null };
+    };
+
+    const meter: MeterDetail = {
+      id: m.id,
+      vendor_id: m.vendor_id ?? "",
+      supplier_id: m.supplier_id ?? null,
+      supplier_name: supplier?.company_name ?? null,
+      landlord_id: m.landlord_id ?? null,
+      landlord_name: person(m.landlord_id ?? null)?.name ?? null,
+      agent_id: m.agent_id ?? null,
+      agent_name: person(m.agent_id ?? null)?.name ?? null,
+      unit_id: m.unit_id ?? null,
+      unit_label: unit
+        ? `${unit.property_name ? `${unit.property_name} · ` : ""}Unit ${unit.unit_number}`
+        : null,
+      meter_number: m.meter_number ?? "",
+      serial_number: m.serial_number ?? "",
+      type: (m.type ?? "").toLowerCase(),
+      initial_reading: Number(m.initial_reading ?? 0),
+      price_per_unit: Number(m.price_per_unit ?? 0),
+      status: (m.status ?? "active").toLowerCase(),
+      sgc: m.sgc ?? null,
+      krn: m.krn ?? null,
+      ti: m.ti ?? null,
+      ea: m.ea ?? null,
+      ken: m.ken ?? null,
+      created_at: m.created_at,
+      updated_at: m.updated_at,
+      supplier,
+      unit,
+      landlord: person(m.landlord_id ?? null),
+      agent: person(m.agent_id ?? null),
+    };
+
+    return { meter };
+  });
+
+/** Activate or deactivate a single meter. */
+export const setMeterStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: uuid, status: z.enum(["active", "inactive"]) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: current, error: curErr } = await supabase
+      .from("meters")
+      .select("id, status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (curErr) throw new Error(curErr.message);
+    if (!current) throw new Error("Meter not found");
+
+    const { error } = await supabase
+      .from("meters")
+      .update({ status: data.status } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    return { ok: true, status: data.status };
+  });
+
+/** Assign (or clear) a meter's unit, landlord and agent. */
+export const assignMeter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: uuid,
+        unit_id: uuid.nullable().optional(),
+        landlord_id: uuid.nullable().optional(),
+        agent_id: uuid.nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: current, error: curErr } = await supabase
+      .from("meters")
+      .select("id, type")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (curErr) throw new Error(curErr.message);
+    if (!current) throw new Error("Meter not found");
+
+    if (data.unit_id) {
+      const { data: unit, error: uErr } = await supabase
+        .from("units")
+        .select("id")
+        .eq("id", data.unit_id)
+        .maybeSingle();
+      if (uErr) throw new Error(uErr.message);
+      if (!unit) throw new Error("Selected unit no longer exists");
+
+      // Prevent two meters of the same utility type on one unit.
+      const { data: clash, error: cErr } = await supabase
+        .from("meters")
+        .select("id, meter_number")
+        .eq("unit_id", data.unit_id)
+        .eq("type", (current as any).type)
+        .neq("id", data.id);
+      if (cErr) throw new Error(cErr.message);
+      if ((clash ?? []).length) {
+        throw new Error(
+          `Meter ${(clash as any)[0].meter_number} is already assigned to this unit for the same utility`,
+        );
+      }
+    }
+
+    const { error } = await supabase
+      .from("meters")
+      .update({
+        unit_id: data.unit_id ?? null,
+        landlord_id: data.landlord_id ?? null,
+        agent_id: data.agent_id ?? null,
+      } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    return { ok: true };
+  });
