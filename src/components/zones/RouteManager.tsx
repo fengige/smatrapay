@@ -506,15 +506,35 @@ function StreetsManager({
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Streets on {routeCode}
         </h4>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search streets"
-            aria-label={`Search streets on ${routeCode}`}
-            className="h-9 w-48 rounded-lg border border-border bg-background pl-8 pr-3 text-xs"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          {selected.size > 0 && (
+            <button
+              type="button"
+              className={`${btn} border-destructive/40 text-destructive hover:bg-destructive/10`}
+              disabled={bulkDeleteMutation.isPending}
+              onClick={() => setConfirmBulkDelete(true)}
+            >
+              {bulkDeleteMutation.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="size-3.5" />
+              )}
+              Delete selected ({selected.size})
+            </button>
+          )}
+          <button type="button" className={btn} onClick={() => setShowImport(true)}>
+            <Upload className="size-3.5" /> Import CSV
+          </button>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search streets"
+              aria-label={`Search streets on ${routeCode}`}
+              className="h-9 w-48 rounded-lg border border-border bg-background pl-8 pr-3 text-xs"
+            />
+          </div>
         </div>
       </div>
 
