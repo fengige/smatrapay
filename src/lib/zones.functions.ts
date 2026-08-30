@@ -401,10 +401,23 @@ export type ZoneAuditRow = {
   zone_id: number | null;
   zone_name: string | null;
   action: string;
-  changes: Record<string, { old: unknown; new: unknown }>;
+  changes: Record<string, { old: string | null; new: string | null }>;
   actor_name: string;
   created_at: string;
 };
+
+function normalizeChanges(raw: unknown): Record<string, { old: string | null; new: string | null }> {
+  const out: Record<string, { old: string | null; new: string | null }> = {};
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw as Record<string, any>)) {
+      out[k] = {
+        old: v?.old == null ? null : String(v.old),
+        new: v?.new == null ? null : String(v.new),
+      };
+    }
+  }
+  return out;
+}
 
 export const listZoneAuditLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -443,7 +456,7 @@ export const listZoneAuditLogs = createServerFn({ method: "GET" })
       zone_id: r.zone_id,
       zone_name: r.zone_name,
       action: r.action,
-      changes: (r.changes ?? {}) as ZoneAuditRow["changes"],
+      changes: normalizeChanges(r.changes),
       actor_name: r.actor_id ? (names.get(r.actor_id) ?? "Unknown user") : "System",
       created_at: r.created_at,
     }));

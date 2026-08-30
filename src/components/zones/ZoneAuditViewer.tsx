@@ -30,7 +30,10 @@ export function ZoneAuditViewer({ zoneId }: { zoneId?: number }) {
 
   const { data, isLoading } = useQuery({
     queryKey: ["zone-audit-logs", zoneId ?? null],
-    queryFn: () => fetchLogs({ data: { zone_id: zoneId ?? null } } as never),
+    queryFn: () =>
+      fetchLogs({ data: { zone_id: zoneId ?? null } } as never) as Promise<{
+        logs: ZoneAuditRow[];
+      }>,
   });
 
   const logs = (data?.logs ?? []) as ZoneAuditRow[];
