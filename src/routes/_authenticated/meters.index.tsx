@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -9,9 +9,12 @@ import {
   ChevronRight,
   Download,
   Droplets,
+  Eye,
   Flame,
   Gauge,
+  Link2,
   Pencil,
+  Power,
   Loader2,
   Plus,
   RefreshCw,
@@ -32,10 +35,12 @@ import {
   listMeterAuditLogs,
   importMeters,
   METER_CSV_HEADERS,
+  setMeterStatus,
   updateMeter,
   type MeterRow,
 } from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { AssignMeterDialog } from "./meters.$meterId";
 
 const DEFAULT_LIMIT = 10;
 const LIMIT_OPTIONS = [10, 25, 50, 100];
@@ -141,6 +146,7 @@ function MetersPage() {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<MeterRow | null>(null);
+  const [assigning, setAssigning] = useState<MeterRow | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
 
@@ -209,6 +215,19 @@ function MetersPage() {
     () => meters.filter((m) => selected.includes(m.id)),
     [meters, selected],
   );
+
+  const changeStatus = useServerFn(setMeterStatus);
+  const statusMutation = useMutation({
+    mutationFn: async (vars: { id: string; status: "active" | "inactive"; label: string }) =>
+      changeStatus({ data: { id: vars.id, status: vars.status } } as never),
+    onSuccess: async (_res, vars) => {
+      await queryClient.invalidateQueries({ queryKey: ["meters"] });
+      toast.success(
+        `Meter ${vars.label} ${vars.status === "active" ? "activated" : "deactivated"}`,
+      );
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not update meter status"),
+  });
 
   const runBulk = useServerFn(bulkMeterAction);
   const bulk = useMutation({
