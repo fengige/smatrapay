@@ -1140,21 +1140,19 @@ function MeterDialog({
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
               Supplier
             </label>
-            <select
+            <SearchSelect
               id="meter-supplier"
               value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              onBlur={() => touch("supplier")}
-              aria-invalid={Boolean(visible("supplier", supplierError))}
-              className={fieldError(visible("supplier", supplierError))}
-            >
-              <option value="">Select supplier</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => {
+                setSupplierId(v);
+                touch("supplier");
+              }}
+              invalid={Boolean(visible("supplier", supplierError))}
+              placeholder="Search and select supplier"
+              emptyLabel="No suppliers match your search"
+              options={suppliers.map((s) => ({ id: s.id, label: s.name }))}
+            />
+
             {visible("supplier", supplierError) && (
               <p className="mt-1 text-xs text-destructive">{supplierError}</p>
             )}
