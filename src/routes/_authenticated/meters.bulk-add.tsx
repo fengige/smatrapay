@@ -319,6 +319,17 @@ function BulkAddMetersPage() {
     onError: (err: Error) => toast.error(err.message || "Could not add meters"),
   });
 
+  useEffect(() => {
+    if (!result) return;
+    const timer = setTimeout(() => {
+      void navigate({
+        to: "/meters",
+        search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
+      });
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [result, navigate]);
+
   const openReview = () => {
     setSubmitted(true);
     if (!headerValid) {
