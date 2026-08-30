@@ -2468,6 +2468,11 @@ function BulkAssignUnitsDialog({
   }, [mapping, meters, occupied, propertyUnits]);
 
   const assignable = meters.filter((m) => mapping[m.id] && !conflicts[m.id]);
+  const [step, setStep] = useState<"configure" | "review">("configure");
+  const unitLabel = (unitId?: string) =>
+    propertyUnits.find((u) => u.id === unitId)?.unit_number ?? "—";
+  const propertyLabel = properties.find((p) => p.id === propertyId)?.label ?? "";
+  const notReady = meters.filter((m) => !mapping[m.id] || conflicts[m.id]);
 
   const run = useServerFn(bulkAssignMeters);
   const mutation = useMutation({
@@ -2482,6 +2487,7 @@ function BulkAssignUnitsDialog({
     onSuccess: (res: any) => onDone(res.assigned as number, res.skipped ?? []),
     onError: (err: Error) => toast.error(err.message || "Bulk assignment failed"),
   });
+
 
   return (
     <div
