@@ -43,6 +43,9 @@ const propertyInput = z.object({
   subtype: text(60),
   number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
   landlord_id: uuid.nullable().optional(),
+  zone_id: z.number().int().positive().nullable().optional(),
+  route_id: z.number().int().positive().nullable().optional(),
+  street_id: z.number().int().positive().nullable().optional(),
 })
   .transform((val) => ({
     ...val,
@@ -50,6 +53,22 @@ const propertyInput = z.object({
     state: val.state == null ? val.state : normalizeState(val.country, val.state) || null,
   }))
   .superRefine((val, ctx) => {
+    if (val.property_type === "zone") {
+      if (!val.zone_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["zone_id"],
+          message: "Please select a zone",
+        });
+      }
+      if (!val.route_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["route_id"],
+          message: "Please select a route",
+        });
+      }
+    }
     if (val.property_type === "building") {
       if (!val.building_category) {
         ctx.addIssue({
@@ -292,12 +311,41 @@ export const getUnit = createServerFn({ method: "GET" })
 
 
 
+async function assertZoneRouteStreet(
+  supabase: any,
+  ids: { zone_id?: number | null | undefined; route_id?: number | null | undefined; street_id?: number | null | undefined },
+) {
+  if (ids.route_id) {
+    const { data: route } = await supabase
+      .from("routes")
+      .select("zone_id")
+      .eq("route_id", ids.route_id)
+      .maybeSingle();
+    if (!route) throw new Error("Selected route not found");
+    if (ids.zone_id && (route as any).zone_id !== ids.zone_id) {
+      throw new Error("The selected route does not belong to the selected zone");
+    }
+  }
+  if (ids.street_id) {
+    const { data: street } = await supabase
+      .from("streets")
+      .select("route_id")
+      .eq("street_id", ids.street_id)
+      .maybeSingle();
+    if (!street) throw new Error("Selected street not found");
+    if (ids.route_id && (street as any).route_id !== ids.route_id) {
+      throw new Error("The selected street does not belong to the selected route");
+    }
+  }
+}
+
 export const createProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => propertyInput.parse(data))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabase, userId } = context;
+    await assertZoneRouteStreet(supabase, data);
     const { data: row, error } = await supabase
       .from("properties")
       .insert({ ...data, created_by: userId, updated_by: userId } as never)
@@ -328,6 +376,9 @@ export const updateProperty = createServerFn({ method: "POST" })
         subtype: text(60),
         number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
         landlord_id: uuid.nullable().optional(),
+        zone_id: z.number().int().positive().nullable().optional(),
+        route_id: z.number().int().positive().nullable().optional(),
+        street_id: z.number().int().positive().nullable().optional(),
       })
       .transform((val) => ({
         ...val,
@@ -335,6 +386,22 @@ export const updateProperty = createServerFn({ method: "POST" })
         state: val.state == null ? val.state : normalizeState(val.country, val.state) || null,
       }))
       .superRefine((val, ctx) => {
+        if (val.property_type === "zone") {
+          if (!val.zone_id) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["zone_id"],
+              message: "Please select a zone",
+            });
+          }
+          if (!val.route_id) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["route_id"],
+              message: "Please select a route",
+            });
+          }
+        }
         if (val.property_type === "building") {
           if (!val.building_category) {
             ctx.addIssue({
@@ -380,6 +447,7 @@ export const updateProperty = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase, userId } = context;
     const { id, ...patch } = data;
+    await assertZoneRouteStreet(supabase, patch);
     const { error } = await supabase
       .from("properties")
       .update({ ...patch, updated_by: userId } as never)

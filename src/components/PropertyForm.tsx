@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Building2, Check, ChevronDown, ClipboardCheck, L
 
 import { cn } from "@/lib/utils";
 import { listLandlords } from "@/lib/properties.functions";
+import { listZones, listRoutes, listStreets } from "@/lib/zones.functions";
 import { COUNTRY_GROUPS, STATE_MAP } from "@/lib/countries";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
@@ -49,6 +50,9 @@ export type PropertyFormValues = {
   status: "active" | "archived";
   number_of_units: string;
   landlord_id: string;
+  zone_id: string;
+  route_id: string;
+  street_id: string;
 };
 
 export const emptyProperty: PropertyFormValues = {
@@ -67,6 +71,9 @@ export const emptyProperty: PropertyFormValues = {
   status: "active",
   number_of_units: "",
   landlord_id: "",
+  zone_id: "",
+  route_id: "",
+  street_id: "",
 };
 
 function Field({
@@ -238,6 +245,42 @@ export function PropertyForm({
   const landlords = landlordsQuery.data?.landlords ?? [];
   const selectedLandlord = landlords.find((l) => l.id === values.landlord_id);
 
+  // Cascading Zone → Route → Street selection for zone-type properties.
+  const fetchZones = useServerFn(listZones);
+  const fetchRoutes = useServerFn(listRoutes);
+  const fetchStreets = useServerFn(listStreets);
+  const zonesQuery = useQuery({
+    queryKey: ["zone-options"],
+    queryFn: () => fetchZones(),
+    enabled: values.property_type === "zone",
+  });
+  const zones = (zonesQuery.data?.zones ?? []) as {
+    zone_id: number;
+    zone_name: string;
+  }[];
+  const routesQuery = useQuery({
+    queryKey: ["route-options", values.zone_id],
+    queryFn: () => fetchRoutes({ data: { zone_id: Number(values.zone_id) } } as never),
+    enabled: values.property_type === "zone" && Boolean(values.zone_id),
+  });
+  const routes = (routesQuery.data?.routes ?? []) as {
+    route_id: number;
+    route_code: string;
+    route_name: string;
+  }[];
+  const streetsQuery = useQuery({
+    queryKey: ["street-options", values.route_id],
+    queryFn: () => fetchStreets({ data: { route_id: Number(values.route_id) } } as never),
+    enabled: values.property_type === "zone" && Boolean(values.route_id),
+  });
+  const streets = (streetsQuery.data?.streets ?? []) as {
+    street_id: number;
+    street_name: string;
+  }[];
+  const selectedZone = zones.find((z) => String(z.zone_id) === values.zone_id);
+  const selectedRoute = routes.find((r) => String(r.route_id) === values.route_id);
+  const selectedStreet = streets.find((s) => String(s.street_id) === values.street_id);
+
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
@@ -270,11 +313,12 @@ export function PropertyForm({
               ? "Please select a residential type"
               : "Please select a commercial type";
       }
-      if (values.name.trim().length < 2)
-        next["name"] =
-          values.property_type === "zone"
-            ? "Zone name must be at least 2 characters"
-            : "Property name must be at least 2 characters";
+      if (values.property_type === "zone") {
+        if (!values.zone_id) next["zone_id"] = "Please select a zone";
+        if (!values.route_id) next["route_id"] = "Please select a route";
+      } else if (values.name.trim().length < 2) {
+        next["name"] = "Property name must be at least 2 characters";
+      }
     }
     if (index === 1) {
       if (values.number_of_units.trim()) {
@@ -567,21 +611,84 @@ export function PropertyForm({
           )}
           {values.property_type === "zone" ? (
             <>
-              <Field label="Zone name *" error={errors["name"]}>
-                <input
-                  value={values.name}
-                  onChange={(e) => set("name", e.target.value)}
+              <Field label="Zone *" error={errors["zone_id"]}>
+                <select
+                  value={values.zone_id}
+                  onChange={(e) => {
+                    const zoneId = e.target.value;
+                    const zone = zones.find((z) => String(z.zone_id) === zoneId);
+                    setValues((prev) => ({
+                      ...prev,
+                      zone_id: zoneId,
+                      route_id: "",
+                      street_id: "",
+                      name: zone?.zone_name ?? "",
+                      code: "",
+                    }));
+                  }}
                   className={inputClass}
-                  placeholder="Greenfield Zone"
-                />
+                  disabled={zonesQuery.isLoading}
+                >
+                  <option value="">
+                    {zonesQuery.isLoading ? "Loading zones…" : "Select zone"}
+                  </option>
+                  {zones.map((z) => (
+                    <option key={z.zone_id} value={z.zone_id}>
+                      {z.zone_name}
+                    </option>
+                  ))}
+                </select>
               </Field>
-              <Field label="Zone code">
-                <input
-                  value={values.code}
-                  onChange={(e) => set("code", e.target.value)}
+              <Field label="Route *" error={errors["route_id"]}>
+                <select
+                  value={values.route_id}
+                  onChange={(e) => {
+                    const routeId = e.target.value;
+                    const route = routes.find((r) => String(r.route_id) === routeId);
+                    setValues((prev) => ({
+                      ...prev,
+                      route_id: routeId,
+                      street_id: "",
+                      code: route?.route_code ?? "",
+                    }));
+                  }}
                   className={inputClass}
-                  placeholder="GFD-01"
-                />
+                  disabled={!values.zone_id || routesQuery.isLoading}
+                >
+                  <option value="">
+                    {!values.zone_id
+                      ? "Select a zone first"
+                      : routesQuery.isLoading
+                        ? "Loading routes…"
+                        : "Select route"}
+                  </option>
+                  {routes.map((r) => (
+                    <option key={r.route_id} value={r.route_id}>
+                      {r.route_code} — {r.route_name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Street">
+                <select
+                  value={values.street_id}
+                  onChange={(e) => set("street_id", e.target.value)}
+                  className={inputClass}
+                  disabled={!values.route_id || streetsQuery.isLoading}
+                >
+                  <option value="">
+                    {!values.route_id
+                      ? "Select a route first"
+                      : streetsQuery.isLoading
+                        ? "Loading streets…"
+                        : "Select street (optional)"}
+                  </option>
+                  {streets.map((s) => (
+                    <option key={s.street_id} value={s.street_id}>
+                      {s.street_name}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </>
           ) : values.property_type === "building" ? (
@@ -768,18 +875,39 @@ export function PropertyForm({
                   </div>
                 </>
               )}
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {values.property_type === "zone" ? "Zone Name" : "Property Name"}
-                </dt>
-                <dd className="mt-1 text-sm font-medium text-foreground">{values.name || "—"}</dd>
-              </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {values.property_type === "zone" ? "Zone Code" : "Property Code"}
-                </dt>
-                <dd className="mt-1 text-sm font-medium text-foreground">{values.code || "—"}</dd>
-              </div>
+              {values.property_type === "zone" ? (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Zone</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">
+                      {selectedZone?.zone_name ?? values.name ?? "—"}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Route</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">
+                      {selectedRoute ? `${selectedRoute.route_code} — ${selectedRoute.route_name}` : values.code || "—"}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Street</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">
+                      {selectedStreet?.street_name ?? "—"}
+                    </dd>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Property Name</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">{values.name || "—"}</dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Property Code</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">{values.code || "—"}</dd>
+                  </div>
+                </>
+              )}
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</dt>
                 <dd className="mt-1 text-sm font-medium text-foreground capitalize">{values.status}</dd>
