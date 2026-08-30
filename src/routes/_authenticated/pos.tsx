@@ -76,11 +76,16 @@ function PosPage() {
   const [reprint, setReprint] = useState<IssuedToken | null>(null);
   const [smsTarget, setSmsTarget] = useState<IssuedToken | null>(null);
   const [smsPhone, setSmsPhone] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [historyFor, setHistoryFor] = useState<IssuedToken | null>(null);
 
   const runSearch = useServerFn(searchTokenMeters);
   const runIssue = useServerFn(issueMeterToken);
   const runList = useServerFn(listMeterTokens);
   const runResendSms = useServerFn(resendTokenSms);
+  const runBulkResend = useServerFn(bulkResendTokenSms);
+  const runSmsLogs = useServerFn(listTokenSmsLogs);
 
   const resendSms = useMutation({
     mutationFn: async () =>
@@ -92,6 +97,7 @@ function PosPage() {
       setSmsTarget(null);
       setSmsPhone("");
       void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["token-sms-logs"] });
     },
     onError: (err: Error) => toast.error(err.message || "Failed to send SMS"),
   });
@@ -111,6 +117,67 @@ function PosPage() {
     queryKey: ["meter-tokens", meter?.id ?? null],
     queryFn: async () =>
       (await runList({ data: { meter_id: meter?.id ?? null } } as never)) as IssuedToken[],
+  });
+
+  const recentRows = useMemo(() => (recent.data ?? []).slice(0, 20), [recent.data]);
+  const recentIds = useMemo(() => recentRows.map((t) => t.id), [recentRows]);
+
+  const smsLogs = useQuery({
+    queryKey: ["token-sms-logs", recentIds],
+    enabled: recentIds.length > 0,
+    queryFn: async () =>
+      (await runSmsLogs({ data: { token_ids: recentIds } } as never)) as TokenSmsLog[],
+  });
+
+  /** Newest attempt per token — logs come back newest first. */
+  const latestLogByToken = useMemo(() => {
+    const map = new Map<string, TokenSmsLog>();
+    for (const log of smsLogs.data ?? []) if (!map.has(log.token_id)) map.set(log.token_id, log);
+    return map;
+  }, [smsLogs.data]);
+
+  const logsByToken = useMemo(() => {
+    const map = new Map<string, TokenSmsLog[]>();
+    for (const log of smsLogs.data ?? []) {
+      const list = map.get(log.token_id) ?? [];
+      list.push(log);
+      map.set(log.token_id, list);
+    }
+    return map;
+  }, [smsLogs.data]);
+
+  const selectable = useMemo(
+    () => recentRows.filter((t) => t.status !== "revoked").map((t) => t.id),
+    [recentRows],
+  );
+  const selectedRows = useMemo(
+    () => recentRows.filter((t) => selected.includes(t.id)),
+    [recentRows, selected],
+  );
+
+  const bulkResend = useMutation({
+    mutationFn: async () =>
+      (await runBulkResend({ data: { ids: selected } } as never)) as {
+        queued: number;
+        failed: number;
+        results: { meter_number: string; phone: string; status: SmsDeliveryStatus; error: string | null }[];
+      },
+    onSuccess: (res) => {
+      setBulkConfirm(false);
+      setSelected([]);
+      if (res.failed === 0) toast.success(`${res.queued} receipt(s) queued for SMS delivery`);
+      else
+        toast.warning(
+          `${res.queued} queued, ${res.failed} failed — ${res.results
+            .filter((r) => r.status === "failed")
+            .slice(0, 3)
+            .map((r) => `${r.meter_number}: ${r.error}`)
+            .join("; ")}`,
+        );
+      void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["token-sms-logs"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Bulk SMS re-send failed"),
   });
 
   const amountNumber = Number(amount);
