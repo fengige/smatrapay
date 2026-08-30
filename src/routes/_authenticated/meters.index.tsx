@@ -2643,21 +2643,34 @@ function BulkAssignUnitsDialog({
             <button
               type="button"
               disabled={mutation.isPending}
-              onClick={onClose}
+              onClick={() => (step === "review" ? setStep("configure") : onClose())}
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
             >
-              Cancel
+              {step === "review" ? "Back" : "Cancel"}
             </button>
-            <button
-              type="button"
-              disabled={mutation.isPending || assignable.length === 0}
-              onClick={() => mutation.mutate()}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-            >
-              {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              Assign {assignable.length} meter{assignable.length === 1 ? "" : "s"}
-            </button>
+            {step === "configure" ? (
+              <button
+                type="button"
+                disabled={assignable.length === 0}
+                onClick={() => setStep("review")}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                Review assignment
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={mutation.isPending || assignable.length === 0}
+                onClick={() => mutation.mutate()}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Confirm &amp; assign {assignable.length} meter
+                {assignable.length === 1 ? "" : "s"}
+              </button>
+            )}
           </div>
+
         </div>
       </div>
     </div>
