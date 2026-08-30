@@ -1550,7 +1550,7 @@ export const listPropertyAuditLogs = createServerFn({ method: "GET" })
  * CSV import for properties
  * ------------------------------------------------------------------ */
 
-const importRow = z.object({
+const propertyImportRow = z.object({
   row: z.number().int().min(1),
   name: z.string().default(""),
   code: z.string().default(""),
@@ -1570,7 +1570,7 @@ const importRow = z.object({
   status: z.string().default(""),
 });
 
-export type PropertyImportRow = z.infer<typeof importRow>;
+export type PropertyImportRow = z.infer<typeof propertyImportRow>;
 export type PropertyImportResult = {
   row: number;
   name: string;
@@ -1583,7 +1583,7 @@ export const importProperties = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z
       .object({
-        rows: z.array(importRow).min(1).max(1000),
+        rows: z.array(propertyImportRow).min(1).max(1000),
         skipExisting: z.boolean().optional(),
         dryRun: z.boolean().optional(),
       })
