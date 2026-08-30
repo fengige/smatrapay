@@ -750,7 +750,7 @@ export const importMeters = createServerFn({ method: "POST" })
 
 
 /* ------------------------------------------------------------------ *
- * Bulk add meters
+ * Add meters
  * ------------------------------------------------------------------ */
 
 const bulkAddRow = z.object({
@@ -829,7 +829,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
 
 
 /* ------------------------------------------------------------------ *
- * Bulk add meters — form options (suppliers + vendor/landlord/agent users)
+ * Add meters — form options (suppliers + vendor/landlord/agent users)
  * ------------------------------------------------------------------ */
 
 export type BulkMeterOptions = {

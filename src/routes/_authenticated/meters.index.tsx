@@ -1783,10 +1783,10 @@ function BulkAddMetersDialog({
       }}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="bulk-add-meters-title"
+      aria-labelledby="add-meters-title"
     >
       <div className="my-8 w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg">
-        <h2 id="bulk-add-meters-title" className="text-lg font-bold">
+        <h2 id="add-meters-title" className="text-lg font-bold">
           Add Meters
         </h2>
         <p className="text-sm text-muted-foreground">

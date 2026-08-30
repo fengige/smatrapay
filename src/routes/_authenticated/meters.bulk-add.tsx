@@ -144,7 +144,7 @@ function BulkAddMetersPage() {
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = "smatrapay-bulk-add-meters-template.csv";
+    a.download = "smatrapay-add-meters-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
