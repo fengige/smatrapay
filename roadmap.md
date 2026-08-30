@@ -22,3 +22,7 @@
 - [x] Create Routes table linked to Zones with RLS and admin policies
 - [x] Create Streets table linked to Routes with RLS and admin policies
 - [x] Zone page: inline Route Management, Streets Management, CSV import, audit viewer
+- [ ] Zones: View + activate/deactivate actions (in progress)
+- [ ] Streets CSV import with row-level validation on Route section
+- [ ] Bulk street create + bulk delete with checkboxes and confirmation
+- [ ] Route Active/Inactive toggle in Zone page with validation
