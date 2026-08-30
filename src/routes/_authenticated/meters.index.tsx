@@ -1117,7 +1117,7 @@ function MeterDialog({
     <div
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) attemptClose();
       }}
       role="dialog"
       aria-modal="true"
@@ -1143,11 +1143,17 @@ function MeterDialog({
               id="meter-vendor"
               value={vendorId}
               onChange={(e) => setVendorId(e.target.value)}
+              onBlur={() => touch("vendor")}
               placeholder="e.g. STRON"
-              aria-invalid={Boolean(vendorError)}
-              className={fieldError(vendorError)}
+              aria-invalid={Boolean(visible("vendor", vendorError))}
+              aria-describedby="meter-vendor-error"
+              className={fieldError(visible("vendor", vendorError))}
             />
-            {vendorError && <p className="mt-1 text-xs text-destructive">{vendorError}</p>}
+            {visible("vendor", vendorError) && (
+              <p id="meter-vendor-error" className="mt-1 text-xs text-destructive">
+                {vendorError}
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
@@ -1229,12 +1235,13 @@ function MeterDialog({
               id="meter-number"
               value={meterNumber}
               onChange={(e) => setMeterNumber(e.target.value)}
+              onBlur={() => touch("meterNumber")}
               placeholder="e.g. 01234567890"
-              aria-invalid={Boolean(meterNumberError)}
+              aria-invalid={Boolean(visible("meterNumber", meterNumberError))}
               aria-describedby="meter-number-error"
-              className={fieldError(meterNumberError)}
+              className={fieldError(visible("meterNumber", meterNumberError))}
             />
-            {meterNumberError && (
+            {visible("meterNumber", meterNumberError) && (
               <p id="meter-number-error" className="mt-1 text-xs text-destructive">
                 {meterNumberError}
               </p>
@@ -1248,12 +1255,13 @@ function MeterDialog({
               id="meter-serial"
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
+              onBlur={() => touch("serialNumber")}
               placeholder="e.g. EM-2026-001"
-              aria-invalid={Boolean(serialNumberError)}
+              aria-invalid={Boolean(visible("serialNumber", serialNumberError))}
               aria-describedby="meter-serial-error"
-              className={fieldError(serialNumberError)}
+              className={fieldError(visible("serialNumber", serialNumberError))}
             />
-            {serialNumberError && (
+            {visible("serialNumber", serialNumberError) && (
               <p id="meter-serial-error" className="mt-1 text-xs text-destructive">
                 {serialNumberError}
               </p>
