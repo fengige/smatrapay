@@ -100,3 +100,103 @@ export const listVendorMeters = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { meters: meters ?? [] };
   });
+
+/** Meters that are not yet registered to any vendor (available for assignment). */
+export const listAssignableVendorMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ search: z.string().trim().max(120).optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let query = context.supabase
+      .from("meters")
+      .select("id, meter_number, serial_number, type, status, vendor_id")
+      .is("vendor_id", null)
+      .order("meter_number", { ascending: true })
+      .limit(200);
+
+    const search = data.search?.trim();
+    if (search) {
+      query = query.or(`meter_number.ilike.%${search}%,serial_number.ilike.%${search}%`);
+    }
+
+    const { data: meters, error } = await query;
+    if (error) throw new Error(error.message);
+    return { meters: meters ?? [] };
+  });
+
+const assignSchema = z.object({
+  vendorId: z.string().uuid(),
+  meterIds: z.array(z.string().uuid()).min(1).max(500),
+});
+
+/** Register selected meters to an vendor. Only unassigned meters are accepted. */
+export const assignMetersToVendor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => assignSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Only admins can assign meters");
+
+    const { data: rows, error: readError } = await supabase
+      .from("meters")
+      .select("id, meter_number, vendor_id")
+      .in("id", data.meterIds);
+    if (readError) throw new Error(readError.message);
+
+    const taken = (rows ?? []).filter((r) => r.vendor_id && r.vendor_id !== data.vendorId);
+    const eligible = (rows ?? []).filter((r) => !r.vendor_id);
+
+    if (eligible.length === 0) {
+      throw new Error(
+        taken.length > 0
+          ? `Those meters are already registered to another vendor (${taken
+              .map((r) => r.meter_number)
+              .join(", ")})`
+          : "No eligible meters to assign",
+      );
+    }
+
+    const { error } = await supabase
+      .from("meters")
+      .update({ vendor_id: data.vendorId })
+      .in(
+        "id",
+        eligible.map((r) => r.id),
+      )
+      .is("vendor_id", null);
+    if (error) throw new Error(error.message);
+
+    return {
+      ok: true,
+      assigned: eligible.length,
+      skipped: taken.map((r) => r.meter_number),
+    };
+  });
+
+/** Remove the vendor registration from selected meters. */
+export const unassignMetersFromVendor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => assignSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Only admins can unassign meters");
+
+    const { data: updated, error } = await supabase
+      .from("meters")
+      .update({ vendor_id: null })
+      .in("id", data.meterIds)
+      .eq("vendor_id", data.vendorId)
+      .select("id");
+    if (error) throw new Error(error.message);
+
+    return { ok: true, unassigned: updated?.length ?? 0 };
+  });

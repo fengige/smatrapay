@@ -30,8 +30,8 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
-import { listVendorMeters } from "@/lib/vendors.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 
 export const Route = createFileRoute("/_authenticated/vendors/$id/")({
   head: () => ({
@@ -94,7 +94,6 @@ function VendorDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchVendor = useServerFn(getUserById);
-  const fetchVendorMeters = useServerFn(listVendorMeters);
   const saveVendor = useServerFn(updateUser);
   const removeVendor = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -116,12 +115,7 @@ function VendorDetailPage() {
 
   const vendor = data?.user;
 
-  const { data: meterData, isLoading: metersLoading } = useQuery({
-    queryKey: ["vendor-meters", id],
-    queryFn: () => fetchVendorMeters({ data: { vendorId: id } }),
-  });
 
-  const vendorMeters = meterData?.meters ?? [];
 
   const statusMutation = useMutation({
     mutationFn: (status: "active" | "inactive") => saveVendor({ data: { id, status } }),
@@ -514,54 +508,11 @@ function VendorDetailPage() {
               )}
 
               {tab === "meters" && (
-                <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
-                  {metersLoading ? (
-                    <div className="flex justify-center p-10 text-muted-foreground">
-                      <Loader2 className="size-5 animate-spin" />
-                    </div>
-                  ) : vendorMeters.length === 0 ? (
-                    <EmptyTabState
-                      icon={<Gauge className="size-8" />}
-                      title="No meters assigned"
-                      description="Meters registered under this vendor will appear here."
-                    />
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[560px] text-left text-sm">
-                        <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                          <tr>
-                            <th className="px-6 py-3 font-semibold">Meter no.</th>
-                            <th className="px-6 py-3 font-semibold">Serial</th>
-                            <th className="px-6 py-3 font-semibold">Type</th>
-                            <th className="px-6 py-3 font-semibold">Price / unit</th>
-                            <th className="px-6 py-3 font-semibold">Status</th>
-                            <th className="px-6 py-3" />
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {vendorMeters.map((m) => (
-                            <tr key={m.id} className="hover:bg-accent/5">
-                              <td className="px-6 py-3 font-medium text-foreground">{m.meter_number}</td>
-                              <td className="px-6 py-3 text-muted-foreground">{m.serial_number}</td>
-                              <td className="px-6 py-3 capitalize text-muted-foreground">{m.type}</td>
-                              <td className="px-6 py-3 text-muted-foreground">{m.price_per_unit}</td>
-                              <td className="px-6 py-3 capitalize text-muted-foreground">{m.status}</td>
-                              <td className="px-6 py-3 text-right">
-                                <Link
-                                  to="/meters/$meterId"
-                                  params={{ meterId: m.id }}
-                                  className="text-xs font-semibold text-primary hover:underline"
-                                >
-                                  View
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </Section>
+                <MeterAssignmentPanel
+                  kind="vendor"
+                  ownerId={id}
+                  ownerName={vendor?.name || vendor?.email || "this vendor"}
+                />
               )}
 
               {tab === "audit" && (

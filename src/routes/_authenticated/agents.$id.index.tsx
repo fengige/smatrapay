@@ -30,8 +30,8 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
-import { listAgentMeters } from "@/lib/agents.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 
 export const Route = createFileRoute("/_authenticated/agents/$id/")({
   head: () => ({
@@ -94,7 +94,6 @@ function AgentDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchAgent = useServerFn(getUserById);
-  const fetchAgentMeters = useServerFn(listAgentMeters);
   const saveAgent = useServerFn(updateUser);
   const removeAgent = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -116,12 +115,7 @@ function AgentDetailPage() {
 
   const agent = data?.user;
 
-  const { data: meterData, isLoading: metersLoading } = useQuery({
-    queryKey: ["agent-meters", id],
-    queryFn: () => fetchAgentMeters({ data: { agentId: id } }),
-  });
 
-  const agentMeters = meterData?.meters ?? [];
 
   const statusMutation = useMutation({
     mutationFn: (status: "active" | "inactive") => saveAgent({ data: { id, status } }),
@@ -514,54 +508,11 @@ function AgentDetailPage() {
               )}
 
               {tab === "meters" && (
-                <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
-                  {metersLoading ? (
-                    <div className="flex justify-center p-10 text-muted-foreground">
-                      <Loader2 className="size-5 animate-spin" />
-                    </div>
-                  ) : agentMeters.length === 0 ? (
-                    <EmptyTabState
-                      icon={<Gauge className="size-8" />}
-                      title="No meters assigned"
-                      description="Meters registered under this agent will appear here."
-                    />
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[560px] text-left text-sm">
-                        <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                          <tr>
-                            <th className="px-6 py-3 font-semibold">Meter no.</th>
-                            <th className="px-6 py-3 font-semibold">Serial</th>
-                            <th className="px-6 py-3 font-semibold">Type</th>
-                            <th className="px-6 py-3 font-semibold">Price / unit</th>
-                            <th className="px-6 py-3 font-semibold">Status</th>
-                            <th className="px-6 py-3" />
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {agentMeters.map((m) => (
-                            <tr key={m.id} className="hover:bg-accent/5">
-                              <td className="px-6 py-3 font-medium text-foreground">{m.meter_number}</td>
-                              <td className="px-6 py-3 text-muted-foreground">{m.serial_number}</td>
-                              <td className="px-6 py-3 capitalize text-muted-foreground">{m.type}</td>
-                              <td className="px-6 py-3 text-muted-foreground">{m.price_per_unit}</td>
-                              <td className="px-6 py-3 capitalize text-muted-foreground">{m.status}</td>
-                              <td className="px-6 py-3 text-right">
-                                <Link
-                                  to="/meters/$meterId"
-                                  params={{ meterId: m.id }}
-                                  className="text-xs font-semibold text-primary hover:underline"
-                                >
-                                  View
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </Section>
+                <MeterAssignmentPanel
+                  kind="agent"
+                  ownerId={id}
+                  ownerName={agent?.name || agent?.email || "this agent"}
+                />
               )}
 
               {tab === "audit" && (
