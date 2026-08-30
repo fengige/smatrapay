@@ -395,10 +395,14 @@ function StreetsManager({
   const create = useServerFn(addStreet);
   const edit = useServerFn(updateStreet);
   const remove = useServerFn(deleteStreet);
+  const bulkRemove = useServerFn(bulkDeleteStreets);
 
   const [q, setQ] = useState("");
   const [form, setForm] = useState({ street_name: "", postal_code: "" });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["route-streets", routeId],
@@ -461,6 +465,37 @@ function StreetsManager({
     },
     onError: (e: Error) => toast.error(e.message || "Could not delete street"),
   });
+
+  const selectedStreets = streets.filter((s) => selected.has(s.street_id));
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) =>
+      bulkRemove({ data: { route_id: routeId, street_ids: ids } } as never),
+    onSuccess: async (_r, ids) => {
+      setSelected(new Set());
+      setConfirmBulkDelete(false);
+      await invalidate();
+      toast.success(`${ids.length} street${ids.length === 1 ? "" : "s"} deleted`);
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not delete selected streets"),
+  });
+
+  const toggleSelect = (id: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const allVisibleSelected = rows.length > 0 && rows.every((s) => selected.has(s.street_id));
+  const toggleSelectAll = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) rows.forEach((s) => next.delete(s.street_id));
+      else rows.forEach((s) => next.add(s.street_id));
+      return next;
+    });
 
   const canSave =
     form.street_name.trim().length >= 2 && !nameError && !postalError && !duplicate;
