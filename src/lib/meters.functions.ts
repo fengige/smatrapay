@@ -622,9 +622,9 @@ export const importMeters = createServerFn({ method: "POST" })
           ken: r.ken,
         });
 
+        const parsedSerial = parsed.serial_number ?? parsed.meter_number;
         const mKey = parsed.meter_number.toLowerCase();
-        const sKey = parsed.serial_number.toLowerCase();
-        if (mKey === sKey) throw new Error("Meter number and serial number must be different");
+        const sKey = parsedSerial.toLowerCase();
         if (seenMeters.has(mKey))
           throw new Error(`Meter number ${parsed.meter_number} appears twice in this file`);
         if (seenSerials.has(sKey))
