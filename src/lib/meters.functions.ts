@@ -1176,3 +1176,20 @@ export const assignMeter = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/** Existing meter/serial identifiers (lowercased) used for inline duplicate checks. */
+export const listMeterIdentifiers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+    const { data, error } = await supabase.from("meters").select("meter_number, serial_number");
+    if (error) throw new Error(error.message);
+    const meterNumbers: string[] = [];
+    const serials: string[] = [];
+    for (const r of (data ?? []) as any[]) {
+      if (r.meter_number) meterNumbers.push(String(r.meter_number).toLowerCase());
+      if (r.serial_number) serials.push(String(r.serial_number).toLowerCase());
+    }
+    return { meterNumbers, serials };
+  });
