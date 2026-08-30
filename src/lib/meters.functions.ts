@@ -308,7 +308,8 @@ export const updateMeter = createServerFn({ method: "POST" })
     if (curErr) throw new Error(curErr.message);
     if (!current) throw new Error("Meter not found");
 
-    await assertMeterIdentifiersFree(supabase, data, data.id);
+    const serial = data.serial_number?.trim() || data.meter_number;
+    await assertMeterIdentifiersFree(supabase, { meter_number: data.meter_number, serial_number: serial }, data.id);
 
     const { error } = await supabase
       .from("meters")
@@ -319,7 +320,7 @@ export const updateMeter = createServerFn({ method: "POST" })
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
-        serial_number: data.serial_number,
+        serial_number: serial,
         type: data.type,
         initial_reading: data.initial_reading,
         price_per_unit: data.price_per_unit,
