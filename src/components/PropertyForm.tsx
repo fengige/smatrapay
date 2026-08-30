@@ -313,11 +313,12 @@ export function PropertyForm({
               ? "Please select a residential type"
               : "Please select a commercial type";
       }
-      if (values.name.trim().length < 2)
-        next["name"] =
-          values.property_type === "zone"
-            ? "Zone name must be at least 2 characters"
-            : "Property name must be at least 2 characters";
+      if (values.property_type === "zone") {
+        if (!values.zone_id) next["zone_id"] = "Please select a zone";
+        if (!values.route_id) next["route_id"] = "Please select a route";
+      } else if (values.name.trim().length < 2) {
+        next["name"] = "Property name must be at least 2 characters";
+      }
     }
     if (index === 1) {
       if (values.number_of_units.trim()) {
@@ -610,21 +611,84 @@ export function PropertyForm({
           )}
           {values.property_type === "zone" ? (
             <>
-              <Field label="Zone name *" error={errors["name"]}>
-                <input
-                  value={values.name}
-                  onChange={(e) => set("name", e.target.value)}
+              <Field label="Zone *" error={errors["zone_id"]}>
+                <select
+                  value={values.zone_id}
+                  onChange={(e) => {
+                    const zoneId = e.target.value;
+                    const zone = zones.find((z) => String(z.zone_id) === zoneId);
+                    setValues((prev) => ({
+                      ...prev,
+                      zone_id: zoneId,
+                      route_id: "",
+                      street_id: "",
+                      name: zone?.zone_name ?? "",
+                      code: "",
+                    }));
+                  }}
                   className={inputClass}
-                  placeholder="Greenfield Zone"
-                />
+                  disabled={zonesQuery.isLoading}
+                >
+                  <option value="">
+                    {zonesQuery.isLoading ? "Loading zones…" : "Select zone"}
+                  </option>
+                  {zones.map((z) => (
+                    <option key={z.zone_id} value={z.zone_id}>
+                      {z.zone_name}
+                    </option>
+                  ))}
+                </select>
               </Field>
-              <Field label="Zone code">
-                <input
-                  value={values.code}
-                  onChange={(e) => set("code", e.target.value)}
+              <Field label="Route *" error={errors["route_id"]}>
+                <select
+                  value={values.route_id}
+                  onChange={(e) => {
+                    const routeId = e.target.value;
+                    const route = routes.find((r) => String(r.route_id) === routeId);
+                    setValues((prev) => ({
+                      ...prev,
+                      route_id: routeId,
+                      street_id: "",
+                      code: route?.route_code ?? "",
+                    }));
+                  }}
                   className={inputClass}
-                  placeholder="GFD-01"
-                />
+                  disabled={!values.zone_id || routesQuery.isLoading}
+                >
+                  <option value="">
+                    {!values.zone_id
+                      ? "Select a zone first"
+                      : routesQuery.isLoading
+                        ? "Loading routes…"
+                        : "Select route"}
+                  </option>
+                  {routes.map((r) => (
+                    <option key={r.route_id} value={r.route_id}>
+                      {r.route_code} — {r.route_name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Street">
+                <select
+                  value={values.street_id}
+                  onChange={(e) => set("street_id", e.target.value)}
+                  className={inputClass}
+                  disabled={!values.route_id || streetsQuery.isLoading}
+                >
+                  <option value="">
+                    {!values.route_id
+                      ? "Select a route first"
+                      : streetsQuery.isLoading
+                        ? "Loading streets…"
+                        : "Select street (optional)"}
+                  </option>
+                  {streets.map((s) => (
+                    <option key={s.street_id} value={s.street_id}>
+                      {s.street_name}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </>
           ) : values.property_type === "building" ? (
