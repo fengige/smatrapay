@@ -3,4 +3,4 @@
 - [x] Empty-state and loading skeleton for the “Add Meters” flow
 - [x] Activity timeline entries for meter CSV imports and edits on meter details page
 - [x] Clear import error report with row-level failure reasons and actionable messages
-- [ ] Duplicate detection during CSV import with summary of skipped/updated rows
+- [x] Duplicate detection during CSV import with summary of skipped/updated rows
