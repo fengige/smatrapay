@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
+import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 
 export const Route = createFileRoute("/_authenticated/agents/$id/")({
   head: () => ({
@@ -350,17 +351,13 @@ function AgentDetailPage() {
             <aside className="space-y-5">
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex flex-col items-center text-center">
-                  {agent.profile_image ? (
-                    <img
-                      src={agent.profile_image}
-                      alt={agent.name ?? "Agent avatar"}
-                      className="size-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                      {initials}
-                    </div>
-                  )}
+                  <ProfileImageEditor
+                    kind="agent"
+                    userId={id}
+                    imageUrl={agent.profile_image ?? null}
+                    name={agent.name ?? null}
+                    initials={initials}
+                  />
                   <h2 className="mt-4 text-lg font-bold text-foreground">
                     {agent.name ?? "Unnamed agent"}
                   </h2>
