@@ -748,6 +748,86 @@ export const importMeters = createServerFn({ method: "POST" })
     } satisfies MeterImportResult;
   });
 
+const previewInput = z.object({
+  rows: z.array(importRow).min(1).max(2000),
+});
+
+export type ImportDuplicatePreview = {
+  row: number;
+  meter_number: string;
+  serial_number: string;
+  mode: "skip" | "update";
+  reason: string;
+};
+
+/** Preview which CSV rows conflict with existing meters before importing. */
+export const previewImportDuplicates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => previewInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: existing, error: exErr } = await supabase
+      .from("meters")
+      .select("id, meter_number, serial_number");
+    if (exErr) throw new Error(exErr.message);
+
+    const meterByNumber = new Map<string, { id: string; serial: string }>();
+    const meterBySerial = new Map<string, { id: string; number: string }>();
+    for (const r of (existing ?? []) as any[]) {
+      meterByNumber.set(String(r.meter_number).toLowerCase(), {
+        id: r.id,
+        serial: String(r.serial_number ?? ""),
+      });
+      meterBySerial.set(String(r.serial_number).toLowerCase(), {
+        id: r.id,
+        number: String(r.meter_number ?? ""),
+      });
+    }
+
+    const seenMeters = new Set<string>();
+    const seenSerials = new Set<string>();
+    const previews: ImportDuplicatePreview[] = [];
+
+    for (const r of data.rows) {
+      const mKey = r.meter_number.toLowerCase();
+      const sKey = r.serial_number.toLowerCase();
+      if (!r.meter_number || !r.serial_number) continue;
+      if (seenMeters.has(mKey) || seenSerials.has(sKey)) continue;
+
+      const byNumber = meterByNumber.get(mKey);
+      const bySerial = meterBySerial.get(sKey);
+      if (byNumber || bySerial) {
+        const existingId = byNumber?.id ?? bySerial?.id;
+        const otherByNumber = byNumber && bySerial && byNumber.id !== bySerial.id;
+        if (otherByNumber) {
+          previews.push({
+            row: r.row,
+            meter_number: r.meter_number,
+            serial_number: r.serial_number,
+            mode: "skip",
+            reason: "Meter number and serial number belong to different existing meters",
+          });
+        } else {
+          previews.push({
+            row: r.row,
+            meter_number: r.meter_number,
+            serial_number: r.serial_number,
+            mode: "update",
+            reason: byNumber
+              ? `Meter number ${r.meter_number} is already registered`
+              : `Serial number ${r.serial_number} is already registered`,
+          });
+        }
+      }
+      seenMeters.add(mKey);
+      seenSerials.add(sKey);
+    }
+
+    return { previews };
+  });
+
 
 /* ------------------------------------------------------------------ *
  * Add meters
