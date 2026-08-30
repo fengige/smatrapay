@@ -1487,7 +1487,8 @@ export type PropertyAuditEntry = {
   action: string;
   created_at: string;
   actor: string;
-  changes: Record<string, { old: unknown; new: unknown }>;
+  property_name: string | null;
+  changes: Record<string, { old: string | null; new: string | null }>;
 };
 
 export const listPropertyAuditLogs = createServerFn({ method: "GET" })
@@ -1541,7 +1542,15 @@ export const listPropertyAuditLogs = createServerFn({ method: "GET" })
         created_at: l.created_at,
         actor: actorName(l.actor_id),
         property_name: l.property_name,
-        changes: (l.changes ?? {}) as Record<string, { old: unknown; new: unknown }>,
+        changes: Object.fromEntries(
+          Object.entries(l.changes ?? {}).map(([k, v]) => [
+            k,
+            {
+              old: v?.old == null ? null : String(v.old),
+              new: v?.new == null ? null : String(v.new),
+            },
+          ]),
+        ) as Record<string, { old: string | null; new: string | null }>,
       })),
     };
   });
