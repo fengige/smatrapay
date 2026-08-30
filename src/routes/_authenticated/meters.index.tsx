@@ -1447,6 +1447,41 @@ function ImportMetersDialog({
     { row: number; meter_number: string; serial_number: string; mode: "skip" | "update"; reason: string }[]
   >([]);
 
+  useEffect(() => {
+    if (!rows.length) {
+      setPreview([]);
+      return;
+    }
+    let cancelled = false;
+    const payload = rows.map((r, i) => ({
+      row: i + 2,
+      meter_number: r["meter_number"] ?? "",
+      serial_number: r["serial_number"] ?? "",
+      type: r["type"] ?? "",
+      vendor_id: r["vendor_id"] ?? "",
+      landlord_email: r["landlord_email"] ?? "",
+      agent_email: r["agent_email"] ?? "",
+      initial_reading: r["initial_reading"] ?? "",
+      price_per_unit: r["price_per_unit"] ?? "",
+      status: r["status"] ?? "",
+      sgc: r["sgc"] ?? "",
+      krn: r["krn"] ?? "",
+      ti: r["ti"] ?? "",
+      ea: r["ea"] ?? "",
+      ken: r["ken"] ?? "",
+    }));
+    runPreview({ data: { rows: payload } } as never)
+      .then((res: any) => {
+        if (!cancelled) setPreview(res.previews ?? []);
+      })
+      .catch(() => {
+        // Preview is best-effort; failures are surfaced by the actual import.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rows, runPreview]);
+
   const importMutation = useMutation({
     mutationFn: async () =>
       runImport({
