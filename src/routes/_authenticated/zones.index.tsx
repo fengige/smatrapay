@@ -67,6 +67,8 @@ function ZonesPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<ZoneRow | null>(null);
   const [deleting, setDeleting] = useState<ZoneRow | null>(null);
+  const [viewing, setViewing] = useState<ZoneRow | null>(null);
+  const [toggling, setToggling] = useState<ZoneRow | null>(null);
   const [importing, setImporting] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
 
