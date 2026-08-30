@@ -2,12 +2,26 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { BadgeDollarSign, Gauge, Loader2, RefreshCw, Search, TrendingUp } from "lucide-react";
+import {
+  BadgeDollarSign,
+  Download,
+  Gauge,
+  History,
+  Loader2,
+  RefreshCw,
+  Search,
+  TrendingUp,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import { listMeters } from "@/lib/meters.functions";
-import { applyPriceMode, bulkSetMeterPrice, type PriceMode } from "@/lib/prices.functions";
+import {
+  applyPriceMode,
+  bulkSetMeterPrice,
+  listPriceAuditLogs,
+  type PriceMode,
+} from "@/lib/prices.functions";
 
 export const Route = createFileRoute("/_authenticated/price-management")({
   head: () => ({
@@ -48,6 +62,7 @@ function PriceManagementPage() {
   const queryClient = useQueryClient();
   const fetchMeters = useServerFn(listMeters);
   const applyPrices = useServerFn(bulkSetMeterPrice);
+  const fetchPriceLogs = useServerFn(listPriceAuditLogs);
 
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -61,6 +76,11 @@ function PriceManagementPage() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["meters"],
     queryFn: () => fetchMeters(),
+  });
+
+  const { data: priceLogs = [], isLoading: logsLoading } = useQuery({
+    queryKey: ["price-audit"],
+    queryFn: () => fetchPriceLogs(),
   });
 
   const meters = data?.meters ?? [];
@@ -109,6 +129,7 @@ function PriceManagementPage() {
       } as never),
     onSuccess: async (res: any) => {
       await queryClient.invalidateQueries({ queryKey: ["meters"] });
+      await queryClient.invalidateQueries({ queryKey: ["price-audit"] });
       setConfirming(false);
       setSelected({});
       setValue("");
@@ -120,6 +141,62 @@ function PriceManagementPage() {
     },
     onError: (e: Error) => toast.error(e.message || "Could not update prices"),
   });
+
+  const exportCsv = () => {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    lines.push(
+      ["Meter number", "Serial", "Utility", "Supplier", "Unit", "Status", "Price per unit", "New price (pending rule)"]
+        .map(esc)
+        .join(","),
+    );
+    for (const m of rows) {
+      const next =
+        valueValid && selected[m.id] ? applyPriceMode(m.price_per_unit, mode, numericValue) : "";
+      lines.push(
+        [
+          m.meter_number,
+          m.serial_number,
+          m.type,
+          m.supplier_name ?? "",
+          m.unit_label ?? "",
+          m.status,
+          m.price_per_unit.toFixed(2),
+          next === "" ? "" : Number(next).toFixed(2),
+        ]
+          .map(esc)
+          .join(","),
+      );
+    }
+    lines.push("");
+    lines.push(["Bulk price configuration"].map(esc).join(","));
+    lines.push(["Rule", "Value", "Selected meters"].map(esc).join(","));
+    lines.push([MODE_LABELS[mode], valueValid ? numericValue : "", selectedRows.length].map(esc).join(","));
+    lines.push("");
+    lines.push(["Price change history"].map(esc).join(","));
+    lines.push(["When", "Changed by", "Meters", "Details"].map(esc).join(","));
+    for (const b of priceLogs) {
+      lines.push(
+        [
+          new Date(b.created_at).toLocaleString(),
+          b.actor_name ?? "System",
+          b.meters.length,
+          b.meters.map((m) => `${m.meter_number}: ${m.from.toFixed(2)} -> ${m.to.toFixed(2)}`).join("; "),
+        ]
+          .map(esc)
+          .join(","),
+      );
+    }
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `meter-prices-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} meter price row(s)`);
+  };
 
   const allSelected = rows.length > 0 && rows.every((m) => selected[m.id]);
   const toggleAll = () => {
@@ -138,6 +215,14 @@ function PriceManagementPage() {
       title="Price Management"
       description="Bulk meter price per unit configuration"
       actions={
+        <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={exportCsv}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+        >
+          <Download className="size-4" /> Export CSV
+        </button>
         <button
           type="button"
           onClick={() => refetch()}
@@ -146,6 +231,7 @@ function PriceManagementPage() {
         >
           <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
         </button>
+        </div>
       }
     >
       <div className="grid gap-4 sm:grid-cols-3">
@@ -361,6 +447,50 @@ function PriceManagementPage() {
           </table>
         </div>
       </div>
+
+      <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+        <h2 className="flex items-center gap-2 text-sm font-bold">
+          <History className="size-4 text-primary" /> Price change history
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Every bulk and single price update, who made it and when.
+        </p>
+        {logsLoading ? (
+          <p className="mt-4 text-sm text-muted-foreground">Loading history…</p>
+        ) : priceLogs.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">No price changes recorded yet.</p>
+        ) : (
+          <ol className="mt-4 space-y-3">
+            {priceLogs.map((b) => (
+              <li key={b.id} className="rounded-xl border border-border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">
+                    {b.meters.length} meter{b.meters.length === 1 ? "" : "s"} repriced
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(b.created_at).toLocaleString()} · by {b.actor_name ?? "System"}
+                  </p>
+                </div>
+                <ul className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {b.meters.slice(0, 12).map((m, i) => (
+                    <li key={`${m.id}-${i}`} className="rounded-lg bg-secondary/60 px-2 py-1">
+                      <span className="font-medium">{m.meter_number}</span>{" "}
+                      <span className="text-muted-foreground">
+                        {money(m.from)} → {money(m.to)}
+                      </span>
+                    </li>
+                  ))}
+                  {b.meters.length > 12 && (
+                    <li className="px-2 py-1 text-muted-foreground">
+                      +{b.meters.length - 12} more
+                    </li>
+                  )}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
 
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">

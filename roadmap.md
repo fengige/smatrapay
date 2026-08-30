@@ -10,3 +10,6 @@
 - [x] "Unassign from units" bulk action
 - [x] Token Management page (meter search + token actions)
 - [x] Price Management page: bulk meter price-per-unit configuration
+- [x] Audit/activity log for bulk price changes
+- [x] Price history timeline on meter details page
+- [x] CSV export of filtered meter prices + bulk price configuration

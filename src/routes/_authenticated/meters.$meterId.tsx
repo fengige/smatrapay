@@ -308,6 +308,8 @@ function MeterDetailPage() {
 
           <MeterAssignmentHistory meterId={meterId} currentLabel={meter.unit_label ?? null} />
 
+          <MeterPriceHistory meterId={meterId} currentPrice={meter.price_per_unit} />
+
           <MeterHistoryPanel meterId={meterId} />
 
           {showAssign && (
@@ -454,6 +456,69 @@ function MeterAssignmentHistory({
                 {p.end ? new Date(p.end).toLocaleString() : "Present"}
                 {p.actorIn ? ` · assigned by ${p.actorIn}` : ""}
                 {p.actorOut ? ` · removed by ${p.actorOut}` : ""}
+              </p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+/** Price-per-unit timeline: previous prices, who set them and when they took effect. */
+function MeterPriceHistory({
+  meterId,
+  currentPrice,
+}: {
+  meterId: string;
+  currentPrice: number;
+}) {
+  const fetchLogs = useServerFn(listMeterAuditLogs);
+  const { data, isLoading } = useQuery({
+    queryKey: ["meter-audit", meterId],
+    queryFn: () => fetchLogs({ data: { meter_id: meterId } }),
+  });
+
+  const fmt = (v: string | null) =>
+    v === null || v === ""
+      ? "—"
+      : Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const entries = useMemo(
+    () =>
+      (data?.logs ?? [])
+        .filter((log) => "price_per_unit" in log.changes)
+        .map((log) => ({
+          at: log.created_at,
+          actor: log.actor_name ?? "System",
+          from: log.changes["price_per_unit"]?.old ?? null,
+          to: log.changes["price_per_unit"]?.new ?? null,
+        }))
+        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
+    [data?.logs],
+  );
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h3 className="text-xs font-bold tracking-wide uppercase text-muted-foreground">
+        Price history
+      </h3>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Current price per unit: <span className="font-semibold text-foreground">{fmt(String(currentPrice))}</span>
+      </p>
+      {isLoading ? (
+        <p className="mt-4 text-sm text-muted-foreground">Loading price history…</p>
+      ) : entries.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">No price changes recorded yet.</p>
+      ) : (
+        <ol className="mt-4 space-y-3">
+          {entries.map((e, i) => (
+            <li key={`${e.at}-${i}`} className="border-l-2 border-emerald-500/40 pl-3">
+              <p className="text-sm font-medium">
+                {fmt(e.from)} → <span className="text-emerald-600">{fmt(e.to)}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Effective {new Date(e.at).toLocaleString()} · by {e.actor}
               </p>
             </li>
           ))}
