@@ -132,6 +132,33 @@ function BulkAddMetersPage() {
     setRows((prev) => Array.from({ length: size }, (_, i) => prev[i] ?? emptyRow()));
   };
 
+  const isDirty =
+    Boolean(meterType || supplierId || ownerType || ownerId) ||
+    rows.some((r) => Object.values(r).some((v) => v.trim()));
+
+  const attemptLeave = () => {
+    if (mutation.isPending) return;
+    if (
+      isDirty &&
+      !result &&
+      !window.confirm("You have unsaved meter entries. Leave this page and discard them?")
+    )
+      return;
+    void navigate({
+      to: "/meters",
+      search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
+    });
+  };
+
+  useEffect(() => {
+    if (!isDirty || result) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty, result]);
+
   const setRow = (i: number, key: keyof Row, value: string) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
 
