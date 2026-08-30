@@ -710,6 +710,30 @@ export type Database = {
         }
         Relationships: []
       }
+      zones: {
+        Row: {
+          created_at: string
+          description: string | null
+          updated_at: string
+          zone_id: number
+          zone_name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          updated_at?: string
+          zone_id?: never
+          zone_name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          updated_at?: string
+          zone_id?: never
+          zone_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
