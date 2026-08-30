@@ -423,6 +423,79 @@ export type Database = {
           },
         ]
       }
+      routes: {
+        Row: {
+          created_at: string
+          route_code: string
+          route_id: number
+          route_name: string
+          status: string
+          updated_at: string
+          zone_id: number
+        }
+        Insert: {
+          created_at?: string
+          route_code: string
+          route_id?: never
+          route_name: string
+          status?: string
+          updated_at?: string
+          zone_id: number
+        }
+        Update: {
+          created_at?: string
+          route_code?: string
+          route_id?: never
+          route_name?: string
+          status?: string
+          updated_at?: string
+          zone_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routes_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["zone_id"]
+          },
+        ]
+      }
+      streets: {
+        Row: {
+          created_at: string
+          postal_code: string | null
+          route_id: number
+          street_id: number
+          street_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          postal_code?: string | null
+          route_id: number
+          street_id?: never
+          street_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          postal_code?: string | null
+          route_id?: number
+          street_id?: never
+          street_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streets_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["route_id"]
+          },
+        ]
+      }
       token_sms_logs: {
         Row: {
           actor_id: string | null
@@ -707,6 +780,30 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      zones: {
+        Row: {
+          created_at: string
+          description: string | null
+          updated_at: string
+          zone_id: number
+          zone_name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          updated_at?: string
+          zone_id?: never
+          zone_name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          updated_at?: string
+          zone_id?: never
+          zone_name?: string
         }
         Relationships: []
       }
