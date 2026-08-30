@@ -20,6 +20,7 @@ import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
 import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_authenticated/service-providers'
+import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
@@ -107,6 +108,12 @@ const AuthenticatedServiceProvidersRoute =
   AuthenticatedServiceProvidersRouteImport.update({
     id: '/service-providers',
     path: '/service-providers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTokenManagementRoute =
+  AuthenticatedTokenManagementRouteImport.update({
+    id: '/token-management',
+    path: '/token-management',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
@@ -312,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/token-management': typeof AuthenticatedTokenManagementRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/vendors': typeof AuthenticatedVendorsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -354,6 +362,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRoute
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/token-management': typeof AuthenticatedTokenManagementRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -399,6 +408,7 @@ export interface FileRoutesById {
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/properties'
     | '/residents'
     | '/service-providers'
+    | '/token-management'
     | '/users'
     | '/vendors'
     | '/admin/dashboard'
@@ -488,6 +499,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/agents'
     | '/service-providers'
+    | '/token-management'
     | '/vendors'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -532,6 +544,7 @@ export interface FileRouteTypes {
     | '/_authenticated/properties'
     | '/_authenticated/residents'
     | '/_authenticated/service-providers'
+    | '/_authenticated/token-management'
     | '/_authenticated/users'
     | '/_authenticated/vendors'
     | '/_authenticated/admin/dashboard'
@@ -655,6 +668,13 @@ declare module '@tanstack/react-router' {
       path: '/service-providers'
       fullPath: '/service-providers'
       preLoaderRoute: typeof AuthenticatedServiceProvidersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/token-management': {
+      id: '/_authenticated/token-management'
+      path: '/token-management'
+      fullPath: '/token-management'
+      preLoaderRoute: typeof AuthenticatedTokenManagementRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users': {
@@ -985,6 +1005,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
   AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
+  AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
@@ -1007,6 +1028,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
   AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
+  AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,

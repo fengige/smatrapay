@@ -13,6 +13,7 @@ import {
   Flame,
   Gauge,
   Link2,
+  Link2Off,
   Pencil,
   Power,
   Loader2,
@@ -31,6 +32,7 @@ import {
   addMeter,
   bulkAddMeters,
   bulkAssignMeters,
+  bulkUnassignMeters,
   bulkMeterAction,
   listMeters,
   listMeterAuditLogs,
@@ -154,7 +156,7 @@ function MetersPage() {
   const [assigning, setAssigning] = useState<MeterRow | null>(null);
   const [bulkAssign, setBulkAssign] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
+  const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate" | "unassign">(null);
 
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
@@ -236,14 +238,28 @@ function MetersPage() {
   });
 
   const runBulk = useServerFn(bulkMeterAction);
+  const runUnassign = useServerFn(bulkUnassignMeters);
   const bulk = useMutation({
-    mutationFn: async (action: "delete" | "deactivate" | "activate") =>
-      runBulk({ data: { action, ids: selectedMeters.map((m) => m.id) } } as never),
-    onSuccess: async (_res, action) => {
+    mutationFn: async (action: "delete" | "deactivate" | "activate" | "unassign") => {
+      const ids = selectedMeters.map((m) => m.id);
+      if (action === "unassign") return runUnassign({ data: { meter_ids: ids } } as never);
+      return runBulk({ data: { action, ids } } as never);
+    },
+    onSuccess: async (res: any, action) => {
       const n = selectedMeters.length;
       setConfirm(null);
       setSelected([]);
       await queryClient.invalidateQueries({ queryKey: ["meters"] });
+      if (action === "unassign") {
+        const done = Number(res?.unassigned ?? 0);
+        const skipped = Number(res?.skipped ?? 0);
+        toast.success(
+          `${done} meter${done === 1 ? "" : "s"} unassigned from units${
+            skipped ? ` · ${skipped} already unassigned` : ""
+          }`,
+        );
+        return;
+      }
       toast.success(
         action === "delete"
           ? `${n} meter${n === 1 ? "" : "s"} deleted`
@@ -252,6 +268,7 @@ function MetersPage() {
     },
     onError: (err: Error) => toast.error(err.message || "Bulk action failed"),
   });
+
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -481,6 +498,13 @@ function MetersPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
               >
                 <Link2 className="size-3.5" /> Assign to units
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirm("unassign")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
+              >
+                <Link2Off className="size-3.5" /> Unassign from units
               </button>
               <button
                 type="button"
@@ -763,7 +787,9 @@ function MetersPage() {
               {confirm} {selected.length} meter{selected.length === 1 ? "" : "s"}?
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {confirm === "delete"
+              {confirm === "unassign"
+                ? "The selected meters will be detached from their units. Meter records and readings stay intact, and each change is written to the meter activity log."
+                : confirm === "delete"
                 ? "The selected meters will be permanently removed from the registry. This cannot be undone."
                 : confirm === "deactivate"
                   ? "The selected meters stay on record but are marked inactive."
@@ -2468,6 +2494,11 @@ function BulkAssignUnitsDialog({
   }, [mapping, meters, occupied, propertyUnits]);
 
   const assignable = meters.filter((m) => mapping[m.id] && !conflicts[m.id]);
+  const [step, setStep] = useState<"configure" | "review">("configure");
+  const unitLabel = (unitId?: string) =>
+    propertyUnits.find((u) => u.id === unitId)?.unit_number ?? "—";
+  const propertyLabel = properties.find((p) => p.id === propertyId)?.label ?? "";
+  const notReady = meters.filter((m) => !mapping[m.id] || conflicts[m.id]);
 
   const run = useServerFn(bulkAssignMeters);
   const mutation = useMutation({
@@ -2482,6 +2513,7 @@ function BulkAssignUnitsDialog({
     onSuccess: (res: any) => onDone(res.assigned as number, res.skipped ?? []),
     onError: (err: Error) => toast.error(err.message || "Bulk assignment failed"),
   });
+
 
   return (
     <div
@@ -2500,7 +2532,9 @@ function BulkAssignUnitsDialog({
               Assign {meters.length} meter{meters.length === 1 ? "" : "s"} to units
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pick a property, then confirm or adjust the unit for each meter.
+              {step === "configure"
+                ? "Step 1 of 2 · Pick a property, then confirm or adjust the unit for each meter."
+                : "Step 2 of 2 · Review the pairings below before confirming."}
             </p>
           </div>
           <button
@@ -2513,6 +2547,7 @@ function BulkAssignUnitsDialog({
           </button>
         </div>
 
+        {step === "configure" && (
         <div className="mt-4 space-y-1">
           <label htmlFor="bulk-assign-property" className="text-sm font-medium">
             Property
@@ -2525,14 +2560,63 @@ function BulkAssignUnitsDialog({
             onChange={setPropertyId}
           />
         </div>
+        )}
 
-        {propertyId && propertyUnits.length === 0 && (
+        {step === "configure" && propertyId && propertyUnits.length === 0 && (
           <p className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
             This property has no units yet. Add units before assigning meters.
           </p>
         )}
 
-        {propertyId && propertyUnits.length > 0 && (
+        {step === "review" && (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm">
+              <p>
+                <span className="font-medium">{assignable.length}</span> meter
+                {assignable.length === 1 ? "" : "s"} will be assigned in{" "}
+                <span className="font-medium">{propertyLabel}</span>
+                {inheritLandlord ? ", inheriting the property landlord" : ""}.
+              </p>
+            </div>
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2">Meter</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Unit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignable.map((m) => (
+                    <tr key={m.id} className="border-t border-border">
+                      <td className="px-3 py-2 font-medium">{m.meter_number}</td>
+                      <td className="px-3 py-2 capitalize text-muted-foreground">{m.type}</td>
+                      <td className="px-3 py-2">Unit {unitLabel(mapping[m.id])}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {notReady.length > 0 && (
+              <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                <p className="font-medium">
+                  {notReady.length} meter{notReady.length === 1 ? "" : "s"} will be left out:
+                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+                  {notReady.slice(0, 6).map((m) => (
+                    <li key={m.id}>
+                      {m.meter_number} — {conflicts[m.id] ?? "no unit selected"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === "configure" && propertyId && propertyUnits.length > 0 && (
+
           <>
             <div className="mt-4 max-h-72 space-y-3 overflow-y-auto rounded-xl border border-border p-3">
               {meters.map((m) => (
@@ -2585,21 +2669,34 @@ function BulkAssignUnitsDialog({
             <button
               type="button"
               disabled={mutation.isPending}
-              onClick={onClose}
+              onClick={() => (step === "review" ? setStep("configure") : onClose())}
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
             >
-              Cancel
+              {step === "review" ? "Back" : "Cancel"}
             </button>
-            <button
-              type="button"
-              disabled={mutation.isPending || assignable.length === 0}
-              onClick={() => mutation.mutate()}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-            >
-              {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              Assign {assignable.length} meter{assignable.length === 1 ? "" : "s"}
-            </button>
+            {step === "configure" ? (
+              <button
+                type="button"
+                disabled={assignable.length === 0}
+                onClick={() => setStep("review")}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                Review assignment
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={mutation.isPending || assignable.length === 0}
+                onClick={() => mutation.mutate()}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Confirm &amp; assign {assignable.length} meter
+                {assignable.length === 1 ? "" : "s"}
+              </button>
+            )}
           </div>
+
         </div>
       </div>
     </div>

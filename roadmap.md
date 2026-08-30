@@ -5,3 +5,7 @@
 - [x] Clear import error report with row-level failure reasons and actionable messages
 - [x] Duplicate detection during CSV import with summary of skipped/updated rows
 - [x] Bulk Add Meters: made SGC/KRN/TI/EA/KEN optional (client + server validation)
+- [x] Bulk assign meters: review step before confirming
+- [x] Audit/activity log entry for bulk assignments (meters trigger)
+- [x] "Unassign from units" bulk action
+- [x] Token Management page (meter search + token actions)

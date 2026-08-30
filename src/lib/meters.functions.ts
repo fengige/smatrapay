@@ -1310,3 +1310,49 @@ export const bulkAssignMeters = createServerFn({ method: "POST" })
 
     return { assigned, skipped };
   });
+
+/* ------------------------------------------------------------------ *
+ * Bulk unassign meters from units
+ * ------------------------------------------------------------------ */
+
+export type BulkUnassignResult = { unassigned: number; skipped: number };
+
+/**
+ * Clear the unit association for the given meters. Meters that are already
+ * unassigned are reported as skipped. Each cleared meter produces a
+ * `meter_audit_logs` entry through the meters change trigger.
+ */
+export const bulkUnassignMeters = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        meter_ids: z
+          .array(uuid)
+          .min(1, "Select at least one meter")
+          .max(500, "You can unassign at most 500 meters at once"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<BulkUnassignResult> => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: rows, error: readErr } = await supabase
+      .from("meters")
+      .select("id, unit_id")
+      .in("id", data.meter_ids);
+    if (readErr) throw new Error(readErr.message);
+
+    const assigned = (rows ?? []).filter((m: any) => m.unit_id).map((m: any) => m.id as string);
+    const skipped = data.meter_ids.length - assigned.length;
+    if (!assigned.length) return { unassigned: 0, skipped };
+
+    const { error } = await supabase
+      .from("meters")
+      .update({ unit_id: null } as never)
+      .in("id", assigned);
+    if (error) throw new Error(error.message);
+
+    return { unassigned: assigned.length, skipped };
+  });
