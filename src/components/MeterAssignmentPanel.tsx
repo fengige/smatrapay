@@ -14,6 +14,7 @@ import {
   unassignMetersFromAgent,
 } from "@/lib/agents.functions";
 import {
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
   assignMetersToVendor,
   listAssignableVendorMeters,
   listVendorMeters,
@@ -153,6 +154,12 @@ export function MeterAssignmentPanel({
       allAssignable.filter((m) => pickerSelected.includes(m.id) && conflictOf(m)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [allAssignable, pickerSelected],
+  );
+
+  useRealtimeRefresh(
+    `${kind}-meters`,
+    ["meters", "meter_audit_logs"],
+    [ownedKey, [`assignable-${kind}-meters`], [`${kind}-assignment-history`, ownerId]],
   );
 
   const refresh = () => {

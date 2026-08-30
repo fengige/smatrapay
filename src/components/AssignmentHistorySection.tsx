@@ -15,6 +15,7 @@ import type { AssignmentHistoryPage } from "@/lib/assignment-history";
 import { listAgentAssignmentHistory } from "@/lib/agents.functions";
 import { listVendorAssignmentHistory } from "@/lib/vendors.functions";
 import { listLandlordAssignmentHistory } from "@/lib/landlords.functions";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 type Kind = "agent" | "vendor" | "landlord";
 type SortBy = "created_at" | "meter_number" | "action" | "actor_name";
@@ -67,6 +68,10 @@ export function AssignmentHistorySection({ kind, ownerId }: { kind: Kind; ownerI
         data: { ...ownerArg, page, pageSize, sortBy, sortDir, search: search || undefined, action },
       }),
   });
+
+  useRealtimeRefresh(`${kind}-assignment-history`, ["meters", "meter_audit_logs"], [
+    [`${kind}-assignment-history`, ownerId],
+  ]);
 
   const entries = data?.entries ?? [];
   const total = data?.total ?? 0;
