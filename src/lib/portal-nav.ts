@@ -9,6 +9,7 @@ import {
   Grid2x2,
   Home,
   KeyRound,
+  MapPin,
   Receipt,
   Settings,
   ShoppingCart,
@@ -75,6 +76,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Meter Management", icon: Gauge, to: "/meters" },
           { label: "Meter Suppliers", icon: Gauge, to: "/meter-suppliers" },
           { label: "Price Management", icon: BadgeDollarSign, to: "/price-management" },
+          { label: "Zone Management", icon: MapPin, to: "/zones" },
         ],
       },
 

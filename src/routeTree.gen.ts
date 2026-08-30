@@ -47,6 +47,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
+import { Route as AuthenticatedZonesIndexRouteImport } from './routes/_authenticated/zones.index'
 import { Route as AuthenticatedLandlordsIdIndexRouteImport } from './routes/_authenticated/landlords.$id.index'
 import { Route as AuthenticatedLandlordsIdEditRouteImport } from './routes/_authenticated/landlords.$id.edit'
 import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_authenticated/properties.$id.index'
@@ -269,6 +270,11 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedZonesIndexRoute = AuthenticatedZonesIndexRouteImport.update({
+  id: '/zones/',
+  path: '/zones/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLandlordsIdIndexRoute =
   AuthenticatedLandlordsIdIndexRouteImport.update({
     id: '/$id/',
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/zones/': typeof AuthenticatedZonesIndexRoute
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
@@ -410,6 +417,7 @@ export interface FileRoutesByTo {
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/zones': typeof AuthenticatedZonesIndexRoute
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
@@ -461,6 +469,7 @@ export interface FileRoutesById {
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/zones/': typeof AuthenticatedZonesIndexRoute
   '/_authenticated/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/_authenticated/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
@@ -512,6 +521,7 @@ export interface FileRouteTypes {
     | '/properties/'
     | '/residents/'
     | '/users/'
+    | '/zones/'
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/properties'
     | '/residents'
     | '/users'
+    | '/zones'
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
     | '/_authenticated/users/'
+    | '/_authenticated/zones/'
     | '/_authenticated/landlords/$id/edit'
     | '/_authenticated/properties/$id/edit'
     | '/_authenticated/residents/$id/edit'
@@ -897,6 +909,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/zones/': {
+      id: '/_authenticated/zones/'
+      path: '/zones'
+      fullPath: '/zones/'
+      preLoaderRoute: typeof AuthenticatedZonesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/landlords/$id/': {
       id: '/_authenticated/landlords/$id/'
       path: '/$id'
@@ -1082,6 +1101,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
+  AuthenticatedZonesIndexRoute: typeof AuthenticatedZonesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1109,6 +1129,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
+  AuthenticatedZonesIndexRoute: AuthenticatedZonesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
