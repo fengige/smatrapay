@@ -319,6 +319,17 @@ function BulkAddMetersPage() {
     onError: (err: Error) => toast.error(err.message || "Could not add meters"),
   });
 
+  useEffect(() => {
+    if (!result) return;
+    const timer = setTimeout(() => {
+      void navigate({
+        to: "/meters",
+        search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
+      });
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [result, navigate]);
+
   const openReview = () => {
     setSubmitted(true);
     if (!headerValid) {
@@ -642,6 +653,9 @@ function BulkAddMetersPage() {
           <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
             Result — {result.created} created, {result.updated} updated, {result.skipped} skipped
           </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Redirecting to Meter Management in a few seconds…
+          </p>
           <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto text-sm">
             {result.results.map((r) => (
               <li key={r.row} className="flex flex-wrap gap-2">
