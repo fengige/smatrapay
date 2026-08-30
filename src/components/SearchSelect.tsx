@@ -4,7 +4,7 @@ import { Check, ChevronsUpDown, Search } from "lucide-react";
 export type SearchSelectOption = {
   id: string;
   label: string;
-  hint?: string;
+  hint?: string | undefined;
 };
 
 type Props = {
