@@ -306,6 +306,8 @@ function MeterDetailPage() {
             </dl>
           </section>
 
+          <MeterAssignmentHistory meterId={meterId} currentLabel={meter.unit_label ?? null} />
+
           <MeterHistoryPanel meterId={meterId} />
 
           {showAssign && (
@@ -376,6 +378,88 @@ function actionBadge(action: string) {
     <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
       {action}
     </span>
+  );
+}
+
+/**
+ * Reconstructs the unit-assignment periods for a meter from its audit log so
+ * admins can see which units it served and for how long.
+ */
+function MeterAssignmentHistory({
+  meterId,
+  currentLabel,
+}: {
+  meterId: string;
+  currentLabel: string | null;
+}) {
+  const fetchLogs = useServerFn(listMeterAuditLogs);
+  const { data, isLoading } = useQuery({
+    queryKey: ["meter-audit", meterId],
+    queryFn: () => fetchLogs({ data: { meter_id: meterId } }),
+  });
+
+  const periods = useMemo(() => {
+    const changes = (data?.logs ?? [])
+      .filter((log) => "unit_id" in log.changes)
+      .map((log) => ({
+        at: log.created_at,
+        actor: log.actor_name ?? "System",
+        from: log.changes["unit_id"]?.old ?? null,
+        to: log.changes["unit_id"]?.new ?? null,
+      }))
+      .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+    const rows: {
+      unit: string;
+      start: string | null;
+      end: string | null;
+      actorIn: string | null;
+      actorOut: string | null;
+    }[] = [];
+    for (const c of changes) {
+      if (c.from) {
+        const open = [...rows].reverse().find((r) => r.unit === c.from && !r.end);
+        if (open) {
+          open.end = c.at;
+          open.actorOut = c.actor;
+        } else {
+          rows.push({ unit: c.from, start: null, end: c.at, actorIn: null, actorOut: c.actor });
+        }
+      }
+      if (c.to) rows.push({ unit: c.to, start: c.at, end: null, actorIn: c.actor, actorOut: null });
+    }
+    return rows.reverse();
+  }, [data?.logs]);
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h3 className="text-xs font-bold tracking-wide uppercase text-muted-foreground">
+        Assignment history
+      </h3>
+      {isLoading ? (
+        <p className="mt-4 text-sm text-muted-foreground">Loading assignment history…</p>
+      ) : periods.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          {currentLabel
+            ? `No assignment changes recorded yet — currently assigned to ${currentLabel}.`
+            : "This meter has never been assigned to a unit."}
+        </p>
+      ) : (
+        <ol className="mt-4 space-y-3">
+          {periods.map((p, i) => (
+            <li key={`${p.unit}-${i}`} className="border-l-2 border-primary/40 pl-3">
+              <p className="text-sm font-medium">{p.unit}</p>
+              <p className="text-xs text-muted-foreground">
+                {p.start ? new Date(p.start).toLocaleString() : "Unknown start"} →{" "}
+                {p.end ? new Date(p.end).toLocaleString() : "Present"}
+                {p.actorIn ? ` · assigned by ${p.actorIn}` : ""}
+                {p.actorOut ? ` · removed by ${p.actorOut}` : ""}
+              </p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }
 
