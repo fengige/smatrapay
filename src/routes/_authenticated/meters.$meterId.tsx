@@ -357,6 +357,28 @@ function categoryOf(field: string): TimelineFilter {
   return "config";
 }
 
+function actionBadge(action: string) {
+  if (action === "create") {
+    return (
+      <span className="inline-flex rounded-full bg-emerald-500/12 px-2 py-0.5 text-xs font-medium text-emerald-600">
+        Created
+      </span>
+    );
+  }
+  if (action === "update") {
+    return (
+      <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+        Updated
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      {action}
+    </span>
+  );
+}
+
 function MeterHistoryPanel({ meterId }: { meterId: string }) {
   const fetchLogs = useServerFn(listMeterAuditLogs);
   const { data, isLoading } = useQuery({
