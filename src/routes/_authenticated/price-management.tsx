@@ -68,6 +68,9 @@ function PriceManagementPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active");
+  const [propertyFilter, setPropertyFilter] = useState("all");
+  const [userType, setUserType] = useState<"all" | "landlord" | "agent" | "vendor">("all");
+  const [userFilter, setUserFilter] = useState("all");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [mode, setMode] = useState<PriceMode>("set");
   const [value, setValue] = useState("");
@@ -85,6 +88,23 @@ function PriceManagementPage() {
 
   const meters = data?.meters ?? [];
   const suppliers = data?.suppliers ?? [];
+  const properties = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of data?.units ?? []) {
+      if (u.property_id) map.set(u.property_id, u.property_name ?? "Unnamed property");
+    }
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [data?.units]);
+
+  /** People/vendors that can be assigned to meters, per selected user type. */
+  const userOptions = useMemo(() => {
+    if (userType === "landlord") return (data?.landlords ?? []).map((l) => ({ id: l.id, name: l.name }));
+    if (userType === "agent") return (data?.agents ?? []).map((a) => ({ id: a.id, name: a.name }));
+    if (userType === "vendor") return (data?.vendors ?? []).map((v) => ({ id: v.id, name: v.name }));
+    return [];
+  }, [userType, data?.landlords, data?.agents, data?.vendors]);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -92,13 +112,24 @@ function PriceManagementPage() {
       if (typeFilter !== "all" && m.type !== typeFilter) return false;
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (supplierFilter !== "all" && (m.supplier_id ?? "none") !== supplierFilter) return false;
+      if (propertyFilter !== "all" && (m.property_id ?? "none") !== propertyFilter) return false;
+      if (userType !== "all") {
+        const assigned =
+          userType === "landlord"
+            ? m.landlord_id
+            : userType === "agent"
+              ? m.agent_id
+              : m.vendor_id || null;
+        if (!assigned) return false;
+        if (userFilter !== "all" && assigned !== userFilter) return false;
+      }
       if (!needle) return true;
       return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.unit_label ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(needle);
     });
-  }, [meters, q, typeFilter, statusFilter, supplierFilter]);
+  }, [meters, q, typeFilter, statusFilter, supplierFilter, propertyFilter, userType, userFilter]);
 
   const selectedRows = rows.filter((m) => selected[m.id]);
   const numericValue = Number(value);
@@ -259,7 +290,7 @@ function PriceManagementPage() {
       </div>
 
       <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto] md:items-center">
           <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3">
             <Search className="size-4 shrink-0 text-muted-foreground" />
             <input
@@ -304,6 +335,50 @@ function PriceManagementPage() {
             <option value="all">All statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
+          </select>
+          <select
+            value={propertyFilter}
+            onChange={(e) => setPropertyFilter(e.target.value)}
+            aria-label="Filter by property"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="all">All properties</option>
+            <option value="none">No property / unassigned</option>
+            {properties.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={userType}
+            onChange={(e) => {
+              setUserType(e.target.value as typeof userType);
+              setUserFilter("all");
+            }}
+            aria-label="Filter by user type"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="all">All user types</option>
+            <option value="landlord">Landlord</option>
+            <option value="agent">Agent</option>
+            <option value="vendor">Vendor</option>
+          </select>
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+            disabled={userType === "all"}
+            aria-label="Filter by assigned user"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm disabled:opacity-60"
+          >
+            <option value="all">
+              {userType === "all" ? "Select a user type first" : `All ${userType}s`}
+            </option>
+            {userOptions.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
           </select>
         </div>
 

@@ -18,6 +18,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
+import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authenticated/pos-shift-report'
 import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_authenticated/price-management'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
@@ -101,6 +102,12 @@ const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
   path: '/pos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPosShiftReportRoute =
+  AuthenticatedPosShiftReportRouteImport.update({
+    id: '/pos-shift-report',
+    path: '/pos-shift-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPriceManagementRoute =
   AuthenticatedPriceManagementRouteImport.update({
     id: '/price-management',
@@ -330,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AuthenticatedAgentsRoute
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/pos': typeof AuthenticatedPosRoute
+  '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
@@ -377,6 +385,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRoute
   '/pos': typeof AuthenticatedPosRoute
+  '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
@@ -423,6 +432,7 @@ export interface FileRoutesById {
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/pos': typeof AuthenticatedPosRoute
+  '/_authenticated/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/_authenticated/price-management': typeof AuthenticatedPriceManagementRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
@@ -473,6 +483,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/landlords'
     | '/pos'
+    | '/pos-shift-report'
     | '/price-management'
     | '/properties'
     | '/residents'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/agents'
     | '/pos'
+    | '/pos-shift-report'
     | '/price-management'
     | '/service-providers'
     | '/token-management'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents'
     | '/_authenticated/landlords'
     | '/_authenticated/pos'
+    | '/_authenticated/pos-shift-report'
     | '/_authenticated/price-management'
     | '/_authenticated/properties'
     | '/_authenticated/residents'
@@ -679,6 +692,13 @@ declare module '@tanstack/react-router' {
       path: '/pos'
       fullPath: '/pos'
       preLoaderRoute: typeof AuthenticatedPosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pos-shift-report': {
+      id: '/_authenticated/pos-shift-report'
+      path: '/pos-shift-report'
+      fullPath: '/pos-shift-report'
+      preLoaderRoute: typeof AuthenticatedPosShiftReportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/price-management': {
@@ -1042,6 +1062,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
+  AuthenticatedPosShiftReportRoute: typeof AuthenticatedPosShiftReportRoute
   AuthenticatedPriceManagementRoute: typeof AuthenticatedPriceManagementRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
@@ -1067,6 +1088,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
+  AuthenticatedPosShiftReportRoute: AuthenticatedPosShiftReportRoute,
   AuthenticatedPriceManagementRoute: AuthenticatedPriceManagementRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,

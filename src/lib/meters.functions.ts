@@ -25,6 +25,8 @@ export type MeterRow = {
   agent_name: string | null;
   unit_id: string | null;
   unit_label: string | null;
+  property_id: string | null;
+  property_name: string | null;
   meter_number: string;
   serial_number: string;
   type: MeterType | string;
@@ -227,6 +229,8 @@ export const listMeters = createServerFn({ method: "GET" })
       agent_name: displayName(r.agent_id ?? null),
       unit_id: r.unit_id ?? null,
       unit_label: r.unit_id ? (unitById.get(r.unit_id)?.label ?? null) : null,
+      property_id: r.unit_id ? (unitById.get(r.unit_id)?.property_id ?? null) : null,
+      property_name: r.unit_id ? (unitById.get(r.unit_id)?.property_name ?? null) : null,
       meter_number: r.meter_number ?? "",
       serial_number: r.serial_number ?? "",
       type: (r.type ?? "").toLowerCase(),
@@ -1066,6 +1070,8 @@ export const getMeter = createServerFn({ method: "GET" })
       unit_label: unit
         ? `${unit.property_name ? `${unit.property_name} · ` : ""}Unit ${unit.unit_number}`
         : null,
+      property_id: unit?.property_id ?? null,
+      property_name: unit?.property_name ?? null,
       meter_number: m.meter_number ?? "",
       serial_number: m.serial_number ?? "",
       type: (m.type ?? "").toLowerCase(),
