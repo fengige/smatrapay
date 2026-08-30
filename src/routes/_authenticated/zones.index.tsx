@@ -190,6 +190,7 @@ function ZonesPage() {
               <th className="w-8 px-2 py-3" />
               <th className="px-4 py-3 text-left">Zone</th>
               <th className="px-4 py-3 text-left">Description</th>
+              <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Routes</th>
               <th className="px-4 py-3 text-left">Created</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -235,12 +236,44 @@ function ZonesPage() {
                 <td className="max-w-md px-4 py-3">
                   <span className="line-clamp-2">{z.description ?? "—"}</span>
                 </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                      z.status === "Active"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {z.status}
+                  </span>
+                </td>
                 <td className="px-4 py-3">{z.route_count}</td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(z.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setViewing(z)}
+                      aria-label={`View ${z.zone_name}`}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent/10"
+                    >
+                      <Eye className="size-3.5" /> View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setToggling(z)}
+                      aria-label={`${z.status === "Active" ? "Deactivate" : "Activate"} ${z.zone_name}`}
+                      className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium ${
+                        z.status === "Active"
+                          ? "border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                          : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                      }`}
+                    >
+                      <Power className="size-3.5" />
+                      {z.status === "Active" ? "Deactivate" : "Activate"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setEditing(z)}
