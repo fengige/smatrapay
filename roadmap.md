@@ -4,3 +4,4 @@
 - [x] Activity timeline entries for meter CSV imports and edits on meter details page
 - [x] Clear import error report with row-level failure reasons and actionable messages
 - [x] Duplicate detection during CSV import with summary of skipped/updated rows
+- [x] Bulk Add Meters: made SGC/KRN/TI/EA/KEN optional (client + server validation)

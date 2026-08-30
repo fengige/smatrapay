@@ -52,6 +52,13 @@ function numberError(label: string, value: string) {
   return null;
 }
 
+function optionalNumberError(label: string, value: string) {
+  const v = value.trim();
+  if (!v) return null;
+  if (!/^\d+$/.test(v)) return `${label} must be a whole number`;
+  return null;
+}
+
 type Row = {
   meter_number: string;
   serial_number: string;
@@ -266,7 +273,7 @@ function BulkAddMetersPage() {
             errs.serial_number = "Duplicate serial in this batch";
         }
         (["sgc", "krn", "ti", "ea", "ken"] as const).forEach((k) => {
-          const err = numberError(k.toUpperCase(), r[k]);
+          const err = optionalNumberError(k.toUpperCase(), r[k]);
           if (err) errs[k] = err;
         });
         return errs;
@@ -603,11 +610,11 @@ function BulkAddMetersPage() {
                   <th className="px-2 py-2 font-semibold">#</th>
                   <th className="px-2 py-2 font-semibold">Meter number *</th>
                   <th className="px-2 py-2 font-semibold">Serial no</th>
-                  <th className="px-2 py-2 font-semibold">SGC *</th>
-                  <th className="px-2 py-2 font-semibold">KRN *</th>
-                  <th className="px-2 py-2 font-semibold">TI *</th>
-                  <th className="px-2 py-2 font-semibold">EA *</th>
-                  <th className="px-2 py-2 font-semibold">KEN *</th>
+                  <th className="px-2 py-2 font-semibold">SGC</th>
+                  <th className="px-2 py-2 font-semibold">KRN</th>
+                  <th className="px-2 py-2 font-semibold">TI</th>
+                  <th className="px-2 py-2 font-semibold">EA</th>
+                  <th className="px-2 py-2 font-semibold">KEN</th>
                 </tr>
               </thead>
               <tbody>

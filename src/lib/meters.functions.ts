@@ -81,7 +81,10 @@ const meterInput = z.object({
   agent_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
   meter_number: identifier("Meter number"),
-  serial_number: identifier("Serial number"),
+  serial_number: z
+    .union([identifier("Serial number"), z.literal("")])
+    .optional()
+    .transform((v) => (v ? v.trim() : undefined)),
   type: z.enum(["electricity", "water", "gas"]),
   initial_reading: numOrZero,
   price_per_unit: numOrZero,
@@ -104,10 +107,6 @@ async function assertMeterIdentifiersFree(
   values: { meter_number: string; serial_number: string },
   excludeId?: string,
 ) {
-  if (values.meter_number.toLowerCase() === values.serial_number.toLowerCase()) {
-    throw new Error("Meter number and serial number must be different");
-  }
-
   let query = supabase
     .from("meters")
     .select("id, meter_number, serial_number")
@@ -261,7 +260,8 @@ export const addMeter = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase } = context;
 
-    await assertMeterIdentifiersFree(supabase, data);
+    const serial = data.serial_number?.trim() || data.meter_number;
+    await assertMeterIdentifiersFree(supabase, { meter_number: data.meter_number, serial_number: serial });
 
     const { data: inserted, error } = await supabase
       .from("meters")
@@ -272,7 +272,7 @@ export const addMeter = createServerFn({ method: "POST" })
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
-        serial_number: data.serial_number,
+        serial_number: serial,
         type: data.type,
         initial_reading: data.initial_reading,
         price_per_unit: data.price_per_unit,
@@ -308,7 +308,8 @@ export const updateMeter = createServerFn({ method: "POST" })
     if (curErr) throw new Error(curErr.message);
     if (!current) throw new Error("Meter not found");
 
-    await assertMeterIdentifiersFree(supabase, data, data.id);
+    const serial = data.serial_number?.trim() || data.meter_number;
+    await assertMeterIdentifiersFree(supabase, { meter_number: data.meter_number, serial_number: serial }, data.id);
 
     const { error } = await supabase
       .from("meters")
@@ -319,7 +320,7 @@ export const updateMeter = createServerFn({ method: "POST" })
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
-        serial_number: data.serial_number,
+        serial_number: serial,
         type: data.type,
         initial_reading: data.initial_reading,
         price_per_unit: data.price_per_unit,
@@ -621,9 +622,9 @@ export const importMeters = createServerFn({ method: "POST" })
           ken: r.ken,
         });
 
+        const parsedSerial = parsed.serial_number ?? parsed.meter_number;
         const mKey = parsed.meter_number.toLowerCase();
-        const sKey = parsed.serial_number.toLowerCase();
-        if (mKey === sKey) throw new Error("Meter number and serial number must be different");
+        const sKey = parsedSerial.toLowerCase();
         if (seenMeters.has(mKey))
           throw new Error(`Meter number ${parsed.meter_number} appears twice in this file`);
         if (seenSerials.has(sKey))
@@ -643,7 +644,7 @@ export const importMeters = createServerFn({ method: "POST" })
             duplicates.push({
               row: r.row,
               meter_number: parsed.meter_number,
-              serial_number: parsed.serial_number,
+              serial_number: parsedSerial,
               reason,
             });
             skipped += 1;
@@ -679,7 +680,7 @@ export const importMeters = createServerFn({ method: "POST" })
           landlord_id,
           agent_id,
           meter_number: parsed.meter_number,
-          serial_number: parsed.serial_number,
+          serial_number: parsedSerial,
           type: parsed.type,
           initial_reading: parsed.initial_reading,
           price_per_unit: parsed.price_per_unit,
@@ -696,16 +697,16 @@ export const importMeters = createServerFn({ method: "POST" })
           duplicates.push({
             row: r.row,
             meter_number: parsed.meter_number,
-            serial_number: parsed.serial_number,
+            serial_number: parsedSerial,
             reason: "Existing meter will be updated",
           });
           toUpdate.push({ id: existingId, values });
           // Keep the lookup fresh so later rows see the new identifiers.
-          meterByNumber.set(mKey, { id: existingId, serial: parsed.serial_number });
+          meterByNumber.set(mKey, { id: existingId, serial: parsedSerial });
           meterBySerial.set(sKey, { id: existingId, number: parsed.meter_number });
         } else {
           toInsert.push({ ...values, unit_id: null });
-          meterByNumber.set(mKey, { id: "pending", serial: parsed.serial_number });
+          meterByNumber.set(mKey, { id: "pending", serial: parsedSerial });
           meterBySerial.set(sKey, { id: "pending", number: parsed.meter_number });
         }
       } catch (e: any) {
