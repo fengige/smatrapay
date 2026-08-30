@@ -898,11 +898,29 @@ const IDENTIFIER_RE = /^[A-Za-z0-9][A-Za-z0-9/_-]*$/;
 function identifierError(label: string, value: string) {
   const v = value.trim();
   if (!v) return `${label} is required`;
-  if (v.length < 4) return `${label} must be at least 4 characters`;
-  if (v.length > 64) return `${label} must be at most 64 characters`;
-  if (!IDENTIFIER_RE.test(v)) return `${label} may only contain letters, numbers, - _ /`;
+  if (v.length < 4) return `${label} must be at least 4 characters (you entered ${v.length})`;
+  if (v.length > 64) return `${label} must be at most 64 characters (you entered ${v.length})`;
+  if (!IDENTIFIER_RE.test(v))
+    return `${label} may only contain letters, numbers, hyphens, underscores and slashes`;
   return null;
 }
+
+function decimalError(label: string, value: string) {
+  const v = value.trim();
+  if (!v) return `${label} is required`;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return `${label} must be a number`;
+  if (n < 0) return `${label} cannot be negative`;
+  return null;
+}
+
+function stsFieldError(label: string, value: string) {
+  const v = value.trim();
+  if (!v) return null;
+  if (!/^\d+$/.test(v)) return `${label} must be a whole number (digits only)`;
+  return null;
+}
+
 
 function MeterDialog({
   meter,
