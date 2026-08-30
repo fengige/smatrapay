@@ -13,6 +13,7 @@ import {
   Flame,
   Gauge,
   Link2,
+  Link2Off,
   Pencil,
   Power,
   Loader2,
@@ -31,6 +32,7 @@ import {
   addMeter,
   bulkAddMeters,
   bulkAssignMeters,
+  bulkUnassignMeters,
   bulkMeterAction,
   listMeters,
   listMeterAuditLogs,
@@ -154,7 +156,7 @@ function MetersPage() {
   const [assigning, setAssigning] = useState<MeterRow | null>(null);
   const [bulkAssign, setBulkAssign] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
+  const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate" | "unassign">(null);
 
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
@@ -499,6 +501,13 @@ function MetersPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setConfirm("unassign")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
+              >
+                <Link2Off className="size-3.5" /> Unassign from units
+              </button>
+              <button
+                type="button"
                 onClick={() => setConfirm("deactivate")}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
               >
@@ -778,7 +787,9 @@ function MetersPage() {
               {confirm} {selected.length} meter{selected.length === 1 ? "" : "s"}?
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {confirm === "delete"
+              {confirm === "unassign"
+                ? "The selected meters will be detached from their units. Meter records and readings stay intact, and each change is written to the meter activity log."
+                : confirm === "delete"
                 ? "The selected meters will be permanently removed from the registry. This cannot be undone."
                 : confirm === "deactivate"
                   ? "The selected meters stay on record but are marked inactive."
