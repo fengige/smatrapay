@@ -262,40 +262,58 @@ function BulkAddMetersPage() {
     [meterType, supplierId, ownerType, ownerId, count],
   );
 
-  const rowErrors: RowErrors[] = useMemo(
+  const rowChecks: { errors: RowErrors; warnings: RowErrors }[] = useMemo(
     () =>
       rows.map((r, i) => {
         const errs: RowErrors = {};
+        const warns: RowErrors = {};
+        const meterKey = r.meter_number.trim().toLowerCase();
+        const serialKey = r.serial_number.trim().toLowerCase();
         const meterErr = identifierError("Meter number", r.meter_number);
         if (meterErr) errs.meter_number = meterErr;
-        else {
-          const key = r.meter_number.trim().toLowerCase();
-          if (rows.some((o, j) => j !== i && o.meter_number.trim().toLowerCase() === key))
-            errs.meter_number = "Duplicate meter number in this batch";
+        else if (rows.some((o, j) => j !== i && o.meter_number.trim().toLowerCase() === meterKey))
+          errs.meter_number = `Duplicate meter number in this batch (row ${
+            rows.findIndex((o) => o.meter_number.trim().toLowerCase() === meterKey) + 1
+          })`;
+        else if (existingMeterNumbers.has(meterKey)) {
+          const msg = "This meter number already exists in the registry";
+          if (duplicateMode === "reject") errs.meter_number = msg;
+          else
+            warns.meter_number =
+              duplicateMode === "skip" ? `${msg} — will be skipped` : `${msg} — will be updated`;
         }
-        if (r.serial_number.trim()) {
+        if (serialKey) {
           const sErr = identifierError("Serial no", r.serial_number);
           if (sErr) errs.serial_number = sErr;
-          else if (r.serial_number.trim().toLowerCase() === r.meter_number.trim().toLowerCase())
+          else if (serialKey === meterKey)
             errs.serial_number = "Must differ from the meter number";
           else if (
             rows.some(
-              (o, j) =>
-                j !== i &&
-                o.serial_number.trim() &&
-                o.serial_number.trim().toLowerCase() === r.serial_number.trim().toLowerCase(),
+              (o, j) => j !== i && o.serial_number.trim().toLowerCase() === serialKey,
             )
           )
             errs.serial_number = "Duplicate serial in this batch";
+          else if (existingSerials.has(serialKey)) {
+            const msg = "This serial number already exists in the registry";
+            if (duplicateMode === "reject") errs.serial_number = msg;
+            else
+              warns.serial_number =
+                duplicateMode === "skip" ? `${msg} — will be skipped` : `${msg} — will be updated`;
+          }
         }
         (["sgc", "krn", "ti", "ea", "ken"] as const).forEach((k) => {
           const err = optionalNumberError(k.toUpperCase(), r[k]);
           if (err) errs[k] = err;
         });
-        return errs;
+        return { errors: errs, warnings: warns };
       }),
-    [rows],
+    [rows, existingMeterNumbers, existingSerials, duplicateMode],
   );
+
+  const rowErrors: RowErrors[] = useMemo(() => rowChecks.map((c) => c.errors), [rowChecks]);
+  const rowWarnings: RowErrors[] = useMemo(() => rowChecks.map((c) => c.warnings), [rowChecks]);
+  const warningCount = rowWarnings.filter((w) => Object.keys(w).length > 0).length;
+
 
   const headerValid = Object.values(headerErrors).every((e) => !e);
   const invalidRows = rowErrors
