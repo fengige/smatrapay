@@ -1051,12 +1051,38 @@ function MeterDialog({
     return null;
   }, [serialNumber, meterNumber, others]);
 
-  const vendorError = vendorId.trim() ? null : "Vendor is required";
-  const hasErrors = Boolean(meterNumberError || serialNumberError || vendorError);
+  const vendorError = vendorId.trim() ? null : "Vendor is required — enter the meter vendor code";
+  const priceError = useMemo(
+    () => decimalError("Price per unit", pricePerUnit),
+    [pricePerUnit],
+  );
+  const readingError = useMemo(
+    () => decimalError("Initial reading", initialReading),
+    [initialReading],
+  );
+  const stsErrors = useMemo(
+    () => ({
+      sgc: stsFieldError("SGC", sts.sgc),
+      krn: stsFieldError("KRN", sts.krn),
+      ti: stsFieldError("TI", sts.ti),
+      ea: stsFieldError("EA", sts.ea),
+      ken: stsFieldError("KEN", sts.ken),
+    }),
+    [sts],
+  );
+  const firstStsError = Object.values(stsErrors).find(Boolean) ?? null;
+  const hasErrors = Boolean(
+    meterNumberError || serialNumberError || vendorError || priceError || readingError || firstStsError,
+  );
+  const visible = (key: string, error: string | null) =>
+    (touched[key] || submitAttempted) && error ? error : null;
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (hasErrors) throw new Error(vendorError || meterNumberError || serialNumberError || "");
+      if (hasErrors)
+        throw new Error(
+          vendorError || meterNumberError || serialNumberError || priceError || readingError || firstStsError || "",
+        );
       const payload = {
         vendor_id: vendorId.trim(),
         supplier_id: supplierId || null,
