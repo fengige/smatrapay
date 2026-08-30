@@ -667,6 +667,72 @@ function StreetsManager({
           </tbody>
         </table>
       </div>
+
+      {showImport && (
+        <StreetImportDialog
+          routeId={routeId}
+          routeCode={routeCode}
+          onClose={() => setShowImport(false)}
+          onImported={async () => {
+            await invalidate();
+          }}
+        />
+      )}
+
+      {confirmBulkDelete && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-delete-streets-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !bulkDeleteMutation.isPending) {
+              setConfirmBulkDelete(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <h2 id="bulk-delete-streets-title" className="text-lg font-bold">
+              Delete {selectedStreets.length} street{selectedStreets.length === 1 ? "" : "s"}?
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The following streets will be permanently removed from route {routeCode}. This cannot
+              be undone.
+            </p>
+            <ul className="mt-3 max-h-48 list-disc overflow-y-auto rounded-lg border border-border p-3 pl-7 text-sm">
+              {selectedStreets.map((s) => (
+                <li key={s.street_id}>
+                  {s.street_name}
+                  {s.postal_code ? (
+                    <span className="text-muted-foreground"> ({s.postal_code})</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className={btn}
+                disabled={bulkDeleteMutation.isPending}
+                onClick={() => setConfirmBulkDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={bulkDeleteMutation.isPending || !selectedStreets.length}
+                onClick={() =>
+                  bulkDeleteMutation.mutate(selectedStreets.map((s) => s.street_id))
+                }
+                className="inline-flex items-center gap-2 rounded-lg bg-destructive px-3.5 py-2 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {bulkDeleteMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Delete {selectedStreets.length} street{selectedStreets.length === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
