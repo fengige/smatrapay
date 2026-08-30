@@ -465,20 +465,20 @@ function BulkAddMetersPage() {
               <label className="mb-1 block text-sm font-medium" htmlFor="supplier">
                 Supplier <span className="text-destructive">*</span>
               </label>
-              <select
+              <SearchSelect
                 id="supplier"
-                className={field}
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-              >
-                <option value="">Select supplier</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                    {s.utility_type ? ` · ${s.utility_type}` : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={setSupplierId}
+                invalid={submitted && Boolean(headerErrors.supplierId)}
+                placeholder="Search and select supplier"
+                emptyLabel="No suppliers match your search"
+                options={suppliers.map((s) => ({
+                  id: s.id,
+                  label: s.name,
+                  hint: s.utility_type || undefined,
+                }))}
+              />
+
               {show(headerErrors.supplierId)}
               {!suppliers.length && (
                 <span className="mt-1 block text-xs text-muted-foreground">
