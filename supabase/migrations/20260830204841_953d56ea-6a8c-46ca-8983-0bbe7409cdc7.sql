@@ -1,0 +1,1 @@
+ALTER TABLE public.meters ALTER COLUMN vendor_id DROP NOT NULL;

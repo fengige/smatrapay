@@ -271,7 +271,7 @@ export type Database = {
           type: string
           unit_id: string | null
           updated_at: string
-          vendor_id: string
+          vendor_id: string | null
         }
         Insert: {
           agent_id?: string | null
@@ -292,7 +292,7 @@ export type Database = {
           type: string
           unit_id?: string | null
           updated_at?: string
-          vendor_id: string
+          vendor_id?: string | null
         }
         Update: {
           agent_id?: string | null
@@ -313,7 +313,7 @@ export type Database = {
           type?: string
           unit_id?: string | null
           updated_at?: string
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
