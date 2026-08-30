@@ -149,30 +149,13 @@ type MeterResult = {
   reason?: string;
 };
 
-async function runAssignment(
-  supabase: { rpc: (fn: "apply_meter_assignment", args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }> },
-  action: "assign" | "unassign",
-  agentId: string,
-  meterIds: string[],
-): Promise<MeterResult[]> {
-  const { data, error } = await supabase.rpc("apply_meter_assignment", {
-    p_holder: "agent",
-    p_holder_id: agentId,
-    p_meter_ids: meterIds,
-    p_action: action,
-  });
-  if (error) throw new Error(error.message);
-  const raw = (data as { results?: MeterResult[] } | null)?.results ?? [];
-  const order = new Map(meterIds.map((id, index) => [id, index]));
-  return [...raw].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
-}
-
 /** Register selected meters to an agent inside a locked transaction. */
 export const assignMetersToAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => assignSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const results = await runAssignment(context.supabase, "assign", data.agentId, data.meterIds);
+    const { runMeterAssignment } = await import("@/lib/meter-assignment.server");
+    const results = await runMeterAssignment(context.supabase, "agent", "assign", data.agentId, data.meterIds);
     return {
       ok: true,
       assigned: results.filter((r) => r.ok).length,
@@ -186,7 +169,8 @@ export const unassignMetersFromAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => assignSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const results = await runAssignment(context.supabase, "unassign", data.agentId, data.meterIds);
+    const { runMeterAssignment } = await import("@/lib/meter-assignment.server");
+    const results = await runMeterAssignment(context.supabase, "agent", "unassign", data.agentId, data.meterIds);
     if (!results.some((r) => r.ok)) {
       throw new Error(results[0]?.reason ?? "No eligible meters to unassign");
     }
