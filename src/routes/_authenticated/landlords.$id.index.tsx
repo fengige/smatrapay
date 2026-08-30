@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AssignmentHistorySection } from "@/components/AssignmentHistorySection";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
@@ -706,11 +707,7 @@ function LandlordDetailPage() {
 
               {tab === "meters" && (
                 <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
-                  <EmptyTabState
-                    icon={<Gauge className="size-8" />}
-                    title="No meters assigned"
-                    description="Water and electricity meters linked to this landlord's unit will appear here."
-                  />
+                  <AssignmentHistorySection kind="landlord" ownerId={id} />
                 </Section>
               )}
 
