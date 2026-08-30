@@ -510,22 +510,17 @@ function BulkAddMetersPage() {
                 {ownerType ? `Select ${ownerType}` : "Select user"}{" "}
                 <span className="text-destructive">*</span>
               </label>
-              <select
+              <SearchSelect
                 id="owner"
-                className={field}
                 value={ownerId}
+                onChange={setOwnerId}
                 disabled={!ownerType}
-                onChange={(e) => setOwnerId(e.target.value)}
-              >
-                <option value="">
-                  {ownerType ? `Select a ${ownerType}` : "Choose a user type first"}
-                </option>
-                {ownerOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+                invalid={submitted && Boolean(headerErrors.ownerId)}
+                placeholder={ownerType ? `Search ${ownerType}s` : "Choose a user type first"}
+                emptyLabel="No users match your search"
+                options={ownerOptions.map((o) => ({ id: o.id, label: o.name }))}
+              />
+
               {show(headerErrors.ownerId)}
               {ownerType && !ownerOptions.length && (
                 <span className="mt-1 block text-xs text-muted-foreground">
