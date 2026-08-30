@@ -333,7 +333,29 @@ const HISTORY_LABELS: Record<string, string> = {
   price_per_unit: "Price per unit",
   type: "Type",
   status: "Status",
+  unit_id: "Unit",
+  landlord_id: "Landlord",
+  agent_id: "Agent",
+  supplier_id: "Supplier",
 };
+
+const ASSIGNMENT_FIELDS = new Set(["unit_id", "landlord_id", "agent_id", "supplier_id"]);
+const STATUS_FIELDS = new Set(["status"]);
+
+type TimelineFilter = "all" | "assignment" | "status" | "config";
+
+const FILTERS: { id: TimelineFilter; label: string }[] = [
+  { id: "all", label: "All activity" },
+  { id: "assignment", label: "Assignments" },
+  { id: "status", label: "Status" },
+  { id: "config", label: "Readings & pricing" },
+];
+
+function categoryOf(field: string): TimelineFilter {
+  if (ASSIGNMENT_FIELDS.has(field)) return "assignment";
+  if (STATUS_FIELDS.has(field)) return "status";
+  return "config";
+}
 
 function MeterHistoryPanel({ meterId }: { meterId: string }) {
   const fetchLogs = useServerFn(listMeterAuditLogs);
@@ -341,27 +363,84 @@ function MeterHistoryPanel({ meterId }: { meterId: string }) {
     queryKey: ["meter-audit", meterId],
     queryFn: () => fetchLogs({ data: { meter_id: meterId } }),
   });
-  const logs = data?.logs ?? [];
+  const [filter, setFilter] = useState<TimelineFilter>("all");
+  const [search, setSearch] = useState("");
+
+  const entries = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (data?.logs ?? [])
+      .map((log) => ({
+        ...log,
+        changes: Object.entries(log.changes).filter(
+          ([field]) => filter === "all" || categoryOf(field) === filter,
+        ),
+      }))
+      .filter((log) => log.changes.length > 0)
+      .filter((log) => {
+        if (!q) return true;
+        const haystack = [
+          log.actor_name ?? "system",
+          ...log.changes.flatMap(([field, diff]) => [
+            HISTORY_LABELS[field] ?? field,
+            diff.old ?? "",
+            diff.new ?? "",
+          ]),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      });
+  }, [data?.logs, filter, search]);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5">
-      <h3 className="text-xs font-bold tracking-wide uppercase text-muted-foreground">
-        Change history
-      </h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-xs font-bold tracking-wide uppercase text-muted-foreground">
+          Activity timeline
+        </h3>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search person, field or value…"
+          aria-label="Search activity"
+          className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
+        />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter activity">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            aria-pressed={filter === f.id}
+            onClick={() => setFilter(f.id)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              filter === f.id
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border text-muted-foreground hover:bg-accent/10"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
-        <p className="mt-3 text-sm text-muted-foreground">Loading history…</p>
-      ) : logs.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">No changes recorded yet.</p>
+        <p className="mt-4 text-sm text-muted-foreground">Loading activity…</p>
+      ) : entries.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          No activity matches the current filters.
+        </p>
       ) : (
         <ol className="mt-4 space-y-3">
-          {logs.map((log) => (
+          {entries.map((log) => (
             <li key={log.id} className="border-l-2 border-primary/40 pl-3">
               <p className="text-xs text-muted-foreground">
                 {new Date(log.created_at).toLocaleString()} ·{" "}
                 <span className="font-medium text-foreground">{log.actor_name ?? "System"}</span>
               </p>
               <ul className="mt-1 space-y-0.5 text-xs">
-                {Object.entries(log.changes).map(([field, diff]) => (
+                {log.changes.map(([field, diff]) => (
                   <li key={field}>
                     <span className="font-medium">{HISTORY_LABELS[field] ?? field}:</span>{" "}
                     <span className="text-muted-foreground line-through">{diff.old ?? "—"}</span> →{" "}
