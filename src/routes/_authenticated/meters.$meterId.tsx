@@ -126,6 +126,7 @@ function MeterDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/meters"
+            search={{} as never}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/10"
           >
             <ArrowLeft className="size-4" /> Back to meters

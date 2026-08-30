@@ -815,6 +815,21 @@ function MetersPage() {
         />
       )}
 
+      {assigning && (
+        <AssignMeterDialog
+          meterId={assigning.id}
+          current={{
+            unit_id: assigning.unit_id,
+            landlord_id: assigning.landlord_id,
+            agent_id: assigning.agent_id,
+          }}
+          units={unitOptions}
+          landlords={landlords}
+          agents={agents}
+          onClose={() => setAssigning(null)}
+        />
+      )}
+
       {(showAdd || editing) && (
         <MeterDialog
           meter={editing}
