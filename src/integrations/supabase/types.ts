@@ -423,6 +423,44 @@ export type Database = {
           },
         ]
       }
+      routes: {
+        Row: {
+          created_at: string
+          route_code: string
+          route_id: number
+          route_name: string
+          status: string
+          updated_at: string
+          zone_id: number
+        }
+        Insert: {
+          created_at?: string
+          route_code: string
+          route_id?: never
+          route_name: string
+          status?: string
+          updated_at?: string
+          zone_id: number
+        }
+        Update: {
+          created_at?: string
+          route_code?: string
+          route_id?: never
+          route_name?: string
+          status?: string
+          updated_at?: string
+          zone_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routes_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["zone_id"]
+          },
+        ]
+      }
       token_sms_logs: {
         Row: {
           actor_id: string | null
