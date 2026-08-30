@@ -313,7 +313,7 @@ export const getUnit = createServerFn({ method: "GET" })
 
 async function assertZoneRouteStreet(
   supabase: any,
-  ids: { zone_id?: number | null; route_id?: number | null; street_id?: number | null },
+  ids: { zone_id?: number | null | undefined; route_id?: number | null | undefined; street_id?: number | null | undefined },
 ) {
   if (ids.route_id) {
     const { data: route } = await supabase
