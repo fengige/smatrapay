@@ -15,12 +15,14 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Upload,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 
-import { listProperties } from "@/lib/properties.functions";
+import { listProperties, listGeography } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { PropertyImportDialog } from "@/components/properties/PropertyImportDialog";
 
 const LIMIT_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_LIMIT = 10;
@@ -66,6 +68,9 @@ type Property = {
   country: string | null;
   status: string;
   property_type: string | null;
+  zone_id: number | null;
+  route_id: number | null;
+  street_id: number | null;
   created_at: string;
 };
 
@@ -123,6 +128,10 @@ function PropertiesPage() {
   const [unitType, setUnitType] = useState("all");
   const [status, setStatus] = useState("all");
   const [propertyType, setPropertyType] = useState("all");
+  const [zoneId, setZoneId] = useState("all");
+  const [routeId, setRouteId] = useState("all");
+  const [streetId, setStreetId] = useState("all");
+  const [importOpen, setImportOpen] = useState(false);
 
   const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
   const setPageSize = (limit: number) =>
@@ -131,12 +140,39 @@ function PropertiesPage() {
   useEffect(() => {
     if (currentPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, unitType, status, propertyType]);
+  }, [search, unitType, status, propertyType, zoneId, routeId, streetId]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["properties", "list"],
     queryFn: () => fetchProperties(),
   });
+
+  const fetchGeography = useServerFn(listGeography);
+  const { data: geo } = useQuery({
+    queryKey: ["properties", "geography"],
+    queryFn: () => fetchGeography(),
+  });
+  const zones = useMemo(() => geo?.zones ?? [], [geo]);
+  const routes = useMemo(
+    () => (geo?.routes ?? []).filter((r) => zoneId === "all" || r.zone_id === Number(zoneId)),
+    [geo, zoneId],
+  );
+  const streets = useMemo(() => {
+    const list = geo?.streets ?? [];
+    if (routeId !== "all") return list.filter((s2) => s2.route_id === Number(routeId));
+    if (zoneId === "all") return list;
+    const routeIds = new Set(routes.map((r) => r.route_id));
+    return list.filter((s2) => routeIds.has(s2.route_id));
+  }, [geo, routeId, zoneId, routes]);
+
+  const geoLabels = useMemo(() => {
+    const zoneMap = new Map((geo?.zones ?? []).map((z) => [z.zone_id, z.zone_name]));
+    const routeMap = new Map(
+      (geo?.routes ?? []).map((r) => [r.route_id, `${r.route_code} · ${r.route_name}`]),
+    );
+    const streetMap = new Map((geo?.streets ?? []).map((s2) => [s2.street_id, s2.street_name]));
+    return { zoneMap, routeMap, streetMap };
+  }, [geo]);
 
   const properties = useMemo(() => (data?.properties ?? []) as unknown as Property[], [data]);
   const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
@@ -167,6 +203,11 @@ function PropertiesPage() {
       const currentAssignments = propertyAssignments.filter((a) => !a.end_date);
       return {
         property,
+        zoneName: property.zone_id ? (geoLabels.zoneMap.get(property.zone_id) ?? null) : null,
+        routeName: property.route_id ? (geoLabels.routeMap.get(property.route_id) ?? null) : null,
+        streetName: property.street_id
+          ? (geoLabels.streetMap.get(property.street_id) ?? null)
+          : null,
         units: propertyUnits,
         buildings: [...new Set(propertyUnits.map((u) => (u.building ?? "").trim()).filter(Boolean))],
         unitTypes: [
@@ -181,7 +222,7 @@ function PropertiesPage() {
         startDates: propertyAssignments.map((a) => a.start_date),
       };
     });
-  }, [properties, units, assignments]);
+  }, [properties, units, assignments, geoLabels]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -190,6 +231,9 @@ function PropertiesPage() {
       if (propertyType !== "all" && (row.property.property_type ?? "building") !== propertyType)
         return false;
       if (unitType !== "all" && !row.unitTypes.includes(unitType)) return false;
+      if (zoneId !== "all" && row.property.zone_id !== Number(zoneId)) return false;
+      if (routeId !== "all" && row.property.route_id !== Number(routeId)) return false;
+      if (streetId !== "all" && row.property.street_id !== Number(streetId)) return false;
       if (!term) return true;
       return [
         row.property.name,
@@ -197,6 +241,9 @@ function PropertiesPage() {
         row.property.city,
         row.property.country,
         row.property.property_type,
+        row.zoneName,
+        row.routeName,
+        row.streetName,
         ...row.buildings,
         ...row.unitTypes,
       ]
@@ -205,7 +252,7 @@ function PropertiesPage() {
         .toLowerCase()
         .includes(term);
     });
-  }, [rows, search, status, propertyType, unitType]);
+  }, [rows, search, status, propertyType, unitType, zoneId, routeId, streetId]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, totalPages);
@@ -226,6 +273,9 @@ function PropertiesPage() {
       "Property",
       "Type",
       "Code",
+      "Zone",
+      "Route",
+      "Street",
       "City",
       "Status",
       "Unit types",
@@ -237,6 +287,9 @@ function PropertiesPage() {
       row.property.name,
       row.property.property_type ?? "building",
       row.property.code ?? "",
+      row.zoneName ?? "",
+      row.routeName ?? "",
+      row.streetName ?? "",
       row.property.city ?? "",
       row.property.status,
       row.unitTypes.join(" | "),
@@ -261,6 +314,9 @@ function PropertiesPage() {
     setUnitType("all");
     setStatus("all");
     setPropertyType("all");
+    setZoneId("all");
+    setRouteId("all");
+    setStreetId("all");
   };
 
   return (
@@ -276,6 +332,13 @@ function PropertiesPage() {
           >
             <Plus className="size-4" /> Add Property
           </Link>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+          >
+            <Upload className="size-4" /> Import CSV
+          </button>
           <button
             type="button"
             onClick={exportCsv}
@@ -350,6 +413,52 @@ function PropertiesPage() {
                   </option>
                 ))}
               </select>
+              <select
+                value={zoneId}
+                onChange={(e) => {
+                  setZoneId(e.target.value);
+                  setRouteId("all");
+                  setStreetId("all");
+                }}
+                aria-label="Filter by zone"
+                className={inputClass}
+              >
+                <option value="all">All zones</option>
+                {zones.map((z) => (
+                  <option key={z.zone_id} value={String(z.zone_id)}>
+                    {z.zone_name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={routeId}
+                onChange={(e) => {
+                  setRouteId(e.target.value);
+                  setStreetId("all");
+                }}
+                aria-label="Filter by route"
+                className={inputClass}
+              >
+                <option value="all">All routes</option>
+                {routes.map((r) => (
+                  <option key={r.route_id} value={String(r.route_id)}>
+                    {r.route_code} · {r.route_name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={streetId}
+                onChange={(e) => setStreetId(e.target.value)}
+                aria-label="Filter by street"
+                className={inputClass}
+              >
+                <option value="all">All streets</option>
+                {streets.map((st) => (
+                  <option key={st.street_id} value={String(st.street_id)}>
+                    {st.street_name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <button
@@ -368,6 +477,7 @@ function PropertiesPage() {
                 <tr>
                   <th className="px-4 py-3 font-semibold">Property</th>
                   <th className="px-4 py-3 font-semibold">Type</th>
+                  <th className="px-4 py-3 font-semibold">Zone / Route / Street</th>
                   <th className="px-4 py-3 font-semibold">Unit Type</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
@@ -379,21 +489,21 @@ function PropertiesPage() {
               <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     </td>
                   </tr>
                 )}
                 {!isLoading && error && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={9} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 )}
                 {!isLoading && !error && !paged.length && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                       No properties match these filters.
                     </td>
                   </tr>
@@ -423,6 +533,17 @@ function PropertiesPage() {
                         )}
                         {row.property.property_type ?? "building"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {row.zoneName || row.routeName || row.streetName ? (
+                        <div className="space-y-0.5">
+                          <p className="font-medium text-foreground">{row.zoneName ?? "—"}</p>
+                          <p className="text-xs">{row.routeName ?? "No route"}</p>
+                          <p className="text-xs">{row.streetName ?? "No street"}</p>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {row.unitTypes.join(", ") || "—"}
@@ -511,6 +632,11 @@ function PropertiesPage() {
           </div>
         </section>
       </div>
+      <PropertyImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => refetch()}
+      />
     </PortalLayout>
   );
 }

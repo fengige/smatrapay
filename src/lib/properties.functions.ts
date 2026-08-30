@@ -1441,3 +1441,353 @@ export const listAssignmentAuditLogs = createServerFn({ method: "GET" })
       })),
     };
   });
+
+/* ------------------------------------------------------------------ *
+ * Geography (zones / routes / streets) — used by list filters + import
+ * ------------------------------------------------------------------ */
+
+export type GeoZone = { zone_id: number; zone_name: string };
+export type GeoRoute = { route_id: number; zone_id: number; route_code: string; route_name: string };
+export type GeoStreet = { street_id: number; route_id: number; street_name: string };
+
+export const listGeography = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const [zonesRes, routesRes, streetsRes] = await Promise.all([
+      supabase.from("zones").select("zone_id, zone_name").order("zone_name", { ascending: true }),
+      supabase
+        .from("routes")
+        .select("route_id, zone_id, route_code, route_name")
+        .order("route_code", { ascending: true }),
+      supabase
+        .from("streets")
+        .select("street_id, route_id, street_name")
+        .order("street_name", { ascending: true }),
+    ]);
+    if (zonesRes.error) throw new Error(zonesRes.error.message);
+    if (routesRes.error) throw new Error(routesRes.error.message);
+    if (streetsRes.error) throw new Error(streetsRes.error.message);
+
+    return {
+      zones: (zonesRes.data ?? []) as unknown as GeoZone[],
+      routes: (routesRes.data ?? []) as unknown as GeoRoute[],
+      streets: (streetsRes.data ?? []) as unknown as GeoStreet[],
+    };
+  });
+
+/* ------------------------------------------------------------------ *
+ * Property audit logs
+ * ------------------------------------------------------------------ */
+
+export type PropertyAuditEntry = {
+  id: string;
+  action: string;
+  created_at: string;
+  actor: string;
+  property_name: string | null;
+  changes: Record<string, { old: string | null; new: string | null }>;
+};
+
+export const listPropertyAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ propertyId: uuid.optional(), limit: z.number().int().min(1).max(200).optional() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    let query = supabase
+      .from("property_audit_logs" as never)
+      .select("id, property_id, property_name, actor_id, action, changes, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (data.propertyId) query = query.eq("property_id", data.propertyId);
+
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const logs = (rows ?? []) as unknown as {
+      id: string;
+      property_id: string | null;
+      property_name: string | null;
+      actor_id: string | null;
+      action: string;
+      changes: Record<string, { old: unknown; new: unknown }> | null;
+      created_at: string;
+    }[];
+
+    const actorIds = [...new Set(logs.map((l) => l.actor_id).filter((v): v is string => !!v))];
+    let actors: AddressAuditActor[] = [];
+    if (actorIds.length) {
+      const { data: actorRows } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", actorIds);
+      actors = (actorRows ?? []) as AddressAuditActor[];
+    }
+    const actorName = (id: string | null) => {
+      if (!id) return "System";
+      const a = actors.find((x) => x.id === id);
+      return a?.name || a?.email || `user ${id.slice(0, 8)}`;
+    };
+
+    return {
+      logs: logs.map((l) => ({
+        id: l.id,
+        action: l.action,
+        created_at: l.created_at,
+        actor: actorName(l.actor_id),
+        property_name: l.property_name,
+        changes: Object.fromEntries(
+          Object.entries(l.changes ?? {}).map(([k, v]) => [
+            k,
+            {
+              old: v?.old == null ? null : String(v.old),
+              new: v?.new == null ? null : String(v.new),
+            },
+          ]),
+        ) as Record<string, { old: string | null; new: string | null }>,
+      })),
+    };
+  });
+
+/* ------------------------------------------------------------------ *
+ * CSV import for properties
+ * ------------------------------------------------------------------ */
+
+const propertyImportRow = z.object({
+  row: z.number().int().min(1),
+  name: z.string().default(""),
+  code: z.string().default(""),
+  property_type: z.string().default(""),
+  building_category: z.string().default(""),
+  subtype: z.string().default(""),
+  number_of_units: z.string().default(""),
+  zone_name: z.string().default(""),
+  route_code: z.string().default(""),
+  street_name: z.string().default(""),
+  address_line1: z.string().default(""),
+  address_line2: z.string().default(""),
+  city: z.string().default(""),
+  state: z.string().default(""),
+  country: z.string().default(""),
+  postal_code: z.string().default(""),
+  status: z.string().default(""),
+});
+
+export type PropertyImportRow = z.infer<typeof propertyImportRow>;
+export type PropertyImportResult = {
+  row: number;
+  name: string;
+  status: "created" | "skipped" | "failed";
+  message: string;
+};
+
+export const importProperties = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        rows: z.array(propertyImportRow).min(1).max(1000),
+        skipExisting: z.boolean().optional(),
+        dryRun: z.boolean().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    const [zonesRes, routesRes, streetsRes, existingRes] = await Promise.all([
+      supabase.from("zones").select("zone_id, zone_name"),
+      supabase.from("routes").select("route_id, zone_id, route_code, route_name"),
+      supabase.from("streets").select("street_id, route_id, street_name"),
+      supabase.from("properties").select("id, name"),
+    ]);
+    if (zonesRes.error) throw new Error(zonesRes.error.message);
+    if (routesRes.error) throw new Error(routesRes.error.message);
+    if (streetsRes.error) throw new Error(streetsRes.error.message);
+    if (existingRes.error) throw new Error(existingRes.error.message);
+
+    const zones = (zonesRes.data ?? []) as unknown as GeoZone[];
+    const routes = (routesRes.data ?? []) as unknown as GeoRoute[];
+    const streets = (streetsRes.data ?? []) as unknown as GeoStreet[];
+    const existingNames = new Set(
+      ((existingRes.data ?? []) as unknown as { name: string }[]).map((p) =>
+        p.name.trim().toLowerCase(),
+      ),
+    );
+
+    const key = (s: string) => s.trim().toLowerCase();
+    const results: PropertyImportResult[] = [];
+    const seenInFile = new Set<string>();
+
+    for (const raw of data.rows) {
+      const name = raw.name.trim();
+      const push = (status: PropertyImportResult["status"], message: string) =>
+        results.push({ row: raw.row, name: name || "(no name)", status, message });
+
+      if (name.length < 2) {
+        push("failed", "Property name is required (at least 2 characters)");
+        continue;
+      }
+      if (seenInFile.has(key(name))) {
+        push("failed", "Duplicate property name within this file");
+        continue;
+      }
+      seenInFile.add(key(name));
+      if (existingNames.has(key(name))) {
+        if (data.skipExisting) {
+          push("skipped", "A property with this name already exists");
+        } else {
+          push("failed", "A property with this name already exists (enable skip to ignore)");
+        }
+        continue;
+      }
+
+      const type = key(raw.property_type) === "zone" ? "zone" : key(raw.property_type) === "building" ? "building" : "";
+      if (!type) {
+        push("failed", "Property type must be 'building' or 'zone'");
+        continue;
+      }
+
+      let zone_id: number | null = null;
+      let route_id: number | null = null;
+      let street_id: number | null = null;
+
+      if (type === "zone") {
+        const zone = zones.find((z2) => key(z2.zone_name) === key(raw.zone_name));
+        if (!raw.zone_name.trim()) {
+          push("failed", "Zone name is required for zone properties");
+          continue;
+        }
+        if (!zone) {
+          push("failed", `Zone "${raw.zone_name.trim()}" was not found`);
+          continue;
+        }
+        zone_id = zone.zone_id;
+
+        if (!raw.route_code.trim()) {
+          push("failed", "Route code is required for zone properties");
+          continue;
+        }
+        const route = routes.find(
+          (r) =>
+            key(r.route_code) === key(raw.route_code) ||
+            key(r.route_name) === key(raw.route_code),
+        );
+        if (!route) {
+          push("failed", `Route "${raw.route_code.trim()}" was not found`);
+          continue;
+        }
+        if (route.zone_id !== zone_id) {
+          push("failed", `Route "${route.route_code}" does not belong to zone "${zone.zone_name}"`);
+          continue;
+        }
+        route_id = route.route_id;
+
+        if (raw.street_name.trim()) {
+          const street = streets.find((s) => key(s.street_name) === key(raw.street_name));
+          if (!street) {
+            push("failed", `Street "${raw.street_name.trim()}" was not found`);
+            continue;
+          }
+          if (street.route_id !== route_id) {
+            push(
+              "failed",
+              `Street "${street.street_name}" does not belong to route "${route.route_code}"`,
+            );
+            continue;
+          }
+          street_id = street.street_id;
+        }
+      } else if (raw.zone_name.trim() || raw.route_code.trim() || raw.street_name.trim()) {
+        push("failed", "Zone, route and street can only be set on zone properties");
+        continue;
+      }
+
+      let building_category: "residential" | "commercial" | null = null;
+      let subtype: string | null = null;
+      if (type === "building") {
+        const cat = key(raw.building_category);
+        if (cat !== "residential" && cat !== "commercial") {
+          push("failed", "Building category must be 'residential' or 'commercial'");
+          continue;
+        }
+        building_category = cat;
+        subtype = raw.subtype.trim() || null;
+        if (!subtype) {
+          push("failed", "Subtype is required for building properties");
+          continue;
+        }
+      }
+
+      let number_of_units: number | null = null;
+      if (raw.number_of_units.trim()) {
+        const n = Number(raw.number_of_units.trim());
+        if (!Number.isInteger(n) || n < 0 || n > 100000) {
+          push("failed", "Number of units must be a whole number between 0 and 100000");
+          continue;
+        }
+        number_of_units = n;
+      }
+
+      const country = normalizeCountry(raw.country.trim() || "Kenya");
+      if (!COUNTRY_OPTIONS.includes(country)) {
+        push("failed", `Country "${raw.country.trim()}" is not a valid country`);
+        continue;
+      }
+      const stateValue = normalizeState(country, raw.state.trim()) || null;
+      const allowedStates = STATE_MAP[country];
+      if (allowedStates && (!stateValue || !allowedStates.includes(stateValue))) {
+        push("failed", `State/County "${raw.state.trim() || "(blank)"}" is not valid for ${country}`);
+        continue;
+      }
+
+      const status = key(raw.status) === "archived" ? "archived" : "active";
+
+      if (data.dryRun) {
+        push("created", "Ready to import");
+        continue;
+      }
+
+      const { error } = await supabase.from("properties").insert({
+        name,
+        code: raw.code.trim() || null,
+        property_type: type,
+        building_category,
+        subtype,
+        number_of_units,
+        zone_id,
+        route_id,
+        street_id,
+        address_line1: raw.address_line1.trim() || null,
+        address_line2: raw.address_line2.trim() || null,
+        city: raw.city.trim() || null,
+        state: stateValue,
+        country,
+        postal_code: raw.postal_code.trim() || null,
+        status,
+        created_by: userId,
+        updated_by: userId,
+      } as never);
+      if (error) {
+        push("failed", error.message);
+        continue;
+      }
+      existingNames.add(key(name));
+      push("created", "Imported successfully");
+    }
+
+    return {
+      results,
+      created: results.filter((r) => r.status === "created").length,
+      skipped: results.filter((r) => r.status === "skipped").length,
+      failed: results.filter((r) => r.status === "failed").length,
+      dryRun: !!data.dryRun,
+    };
+  });

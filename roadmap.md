@@ -26,3 +26,6 @@
 - [x] Streets CSV import with row-level validation on Route section
 - [x] Bulk street create + bulk delete with checkboxes and confirmation
 - [x] Route Active/Inactive toggle in Zone page with validation
+
+- [x] Property CSV import with zone/route/street row validation
+- [x] Show Zone/Route/Street names in property table and detail views
