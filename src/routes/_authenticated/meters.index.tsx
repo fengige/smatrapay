@@ -142,7 +142,7 @@ function MetersPage() {
 
   const [sortKey, setSortKey] = useState<SortKey>("meter_number");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [showAdd, setShowAdd] = useState(false);
+  
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<MeterRow | null>(null);
@@ -336,13 +336,6 @@ function MetersPage() {
       description="All registered electricity, water and gas meters"
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-          >
-            <Plus className="size-4" /> Add Meter
-          </button>
           <button
             type="button"
             onClick={() => navigate({ to: "/meters/bulk-add" })}
@@ -545,7 +538,7 @@ function MetersPage() {
                 ) : paged.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
-                      No meters match your filters. Use “Add Meter” to register one.
+                      No meters match your filters. Use “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
                 ) : (
@@ -830,7 +823,7 @@ function MetersPage() {
         />
       )}
 
-      {(showAdd || editing) && (
+      {editing && (
         <MeterDialog
           meter={editing}
           landlords={landlords}
@@ -839,15 +832,12 @@ function MetersPage() {
           suppliers={supplierOptions}
           existing={meters}
           onClose={() => {
-            setShowAdd(false);
             setEditing(null);
           }}
           onSaved={async () => {
-            const wasEdit = Boolean(editing);
-            setShowAdd(false);
             setEditing(null);
             await queryClient.invalidateQueries({ queryKey: ["meters"] });
-            toast.success(wasEdit ? "Meter updated" : "Meter added");
+            toast.success("Meter updated");
           }}
         />
       )}
