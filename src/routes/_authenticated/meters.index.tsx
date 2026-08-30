@@ -41,6 +41,8 @@ import {
   type MeterRow,
 } from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { SearchSelect } from "@/components/SearchSelect";
+
 import { AssignMeterDialog } from "./meters.$meterId";
 
 const DEFAULT_LIMIT = 10;
@@ -1140,21 +1142,19 @@ function MeterDialog({
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
               Supplier
             </label>
-            <select
+            <SearchSelect
               id="meter-supplier"
               value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              onBlur={() => touch("supplier")}
-              aria-invalid={Boolean(visible("supplier", supplierError))}
-              className={fieldError(visible("supplier", supplierError))}
-            >
-              <option value="">Select supplier</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => {
+                setSupplierId(v);
+                touch("supplier");
+              }}
+              invalid={Boolean(visible("supplier", supplierError))}
+              placeholder="Search and select supplier"
+              emptyLabel="No suppliers match your search"
+              options={suppliers.map((s) => ({ id: s.id, label: s.name }))}
+            />
+
             {visible("supplier", supplierError) && (
               <p className="mt-1 text-xs text-destructive">{supplierError}</p>
             )}
@@ -1181,24 +1181,19 @@ function MeterDialog({
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-owner">
               User
             </label>
-            <select
+            <SearchSelect
               id="meter-owner"
               value={ownerId}
-              onChange={(e) => setOwnerId(e.target.value)}
-              onBlur={() => touch("owner")}
-              aria-invalid={Boolean(visible("owner", ownerError))}
-              className={fieldError(visible("owner", ownerError))}
-            >
-              <option value="">
-                Select {ownerType}
-                {ownerOptions.length === 0 ? " (none available)" : ""}
-              </option>
-              {ownerOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => {
+                setOwnerId(v);
+                touch("owner");
+              }}
+              invalid={Boolean(visible("owner", ownerError))}
+              placeholder={`Search ${ownerType}s${ownerOptions.length === 0 ? " (none available)" : ""}`}
+              emptyLabel="No users match your search"
+              options={ownerOptions.map((o) => ({ id: o.id, label: o.name }))}
+            />
+
             {visible("owner", ownerError) && (
               <p className="mt-1 text-xs text-destructive">{ownerError}</p>
             )}

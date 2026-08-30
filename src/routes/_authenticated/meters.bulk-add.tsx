@@ -8,9 +8,12 @@ import { toast } from "sonner";
 import {
   bulkAddMeters,
   listBulkMeterOptions,
+  listMeterIdentifiers,
   type BulkAddResult,
 } from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { SearchSelect } from "@/components/SearchSelect";
+
 
 export const Route = createFileRoute("/_authenticated/meters/bulk-add")({
   head: () => ({
@@ -87,6 +90,7 @@ function BulkAddMetersPage() {
   const queryClient = useQueryClient();
   const loadOptions = useServerFn(listBulkMeterOptions);
   const bulkCreate = useServerFn(bulkAddMeters);
+  const loadIdentifiers = useServerFn(listMeterIdentifiers);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
@@ -94,10 +98,22 @@ function BulkAddMetersPage() {
     queryFn: () => loadOptions({} as never),
   });
 
+  const { data: existingIds } = useQuery({
+    queryKey: ["meter-identifiers"],
+    queryFn: () => loadIdentifiers({} as never),
+  });
+
+  const existingMeterNumbers = useMemo(
+    () => new Set(existingIds?.meterNumbers ?? []),
+    [existingIds],
+  );
+  const existingSerials = useMemo(() => new Set(existingIds?.serials ?? []), [existingIds]);
+
   const suppliers = data?.suppliers ?? [];
   const vendors = data?.vendors ?? [];
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
+
 
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas" | "">("");
   const [supplierId, setSupplierId] = useState("");
@@ -246,40 +262,58 @@ function BulkAddMetersPage() {
     [meterType, supplierId, ownerType, ownerId, count],
   );
 
-  const rowErrors: RowErrors[] = useMemo(
+  const rowChecks: { errors: RowErrors; warnings: RowErrors }[] = useMemo(
     () =>
       rows.map((r, i) => {
         const errs: RowErrors = {};
+        const warns: RowErrors = {};
+        const meterKey = r.meter_number.trim().toLowerCase();
+        const serialKey = r.serial_number.trim().toLowerCase();
         const meterErr = identifierError("Meter number", r.meter_number);
         if (meterErr) errs.meter_number = meterErr;
-        else {
-          const key = r.meter_number.trim().toLowerCase();
-          if (rows.some((o, j) => j !== i && o.meter_number.trim().toLowerCase() === key))
-            errs.meter_number = "Duplicate meter number in this batch";
+        else if (rows.some((o, j) => j !== i && o.meter_number.trim().toLowerCase() === meterKey))
+          errs.meter_number = `Duplicate meter number in this batch (row ${
+            rows.findIndex((o) => o.meter_number.trim().toLowerCase() === meterKey) + 1
+          })`;
+        else if (existingMeterNumbers.has(meterKey)) {
+          const msg = "This meter number already exists in the registry";
+          if (duplicateMode === "reject") errs.meter_number = msg;
+          else
+            warns.meter_number =
+              duplicateMode === "skip" ? `${msg} — will be skipped` : `${msg} — will be updated`;
         }
-        if (r.serial_number.trim()) {
+        if (serialKey) {
           const sErr = identifierError("Serial no", r.serial_number);
           if (sErr) errs.serial_number = sErr;
-          else if (r.serial_number.trim().toLowerCase() === r.meter_number.trim().toLowerCase())
+          else if (serialKey === meterKey)
             errs.serial_number = "Must differ from the meter number";
           else if (
             rows.some(
-              (o, j) =>
-                j !== i &&
-                o.serial_number.trim() &&
-                o.serial_number.trim().toLowerCase() === r.serial_number.trim().toLowerCase(),
+              (o, j) => j !== i && o.serial_number.trim().toLowerCase() === serialKey,
             )
           )
             errs.serial_number = "Duplicate serial in this batch";
+          else if (existingSerials.has(serialKey)) {
+            const msg = "This serial number already exists in the registry";
+            if (duplicateMode === "reject") errs.serial_number = msg;
+            else
+              warns.serial_number =
+                duplicateMode === "skip" ? `${msg} — will be skipped` : `${msg} — will be updated`;
+          }
         }
         (["sgc", "krn", "ti", "ea", "ken"] as const).forEach((k) => {
           const err = optionalNumberError(k.toUpperCase(), r[k]);
           if (err) errs[k] = err;
         });
-        return errs;
+        return { errors: errs, warnings: warns };
       }),
-    [rows],
+    [rows, existingMeterNumbers, existingSerials, duplicateMode],
   );
+
+  const rowErrors: RowErrors[] = useMemo(() => rowChecks.map((c) => c.errors), [rowChecks]);
+  const rowWarnings: RowErrors[] = useMemo(() => rowChecks.map((c) => c.warnings), [rowChecks]);
+  const warningCount = rowWarnings.filter((w) => Object.keys(w).length > 0).length;
+
 
   const headerValid = Object.values(headerErrors).every((e) => !e);
   const invalidRows = rowErrors
@@ -431,20 +465,20 @@ function BulkAddMetersPage() {
               <label className="mb-1 block text-sm font-medium" htmlFor="supplier">
                 Supplier <span className="text-destructive">*</span>
               </label>
-              <select
+              <SearchSelect
                 id="supplier"
-                className={field}
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-              >
-                <option value="">Select supplier</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                    {s.utility_type ? ` · ${s.utility_type}` : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={setSupplierId}
+                invalid={submitted && Boolean(headerErrors.supplierId)}
+                placeholder="Search and select supplier"
+                emptyLabel="No suppliers match your search"
+                options={suppliers.map((s) => ({
+                  id: s.id,
+                  label: s.name,
+                  hint: s.utility_type || undefined,
+                }))}
+              />
+
               {show(headerErrors.supplierId)}
               {!suppliers.length && (
                 <span className="mt-1 block text-xs text-muted-foreground">
@@ -476,22 +510,17 @@ function BulkAddMetersPage() {
                 {ownerType ? `Select ${ownerType}` : "Select user"}{" "}
                 <span className="text-destructive">*</span>
               </label>
-              <select
+              <SearchSelect
                 id="owner"
-                className={field}
                 value={ownerId}
+                onChange={setOwnerId}
                 disabled={!ownerType}
-                onChange={(e) => setOwnerId(e.target.value)}
-              >
-                <option value="">
-                  {ownerType ? `Select a ${ownerType}` : "Choose a user type first"}
-                </option>
-                {ownerOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+                invalid={submitted && Boolean(headerErrors.ownerId)}
+                placeholder={ownerType ? `Search ${ownerType}s` : "Choose a user type first"}
+                emptyLabel="No users match your search"
+                options={ownerOptions.map((o) => ({ id: o.id, label: o.name }))}
+              />
+
               {show(headerErrors.ownerId)}
               {ownerType && !ownerOptions.length && (
                 <span className="mt-1 block text-xs text-muted-foreground">
@@ -587,6 +616,26 @@ function BulkAddMetersPage() {
             )}
           </div>
 
+          {!importing && rows.length > 0 && (invalidRows.length > 0 || warningCount > 0) && (
+            <div className="mt-3 space-y-2 text-sm">
+              {invalidRows.length > 0 && (
+                <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-destructive">
+                  {invalidRows.length} row{invalidRows.length === 1 ? "" : "s"} need attention —
+                  rows {invalidRows.slice(0, 8).map((r) => r.index + 1).join(", ")}
+                  {invalidRows.length > 8 ? "…" : ""}
+                </p>
+              )}
+              {warningCount > 0 && (
+                <p className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-amber-700">
+                  {warningCount} row{warningCount === 1 ? "" : "s"} match existing meters and will be{" "}
+                  {duplicateMode === "skip" ? "skipped" : "updated"}.
+                </p>
+              )}
+            </div>
+          )}
+
+
+
           {importing ? (
             <div className="mt-4 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -620,23 +669,39 @@ function BulkAddMetersPage() {
               <tbody>
                 {rows.map((r, i) => {
                   const errs = rowErrors[i] ?? {};
-                  const inputFor = (key: keyof Row, label: string, numeric = false) => (
-                    <td className="px-2 py-1.5 align-top">
-                      <input
-                        aria-label={`${label} for meter ${i + 1}`}
-                        aria-invalid={submitted && Boolean(errs[key])}
-                        inputMode={numeric ? "numeric" : "text"}
-                        className={`${cell} ${submitted && errs[key] ? "border-destructive" : ""}`}
-                        value={r[key]}
-                        onChange={(e) => setRow(i, key, e.target.value)}
-                      />
-                      {submitted && errs[key] ? (
-                        <span className="mt-1 block text-[11px] text-destructive">{errs[key]}</span>
-                      ) : null}
-                    </td>
-                  );
+                  const warns = rowWarnings[i] ?? {};
+                  const rowHasError = Object.keys(errs).length > 0;
+                  const inputFor = (key: keyof Row, label: string, numeric = false) => {
+                    const touched = submitted || Boolean(r[key].trim());
+                    const err = touched ? errs[key] : undefined;
+                    const warn = !err && touched ? warns[key] : undefined;
+                    return (
+                      <td className="px-2 py-1.5 align-top">
+                        <input
+                          aria-label={`${label} for meter ${i + 1}`}
+                          aria-invalid={Boolean(err)}
+                          inputMode={numeric ? "numeric" : "text"}
+                          className={`${cell} ${
+                            err ? "border-destructive" : warn ? "border-amber-500" : ""
+                          }`}
+                          value={r[key]}
+                          onChange={(e) => setRow(i, key, e.target.value)}
+                        />
+                        {err ? (
+                          <span role="alert" className="mt-1 block text-[11px] text-destructive">
+                            {err}
+                          </span>
+                        ) : warn ? (
+                          <span className="mt-1 block text-[11px] text-amber-600">{warn}</span>
+                        ) : null}
+                      </td>
+                    );
+                  };
                   return (
-                    <tr key={i} className="border-b border-border/60">
+                    <tr
+                      key={i}
+                      className={`border-b border-border/60 ${rowHasError && submitted ? "bg-destructive/5" : ""}`}
+                    >
                       <td className="px-2 py-1.5 align-top text-muted-foreground">{i + 1}</td>
                       {inputFor("meter_number", "Meter number")}
                       {inputFor("serial_number", "Serial no")}
@@ -648,6 +713,7 @@ function BulkAddMetersPage() {
                     </tr>
                   );
                 })}
+
               </tbody>
             </table>
           </div>
