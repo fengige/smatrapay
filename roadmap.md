@@ -35,3 +35,4 @@
 
 - [x] Vendor details: meter assignment UI (register/unassign meters to a vendor)
 - [x] Agent details: meter assignment UI (register/unassign meters to an agent)
+- [x] Agent/vendor meter assignment: history, richer picker filters, bulk result summary, conflict validation
