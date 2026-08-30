@@ -15,13 +15,13 @@ import { PortalLayout } from "@/components/PortalLayout";
 export const Route = createFileRoute("/_authenticated/meters/bulk-add")({
   head: () => ({
     meta: [
-      { title: "Bulk Add Meters · SmatraPay" },
+      { title: "Add Meters · SmatraPay" },
       {
         name: "description",
         content:
           "Register many electricity, water or gas meters at once against a supplier and a vendor, landlord or agent.",
       },
-      { property: "og:title", content: "Bulk Add Meters · SmatraPay" },
+      { property: "og:title", content: "Add Meters · SmatraPay" },
       {
         property: "og:description",
         content: "Create multiple meters in a single validated bulk operation.",
@@ -307,7 +307,7 @@ function BulkAddMetersPage() {
   return (
     <PortalLayout
       roles={["admin"]}
-      title="Bulk Add Meters"
+      title="Add Meters"
       description="Register many meters at once for one supplier and one owner"
       actions={
         <div className="flex flex-wrap items-center gap-2">
