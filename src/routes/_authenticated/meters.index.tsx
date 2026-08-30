@@ -611,15 +611,57 @@ function MetersPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setEditing(m)}
-                            aria-label={`Edit meter ${m.meter_number}`}
-                            className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Pencil className="size-3.5" />
-                          </button>
+                          <div className="inline-flex items-center gap-1">
+                            <Link
+                              to="/meters/$meterId"
+                              params={{ meterId: m.id }}
+                              aria-label={`View meter ${m.meter_number}`}
+                              title="View details"
+                              className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+                            >
+                              <Eye className="size-3.5" />
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => setAssigning(m)}
+                              aria-label={`Assign meter ${m.meter_number}`}
+                              title="Assign meter"
+                              className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+                            >
+                              <Link2 className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: m.id,
+                                  status: m.status === "active" ? "inactive" : "active",
+                                  label: m.meter_number,
+                                })
+                              }
+                              aria-label={`${m.status === "active" ? "Deactivate" : "Activate"} meter ${m.meter_number}`}
+                              title={m.status === "active" ? "Deactivate" : "Activate"}
+                              className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
+                            >
+                              {m.status === "active" ? (
+                                <PowerOff className="size-3.5" />
+                              ) : (
+                                <Power className="size-3.5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditing(m)}
+                              aria-label={`Edit meter ${m.meter_number}`}
+                              title="Edit meter"
+                              className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent/10"
+                            >
+                              <Pencil className="size-3.5" />
+                            </button>
+                          </div>
                         </td>
+
                       </tr>
                     );
                   })
