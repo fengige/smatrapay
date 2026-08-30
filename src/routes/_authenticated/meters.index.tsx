@@ -41,6 +41,8 @@ import {
   type MeterRow,
 } from "@/lib/meters.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { SearchSelect } from "@/components/SearchSelect";
+
 import { AssignMeterDialog } from "./meters.$meterId";
 
 const DEFAULT_LIMIT = 10;
