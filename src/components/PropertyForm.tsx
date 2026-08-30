@@ -875,18 +875,39 @@ export function PropertyForm({
                   </div>
                 </>
               )}
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {values.property_type === "zone" ? "Zone Name" : "Property Name"}
-                </dt>
-                <dd className="mt-1 text-sm font-medium text-foreground">{values.name || "—"}</dd>
-              </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {values.property_type === "zone" ? "Zone Code" : "Property Code"}
-                </dt>
-                <dd className="mt-1 text-sm font-medium text-foreground">{values.code || "—"}</dd>
-              </div>
+              {values.property_type === "zone" ? (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Zone</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">
+                      {selectedZone?.zone_name ?? values.name ?? "—"}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Route</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">
+                      {selectedRoute ? `${selectedRoute.route_code} — ${selectedRoute.route_name}` : values.code || "—"}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Street</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">
+                      {selectedStreet?.street_name ?? "—"}
+                    </dd>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Property Name</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">{values.name || "—"}</dd>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Property Code</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">{values.code || "—"}</dd>
+                  </div>
+                </>
+              )}
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</dt>
                 <dd className="mt-1 text-sm font-medium text-foreground capitalize">{values.status}</dd>
