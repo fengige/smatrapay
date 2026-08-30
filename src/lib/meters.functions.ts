@@ -107,10 +107,6 @@ async function assertMeterIdentifiersFree(
   values: { meter_number: string; serial_number: string },
   excludeId?: string,
 ) {
-  if (values.meter_number.toLowerCase() === values.serial_number.toLowerCase()) {
-    throw new Error("Meter number and serial number must be different");
-  }
-
   let query = supabase
     .from("meters")
     .select("id, meter_number, serial_number")
