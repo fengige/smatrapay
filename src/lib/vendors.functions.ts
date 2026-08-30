@@ -86,3 +86,17 @@ export const updateVendor = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/** Meters registered under a vendor account. */
+export const listVendorMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ vendorId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: meters, error } = await context.supabase
+      .from("meters")
+      .select("id, meter_number, serial_number, type, price_per_unit, status, unit_id, created_at")
+      .eq("vendor_id", data.vendorId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { meters: meters ?? [] };
+  });
