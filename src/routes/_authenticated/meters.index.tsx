@@ -2506,7 +2506,9 @@ function BulkAssignUnitsDialog({
               Assign {meters.length} meter{meters.length === 1 ? "" : "s"} to units
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pick a property, then confirm or adjust the unit for each meter.
+              {step === "configure"
+                ? "Step 1 of 2 · Pick a property, then confirm or adjust the unit for each meter."
+                : "Step 2 of 2 · Review the pairings below before confirming."}
             </p>
           </div>
           <button
@@ -2519,6 +2521,7 @@ function BulkAssignUnitsDialog({
           </button>
         </div>
 
+        {step === "configure" && (
         <div className="mt-4 space-y-1">
           <label htmlFor="bulk-assign-property" className="text-sm font-medium">
             Property
@@ -2531,14 +2534,63 @@ function BulkAssignUnitsDialog({
             onChange={setPropertyId}
           />
         </div>
+        )}
 
-        {propertyId && propertyUnits.length === 0 && (
+        {step === "configure" && propertyId && propertyUnits.length === 0 && (
           <p className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
             This property has no units yet. Add units before assigning meters.
           </p>
         )}
 
-        {propertyId && propertyUnits.length > 0 && (
+        {step === "review" && (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm">
+              <p>
+                <span className="font-medium">{assignable.length}</span> meter
+                {assignable.length === 1 ? "" : "s"} will be assigned in{" "}
+                <span className="font-medium">{propertyLabel}</span>
+                {inheritLandlord ? ", inheriting the property landlord" : ""}.
+              </p>
+            </div>
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2">Meter</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Unit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignable.map((m) => (
+                    <tr key={m.id} className="border-t border-border">
+                      <td className="px-3 py-2 font-medium">{m.meter_number}</td>
+                      <td className="px-3 py-2 capitalize text-muted-foreground">{m.type}</td>
+                      <td className="px-3 py-2">Unit {unitLabel(mapping[m.id])}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {notReady.length > 0 && (
+              <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                <p className="font-medium">
+                  {notReady.length} meter{notReady.length === 1 ? "" : "s"} will be left out:
+                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+                  {notReady.slice(0, 6).map((m) => (
+                    <li key={m.id}>
+                      {m.meter_number} — {conflicts[m.id] ?? "no unit selected"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === "configure" && propertyId && propertyUnits.length > 0 && (
+
           <>
             <div className="mt-4 max-h-72 space-y-3 overflow-y-auto rounded-xl border border-border p-3">
               {meters.map((m) => (
