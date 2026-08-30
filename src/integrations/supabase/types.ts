@@ -423,6 +423,47 @@ export type Database = {
           },
         ]
       }
+      token_sms_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          phone: string
+          status: Database["public"]["Enums"]["sms_delivery_status"]
+          token_id: string
+          updated_at: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          phone: string
+          status?: Database["public"]["Enums"]["sms_delivery_status"]
+          token_id: string
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          phone?: string
+          status?: Database["public"]["Enums"]["sms_delivery_status"]
+          token_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_sms_logs_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "meter_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unit_assignments: {
         Row: {
           created_at: string
@@ -702,6 +743,7 @@ export type Database = {
       meter_token_status: "issued" | "revoked" | "expired"
       meter_utility_type: "Electricity" | "Water" | "Gas" | "Multi-Utility"
       property_status: "active" | "archived"
+      sms_delivery_status: "queued" | "sent" | "failed"
       supplier_status: "Active" | "Inactive" | "Suspended"
       unit_status: "vacant" | "occupied" | "maintenance" | "archived"
       user_status: "active" | "inactive" | "suspended" | "pending"
@@ -852,6 +894,7 @@ export const Constants = {
       meter_token_status: ["issued", "revoked", "expired"],
       meter_utility_type: ["Electricity", "Water", "Gas", "Multi-Utility"],
       property_status: ["active", "archived"],
+      sms_delivery_status: ["queued", "sent", "failed"],
       supplier_status: ["Active", "Inactive", "Suspended"],
       unit_status: ["vacant", "occupied", "maintenance", "archived"],
       user_status: ["active", "inactive", "suspended", "pending"],
