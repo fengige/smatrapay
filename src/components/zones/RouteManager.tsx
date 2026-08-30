@@ -75,6 +75,18 @@ export function RouteManager({ zoneId, zoneName }: { zoneId: number; zoneName: s
     onError: (e: Error) => toast.error(e.message || "Could not delete route"),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: (vars: { route_id: number; status: "Active" | "Inactive" }) =>
+      toggleStatus({ data: vars } as never),
+    onSuccess: async (_r, vars) => {
+      await invalidate();
+      toast.success(
+        vars.status === "Active" ? "Route activated" : "Route deactivated",
+      );
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not update route status"),
+  });
+
   return (
     <div className="rounded-xl border border-border bg-background/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -195,6 +207,39 @@ export function RouteManager({ zoneId, zoneName }: { zoneId: number; zoneName: s
                       }}
                     >
                       <Pencil className="size-3.5" /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={`${btn} ${
+                        r.status === "Active"
+                          ? "border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                          : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                      }`}
+                      disabled={statusMutation.isPending}
+                      aria-label={
+                        r.status === "Active"
+                          ? `Deactivate route ${r.route_code}`
+                          : `Activate route ${r.route_code}`
+                      }
+                      onClick={() => {
+                        const next = r.status === "Active" ? "Inactive" : "Active";
+                        if (
+                          window.confirm(
+                            next === "Inactive"
+                              ? `Deactivate route ${r.route_code}? It will remain listed but flagged inactive.`
+                              : `Activate route ${r.route_code}?`,
+                          )
+                        ) {
+                          statusMutation.mutate({ route_id: r.route_id, status: next });
+                        }
+                      }}
+                    >
+                      {statusMutation.isPending ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Power className="size-3.5" />
+                      )}
+                      {r.status === "Active" ? "Deactivate" : "Activate"}
                     </button>
                     <button
                       type="button"
