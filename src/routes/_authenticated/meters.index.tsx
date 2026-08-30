@@ -1652,6 +1652,42 @@ function ImportMetersDialog({
             </fieldset>
           )}
 
+          {preview.length > 0 && !result && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+              <p className="text-xs font-semibold text-amber-700">
+                {preview.length} duplicate row{preview.length === 1 ? "" : "s"} found in the registry
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                With the current mode, these rows will be{" "}
+                <span className="font-medium text-foreground">
+                  {dupMode === "reject" ? "rejected" : dupMode === "skip" ? "skipped" : "updated"}
+                </span>
+                .
+              </p>
+              <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs">
+                {preview.map((p) => (
+                  <li key={`preview-${p.row}-${p.meter_number}`} className="flex flex-wrap gap-2">
+                    <span className="rounded bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-700">
+                      Row {p.row}
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {p.meter_number} / {p.serial_number}
+                    </span>
+                    <span className="text-muted-foreground">— {p.reason}</span>
+                    <span
+                      className={`rounded px-1.5 py-0.5 font-medium ${
+                        dupMode === "update"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {dupMode === "update" ? "Will update" : "Will skip"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {rows.length > 0 && !result && (
             <div className="overflow-hidden rounded-xl border border-border">
