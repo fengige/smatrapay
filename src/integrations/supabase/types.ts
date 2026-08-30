@@ -461,6 +461,41 @@ export type Database = {
           },
         ]
       }
+      streets: {
+        Row: {
+          created_at: string
+          postal_code: string | null
+          route_id: number
+          street_id: number
+          street_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          postal_code?: string | null
+          route_id: number
+          street_id?: never
+          street_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          postal_code?: string | null
+          route_id?: number
+          street_id?: never
+          street_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streets_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["route_id"]
+          },
+        ]
+      }
       token_sms_logs: {
         Row: {
           actor_id: string | null
