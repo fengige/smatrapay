@@ -399,6 +399,53 @@ export const listMeterAuditLogs = createServerFn({ method: "GET" })
     }
     const actorById = new Map(actors.map((a) => [a.id, a]));
 
+    // Resolve reference ids (unit / landlord / agent / supplier) to readable labels.
+    const refFields = new Set(["unit_id", "landlord_id", "agent_id", "supplier_id"]);
+    const refIds: Record<string, Set<string>> = {
+      unit_id: new Set(),
+      landlord_id: new Set(),
+      agent_id: new Set(),
+      supplier_id: new Set(),
+    };
+    for (const r of rows ?? []) {
+      for (const [field, diff] of Object.entries((r.changes ?? {}) as Record<string, any>)) {
+        if (!refFields.has(field)) continue;
+        for (const v of [diff?.old, diff?.new]) if (v) refIds[field]!.add(String(v));
+      }
+    }
+
+    const labelById = new Map<string, string>();
+    const unitIds = [...refIds["unit_id"]!];
+    if (unitIds.length) {
+      const { data: us } = await supabase
+        .from("units")
+        .select("id, unit_number, properties(name)")
+        .in("id", unitIds);
+      for (const u of (us ?? []) as any[]) {
+        const property = (u.properties as any)?.name as string | undefined;
+        labelById.set(u.id, property ? `${property} · Unit ${u.unit_number}` : `Unit ${u.unit_number}`);
+      }
+    }
+    const personIds = [...refIds["landlord_id"]!, ...refIds["agent_id"]!];
+    if (personIds.length) {
+      const { data: ps } = await supabase.from("users").select("id, name, email").in("id", personIds);
+      for (const u of (ps ?? []) as any[]) labelById.set(u.id, u.name ?? u.email ?? u.id);
+    }
+    const supplierIds = [...refIds["supplier_id"]!];
+    if (supplierIds.length) {
+      const { data: ss } = await supabase
+        .from("meter_suppliers")
+        .select("id, company_name")
+        .in("id", supplierIds);
+      for (const sup of (ss ?? []) as any[]) labelById.set(sup.id, sup.company_name);
+    }
+
+    const display = (field: string, value: unknown) => {
+      if (value === null || value === undefined || value === "") return null;
+      const raw = String(value);
+      return refFields.has(field) ? (labelById.get(raw) ?? raw) : raw;
+    };
+
     return {
       logs: (rows ?? []).map((r: any) => ({
         id: r.id as string,
@@ -412,10 +459,7 @@ export const listMeterAuditLogs = createServerFn({ method: "GET" })
         changes: Object.fromEntries(
           Object.entries((r.changes ?? {}) as Record<string, any>).map(([k, v]) => [
             k,
-            {
-              old: v?.old === null || v?.old === undefined ? null : String(v.old),
-              new: v?.new === null || v?.new === undefined ? null : String(v.new),
-            },
+            { old: display(k, v?.old), new: display(k, v?.new) },
           ]),
         ),
       })) satisfies MeterAuditEntry[],
