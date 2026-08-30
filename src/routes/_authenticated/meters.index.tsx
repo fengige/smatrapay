@@ -1482,33 +1482,79 @@ function ImportMetersDialog({
     };
   }, [rows, runPreview]);
 
+  const [progress, setProgress] = useState<{
+    phase: "validating" | "applying";
+    done: number;
+    total: number;
+  } | null>(null);
+  const [cancelled, setCancelled] = useState(false);
+  const cancelRef = useRef(false);
+
+  const toPayload = (r: Record<string, string>, row: number) => ({
+    row,
+    meter_number: r["meter_number"] ?? "",
+    serial_number: r["serial_number"] ?? "",
+    type: r["type"] ?? "",
+    vendor_id: r["vendor_id"] ?? "",
+    landlord_email: r["landlord_email"] ?? "",
+    agent_email: r["agent_email"] ?? "",
+    initial_reading: r["initial_reading"] ?? "",
+    price_per_unit: r["price_per_unit"] ?? "",
+    status: r["status"] ?? "",
+    sgc: r["sgc"] ?? "",
+    krn: r["krn"] ?? "",
+    ti: r["ti"] ?? "",
+    ea: r["ea"] ?? "",
+    ken: r["ken"] ?? "",
+  });
+
   const importMutation = useMutation({
-    mutationFn: async () =>
-      runImport({
-        data: {
-          duplicate_mode: dupMode,
-          rows: rows.map((r, i) => ({
-            row: i + 2,
-            meter_number: r["meter_number"] ?? "",
-            serial_number: r["serial_number"] ?? "",
-            type: r["type"] ?? "",
-            vendor_id: r["vendor_id"] ?? "",
-            landlord_email: r["landlord_email"] ?? "",
-            agent_email: r["agent_email"] ?? "",
-            initial_reading: r["initial_reading"] ?? "",
-            price_per_unit: r["price_per_unit"] ?? "",
-            status: r["status"] ?? "",
-            sgc: r["sgc"] ?? "",
-            krn: r["krn"] ?? "",
-            ti: r["ti"] ?? "",
-            ea: r["ea"] ?? "",
-            ken: r["ken"] ?? "",
-          })),
-        },
-      } as never),
+    mutationFn: async () => {
+      cancelRef.current = false;
+      setCancelled(false);
+      const CHUNK = 100;
+      const total = rows.length;
+      const agg = {
+        imported: 0,
+        updated: 0,
+        skipped: 0,
+        failed: 0,
+        errors: [] as { row: number; meter_number: string; message: string }[],
+        duplicates: [] as {
+          row: number;
+          meter_number: string;
+          serial_number: string;
+          reason: string;
+        }[],
+      };
+      setProgress({ phase: "validating", done: 0, total });
+      for (let start = 0; start < total; start += CHUNK) {
+        if (cancelRef.current) {
+          setCancelled(true);
+          break;
+        }
+        const chunk = rows
+          .slice(start, start + CHUNK)
+          .map((r, i) => toPayload(r, start + i + 2));
+        setProgress({ phase: "applying", done: start, total });
+        const res: any = await runImport({
+          data: { duplicate_mode: dupMode, rows: chunk },
+        } as never);
+        agg.imported += res.imported ?? 0;
+        agg.updated += res.updated ?? 0;
+        agg.skipped += res.skipped ?? 0;
+        agg.failed += res.failed ?? 0;
+        agg.errors.push(...(res.errors ?? []));
+        agg.duplicates.push(...(res.duplicates ?? []));
+        setProgress({ phase: "applying", done: Math.min(start + CHUNK, total), total });
+      }
+      return agg;
+    },
+    onSettled: () => setProgress(null),
     onSuccess: async (res: any) => {
       setResult(res);
       await onImported();
+      if (cancelRef.current) toast.message("Import cancelled — completed rows were saved");
       if (res.imported) toast.success(`${res.imported} meter${res.imported === 1 ? "" : "s"} imported`);
       if (res.updated) toast.success(`${res.updated} existing meter${res.updated === 1 ? "" : "s"} updated`);
       if (res.skipped) toast.message(`${res.skipped} duplicate row${res.skipped === 1 ? "" : "s"} skipped`);
@@ -1516,6 +1562,7 @@ function ImportMetersDialog({
     },
     onError: (err: Error) => toast.error(err.message || "Import failed"),
   });
+
 
 
   const onFile = async (file: File) => {
