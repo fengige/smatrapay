@@ -51,6 +51,7 @@ import {
   listAssignableUsers,
   upsertUnit,
 } from "@/lib/properties.functions";
+import { PropertyAuditViewer } from "@/components/properties/PropertyAuditViewer";
 import { PortalLayout } from "@/components/PortalLayout";
 import { AddressEditDialog } from "@/components/AddressEditDialog";
 
@@ -1664,6 +1665,8 @@ function PropertyDetailPage() {
               )}
             </div>
           </section>
+
+          {tab === "audit" && <PropertyAuditViewer propertyId={id} />}
         </div>
       )}
 
