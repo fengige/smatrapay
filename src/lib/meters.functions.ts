@@ -750,7 +750,12 @@ export type BulkAddResult = {
   results: BulkAddRowResult[];
 };
 
-/** Create many meters at once for one supplier + one owner (vendor / landlord / agent). */
+/**
+ * Create many meters at once for one supplier + one owner (vendor / landlord / agent).
+ * The whole batch runs inside a single database transaction (public.bulk_add_meters):
+ * any failed row or unexpected error rolls back everything, and per-row results are
+ * computed from the actual database outcome (created / updated / skipped).
+ */
 export const bulkAddMeters = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => bulkAddInput.parse(d))
@@ -762,158 +767,20 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
       throw new Error("Updating existing meters must be explicitly confirmed");
     }
 
-    const { data: existing, error: exErr } = await supabase
-      .from("meters")
-      .select("id, meter_number, serial_number");
-    if (exErr) throw new Error(exErr.message);
-
-    const byMeter = new Map<string, { id: string; serial: string }>();
-    const bySerial = new Map<string, { id: string; meter: string }>();
-    for (const r of (existing ?? []) as any[]) {
-      const m = String(r.meter_number ?? "").toLowerCase();
-      const s = String(r.serial_number ?? "").toLowerCase();
-      byMeter.set(m, { id: r.id as string, serial: s });
-      bySerial.set(s, { id: r.id as string, meter: m });
-    }
-
-    const seenMeters = new Set<string>();
-    const seenSerials = new Set<string>();
-
-    const results: BulkAddRowResult[] = [];
-    const toInsert: any[] = [];
-    const toUpdate: { id: string; values: any }[] = [];
-
-    const baseValues = (r: (typeof data.rows)[number], serial: string) => ({
-      vendor_id: data.owner_id,
-      supplier_id: data.supplier_id ?? null,
-      landlord_id: data.owner_type === "landlord" ? data.owner_id : null,
-      agent_id: data.owner_type === "agent" ? data.owner_id : null,
-      meter_number: r.meter_number,
-      serial_number: serial,
-      type: data.type,
-      initial_reading: data.initial_reading,
-      price_per_unit: data.price_per_unit,
-      sgc: r.sgc,
-      krn: r.krn,
-      ti: r.ti,
-      ea: r.ea,
-      ken: r.ken,
+    const { data: result, error } = await (supabase.rpc as any)("bulk_add_meters", {
+      p_payload: {
+        supplier_id: data.supplier_id ?? null,
+        owner_type: data.owner_type,
+        owner_id: data.owner_id,
+        type: data.type,
+        price_per_unit: data.price_per_unit,
+        initial_reading: data.initial_reading,
+        duplicate_mode: data.duplicate_mode,
+        rows: data.rows,
+      },
     });
-
-    for (const [i, r] of data.rows.entries()) {
-      const rowNo = i + 1;
-      const mKey = r.meter_number.toLowerCase();
-      const serial = (r.serial_number || `${r.meter_number}-S`).trim();
-      const sKey = serial.toLowerCase();
-      const fail = (message: string) =>
-        results.push({
-          row: rowNo,
-          meter_number: r.meter_number,
-          serial_number: serial,
-          status: "failed",
-          message,
-        });
-
-      if (mKey === sKey) {
-        fail("Meter number and serial number must be different");
-        continue;
-      }
-      if (serial.length < 4 || !IDENTIFIER_RE.test(serial)) {
-        fail("Serial number may only contain letters, numbers, - _ / (min 4 characters)");
-        continue;
-      }
-      if (seenMeters.has(mKey)) {
-        fail("Duplicate meter number within this batch");
-        continue;
-      }
-      if (seenSerials.has(sKey)) {
-        fail("Duplicate serial number within this batch");
-        continue;
-      }
-
-      const meterMatch = byMeter.get(mKey);
-      const serialMatch = bySerial.get(sKey);
-
-      if (meterMatch || serialMatch) {
-        if (data.duplicate_mode === "reject") {
-          fail(
-            meterMatch
-              ? `Meter number ${r.meter_number} is already registered`
-              : `Serial number ${serial} is already registered`,
-          );
-          continue;
-        }
-        if (data.duplicate_mode === "skip") {
-          seenMeters.add(mKey);
-          seenSerials.add(sKey);
-          results.push({
-            row: rowNo,
-            meter_number: r.meter_number,
-            serial_number: serial,
-            status: "skipped",
-            message: "Already registered — skipped",
-          });
-          continue;
-        }
-        // update mode
-        if (meterMatch && serialMatch && meterMatch.id !== serialMatch.id) {
-          fail("Meter number and serial number match two different existing meters");
-          continue;
-        }
-        const target = meterMatch ?? serialMatch!;
-        seenMeters.add(mKey);
-        seenSerials.add(sKey);
-        toUpdate.push({ id: target.id, values: baseValues(r, serial) });
-        results.push({
-          row: rowNo,
-          meter_number: r.meter_number,
-          serial_number: serial,
-          status: "updated",
-          message: "Existing meter updated",
-        });
-        continue;
-      }
-
-      seenMeters.add(mKey);
-      seenSerials.add(sKey);
-      toInsert.push({ ...baseValues(r, serial), unit_id: null, status: "active" });
-      results.push({
-        row: rowNo,
-        meter_number: r.meter_number,
-        serial_number: serial,
-        status: "created",
-        message: "Created",
-      });
-    }
-
-    const failedRows = results.filter((r) => r.status === "failed");
-    if (failedRows.length) {
-      // Nothing is written unless every row is valid — keeps the batch all-or-nothing.
-      const detail = failedRows.map((e) => `Row ${e.row}: ${e.message}`).join("\n");
-      throw new Error(detail);
-    }
-
-    if (toInsert.length) {
-      const { error } = await supabase.from("meters").insert(toInsert as never);
-      if (error) throw new Error(error.message);
-    }
-
-    for (const u of toUpdate) {
-      const { error } = await supabase
-        .from("meters")
-        .update(u.values as never)
-        .eq("id", u.id);
-      if (error) throw new Error(error.message);
-    }
-
-    return {
-      ok: true,
-      created: toInsert.length,
-      updated: toUpdate.length,
-      skipped: results.filter((r) => r.status === "skipped").length,
-      failed: 0,
-      results,
-    } satisfies BulkAddResult;
+    if (error) throw new Error(error.message);
+    return result as BulkAddResult;
   });
 
 
