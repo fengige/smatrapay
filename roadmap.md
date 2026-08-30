@@ -17,4 +17,4 @@
 - [x] POS shift report page (totals by payment method + CSV export)
 - [x] Reprint token receipts from POS recent sales
 - [x] Price Management: filter meters by property and by assigned user type (agent/landlord/vendor)
-- [ ] Property add page: default State/County to Nairobi
+- [x] Property add page: default State/County to Nairobi
