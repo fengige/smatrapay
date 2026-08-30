@@ -1,2 +1,5 @@
 - [x] Lock/retry strategy for bulk meter duplicate handling (Skip/Update under concurrency)
 - [x] Confirmation step + success/error feedback on meter assignment dialog
+- [ ] Empty-state and loading skeleton for the “Add Meters” flow
+- [ ] Activity timeline entries for meter CSV imports and edits on meter details page
+- [ ] Clear import error report with row-level failure reasons and actionable messages
