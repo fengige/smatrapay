@@ -213,7 +213,9 @@ async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
     .from("meters")
     .select("id, meter_number")
     .in("id", meterIds);
-  const meterById = new Map((meters ?? []).map((m: any) => [m.id, m.meter_number as string]));
+  const meterById = new Map<string, string>(
+    (meters ?? []).map((m: any) => [m.id as string, m.meter_number as string]),
+  );
 
   const actorIds = [...new Set(rows.map((r) => r.issued_by).filter(Boolean))] as string[];
   const actorById = new Map<string, string>();
