@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Download, Loader2, Plus, Upload } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -103,6 +103,7 @@ function BulkAddMetersPage() {
   const [confirmUpdate, setConfirmUpdate] = useState(false);
   const [review, setReview] = useState(false);
   const [result, setResult] = useState<BulkAddResult | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     setOwnerId("");
@@ -150,47 +151,52 @@ function BulkAddMetersPage() {
   };
 
   const onTemplateFile = async (file: File) => {
-    const text = await file.text();
-    const lines = text
-      .replace(/^\uFEFF/, "")
-      .split(/\r?\n/)
-      .filter((l) => l.trim());
-    if (lines.length < 2) {
-      toast.error("The CSV has no data rows");
-      return;
-    }
-    const split = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const header = split(lines[0]!).map((h) => h.toLowerCase());
-    const idx = (name: string) => header.indexOf(name);
-    const cols = {
-      meter_number: idx("meter_number"),
-      serial: idx("serial_no") >= 0 ? idx("serial_no") : idx("serial_number"),
-      sgc: idx("sgc"),
-      krn: idx("krn"),
-      ti: idx("ti"),
-      ea: idx("ea"),
-      ken: idx("ken"),
-    };
-    if (cols.meter_number < 0) {
-      toast.error("CSV must include a meter_number column");
-      return;
-    }
-    const parsed: Row[] = lines.slice(1, 501).map((line) => {
-      const c = split(line);
-      const get = (i: number) => (i >= 0 ? (c[i] ?? "") : "");
-      return {
-        meter_number: get(cols.meter_number),
-        serial_number: get(cols.serial),
-        sgc: get(cols.sgc),
-        krn: get(cols.krn),
-        ti: get(cols.ti),
-        ea: get(cols.ea),
-        ken: get(cols.ken),
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .filter((l) => l.trim());
+      if (lines.length < 2) {
+        toast.error("The CSV has no data rows");
+        return;
+      }
+      const split = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+      const header = split(lines[0]!).map((h) => h.toLowerCase());
+      const idx = (name: string) => header.indexOf(name);
+      const cols = {
+        meter_number: idx("meter_number"),
+        serial: idx("serial_no") >= 0 ? idx("serial_no") : idx("serial_number"),
+        sgc: idx("sgc"),
+        krn: idx("krn"),
+        ti: idx("ti"),
+        ea: idx("ea"),
+        ken: idx("ken"),
       };
-    });
-    setRows(parsed);
-    setCount(String(parsed.length));
-    toast.success(`${parsed.length} row${parsed.length === 1 ? "" : "s"} loaded from CSV`);
+      if (cols.meter_number < 0) {
+        toast.error("CSV must include a meter_number column");
+        return;
+      }
+      const parsed: Row[] = lines.slice(1, 501).map((line) => {
+        const c = split(line);
+        const get = (i: number) => (i >= 0 ? (c[i] ?? "") : "");
+        return {
+          meter_number: get(cols.meter_number),
+          serial_number: get(cols.serial),
+          sgc: get(cols.sgc),
+          krn: get(cols.krn),
+          ti: get(cols.ti),
+          ea: get(cols.ea),
+          ken: get(cols.ken),
+        };
+      });
+      setRows(parsed);
+      setCount(String(parsed.length));
+      toast.success(`${parsed.length} row${parsed.length === 1 ? "" : "s"} loaded from CSV`);
+    } finally {
+      setImporting(false);
+    }
   };
 
   /* ------------------------------ validation ------------------------------ */
@@ -348,7 +354,14 @@ function BulkAddMetersPage() {
     >
       <div className="rounded-2xl border border-border bg-card p-5">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading options…</p>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-11 w-full animate-pulse rounded-xl bg-muted" />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
@@ -498,22 +511,54 @@ function BulkAddMetersPage() {
         )}
       </div>
 
-      {rows.length > 0 && (
+      {!isLoading && rows.length === 0 && !result && (
+        <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <FileSpreadsheet className="size-6 text-muted-foreground" />
+          </div>
+          <h3 className="mt-4 text-sm font-semibold">No meters to add yet</h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Enter the number of meters above and click{" "}
+            <span className="font-medium text-foreground">Generate rows</span>, or use{" "}
+            <span className="font-medium text-foreground">Fill from CSV</span> to import existing meter data.
+          </p>
+        </div>
+      )}
+
+      {(importing || rows.length > 0) && (
         <div className="mt-6 rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              Meter details ({rows.length})
+              {importing ? "Importing meters…" : `Meter details (${rows.length})`}
             </h2>
-            <button
-              type="button"
-              onClick={() => setRows([])}
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              Clear rows
-            </button>
+            {!importing && (
+              <button
+                type="button"
+                onClick={() => setRows([])}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Clear rows
+              </button>
+            )}
           </div>
 
-          <div className="mt-3 -mx-5 overflow-x-auto px-5">
+          {importing ? (
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-2">
+                  <div className="h-9 w-8 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 -mx-5 overflow-x-auto px-5">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr className="border-b border-border">
@@ -561,6 +606,7 @@ function BulkAddMetersPage() {
               </tbody>
             </table>
           </div>
+        )}
         </div>
       )}
 
