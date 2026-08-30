@@ -90,6 +90,7 @@ function BulkAddMetersPage() {
   const queryClient = useQueryClient();
   const loadOptions = useServerFn(listBulkMeterOptions);
   const bulkCreate = useServerFn(bulkAddMeters);
+  const loadIdentifiers = useServerFn(listMeterIdentifiers);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
@@ -97,10 +98,22 @@ function BulkAddMetersPage() {
     queryFn: () => loadOptions({} as never),
   });
 
+  const { data: existingIds } = useQuery({
+    queryKey: ["meter-identifiers"],
+    queryFn: () => loadIdentifiers({} as never),
+  });
+
+  const existingMeterNumbers = useMemo(
+    () => new Set(existingIds?.meterNumbers ?? []),
+    [existingIds],
+  );
+  const existingSerials = useMemo(() => new Set(existingIds?.serials ?? []), [existingIds]);
+
   const suppliers = data?.suppliers ?? [];
   const vendors = data?.vendors ?? [];
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
+
 
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas" | "">("");
   const [supplierId, setSupplierId] = useState("");
