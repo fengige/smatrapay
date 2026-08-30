@@ -1,0 +1,2 @@
+- [x] Lock/retry strategy for bulk meter duplicate handling (Skip/Update under concurrency)
+- [x] Confirmation step + success/error feedback on meter assignment dialog

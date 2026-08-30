@@ -399,6 +399,8 @@ export function AssignMeterDialog({
   const [landlordId, setLandlordId] = useState(current.landlord_id ?? "");
   const [agentId, setAgentId] = useState(current.agent_id ?? "");
   const [unitSearch, setUnitSearch] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const visibleUnits = useMemo(() => {
     const q = unitSearch.trim().toLowerCase();
@@ -422,10 +424,28 @@ export function AssignMeterDialog({
         queryClient.invalidateQueries({ queryKey: ["meters"] }),
       ]);
       toast.success("Meter assignment updated");
+      setConfirming(false);
       onClose();
     },
-    onError: (err: Error) => toast.error(err.message || "Could not assign meter"),
+    onError: (err: Error) => {
+      const message = err.message || "Could not assign meter";
+      setErrorMsg(message);
+      setConfirming(false);
+      toast.error(message);
+    },
   });
+
+  const nameOf = (list: { id: string; name: string }[], id: string) =>
+    list.find((x) => x.id === id)?.name ?? "Unassigned";
+  const summary = [
+    { label: "Unit", value: units.find((u) => u.id === unitId)?.label ?? "Unassigned" },
+    { label: "Landlord", value: nameOf(landlords, landlordId) },
+    { label: "Agent", value: nameOf(agents, agentId) },
+  ];
+  const unchanged =
+    (unitId || null) === current.unit_id &&
+    (landlordId || null) === current.landlord_id &&
+    (agentId || null) === current.agent_id;
 
   return (
     <div
@@ -506,22 +526,53 @@ export function AssignMeterDialog({
           </div>
         </div>
 
+        {errorMsg && (
+          <p role="alert" className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {errorMsg}
+          </p>
+        )}
+
+        {confirming && (
+          <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4">
+            <p className="text-sm font-semibold">Confirm this assignment</p>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              {summary.map((item) => (
+                <li key={item.label}>
+                  <span className="font-medium text-foreground">{item.label}:</span> {item.value}
+                </li>
+              ))}
+            </ul>
+            {unchanged && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                No changes detected — saving will leave the assignment as it is.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
-            onClick={onClose}
+            onClick={confirming ? () => setConfirming(false) : onClose}
             className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent/10"
           >
-            Cancel
+            {confirming ? "Back" : "Cancel"}
           </button>
           <button
             type="button"
             disabled={mutation.isPending}
-            onClick={() => mutation.mutate()}
+            onClick={() => {
+              setErrorMsg(null);
+              if (!confirming) {
+                setConfirming(true);
+                return;
+              }
+              mutation.mutate();
+            }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            Save assignment
+            {confirming ? "Confirm assignment" : "Review assignment"}
           </button>
         </div>
       </div>
