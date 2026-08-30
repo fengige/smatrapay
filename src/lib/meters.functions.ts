@@ -1193,3 +1193,120 @@ export const listMeterIdentifiers = createServerFn({ method: "GET" })
     }
     return { meterNumbers, serials };
   });
+
+/* ------------------------------------------------------------------ *
+ * Bulk assign meters to property units
+ * ------------------------------------------------------------------ */
+
+export type BulkAssignResult = {
+  assigned: number;
+  skipped: { meter_number: string; reason: string }[];
+};
+
+/**
+ * Assign many meters to units of a property in one step.
+ * Rows that clash (unit missing, duplicate utility on a unit, repeated unit in
+ * the same batch) are skipped and reported instead of failing the whole run.
+ */
+export const bulkAssignMeters = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        property_id: uuid,
+        inherit_landlord: z.boolean().optional(),
+        assignments: z
+          .array(z.object({ meter_id: uuid, unit_id: uuid }))
+          .min(1, "Select at least one meter to assign")
+          .max(500, "You can assign at most 500 meters at once"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<BulkAssignResult> => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: property, error: pErr } = await supabase
+      .from("properties")
+      .select("id, landlord_id")
+      .eq("id", data.property_id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!property) throw new Error("Property not found");
+
+    const { data: unitRows, error: uErr } = await supabase
+      .from("units")
+      .select("id, unit_number")
+      .eq("property_id", data.property_id);
+    if (uErr) throw new Error(uErr.message);
+    const unitById = new Map((unitRows ?? []).map((u: any) => [u.id as string, u]));
+
+    const meterIds = [...new Set(data.assignments.map((a) => a.meter_id))];
+    const { data: meterRows, error: mErr } = await supabase
+      .from("meters")
+      .select("id, meter_number, type, unit_id")
+      .in("id", meterIds);
+    if (mErr) throw new Error(mErr.message);
+    const meterById = new Map((meterRows ?? []).map((m: any) => [m.id as string, m]));
+
+    // Existing meters already sitting on these units (per utility type).
+    const unitIds = [...unitById.keys()];
+    const taken = new Set<string>();
+    if (unitIds.length) {
+      const { data: existing, error: eErr } = await supabase
+        .from("meters")
+        .select("id, unit_id, type")
+        .in("unit_id", unitIds);
+      if (eErr) throw new Error(eErr.message);
+      for (const m of (existing ?? []) as any[]) {
+        if (meterIds.includes(m.id)) continue; // will be re-assigned below
+        taken.add(`${m.unit_id}:${String(m.type ?? "").toLowerCase()}`);
+      }
+    }
+
+    const skipped: BulkAssignResult["skipped"] = [];
+    let assigned = 0;
+
+    for (const row of data.assignments) {
+      const meter = meterById.get(row.meter_id);
+      if (!meter) {
+        skipped.push({ meter_number: row.meter_id, reason: "Meter no longer exists" });
+        continue;
+      }
+      const unit = unitById.get(row.unit_id);
+      if (!unit) {
+        skipped.push({
+          meter_number: meter.meter_number,
+          reason: "Selected unit is not part of this property",
+        });
+        continue;
+      }
+      const key = `${row.unit_id}:${String(meter.type ?? "").toLowerCase()}`;
+      if (taken.has(key)) {
+        skipped.push({
+          meter_number: meter.meter_number,
+          reason: `Unit ${unit.unit_number} already has a ${String(meter.type)} meter`,
+        });
+        continue;
+      }
+
+      const patch: Record<string, unknown> = { unit_id: row.unit_id };
+      if (data.inherit_landlord && (property as any).landlord_id) {
+        patch['landlord_id'] = (property as any).landlord_id;
+      }
+
+      const { error } = await supabase
+        .from("meters")
+        .update(patch as never)
+        .eq("id", row.meter_id);
+      if (error) {
+        skipped.push({ meter_number: meter.meter_number, reason: error.message });
+        continue;
+      }
+
+      taken.add(key);
+      assigned += 1;
+    }
+
+    return { assigned, skipped };
+  });
