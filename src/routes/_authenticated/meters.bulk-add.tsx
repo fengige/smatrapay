@@ -369,13 +369,13 @@ function BulkAddMetersPage() {
               e.target.value = "";
             }}
           />
-          <Link
-            to="/meters"
-            search={{ page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" }}
+          <button
+            type="button"
+            onClick={attemptLeave}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
             <ArrowLeft className="size-4" /> Back
-          </Link>
+          </button>
         </div>
       }
     >
@@ -672,13 +672,13 @@ function BulkAddMetersPage() {
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-        <Link
-          to="/meters"
-            search={{ page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" }}
+        <button
+          type="button"
+          onClick={attemptLeave}
           className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent/10"
         >
           Cancel
-        </Link>
+        </button>
         <button
           type="button"
           onClick={openReview}
