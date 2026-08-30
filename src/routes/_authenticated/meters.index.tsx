@@ -1100,6 +1100,15 @@ function MeterDialog({
       toast.error(err.message || (isEdit ? "Could not update meter" : "Could not add meter")),
   });
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") attemptClose(mutation.isPending);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, isDirty, mutation.isPending]);
+
   const field = "h-11 w-full rounded-xl border bg-background px-3 text-sm";
   const fieldError = (msg: string | null) =>
     msg ? `${field} border-destructive focus:border-destructive` : field;
@@ -1108,7 +1117,7 @@ function MeterDialog({
     <div
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) attemptClose();
+        if (e.target === e.currentTarget) attemptClose(mutation.isPending);
       }}
       role="dialog"
       aria-modal="true"
@@ -1382,7 +1391,7 @@ function MeterDialog({
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={attemptClose}
+            onClick={() => attemptClose(mutation.isPending)}
             className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
           >
             Cancel
