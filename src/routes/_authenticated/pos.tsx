@@ -76,6 +76,21 @@ function PosPage() {
   const runSearch = useServerFn(searchTokenMeters);
   const runIssue = useServerFn(issueMeterToken);
   const runList = useServerFn(listMeterTokens);
+  const runResendSms = useServerFn(resendTokenSms);
+
+  const resendSms = useMutation({
+    mutationFn: async () =>
+      runResendSms({
+        data: { id: smsTarget!.id, customer_phone: smsPhone.trim() || null },
+      } as never),
+    onSuccess: () => {
+      toast.success(`Receipt queued for SMS delivery to ${smsPhone.trim()}`);
+      setSmsTarget(null);
+      setSmsPhone("");
+      void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to send SMS"),
+  });
 
   const search = useMutation({
     mutationFn: async () => runSearch({ data: { q: query.trim() } } as never),
