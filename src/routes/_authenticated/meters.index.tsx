@@ -1592,29 +1592,82 @@ function ImportMetersDialog({
           )}
 
           {result && (
-            <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-3 text-sm">
-              <p className="font-semibold">
-                {result.imported} imported · {result.updated} updated · {result.skipped} skipped ·{" "}
-                {result.failed} failed
-              </p>
+            <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4 text-sm">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-lg border border-border bg-card p-2.5 text-center">
+                  <p className="text-lg font-bold text-emerald-600">{result.imported}</p>
+                  <p className="text-xs text-muted-foreground">Imported</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-2.5 text-center">
+                  <p className="text-lg font-bold text-primary">{result.updated}</p>
+                  <p className="text-xs text-muted-foreground">Updated</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-2.5 text-center">
+                  <p className="text-lg font-bold text-amber-600">{result.skipped}</p>
+                  <p className="text-xs text-muted-foreground">Skipped</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-2.5 text-center">
+                  <p className="text-lg font-bold text-destructive">{result.failed}</p>
+                  <p className="text-xs text-muted-foreground">Failed</p>
+                </div>
+              </div>
+
               {result.duplicates.length > 0 && (
-                <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
-                  {result.duplicates.map((d) => (
-                    <li key={`dup-${d.row}-${d.meter_number}`}>
-                      Row {d.row} ({d.meter_number} / {d.serial_number}): {d.reason}
-                    </li>
-                  ))}
-                </ul>
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
+                    Duplicate rows
+                  </p>
+                  <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border bg-card p-2 text-xs text-muted-foreground">
+                    {result.duplicates.map((d) => (
+                      <li key={`dup-${d.row}-${d.meter_number}`}>
+                        <span className="rounded bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-600">
+                          Row {d.row}
+                        </span>{" "}
+                        <span className="font-medium text-foreground">
+                          {d.meter_number} / {d.serial_number}
+                        </span>{" "}
+                        — {d.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
+
               {result.errors.length > 0 && (
-                <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-destructive">
-                  {result.errors.map((e, i) => (
-                    <li key={`${e.row}-${e.meter_number}-${i}`}>
-                      Row {e.row}
-                      {e.meter_number ? ` (${e.meter_number})` : ""}: {e.message}
-                    </li>
-                  ))}
-                </ul>
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase text-destructive">
+                    Failed rows — fix and re-import
+                  </p>
+                  <div className="max-h-56 overflow-y-auto rounded-lg border border-destructive/20 bg-card">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-destructive/10 text-destructive">
+                        <tr>
+                          <th className="px-3 py-2 font-semibold">Row</th>
+                          <th className="px-3 py-2 font-semibold">Meter no</th>
+                          <th className="px-3 py-2 font-semibold">Issue</th>
+                          <th className="px-3 py-2 font-semibold">How to fix</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {result.errors.map((e, i) => {
+                          const { issue, fix } = actionableImportError(e.message);
+                          return (
+                            <tr key={`${e.row}-${e.meter_number}-${i}`}>
+                              <td className="px-3 py-2 align-top font-medium text-destructive">
+                                {e.row}
+                              </td>
+                              <td className="px-3 py-2 align-top font-medium text-foreground">
+                                {e.meter_number || "—"}
+                              </td>
+                              <td className="px-3 py-2 align-top text-destructive">{issue}</td>
+                              <td className="px-3 py-2 align-top text-muted-foreground">{fix}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
           )}
