@@ -30,7 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
-import { listVendorProperties, listUserAssignments } from "@/lib/properties.functions";
+import { listVendorMeters } from "@/lib/vendors.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/vendors/$id/")({
@@ -94,8 +94,7 @@ function VendorDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchVendor = useServerFn(getUserById);
-  const fetchAssignments = useServerFn(listUserAssignments);
-  const fetchOwnedProperties = useServerFn(listVendorProperties);
+  const fetchVendorMeters = useServerFn(listVendorMeters);
   const saveVendor = useServerFn(updateUser);
   const removeVendor = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -103,8 +102,8 @@ function VendorDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
-  >("property");
+    "meters" | "invoices" | "payments" | "history" | "notes" | "audit"
+  >("meters");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
   const [auditFrom, setAuditFrom] = useState("");
@@ -117,32 +116,12 @@ function VendorDetailPage() {
 
   const vendor = data?.user;
 
-  const { data: assignmentData, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ["vendor-assignments", id],
-    queryFn: () => fetchAssignments({ data: { userId: id } }),
+  const { data: meterData, isLoading: metersLoading } = useQuery({
+    queryKey: ["vendor-meters", id],
+    queryFn: () => fetchVendorMeters({ data: { vendorId: id } }),
   });
 
-  const { data: ownedData, isLoading: ownedLoading } = useQuery({
-    queryKey: ["vendor-properties", id],
-    queryFn: () => fetchOwnedProperties({ data: { vendorId: id } }),
-  });
-
-  const ownedProperties = (ownedData?.properties ?? []).map((p) => {
-    const units = (ownedData?.units ?? []).filter((u) => u.property_id === p.id);
-    return {
-      ...p,
-      unitCount: units.length,
-      occupiedCount: units.filter((u) => u.status === "occupied").length,
-    };
-  });
-
-  const assignedUnits = (assignmentData?.assignments ?? []).map((a) => {
-    const unit = assignmentData?.units.find((u) => u.id === a.unit_id);
-    const property = assignmentData?.properties.find((p) => p.id === unit?.property_id);
-    return { ...a, unit, property };
-  });
-  const currentUnits = assignedUnits.filter((a) => !a.end_date);
-  const previousUnits = assignedUnits.filter((a) => a.end_date);
+  const vendorMeters = meterData?.meters ?? [];
 
   const statusMutation = useMutation({
     mutationFn: (status: "active" | "inactive") => saveVendor({ data: { id, status } }),
@@ -444,11 +423,9 @@ function VendorDetailPage() {
               <div className="flex flex-wrap gap-1 rounded-2xl border border-border bg-card p-2">
                 {(
                   [
-                    ["property", "My Properties"],
-                    ["units", "Assigned Units"],
+                    ["meters", "Meters"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
-                    ["meters", "Meters"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
                     ["audit", "Audit Logs"],
@@ -469,176 +446,6 @@ function VendorDetailPage() {
                 ))}
               </div>
 
-              {tab === "property" && (
-              <Section title="My Properties" icon={<Building2 className="size-4 text-primary" />}>
-                {ownedLoading ? (
-                  <div className="flex justify-center p-10 text-muted-foreground">
-                    <Loader2 className="size-5 animate-spin" />
-                  </div>
-                ) : ownedProperties.length === 0 ? (
-                  <EmptyTabState
-                    icon={<Building2 className="size-8" />}
-                    title="No properties owned"
-                    description="This vendor is not linked to any properties yet. Assign them as the vendor when creating or editing a property."
-                  />
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                        <tr>
-                          <th className="px-4 py-2.5 font-semibold">Property</th>
-                          <th className="px-4 py-2.5 font-semibold">Code</th>
-                          <th className="px-4 py-2.5 font-semibold">Type</th>
-                          <th className="px-4 py-2.5 font-semibold">Location</th>
-                          <th className="px-4 py-2.5 font-semibold">Units</th>
-                          <th className="px-4 py-2.5 font-semibold">Occupied</th>
-                          <th className="px-4 py-2.5 font-semibold">Status</th>
-                          <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ownedProperties.map((p) => (
-                          <tr key={p.id} className="border-t border-border">
-                            <td className="px-4 py-2.5">
-                              <p className="font-medium text-foreground">{p.name}</p>
-                              {p.description && (
-                                <p className="max-w-56 truncate text-xs text-muted-foreground">
-                                  {p.description}
-                                </p>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
-                              {p.code ?? "—"}
-                            </td>
-                            <td className="px-4 py-2.5 capitalize text-muted-foreground">
-                              {[p.property_type, p.subtype].filter(Boolean).join(" · ") || "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-muted-foreground">
-                              {[p.city, p.state].filter(Boolean).join(", ") || "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-muted-foreground">
-                              {p.unitCount || p.number_of_units || 0}
-                            </td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{p.occupiedCount}</td>
-                            <td className="px-4 py-2.5">
-                              <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
-                                  p.status === "active"
-                                    ? "bg-emerald-500/10 text-emerald-600"
-                                    : "bg-muted text-muted-foreground"
-                                }`}
-                              >
-                                {p.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-2.5 text-right">
-                              <Link
-                                to="/properties/$id"
-                                params={{ id: p.id }}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-                              >
-                                View
-                              </Link>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
-                      <Building2 className="size-3.5 text-primary" />
-                      {ownedProperties.length}{" "}
-                      {ownedProperties.length === 1 ? "property" : "properties"} owned ·{" "}
-                      {ownedProperties.reduce((sum, p) => sum + p.unitCount, 0)} units total
-                    </div>
-                  </div>
-                )}
-              </Section>
-              )}
-
-              {tab === "units" && (
-              <Section title="Assigned Units" icon={<DoorOpen className="size-4 text-primary" />}>
-                {assignmentsLoading ? (
-                  <div className="flex justify-center p-10 text-muted-foreground">
-                    <Loader2 className="size-5 animate-spin" />
-                  </div>
-                ) : assignedUnits.length === 0 ? (
-                  <EmptyTabState
-                    icon={<DoorOpen className="size-8" />}
-                    title="No unit assignments"
-                    description="This vendor has not been assigned to any units yet. Use Property Management to assign units."
-                  />
-                ) : (
-                  <div className="space-y-8 p-6">
-                    {[
-                      ["Current assignments", currentUnits],
-                      ["Previous assignments", previousUnits],
-                    ].map(([label, list]) => (
-                      <div key={label as string}>
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          {label as string} ({(list as typeof assignedUnits).length})
-                        </p>
-                        {(list as typeof assignedUnits).length === 0 ? (
-                          <p className="text-sm text-muted-foreground">None.</p>
-                        ) : (
-                          <div className="overflow-x-auto rounded-xl border border-border">
-                            <table className="w-full text-left text-sm">
-                              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                                <tr>
-                                  <th className="px-4 py-2.5 font-semibold">Property</th>
-                                  <th className="px-4 py-2.5 font-semibold">Unit</th>
-                                  <th className="px-4 py-2.5 font-semibold">Unit type</th>
-                                  <th className="px-4 py-2.5 font-semibold">Role</th>
-                                  <th className="px-4 py-2.5 font-semibold">Start</th>
-                                  <th className="px-4 py-2.5 font-semibold">End</th>
-                                  <th className="px-4 py-2.5 font-semibold">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {(list as typeof assignedUnits).map((a) => (
-                                  <tr key={a.id} className="border-t border-border">
-                                    <td className="px-4 py-2.5 font-medium text-foreground">
-                                      {a.property?.name ?? "—"}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-muted-foreground">
-                                      {[a.unit?.building, a.unit?.unit_number]
-                                        .filter(Boolean)
-                                        .join(" · ") || "—"}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-muted-foreground">
-                                      {a.unit?.unit_type ?? "—"}
-                                    </td>
-                                    <td className="px-4 py-2.5 capitalize text-muted-foreground">
-                                      {a.role}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-muted-foreground">
-                                      {date(a.start_date)}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-muted-foreground">
-                                      {a.end_date ? date(a.end_date) : "—"}
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span
-                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                          a.end_date
-                                            ? "bg-muted text-muted-foreground"
-                                            : "bg-emerald-500/10 text-emerald-600"
-                                        }`}
-                                      >
-                                        {a.end_date ? "Ended" : "Active"}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Section>
-              )}
 
               {tab === "history" && (
               <Section title="Status History" icon={<Clock className="size-4 text-primary" />}>
@@ -708,11 +515,52 @@ function VendorDetailPage() {
 
               {tab === "meters" && (
                 <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
-                  <EmptyTabState
-                    icon={<Gauge className="size-8" />}
-                    title="No meters assigned"
-                    description="Water and electricity meters linked to this vendor's unit will appear here."
-                  />
+                  {metersLoading ? (
+                    <div className="flex justify-center p-10 text-muted-foreground">
+                      <Loader2 className="size-5 animate-spin" />
+                    </div>
+                  ) : vendorMeters.length === 0 ? (
+                    <EmptyTabState
+                      icon={<Gauge className="size-8" />}
+                      title="No meters assigned"
+                      description="Meters registered under this vendor will appear here."
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[560px] text-left text-sm">
+                        <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                          <tr>
+                            <th className="px-6 py-3 font-semibold">Meter no.</th>
+                            <th className="px-6 py-3 font-semibold">Serial</th>
+                            <th className="px-6 py-3 font-semibold">Type</th>
+                            <th className="px-6 py-3 font-semibold">Price / unit</th>
+                            <th className="px-6 py-3 font-semibold">Status</th>
+                            <th className="px-6 py-3" />
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {vendorMeters.map((m) => (
+                            <tr key={m.id} className="hover:bg-accent/5">
+                              <td className="px-6 py-3 font-medium text-foreground">{m.meter_number}</td>
+                              <td className="px-6 py-3 text-muted-foreground">{m.serial_number}</td>
+                              <td className="px-6 py-3 capitalize text-muted-foreground">{m.type}</td>
+                              <td className="px-6 py-3 text-muted-foreground">{m.price_per_unit}</td>
+                              <td className="px-6 py-3 capitalize text-muted-foreground">{m.status}</td>
+                              <td className="px-6 py-3 text-right">
+                                <Link
+                                  to="/meters/$meterId"
+                                  params={{ meterId: m.id }}
+                                  className="text-xs font-semibold text-primary hover:underline"
+                                >
+                                  View
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </Section>
               )}
 
