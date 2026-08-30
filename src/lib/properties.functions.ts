@@ -43,6 +43,9 @@ const propertyInput = z.object({
   subtype: text(60),
   number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
   landlord_id: uuid.nullable().optional(),
+  zone_id: z.number().int().positive().nullable().optional(),
+  route_id: z.number().int().positive().nullable().optional(),
+  street_id: z.number().int().positive().nullable().optional(),
 })
   .transform((val) => ({
     ...val,
@@ -50,6 +53,22 @@ const propertyInput = z.object({
     state: val.state == null ? val.state : normalizeState(val.country, val.state) || null,
   }))
   .superRefine((val, ctx) => {
+    if (val.property_type === "zone") {
+      if (!val.zone_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["zone_id"],
+          message: "Please select a zone",
+        });
+      }
+      if (!val.route_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["route_id"],
+          message: "Please select a route",
+        });
+      }
+    }
     if (val.property_type === "building") {
       if (!val.building_category) {
         ctx.addIssue({
