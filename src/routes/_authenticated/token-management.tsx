@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  Ban,
   Copy,
   Gauge,
   KeyRound,
@@ -13,7 +14,15 @@ import {
   Zap,
 } from "lucide-react";
 import { PortalLayout } from "@/components/PortalLayout";
-import { searchTokenMeters, type TokenMeterMatch } from "@/lib/tokens.functions";
+import {
+  issueMeterToken,
+  listMeterTokens,
+  revokeMeterToken,
+  searchTokenMeters,
+  type IssuedToken,
+  type TokenAction,
+  type TokenMeterMatch,
+} from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/_authenticated/token-management")({
   head: () => ({
@@ -36,8 +45,6 @@ export const Route = createFileRoute("/_authenticated/token-management")({
   component: TokenManagementPage,
 });
 
-type TokenAction = "credit" | "key_change" | "clear_tamper" | "clear_credit";
-
 const ACTIONS: { id: TokenAction; label: string; hint: string }[] = [
   { id: "credit", label: "Issue Credit", hint: "Vend units or value onto the meter" },
   { id: "key_change", label: "Key Change", hint: "Rotate the meter supply group key" },
@@ -45,13 +52,29 @@ const ACTIONS: { id: TokenAction; label: string; hint: string }[] = [
   { id: "clear_credit", label: "Clear Credit", hint: "Zero the meter credit balance" },
 ];
 
-function randomToken() {
-  let out = "";
-  for (let i = 0; i < 20; i += 1) out += Math.floor(Math.random() * 10);
-  return out.replace(/(\d{4})(?=\d)/g, "$1-");
+const ACTION_LABEL: Record<TokenAction, string> = {
+  credit: "Issue Credit",
+  key_change: "Key Change",
+  clear_tamper: "Clear Tamper",
+  clear_credit: "Clear Credit",
+};
+
+function StatusBadge({ status }: { status: IssuedToken["status"] }) {
+  const tone =
+    status === "issued"
+      ? "bg-emerald-500/15 text-emerald-600"
+      : status === "expired"
+        ? "bg-amber-500/15 text-amber-600"
+        : "bg-destructive/15 text-destructive";
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${tone}`}>
+      {status}
+    </span>
+  );
 }
 
 function TokenManagementPage() {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TokenMeterMatch[] | null>(null);
   const [meter, setMeter] = useState<TokenMeterMatch | null>(null);
@@ -60,16 +83,19 @@ function TokenManagementPage() {
   const [mode, setMode] = useState<"value" | "units">("value");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
+  const [expiryDays, setExpiryDays] = useState("30");
   const [sendSms, setSendSms] = useState(false);
   const [phone, setPhone] = useState("");
-  const [token, setToken] = useState<null | {
-    value: string;
-    units: number;
-    amount: number;
-    issuedAt: string;
-  }>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [token, setToken] = useState<IssuedToken | null>(null);
+  const [revoking, setRevoking] = useState<IssuedToken | null>(null);
+  const [revokeReason, setRevokeReason] = useState("");
 
   const runSearch = useServerFn(searchTokenMeters);
+  const runIssue = useServerFn(issueMeterToken);
+  const runRevoke = useServerFn(revokeMeterToken);
+  const runList = useServerFn(listMeterTokens);
+
   const search = useMutation({
     mutationFn: async () => runSearch({ data: { q: query.trim() } } as never),
     onSuccess: (rows: any) => {
@@ -79,6 +105,12 @@ function TokenManagementPage() {
       if (!list.length) toast.info("No meters matched that search");
     },
     onError: (err: Error) => toast.error(err.message || "Search failed"),
+  });
+
+  const history = useQuery({
+    queryKey: ["meter-tokens", meter?.id ?? null],
+    queryFn: async () =>
+      (await runList({ data: { meter_id: meter?.id ?? null } } as never)) as IssuedToken[],
   });
 
   const amountNumber = Number(amount);
@@ -99,22 +131,58 @@ function TokenManagementPage() {
           ? "This meter has no price per unit configured"
           : null;
   const phoneError = sendSms && phone.trim().length < 7 ? "Enter a valid phone number" : null;
+  const expiryNumber = Number(expiryDays);
+  const expiryError =
+    !Number.isInteger(expiryNumber) || expiryNumber < 1 || expiryNumber > 365
+      ? "Expiry must be between 1 and 365 days"
+      : null;
   const needsAmount = action === "credit";
   const canGenerate =
-    !!meter && (!needsAmount || !amountError) && !phoneError && meter.status === "active";
+    !!meter &&
+    (!needsAmount || !amountError) &&
+    !phoneError &&
+    !expiryError &&
+    meter.status === "active";
 
-  const generate = () => {
-    if (!meter || !canGenerate) return;
-    const issuedAt = new Date().toISOString();
-    setToken({
-      value: randomToken(),
-      units: needsAmount ? Number(units.toFixed(2)) : 0,
-      amount: needsAmount ? Number(value.toFixed(2)) : 0,
-      issuedAt,
-    });
-    toast.success("Token generated");
-    if (sendSms) toast.info(`Token queued for SMS delivery to ${phone.trim()}`);
-  };
+  const issue = useMutation({
+    mutationFn: async () =>
+      (await runIssue({
+        data: {
+          meter_id: meter!.id,
+          action,
+          units: needsAmount ? Number(units.toFixed(2)) : 0,
+          amount: needsAmount ? Number(value.toFixed(2)) : 0,
+          reference: reference.trim() || null,
+          customer_phone: sendSms ? phone.trim() : null,
+          sms_requested: sendSms,
+          expires_in_days: expiryNumber,
+        },
+      } as never)) as IssuedToken,
+    onSuccess: (issued) => {
+      setToken(issued);
+      setConfirming(false);
+      toast.success("Token issued");
+      if (issued.sms_requested)
+        toast.info(`Token queued for SMS delivery to ${issued.customer_phone}`);
+      void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not issue token"),
+  });
+
+  const revoke = useMutation({
+    mutationFn: async () =>
+      (await runRevoke({
+        data: { id: revoking!.id, reason: revokeReason.trim() || null },
+      } as never)) as IssuedToken,
+    onSuccess: (updated) => {
+      toast.success("Token revoked");
+      setRevoking(null);
+      setRevokeReason("");
+      if (token?.id === updated.id) setToken(updated);
+      void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Could not revoke token"),
+  });
 
   return (
     <PortalLayout
@@ -320,10 +388,18 @@ function TokenManagementPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <span className="text-sm font-medium">Transaction time</span>
-                  <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                    {new Date().toLocaleString()}
-                  </p>
+                  <label htmlFor="token-expiry" className="text-sm font-medium">
+                    Token expiry (days)
+                  </label>
+                  <input
+                    id="token-expiry"
+                    inputMode="numeric"
+                    value={expiryDays}
+                    onChange={(e) => setExpiryDays(e.target.value)}
+                    aria-invalid={!!expiryError}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  {expiryError && <p className="text-xs text-destructive">{expiryError}</p>}
                 </div>
               </div>
 
@@ -367,7 +443,7 @@ function TokenManagementPage() {
 
               <button
                 type="button"
-                onClick={generate}
+                onClick={() => setConfirming(true)}
                 disabled={!canGenerate}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
@@ -377,32 +453,224 @@ function TokenManagementPage() {
 
             {token && (
               <div className="mt-5 rounded-xl border border-primary/40 bg-primary/5 p-4">
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  {ACTIONS.find((a) => a.id === action)?.label} token
-                </p>
-                <p className="mt-1 font-mono text-xl font-bold tracking-wider">{token.value}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-medium uppercase text-muted-foreground">
+                    {ACTION_LABEL[token.action]} token
+                  </p>
+                  <StatusBadge status={token.status} />
+                </div>
+                <p className="mt-1 font-mono text-xl font-bold tracking-wider">{token.value ?? token.token}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {needsAmount
+                  {token.action === "credit"
                     ? `${token.units.toFixed(2)} units · KES ${token.amount.toFixed(2)} · `
                     : ""}
-                  {new Date(token.issuedAt).toLocaleString()}
-                  {reference ? ` · Ref ${reference}` : ""}
+                  {new Date(token.created_at).toLocaleString()}
+                  {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
+                  {new Date(token.expires_at).toLocaleString()}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(token.value.replace(/-/g, ""));
-                    toast.success("Token copied");
-                  }}
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
-                >
-                  <Copy className="size-3.5" /> Copy token
-                </button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(token.token.replace(/-/g, ""));
+                      toast.success("Token copied");
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
+                  >
+                    <Copy className="size-3.5" /> Copy token
+                  </button>
+                  {token.status === "issued" && (
+                    <button
+                      type="button"
+                      onClick={() => setRevoking(token)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                    >
+                      <Ban className="size-3.5" /> Revoke token
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </section>
         </div>
+
+        {/* Token history */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="font-semibold">
+            {meter ? `Tokens for ${meter.meter_number}` : "Recently issued tokens"}
+          </h2>
+          {history.isLoading ? (
+            <p className="mt-3 text-sm text-muted-foreground">Loading tokens…</p>
+          ) : !history.data?.length ? (
+            <p className="mt-3 text-sm text-muted-foreground">No tokens issued yet.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
+                    <th className="py-2 pr-4">Token</th>
+                    <th className="py-2 pr-4">Meter</th>
+                    <th className="py-2 pr-4">Action</th>
+                    <th className="py-2 pr-4">Value</th>
+                    <th className="py-2 pr-4">Issued</th>
+                    <th className="py-2 pr-4">Expires</th>
+                    <th className="py-2 pr-4">Status</th>
+                    <th className="py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.data.map((t) => (
+                    <tr key={t.id} className="border-b border-border/60">
+                      <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
+                      <td className="py-2 pr-4">{t.meter_number}</td>
+                      <td className="py-2 pr-4">{ACTION_LABEL[t.action]}</td>
+                      <td className="py-2 pr-4">
+                        {t.action === "credit"
+                          ? `${t.units.toFixed(2)} u · KES ${t.amount.toFixed(2)}`
+                          : "—"}
+                      </td>
+                      <td className="py-2 pr-4 text-xs text-muted-foreground">
+                        {new Date(t.created_at).toLocaleString()}
+                        {t.issued_by_name ? ` · ${t.issued_by_name}` : ""}
+                      </td>
+                      <td className="py-2 pr-4 text-xs text-muted-foreground">
+                        {new Date(t.expires_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <StatusBadge status={t.status} />
+                        {t.revoke_reason && (
+                          <span className="block text-xs text-muted-foreground">
+                            {t.revoke_reason}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 text-right">
+                        {t.status === "issued" && (
+                          <button
+                            type="button"
+                            onClick={() => setRevoking(t)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/10"
+                          >
+                            <Ban className="size-3" /> Revoke
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
+
+      {/* Issue confirmation */}
+      {confirming && meter && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-token-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-lg">
+            <h3 id="confirm-token-title" className="font-semibold">
+              Confirm token issuance
+            </h3>
+            <dl className="mt-4 space-y-2 rounded-xl border border-border bg-muted/30 p-4 text-sm">
+              {[
+                ["Meter", meter.meter_number],
+                ["Customer", meter.customer_name ?? "Unassigned"],
+                ["Action", ACTION_LABEL[action]],
+                ...(needsAmount
+                  ? ([
+                      ["Units", units.toFixed(2)],
+                      ["Amount", `KES ${value.toFixed(2)}`],
+                    ] as [string, string][])
+                  : []),
+                ["Expires in", `${expiryNumber} day(s)`],
+                ["Reference", reference.trim() || "—"],
+                ["SMS", sendSms ? phone.trim() : "Not sending"],
+              ].map(([label, val]) => (
+                <div key={label} className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{label}</dt>
+                  <dd className="text-right font-medium">{val}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => issue.mutate()}
+                disabled={issue.isPending}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {issue.isPending && <Loader2 className="size-4 animate-spin" />}
+                Confirm and issue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke confirmation */}
+      {revoking && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="revoke-token-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-lg">
+            <h3 id="revoke-token-title" className="font-semibold">
+              Revoke this token?
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Token <span className="font-mono">{revoking.token}</span> for meter{" "}
+              {revoking.meter_number} will be marked as revoked and can no longer be used.
+            </p>
+            <div className="mt-4 space-y-1">
+              <label htmlFor="revoke-reason" className="text-sm font-medium">
+                Reason (optional)
+              </label>
+              <input
+                id="revoke-reason"
+                value={revokeReason}
+                onChange={(e) => setRevokeReason(e.target.value)}
+                placeholder="e.g. issued in error"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRevoking(null);
+                  setRevokeReason("");
+                }}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => revoke.mutate()}
+                disabled={revoke.isPending}
+                className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-60"
+              >
+                {revoke.isPending && <Loader2 className="size-4 animate-spin" />}
+                Revoke token
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PortalLayout>
   );
 }
