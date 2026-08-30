@@ -594,6 +594,14 @@ function StreetsManager({
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr>
+              <th className="w-8 px-2 py-2">
+                <input
+                  type="checkbox"
+                  aria-label={allVisibleSelected ? "Deselect all streets" : "Select all streets"}
+                  checked={allVisibleSelected}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="px-3 py-2 text-left">Street</th>
               <th className="px-3 py-2 text-left">Postal code</th>
               <th className="px-3 py-2 text-right">Actions</th>
@@ -602,20 +610,28 @@ function StreetsManager({
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={3} className="px-3 py-5 text-center text-muted-foreground">
+                <td colSpan={4} className="px-3 py-5 text-center text-muted-foreground">
                   <Loader2 className="mx-auto size-4 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && !rows.length && (
               <tr>
-                <td colSpan={3} className="px-3 py-5 text-center text-xs text-muted-foreground">
+                <td colSpan={4} className="px-3 py-5 text-center text-xs text-muted-foreground">
                   No streets recorded for this route yet.
                 </td>
               </tr>
             )}
             {rows.map((s) => (
               <tr key={s.street_id} className="border-t border-border/70">
+                <td className="px-2 py-2">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select street ${s.street_name}`}
+                    checked={selected.has(s.street_id)}
+                    onChange={() => toggleSelect(s.street_id)}
+                  />
+                </td>
                 <td className="px-3 py-2">{s.street_name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{s.postal_code ?? "—"}</td>
                 <td className="px-3 py-2">
