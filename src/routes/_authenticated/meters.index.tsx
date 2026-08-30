@@ -1367,6 +1367,59 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
+function actionableImportError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("meter number") && lower.includes("already registered")) {
+    return {
+      issue: message,
+      fix: "Use a unique meter number, or change duplicate handling to Skip / Update.",
+    };
+  }
+  if (lower.includes("serial number") && lower.includes("already registered")) {
+    return {
+      issue: message,
+      fix: "Use a unique serial number, or change duplicate handling to Skip / Update.",
+    };
+  }
+  if (lower.includes("appears twice in this file")) {
+    return {
+      issue: message,
+      fix: "Remove the duplicate row from the CSV before importing.",
+    };
+  }
+  if (lower.includes("no user found for landlord")) {
+    return {
+      issue: message,
+      fix: "Use the landlord's registered email address, or leave landlord_email blank.",
+    };
+  }
+  if (lower.includes("no user found for agent")) {
+    return {
+      issue: message,
+      fix: "Use the agent's registered email address, or leave agent_email blank.",
+    };
+  }
+  if (lower.includes("must be at least 4 characters") || lower.includes("may only contain")) {
+    return {
+      issue: message,
+      fix: "Use 4–64 letters, numbers, dashes, underscores or slashes only.",
+    };
+  }
+  if (lower.includes("invalid enum")) {
+    return {
+      issue: message,
+      fix: "Use one of the allowed values: electricity, water, gas, active, inactive.",
+    };
+  }
+  if (lower.includes("meter number and serial number must be different")) {
+    return {
+      issue: message,
+      fix: "Make the meter number and serial number different values.",
+    };
+  }
+  return { issue: message, fix: "Check the value and try again." };
+}
+
 function ImportMetersDialog({
   onClose,
   onImported,
