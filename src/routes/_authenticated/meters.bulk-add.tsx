@@ -621,6 +621,26 @@ function BulkAddMetersPage() {
             )}
           </div>
 
+          {!importing && rows.length > 0 && (invalidRows.length > 0 || warningCount > 0) && (
+            <div className="mt-3 space-y-2 text-sm">
+              {invalidRows.length > 0 && (
+                <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-destructive">
+                  {invalidRows.length} row{invalidRows.length === 1 ? "" : "s"} need attention —
+                  rows {invalidRows.slice(0, 8).map((r) => r.index + 1).join(", ")}
+                  {invalidRows.length > 8 ? "…" : ""}
+                </p>
+              )}
+              {warningCount > 0 && (
+                <p className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-amber-700">
+                  {warningCount} row{warningCount === 1 ? "" : "s"} match existing meters and will be{" "}
+                  {duplicateMode === "skip" ? "skipped" : "updated"}.
+                </p>
+              )}
+            </div>
+          )}
+
+
+
           {importing ? (
             <div className="mt-4 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
