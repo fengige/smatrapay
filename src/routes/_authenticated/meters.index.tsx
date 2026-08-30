@@ -1442,6 +1442,9 @@ function ImportMetersDialog({
     errors: { row: number; meter_number: string; message: string }[];
     duplicates: { row: number; meter_number: string; serial_number: string; reason: string }[];
   } | null>(null);
+  const [preview, setPreview] = useState<
+    { row: number; meter_number: string; serial_number: string; mode: "skip" | "update"; reason: string }[]
+  >([]);
 
   const importMutation = useMutation({
     mutationFn: async () =>
