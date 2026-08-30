@@ -6,10 +6,7 @@ export type MeterAssignmentResult = {
 };
 
 type RpcClient = {
-  rpc: (
-    fn: "apply_meter_assignment",
-    args: Record<string, unknown>,
-  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  rpc: (fn: any, args: any) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 
 /**
