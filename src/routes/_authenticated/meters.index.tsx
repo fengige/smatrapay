@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import {
   addMeter,
   bulkAddMeters,
+  bulkAssignMeters,
   bulkMeterAction,
   listMeters,
   listMeterAuditLogs,
@@ -151,6 +152,7 @@ function MetersPage() {
   const [editing, setEditing] = useState<MeterRow | null>(null);
   const [creating, setCreating] = useState(false);
   const [assigning, setAssigning] = useState<MeterRow | null>(null);
+  const [bulkAssign, setBulkAssign] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
 
@@ -473,6 +475,13 @@ function MetersPage() {
           {selected.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary/5 px-3 py-2 text-sm">
               <span className="font-medium text-foreground">{selected.length} selected</span>
+              <button
+                type="button"
+                onClick={() => setBulkAssign(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10"
+              >
+                <Link2 className="size-3.5" /> Assign to units
+              </button>
               <button
                 type="button"
                 onClick={() => setConfirm("deactivate")}
@@ -831,6 +840,31 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           onClose={() => setAssigning(null)}
+        />
+      )}
+
+      {bulkAssign && (
+        <BulkAssignUnitsDialog
+          meters={selectedMeters}
+          allMeters={meters}
+          units={unitOptions}
+          onClose={() => setBulkAssign(false)}
+          onDone={async (assigned, skipped) => {
+            setBulkAssign(false);
+            setSelected([]);
+            await queryClient.invalidateQueries({ queryKey: ["meters"] });
+            if (assigned > 0) {
+              toast.success(`${assigned} meter${assigned === 1 ? "" : "s"} assigned to units`);
+            }
+            if (skipped.length) {
+              toast.warning(
+                `${skipped.length} skipped: ${skipped
+                  .slice(0, 3)
+                  .map((s) => `${s.meter_number} (${s.reason})`)
+                  .join("; ")}`,
+              );
+            }
+          }}
         />
       )}
 
