@@ -345,6 +345,7 @@ export const createProperty = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabase, userId } = context;
+    await assertZoneRouteStreet(supabase, data);
     const { data: row, error } = await supabase
       .from("properties")
       .insert({ ...data, created_by: userId, updated_by: userId } as never)
@@ -446,6 +447,7 @@ export const updateProperty = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase, userId } = context;
     const { id, ...patch } = data;
+    await assertZoneRouteStreet(supabase, patch);
     const { error } = await supabase
       .from("properties")
       .update({ ...patch, updated_by: userId } as never)
