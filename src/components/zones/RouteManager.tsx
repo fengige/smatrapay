@@ -1,21 +1,34 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ChevronRight, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
   addRoute,
   addStreet,
+  bulkDeleteStreets,
   deleteRoute,
   deleteStreet,
   listRoutes,
   listStreets,
+  setRouteStatus,
   updateRoute,
   updateStreet,
   type RouteRow,
   type StreetRow,
 } from "@/lib/zones.functions";
+import { StreetImportDialog } from "@/components/zones/StreetImportDialog";
 
 const field = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm";
 const btn =
@@ -27,6 +40,7 @@ export function RouteManager({ zoneId, zoneName }: { zoneId: number; zoneName: s
   const queryClient = useQueryClient();
   const fetchRoutes = useServerFn(listRoutes);
   const removeRoute = useServerFn(deleteRoute);
+  const toggleStatus = useServerFn(setRouteStatus);
 
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
