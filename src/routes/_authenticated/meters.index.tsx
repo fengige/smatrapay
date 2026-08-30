@@ -547,7 +547,7 @@ function MetersPage() {
                 ) : paged.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
-                      No meters match your filters. Use “Add Meters” or “Import CSV” to register meters.
+                      No meters match your filters. Use “Add Meter”, “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
                 ) : (
@@ -2069,7 +2069,7 @@ function BulkAddMetersDialog({
     >
       <div className="my-8 w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg">
         <h2 id="add-meters-title" className="text-lg font-bold">
-          Add Meters
+          Bulk Add Meters
         </h2>
         <p className="text-sm text-muted-foreground">
           Pick a supplier and owner, choose how many meters, then fill in each meter row.
