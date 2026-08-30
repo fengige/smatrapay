@@ -505,6 +505,20 @@ function BulkAddMetersPage() {
         )}
       </div>
 
+      {!isLoading && rows.length === 0 && !result && (
+        <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <FileSpreadsheet className="size-6 text-muted-foreground" />
+          </div>
+          <h3 className="mt-4 text-sm font-semibold">No meters to add yet</h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Enter the number of meters above and click{" "}
+            <span className="font-medium text-foreground">Generate rows</span>, or use{" "}
+            <span className="font-medium text-foreground">Fill from CSV</span> to import existing meter data.
+          </p>
+        </div>
+      )}
+
       {rows.length > 0 && (
         <div className="mt-6 rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
