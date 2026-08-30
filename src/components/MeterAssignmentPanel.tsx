@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Gauge, History, Loader2, Plus, Search, Unlink, X } from "lucide-react";
+import { Gauge, Loader2, Plus, Search, Unlink, X } from "lucide-react";
 import { toast } from "sonner";
+
+import { AssignmentHistorySection } from "@/components/AssignmentHistorySection";
 
 import {
   assignMetersToAgent,
-  listAgentAssignmentHistory,
   listAgentMeters,
   listAssignableAgentMeters,
   unassignMetersFromAgent,
@@ -15,22 +16,11 @@ import {
 import {
   assignMetersToVendor,
   listAssignableVendorMeters,
-  listVendorAssignmentHistory,
   listVendorMeters,
   unassignMetersFromVendor,
 } from "@/lib/vendors.functions";
 
 type MeterResult = { id: string; meter_number: string; ok: boolean; reason?: string };
-
-type HistoryEntry = {
-  id: string;
-  meter_id: string;
-  meter_number: string;
-  serial_number: string | null;
-  action: "assigned" | "unassigned";
-  actor_name: string;
-  created_at: string;
-};
 
 type Kind = "agent" | "vendor";
 
@@ -73,9 +63,6 @@ export function MeterAssignmentPanel({
   const assign = useServerFn(isAgent ? assignMetersToAgent : (assignMetersToVendor as never));
   const unassign = useServerFn(
     isAgent ? unassignMetersFromAgent : (unassignMetersFromVendor as never),
-  );
-  const listHistory = useServerFn(
-    isAgent ? listAgentAssignmentHistory : (listVendorAssignmentHistory as never),
   );
 
   const ownerArg = (extra: Record<string, unknown> = {}) =>
@@ -167,16 +154,6 @@ export function MeterAssignmentPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [allAssignable, pickerSelected],
   );
-
-  const { data: historyData, isLoading: historyLoading } = useQuery({
-    queryKey: [`${kind}-assignment-history`, ownerId],
-    queryFn: () =>
-      (listHistory as unknown as (o: { data: unknown }) => Promise<{ entries: HistoryEntry[] }>)({
-        data: ownerArg(),
-      }),
-  });
-
-  const history = historyData?.entries ?? [];
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ownedKey });
@@ -594,46 +571,8 @@ export function MeterAssignmentPanel({
         </div>
       )}
 
-      <div className="border-t border-border">
-        <header className="flex items-center gap-2 px-6 py-4">
-          <History className="size-4 text-primary" />
-          <h4 className="text-sm font-bold text-foreground">Assignment history</h4>
-        </header>
-        {historyLoading ? (
-          <div className="flex justify-center pb-8 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" />
-          </div>
-        ) : history.length === 0 ? (
-          <p className="px-6 pb-6 text-xs text-muted-foreground">
-            No meter registrations or removals recorded yet.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {history.map((h) => (
-              <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 px-6 py-3">
-                <div className="text-sm">
-                  <span
-                    className={
-                      h.action === "assigned"
-                        ? "mr-2 rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-emerald-600"
-                        : "mr-2 rounded bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-destructive"
-                    }
-                  >
-                    {h.action}
-                  </span>
-                  <span className="font-medium text-foreground">{h.meter_number}</span>
-                  {h.serial_number && (
-                    <span className="ml-2 text-xs text-muted-foreground">{h.serial_number}</span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {h.actor_name} · {new Date(h.created_at).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <AssignmentHistorySection kind={kind} ownerId={ownerId} />
+
     </section>
   );
 }
