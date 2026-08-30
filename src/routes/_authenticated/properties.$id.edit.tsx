@@ -41,6 +41,9 @@ function clean(values: PropertyFormValues) {
     subtype: values.property_type === "building" ? values.subtype || null : null,
     number_of_units: values.number_of_units.trim() ? Number(values.number_of_units) : null,
     landlord_id: values.landlord_id || null,
+    zone_id: values.property_type === "zone" && values.zone_id ? Number(values.zone_id) : null,
+    route_id: values.property_type === "zone" && values.route_id ? Number(values.route_id) : null,
+    street_id: values.property_type === "zone" && values.street_id ? Number(values.street_id) : null,
   };
   for (const key of [
     "code",
@@ -122,6 +125,9 @@ function EditPropertyPage() {
                 ? ""
                 : String(property["number_of_units"]),
             landlord_id: property["landlord_id"] ?? "",
+            zone_id: property["zone_id"] ? String(property["zone_id"]) : "",
+            route_id: property["route_id"] ? String(property["route_id"]) : "",
+            street_id: property["street_id"] ? String(property["street_id"]) : "",
           }}
           submitLabel="Save changes"
           pending={mutation.isPending}
