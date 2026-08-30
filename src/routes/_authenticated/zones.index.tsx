@@ -341,6 +341,54 @@ function ZonesPage() {
         />
       )}
 
+      {viewing && <ZoneViewDialog zoneId={viewing.zone_id} onClose={() => setViewing(null)} />}
+
+      {toggling && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="zone-status-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setToggling(null);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <h2 id="zone-status-title" className="text-lg font-bold">
+              {toggling.status === "Active" ? "Deactivate" : "Activate"} “{toggling.zone_name}”?
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {toggling.status === "Active"
+                ? "Inactive zones stay visible in history but should not be used for new routes, streets, or field operations."
+                : "Activating this zone makes it available for routes, streets, and field operations again."}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setToggling(null)}
+                className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({
+                    zone_id: toggling.zone_id,
+                    status: toggling.status === "Active" ? "Inactive" : "Active",
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {statusMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                {toggling.status === "Active" ? "Deactivate zone" : "Activate zone"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleting && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
