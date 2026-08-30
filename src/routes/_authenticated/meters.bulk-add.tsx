@@ -610,11 +610,11 @@ function BulkAddMetersPage() {
                   <th className="px-2 py-2 font-semibold">#</th>
                   <th className="px-2 py-2 font-semibold">Meter number *</th>
                   <th className="px-2 py-2 font-semibold">Serial no</th>
-                  <th className="px-2 py-2 font-semibold">SGC *</th>
-                  <th className="px-2 py-2 font-semibold">KRN *</th>
-                  <th className="px-2 py-2 font-semibold">TI *</th>
-                  <th className="px-2 py-2 font-semibold">EA *</th>
-                  <th className="px-2 py-2 font-semibold">KEN *</th>
+                  <th className="px-2 py-2 font-semibold">SGC</th>
+                  <th className="px-2 py-2 font-semibold">KRN</th>
+                  <th className="px-2 py-2 font-semibold">TI</th>
+                  <th className="px-2 py-2 font-semibold">EA</th>
+                  <th className="px-2 py-2 font-semibold">KEN</th>
                 </tr>
               </thead>
               <tbody>
