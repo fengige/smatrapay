@@ -595,6 +595,74 @@ function PosPage() {
         </div>
       )}
 
+      {smsTarget && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Re-send receipt via SMS"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !resendSms.isPending) setSmsTarget(null);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <h3 className="font-semibold">Re-send receipt via SMS</h3>
+            <dl className="mt-3 space-y-2 text-sm">
+              {[
+                ["Meter", smsTarget.meter_number],
+                ["Token", smsTarget.token],
+                ["Units", smsTarget.units.toFixed(2)],
+                ["Amount", money(smsTarget.amount)],
+                ["Date", new Date(smsTarget.created_at).toLocaleString()],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{k}</dt>
+                  <dd className="text-right font-medium">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <label className="mt-4 block text-sm">
+              <span className="text-muted-foreground">Send to phone number</span>
+              <input
+                type="tel"
+                value={smsPhone}
+                onChange={(e) => setSmsPhone(e.target.value)}
+                placeholder="e.g. 0712 345 678"
+                autoFocus
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              />
+            </label>
+            <p className="mt-2 text-xs text-muted-foreground">
+              The original sale is not changed — the existing token receipt is queued for SMS
+              delivery to this number.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSmsTarget(null)}
+                disabled={resendSms.isPending}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => resendSms.mutate()}
+                disabled={resendSms.isPending || smsPhone.trim().length < 7}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {resendSms.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <MessageSquare className="size-4" />
+                )}
+                Send SMS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirming && meter && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
