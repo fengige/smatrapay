@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Download, Loader2, Plus, Upload } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -348,7 +348,14 @@ function BulkAddMetersPage() {
     >
       <div className="rounded-2xl border border-border bg-card p-5">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading options…</p>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-11 w-full animate-pulse rounded-xl bg-muted" />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
