@@ -13,3 +13,7 @@
 - [x] Audit/activity log for bulk price changes
 - [x] Price history timeline on meter details page
 - [x] CSV export of filtered meter prices + bulk price configuration
+
+- [x] POS shift report page (totals by payment method + CSV export)
+- [x] Reprint token receipts from POS recent sales
+- [x] Price Management: filter meters by property and by assigned user type (agent/landlord/vendor)

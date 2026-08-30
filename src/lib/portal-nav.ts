@@ -9,6 +9,7 @@ import {
   Grid2x2,
   Home,
   KeyRound,
+  Receipt,
   Settings,
   ShoppingCart,
   Store,
@@ -38,7 +39,10 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       items: [
         { label: "Dashboard", to: dashboardForRoles(roles), icon: Grid2x2 },
         ...(roles.includes("admin")
-          ? [{ label: "POS", to: "/pos", icon: ShoppingCart }]
+          ? [
+              { label: "POS", to: "/pos", icon: ShoppingCart },
+              { label: "POS Shift Report", to: "/pos-shift-report", icon: Receipt },
+            ]
           : []),
       ],
     },
