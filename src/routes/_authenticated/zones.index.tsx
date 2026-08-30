@@ -6,10 +6,12 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Eye,
   Loader2,
   MapPin,
   Pencil,
   Plus,
+  Power,
   RefreshCw,
   Route as RouteIcon,
   Search,
@@ -21,7 +23,9 @@ import { toast } from "sonner";
 import {
   addZone,
   deleteZone,
+  getZone,
   listZones,
+  setZoneStatus,
   updateZone,
   type ZoneRow,
 } from "@/lib/zones.functions";
