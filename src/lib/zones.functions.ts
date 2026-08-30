@@ -14,6 +14,7 @@ export type ZoneRow = {
   zone_id: number;
   zone_name: string;
   description: string | null;
+  status: "Active" | "Inactive";
   route_count: number;
   created_at: string;
   updated_at: string;
@@ -40,7 +41,7 @@ export const listZones = createServerFn({ method: "GET" })
 
     const { data: rows, error } = await supabase
       .from("zones")
-      .select("zone_id, zone_name, description, created_at, updated_at")
+      .select("zone_id, zone_name, description, status, created_at, updated_at")
       .order("zone_name", { ascending: true });
     if (error) throw new Error(error.message);
 
@@ -54,6 +55,7 @@ export const listZones = createServerFn({ method: "GET" })
       zone_id: r.zone_id,
       zone_name: r.zone_name ?? "",
       description: r.description ?? null,
+      status: r.status === "Inactive" ? "Inactive" : "Active",
       route_count: counts.get(r.zone_id) ?? 0,
       created_at: r.created_at,
       updated_at: r.updated_at,
