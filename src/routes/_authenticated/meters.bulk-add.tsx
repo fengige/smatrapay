@@ -654,23 +654,39 @@ function BulkAddMetersPage() {
               <tbody>
                 {rows.map((r, i) => {
                   const errs = rowErrors[i] ?? {};
-                  const inputFor = (key: keyof Row, label: string, numeric = false) => (
-                    <td className="px-2 py-1.5 align-top">
-                      <input
-                        aria-label={`${label} for meter ${i + 1}`}
-                        aria-invalid={submitted && Boolean(errs[key])}
-                        inputMode={numeric ? "numeric" : "text"}
-                        className={`${cell} ${submitted && errs[key] ? "border-destructive" : ""}`}
-                        value={r[key]}
-                        onChange={(e) => setRow(i, key, e.target.value)}
-                      />
-                      {submitted && errs[key] ? (
-                        <span className="mt-1 block text-[11px] text-destructive">{errs[key]}</span>
-                      ) : null}
-                    </td>
-                  );
+                  const warns = rowWarnings[i] ?? {};
+                  const rowHasError = Object.keys(errs).length > 0;
+                  const inputFor = (key: keyof Row, label: string, numeric = false) => {
+                    const touched = submitted || Boolean(r[key].trim());
+                    const err = touched ? errs[key] : undefined;
+                    const warn = !err && touched ? warns[key] : undefined;
+                    return (
+                      <td className="px-2 py-1.5 align-top">
+                        <input
+                          aria-label={`${label} for meter ${i + 1}`}
+                          aria-invalid={Boolean(err)}
+                          inputMode={numeric ? "numeric" : "text"}
+                          className={`${cell} ${
+                            err ? "border-destructive" : warn ? "border-amber-500" : ""
+                          }`}
+                          value={r[key]}
+                          onChange={(e) => setRow(i, key, e.target.value)}
+                        />
+                        {err ? (
+                          <span role="alert" className="mt-1 block text-[11px] text-destructive">
+                            {err}
+                          </span>
+                        ) : warn ? (
+                          <span className="mt-1 block text-[11px] text-amber-600">{warn}</span>
+                        ) : null}
+                      </td>
+                    );
+                  };
                   return (
-                    <tr key={i} className="border-b border-border/60">
+                    <tr
+                      key={i}
+                      className={`border-b border-border/60 ${rowHasError && submitted ? "bg-destructive/5" : ""}`}
+                    >
                       <td className="px-2 py-1.5 align-top text-muted-foreground">{i + 1}</td>
                       {inputFor("meter_number", "Meter number")}
                       {inputFor("serial_number", "Serial no")}
@@ -682,6 +698,7 @@ function BulkAddMetersPage() {
                     </tr>
                   );
                 })}
+
               </tbody>
             </table>
           </div>
