@@ -147,6 +147,7 @@ function MetersPage() {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<MeterRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [assigning, setAssigning] = useState<MeterRow | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
