@@ -817,6 +817,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          status: string
           updated_at: string
           zone_id: number
           zone_name: string
@@ -824,6 +825,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          status?: string
           updated_at?: string
           zone_id?: never
           zone_name: string
@@ -831,6 +833,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          status?: string
           updated_at?: string
           zone_id?: never
           zone_name?: string

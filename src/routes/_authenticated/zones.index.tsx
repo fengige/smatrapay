@@ -6,10 +6,12 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Eye,
   Loader2,
   MapPin,
   Pencil,
   Plus,
+  Power,
   RefreshCw,
   Route as RouteIcon,
   Search,
@@ -21,7 +23,9 @@ import { toast } from "sonner";
 import {
   addZone,
   deleteZone,
+  getZone,
   listZones,
+  setZoneStatus,
   updateZone,
   type ZoneRow,
 } from "@/lib/zones.functions";
@@ -63,6 +67,8 @@ function ZonesPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<ZoneRow | null>(null);
   const [deleting, setDeleting] = useState<ZoneRow | null>(null);
+  const [viewing, setViewing] = useState<ZoneRow | null>(null);
+  const [toggling, setToggling] = useState<ZoneRow | null>(null);
   const [importing, setImporting] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -82,6 +88,19 @@ function ZonesPage() {
       toast.success("Zone deleted");
     },
     onError: (e: Error) => toast.error(e.message || "Could not delete zone"),
+  });
+
+  const statusFn = useServerFn(setZoneStatus);
+  const statusMutation = useMutation({
+    mutationFn: ({ zone_id, status }: { zone_id: number; status: "Active" | "Inactive" }) =>
+      statusFn({ data: { zone_id, status } } as never),
+    onSuccess: async (_r, vars) => {
+      setToggling(null);
+      await queryClient.invalidateQueries({ queryKey: ["zones"] });
+      await queryClient.invalidateQueries({ queryKey: ["zone-audit-logs"] });
+      toast.success(vars.status === "Active" ? "Zone activated" : "Zone deactivated");
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not update zone status"),
   });
 
   const rows = useMemo(() => {
@@ -171,6 +190,7 @@ function ZonesPage() {
               <th className="w-8 px-2 py-3" />
               <th className="px-4 py-3 text-left">Zone</th>
               <th className="px-4 py-3 text-left">Description</th>
+              <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Routes</th>
               <th className="px-4 py-3 text-left">Created</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -179,14 +199,14 @@ function ZonesPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto size-5 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && !rows.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   No zones match your search. Use “Add Zone” to create one.
                 </td>
               </tr>
@@ -216,12 +236,44 @@ function ZonesPage() {
                 <td className="max-w-md px-4 py-3">
                   <span className="line-clamp-2">{z.description ?? "—"}</span>
                 </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                      z.status === "Active"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {z.status}
+                  </span>
+                </td>
                 <td className="px-4 py-3">{z.route_count}</td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(z.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setViewing(z)}
+                      aria-label={`View ${z.zone_name}`}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent/10"
+                    >
+                      <Eye className="size-3.5" /> View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setToggling(z)}
+                      aria-label={`${z.status === "Active" ? "Deactivate" : "Activate"} ${z.zone_name}`}
+                      className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium ${
+                        z.status === "Active"
+                          ? "border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                          : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                      }`}
+                    >
+                      <Power className="size-3.5" />
+                      {z.status === "Active" ? "Deactivate" : "Activate"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setEditing(z)}
@@ -241,7 +293,7 @@ function ZonesPage() {
               </tr>
               {expanded === z.zone_id && (
                 <tr key={`routes-${z.zone_id}`} className="border-t border-border/70 bg-muted/20">
-                  <td colSpan={6} className="p-3">
+                  <td colSpan={7} className="p-3">
                     <RouteManager zoneId={z.zone_id} zoneName={z.zone_name} />
                   </td>
                 </tr>
@@ -287,6 +339,54 @@ function ZonesPage() {
             toast.success(wasEdit ? "Zone updated" : "Zone added");
           }}
         />
+      )}
+
+      {viewing && <ZoneViewDialog zoneId={viewing.zone_id} onClose={() => setViewing(null)} />}
+
+      {toggling && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="zone-status-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setToggling(null);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <h2 id="zone-status-title" className="text-lg font-bold">
+              {toggling.status === "Active" ? "Deactivate" : "Activate"} “{toggling.zone_name}”?
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {toggling.status === "Active"
+                ? "Inactive zones stay visible in history but should not be used for new routes, streets, or field operations."
+                : "Activating this zone makes it available for routes, streets, and field operations again."}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setToggling(null)}
+                className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({
+                    zone_id: toggling.zone_id,
+                    status: toggling.status === "Active" ? "Inactive" : "Active",
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {statusMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                {toggling.status === "Active" ? "Deactivate zone" : "Activate zone"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {deleting && (
@@ -443,6 +543,132 @@ function ZoneDialog({
             {isEdit ? "Save changes" : "Add zone"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ZoneViewDialog({ zoneId, onClose }: { zoneId: number; onClose: () => void }) {
+  const fetchZone = useServerFn(getZone);
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["zone", zoneId],
+    queryFn: () => fetchZone({ data: { zone_id: zoneId } } as never),
+  });
+  const zone = data?.zone;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="zone-view-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-lg">
+        {isLoading && (
+          <div className="grid place-items-center py-16">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {isError && (
+          <p className="py-10 text-center text-sm text-destructive">
+            {(error as Error)?.message || "Could not load zone"}
+          </p>
+        )}
+        {zone && (
+          <>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 id="zone-view-title" className="text-lg font-bold">
+                  {zone.zone_name}
+                </h2>
+                <p className="text-xs text-muted-foreground">Zone #{zone.zone_id}</p>
+              </div>
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                  zone.status === "Active"
+                    ? "bg-emerald-500/10 text-emerald-600"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {zone.status}
+              </span>
+            </div>
+
+            <p className="mt-3 text-sm text-muted-foreground">
+              {zone.description || "No description provided."}
+            </p>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-border p-4">
+                <div className="text-xs text-muted-foreground">Routes</div>
+                <div className="mt-1 text-xl font-bold">{zone.route_count}</div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <div className="text-xs text-muted-foreground">Streets</div>
+                <div className="mt-1 text-xl font-bold">{zone.street_count}</div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <div className="text-xs text-muted-foreground">Created</div>
+                <div className="mt-1 text-sm font-semibold">
+                  {new Date(zone.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+
+            <h3 className="mt-5 text-sm font-semibold">Routes in this zone</h3>
+            <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border">
+              {!zone.routes.length && (
+                <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  No routes yet. Expand the zone in the table to add one.
+                </p>
+              )}
+              {zone.routes.map((r) => (
+                <div
+                  key={r.route_id}
+                  className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5 text-sm first:border-t-0"
+                >
+                  <div>
+                    <span className="font-medium">{r.route_code}</span>
+                    <span className="ml-2 text-muted-foreground">{r.route_name}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>{r.street_count} streets</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 font-medium ${
+                        r.status === "Active"
+                          ? "bg-emerald-500/10 text-emerald-600"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {r.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Close
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

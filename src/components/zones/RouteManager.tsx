@@ -1,21 +1,34 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ChevronRight, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
   addRoute,
   addStreet,
+  bulkDeleteStreets,
   deleteRoute,
   deleteStreet,
   listRoutes,
   listStreets,
+  setRouteStatus,
   updateRoute,
   updateStreet,
   type RouteRow,
   type StreetRow,
 } from "@/lib/zones.functions";
+import { StreetImportDialog } from "@/components/zones/StreetImportDialog";
 
 const field = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm";
 const btn =
@@ -27,6 +40,7 @@ export function RouteManager({ zoneId, zoneName }: { zoneId: number; zoneName: s
   const queryClient = useQueryClient();
   const fetchRoutes = useServerFn(listRoutes);
   const removeRoute = useServerFn(deleteRoute);
+  const toggleStatus = useServerFn(setRouteStatus);
 
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -59,6 +73,18 @@ export function RouteManager({ zoneId, zoneName }: { zoneId: number; zoneName: s
       toast.success("Route deleted");
     },
     onError: (e: Error) => toast.error(e.message || "Could not delete route"),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: (vars: { route_id: number; status: "Active" | "Inactive" }) =>
+      toggleStatus({ data: vars } as never),
+    onSuccess: async (_r, vars) => {
+      await invalidate();
+      toast.success(
+        vars.status === "Active" ? "Route activated" : "Route deactivated",
+      );
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not update route status"),
   });
 
   return (
@@ -181,6 +207,39 @@ export function RouteManager({ zoneId, zoneName }: { zoneId: number; zoneName: s
                       }}
                     >
                       <Pencil className="size-3.5" /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={`${btn} ${
+                        r.status === "Active"
+                          ? "border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                          : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                      }`}
+                      disabled={statusMutation.isPending}
+                      aria-label={
+                        r.status === "Active"
+                          ? `Deactivate route ${r.route_code}`
+                          : `Activate route ${r.route_code}`
+                      }
+                      onClick={() => {
+                        const next = r.status === "Active" ? "Inactive" : "Active";
+                        if (
+                          window.confirm(
+                            next === "Inactive"
+                              ? `Deactivate route ${r.route_code}? It will remain listed but flagged inactive.`
+                              : `Activate route ${r.route_code}?`,
+                          )
+                        ) {
+                          statusMutation.mutate({ route_id: r.route_id, status: next });
+                        }
+                      }}
+                    >
+                      {statusMutation.isPending ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Power className="size-3.5" />
+                      )}
+                      {r.status === "Active" ? "Deactivate" : "Activate"}
                     </button>
                     <button
                       type="button"
@@ -336,10 +395,14 @@ function StreetsManager({
   const create = useServerFn(addStreet);
   const edit = useServerFn(updateStreet);
   const remove = useServerFn(deleteStreet);
+  const bulkRemove = useServerFn(bulkDeleteStreets);
 
   const [q, setQ] = useState("");
   const [form, setForm] = useState({ street_name: "", postal_code: "" });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["route-streets", routeId],
@@ -403,6 +466,37 @@ function StreetsManager({
     onError: (e: Error) => toast.error(e.message || "Could not delete street"),
   });
 
+  const selectedStreets = streets.filter((s) => selected.has(s.street_id));
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) =>
+      bulkRemove({ data: { route_id: routeId, street_ids: ids } } as never),
+    onSuccess: async (_r, ids) => {
+      setSelected(new Set());
+      setConfirmBulkDelete(false);
+      await invalidate();
+      toast.success(`${ids.length} street${ids.length === 1 ? "" : "s"} deleted`);
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not delete selected streets"),
+  });
+
+  const toggleSelect = (id: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const allVisibleSelected = rows.length > 0 && rows.every((s) => selected.has(s.street_id));
+  const toggleSelectAll = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) rows.forEach((s) => next.delete(s.street_id));
+      else rows.forEach((s) => next.add(s.street_id));
+      return next;
+    });
+
   const canSave =
     form.street_name.trim().length >= 2 && !nameError && !postalError && !duplicate;
 
@@ -412,15 +506,35 @@ function StreetsManager({
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Streets on {routeCode}
         </h4>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search streets"
-            aria-label={`Search streets on ${routeCode}`}
-            className="h-9 w-48 rounded-lg border border-border bg-background pl-8 pr-3 text-xs"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          {selected.size > 0 && (
+            <button
+              type="button"
+              className={`${btn} border-destructive/40 text-destructive hover:bg-destructive/10`}
+              disabled={bulkDeleteMutation.isPending}
+              onClick={() => setConfirmBulkDelete(true)}
+            >
+              {bulkDeleteMutation.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="size-3.5" />
+              )}
+              Delete selected ({selected.size})
+            </button>
+          )}
+          <button type="button" className={btn} onClick={() => setShowImport(true)}>
+            <Upload className="size-3.5" /> Import CSV
+          </button>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search streets"
+              aria-label={`Search streets on ${routeCode}`}
+              className="h-9 w-48 rounded-lg border border-border bg-background pl-8 pr-3 text-xs"
+            />
+          </div>
         </div>
       </div>
 
@@ -480,6 +594,14 @@ function StreetsManager({
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr>
+              <th className="w-8 px-2 py-2">
+                <input
+                  type="checkbox"
+                  aria-label={allVisibleSelected ? "Deselect all streets" : "Select all streets"}
+                  checked={allVisibleSelected}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="px-3 py-2 text-left">Street</th>
               <th className="px-3 py-2 text-left">Postal code</th>
               <th className="px-3 py-2 text-right">Actions</th>
@@ -488,20 +610,28 @@ function StreetsManager({
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={3} className="px-3 py-5 text-center text-muted-foreground">
+                <td colSpan={4} className="px-3 py-5 text-center text-muted-foreground">
                   <Loader2 className="mx-auto size-4 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && !rows.length && (
               <tr>
-                <td colSpan={3} className="px-3 py-5 text-center text-xs text-muted-foreground">
+                <td colSpan={4} className="px-3 py-5 text-center text-xs text-muted-foreground">
                   No streets recorded for this route yet.
                 </td>
               </tr>
             )}
             {rows.map((s) => (
               <tr key={s.street_id} className="border-t border-border/70">
+                <td className="px-2 py-2">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select street ${s.street_name}`}
+                    checked={selected.has(s.street_id)}
+                    onChange={() => toggleSelect(s.street_id)}
+                  />
+                </td>
                 <td className="px-3 py-2">{s.street_name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{s.postal_code ?? "—"}</td>
                 <td className="px-3 py-2">
@@ -537,6 +667,72 @@ function StreetsManager({
           </tbody>
         </table>
       </div>
+
+      {showImport && (
+        <StreetImportDialog
+          routeId={routeId}
+          routeCode={routeCode}
+          onClose={() => setShowImport(false)}
+          onImported={async () => {
+            await invalidate();
+          }}
+        />
+      )}
+
+      {confirmBulkDelete && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-delete-streets-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !bulkDeleteMutation.isPending) {
+              setConfirmBulkDelete(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <h2 id="bulk-delete-streets-title" className="text-lg font-bold">
+              Delete {selectedStreets.length} street{selectedStreets.length === 1 ? "" : "s"}?
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The following streets will be permanently removed from route {routeCode}. This cannot
+              be undone.
+            </p>
+            <ul className="mt-3 max-h-48 list-disc overflow-y-auto rounded-lg border border-border p-3 pl-7 text-sm">
+              {selectedStreets.map((s) => (
+                <li key={s.street_id}>
+                  {s.street_name}
+                  {s.postal_code ? (
+                    <span className="text-muted-foreground"> ({s.postal_code})</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className={btn}
+                disabled={bulkDeleteMutation.isPending}
+                onClick={() => setConfirmBulkDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={bulkDeleteMutation.isPending || !selectedStreets.length}
+                onClick={() =>
+                  bulkDeleteMutation.mutate(selectedStreets.map((s) => s.street_id))
+                }
+                className="inline-flex items-center gap-2 rounded-lg bg-destructive px-3.5 py-2 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {bulkDeleteMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Delete {selectedStreets.length} street{selectedStreets.length === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ export type ZoneRow = {
   zone_id: number;
   zone_name: string;
   description: string | null;
+  status: "Active" | "Inactive";
   route_count: number;
   created_at: string;
   updated_at: string;
@@ -40,7 +41,7 @@ export const listZones = createServerFn({ method: "GET" })
 
     const { data: rows, error } = await supabase
       .from("zones")
-      .select("zone_id, zone_name, description, created_at, updated_at")
+      .select("zone_id, zone_name, description, status, created_at, updated_at")
       .order("zone_name", { ascending: true });
     if (error) throw new Error(error.message);
 
@@ -54,6 +55,7 @@ export const listZones = createServerFn({ method: "GET" })
       zone_id: r.zone_id,
       zone_name: r.zone_name ?? "",
       description: r.description ?? null,
+      status: r.status === "Inactive" ? "Inactive" : "Active",
       route_count: counts.get(r.zone_id) ?? 0,
       created_at: r.created_at,
       updated_at: r.updated_at,
@@ -93,6 +95,87 @@ export const updateZone = createServerFn({ method: "POST" })
       if (error.code === "23505") throw new Error("A zone with this name already exists");
       throw new Error(error.message);
     }
+    return { ok: true };
+  });
+
+export type ZoneDetail = ZoneRow & {
+  street_count: number;
+  routes: { route_id: number; route_code: string; route_name: string; status: string; street_count: number }[];
+};
+
+export const getZone = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: row, error } = await supabase
+      .from("zones")
+      .select("zone_id, zone_name, description, status, created_at, updated_at")
+      .eq("zone_id", data.zone_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Zone not found");
+
+    const { data: routeRows } = await supabase
+      .from("routes")
+      .select("route_id, route_code, route_name, status")
+      .eq("zone_id", data.zone_id)
+      .order("route_code", { ascending: true });
+
+    const routes = ((routeRows ?? []) as any[]).map((r) => ({
+      route_id: r.route_id,
+      route_code: r.route_code ?? "",
+      route_name: r.route_name ?? "",
+      status: r.status ?? "Active",
+      street_count: 0,
+    }));
+
+    const ids = routes.map((r) => r.route_id);
+    const counts = new Map<number, number>();
+    if (ids.length) {
+      const { data: streetRows } = await supabase
+        .from("streets")
+        .select("route_id")
+        .in("route_id", ids);
+      for (const s of (streetRows ?? []) as any[]) {
+        counts.set(s.route_id, (counts.get(s.route_id) ?? 0) + 1);
+      }
+    }
+    for (const r of routes) r.street_count = counts.get(r.route_id) ?? 0;
+
+    const zone: ZoneDetail = {
+      zone_id: (row as any).zone_id,
+      zone_name: (row as any).zone_name ?? "",
+      description: (row as any).description ?? null,
+      status: (row as any).status === "Inactive" ? "Inactive" : "Active",
+      route_count: routes.length,
+      street_count: routes.reduce((s, r) => s + r.street_count, 0),
+      created_at: (row as any).created_at,
+      updated_at: (row as any).updated_at,
+      routes,
+    };
+    return { zone };
+  });
+
+export const setZoneStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        zone_id: z.number().int().positive(),
+        status: z.enum(["Active", "Inactive"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { error } = await context.supabase
+      .from("zones")
+      .update({ status: data.status } as never)
+      .eq("zone_id", data.zone_id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
@@ -303,6 +386,139 @@ export const deleteStreet = createServerFn({ method: "POST" })
       .from("streets")
       .delete()
       .eq("street_id", data.street_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkDeleteStreets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        route_id: z.number().int().positive(),
+        street_ids: z.array(z.number().int().positive()).min(1).max(1000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { error } = await context.supabase
+      .from("streets")
+      .delete()
+      .eq("route_id", data.route_id)
+      .in("street_id", data.street_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: data.street_ids.length };
+  });
+
+export type StreetImportRowResult = {
+  row: number;
+  street_name: string;
+  status: "created" | "skipped" | "failed";
+  message?: string;
+};
+
+const streetImportInput = z.object({
+  route_id: z.number().int().positive(),
+  skipExisting: z.boolean().default(true),
+  rows: z
+    .array(z.object({ row: z.number().int(), street_name: z.string(), postal_code: z.string() }))
+    .min(1, "No rows to import")
+    .max(1000, "A maximum of 1000 rows can be imported at once"),
+});
+
+export const importStreets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => streetImportInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: existingRows } = await supabase
+      .from("streets")
+      .select("street_name")
+      .eq("route_id", data.route_id);
+    const existing = new Set(
+      ((existingRows ?? []) as any[]).map((r) => String(r.street_name).trim().toLowerCase()),
+    );
+    const seen = new Set<string>();
+    const results: StreetImportRowResult[] = [];
+
+    for (const r of data.rows) {
+      const name = r.street_name.trim();
+      const key = name.toLowerCase();
+      if (name.length < 2) {
+        results.push({ row: r.row, street_name: name, status: "failed", message: "Street name must be at least 2 characters" });
+        continue;
+      }
+      if (name.length > 150) {
+        results.push({ row: r.row, street_name: name, status: "failed", message: "Street name exceeds 150 characters" });
+        continue;
+      }
+      if (r.postal_code.trim().length > 20) {
+        results.push({ row: r.row, street_name: name, status: "failed", message: "Postal code exceeds 20 characters" });
+        continue;
+      }
+      if (seen.has(key)) {
+        results.push({ row: r.row, street_name: name, status: "failed", message: "Duplicate street name in the file" });
+        continue;
+      }
+      seen.add(key);
+      if (existing.has(key)) {
+        results.push({
+          row: r.row,
+          street_name: name,
+          status: data.skipExisting ? "skipped" : "failed",
+          message: "Street already exists on this route",
+        });
+        continue;
+      }
+
+      const { error } = await supabase
+        .from("streets")
+        .insert({ route_id: data.route_id, street_name: name, postal_code: r.postal_code.trim() || null } as never);
+      if (error) {
+        results.push({ row: r.row, street_name: name, status: "failed", message: error.message });
+        continue;
+      }
+      existing.add(key);
+      results.push({ row: r.row, street_name: name, status: "created" });
+    }
+
+    return {
+      results,
+      created: results.filter((r) => r.status === "created").length,
+      skipped: results.filter((r) => r.status === "skipped").length,
+      failed: results.filter((r) => r.status === "failed").length,
+    };
+  });
+
+export const setRouteStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        route_id: z.number().int().positive(),
+        status: z.enum(["Active", "Inactive"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { data: existing, error: findError } = await context.supabase
+      .from("routes")
+      .select("route_id, status")
+      .eq("route_id", data.route_id)
+      .maybeSingle();
+    if (findError) throw new Error(findError.message);
+    if (!existing) throw new Error("Route not found");
+    if ((existing as any).status === data.status) {
+      throw new Error(`Route is already ${data.status.toLowerCase()}`);
+    }
+    const { error } = await context.supabase
+      .from("routes")
+      .update({ status: data.status } as never)
+      .eq("route_id", data.route_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
