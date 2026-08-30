@@ -850,6 +850,23 @@ function MetersPage() {
           }}
         />
       )}
+
+      {creating && (
+        <MeterDialog
+          meter={null}
+          landlords={landlords}
+          agents={agents}
+          units={unitOptions}
+          suppliers={supplierOptions}
+          existing={meters}
+          onClose={() => setCreating(false)}
+          onSaved={async () => {
+            setCreating(false);
+            await queryClient.invalidateQueries({ queryKey: ["meters"] });
+            toast.success("Meter added");
+          }}
+        />
+      )}
     </PortalLayout>
   );
 }
