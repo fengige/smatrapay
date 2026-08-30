@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createUserSchema } from "@/lib/user-schema";
+import { assignmentHistorySchema } from "@/lib/assignment-history";
+import { buildAssignmentHistory } from "@/lib/assignment-history.server";
+
 
 /** Agents never carry residency details, so those fields are dropped entirely. */
 const agentCreateSchema = createUserSchema.omit({
