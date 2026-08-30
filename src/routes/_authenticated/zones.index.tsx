@@ -90,6 +90,19 @@ function ZonesPage() {
     onError: (e: Error) => toast.error(e.message || "Could not delete zone"),
   });
 
+  const statusFn = useServerFn(setZoneStatus);
+  const statusMutation = useMutation({
+    mutationFn: ({ zone_id, status }: { zone_id: number; status: "Active" | "Inactive" }) =>
+      statusFn({ data: { zone_id, status } } as never),
+    onSuccess: async (_r, vars) => {
+      setToggling(null);
+      await queryClient.invalidateQueries({ queryKey: ["zones"] });
+      await queryClient.invalidateQueries({ queryKey: ["zone-audit-logs"] });
+      toast.success(vars.status === "Active" ? "Zone activated" : "Zone deactivated");
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not update zone status"),
+  });
+
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return zones;
