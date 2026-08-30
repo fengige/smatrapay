@@ -17,6 +17,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
+import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
 import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_authenticated/price-management'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
@@ -93,6 +94,11 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
 const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
   id: '/landlords',
   path: '/landlords',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
+  id: '/pos',
+  path: '/pos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPriceManagementRoute =
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRoute
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
+  '/pos': typeof AuthenticatedPosRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRoute
+  '/pos': typeof AuthenticatedPosRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
+  '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/price-management': typeof AuthenticatedPriceManagementRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
@@ -463,6 +472,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/agents'
     | '/landlords'
+    | '/pos'
     | '/price-management'
     | '/properties'
     | '/residents'
@@ -509,6 +519,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/agents'
+    | '/pos'
     | '/price-management'
     | '/service-providers'
     | '/token-management'
@@ -553,6 +564,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/agents'
     | '/_authenticated/landlords'
+    | '/_authenticated/pos'
     | '/_authenticated/price-management'
     | '/_authenticated/properties'
     | '/_authenticated/residents'
@@ -660,6 +672,13 @@ declare module '@tanstack/react-router' {
       path: '/landlords'
       fullPath: '/landlords'
       preLoaderRoute: typeof AuthenticatedLandlordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pos': {
+      id: '/_authenticated/pos'
+      path: '/pos'
+      fullPath: '/pos'
+      preLoaderRoute: typeof AuthenticatedPosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/price-management': {
@@ -1022,6 +1041,7 @@ const AuthenticatedUsersRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
+  AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedPriceManagementRoute: typeof AuthenticatedPriceManagementRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
@@ -1046,6 +1066,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
+  AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedPriceManagementRoute: AuthenticatedPriceManagementRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
