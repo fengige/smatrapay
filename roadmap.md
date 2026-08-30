@@ -21,3 +21,4 @@
 - [x] Create Zones table with RLS and admin policies
 - [x] Create Routes table linked to Zones with RLS and admin policies
 - [x] Create Streets table linked to Routes with RLS and admin policies
+- [x] Zone page: inline Route Management, Streets Management, CSV import, audit viewer

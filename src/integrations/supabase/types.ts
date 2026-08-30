@@ -783,6 +783,36 @@ export type Database = {
         }
         Relationships: []
       }
+      zone_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          zone_id: number | null
+          zone_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          zone_id?: number | null
+          zone_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          zone_id?: number | null
+          zone_name?: string | null
+        }
+        Relationships: []
+      }
       zones: {
         Row: {
           created_at: string
