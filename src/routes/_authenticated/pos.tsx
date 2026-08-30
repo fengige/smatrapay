@@ -59,6 +59,13 @@ const PAYMENT_METHODS = [
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["id"];
 
+/** Badge colours for an SMS delivery attempt result. */
+function smsBadgeClass(status: SmsDeliveryStatus) {
+  if (status === "sent") return "bg-emerald-500/15 text-emerald-500";
+  if (status === "failed") return "bg-destructive/15 text-destructive";
+  return "bg-amber-500/15 text-amber-500";
+}
+
 function PosPage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
