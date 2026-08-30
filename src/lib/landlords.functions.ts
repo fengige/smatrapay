@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createUserSchema } from "@/lib/user-schema";
+import { assignmentHistorySchema } from "@/lib/assignment-history";
 
 /** Landlords never carry residency details, so those fields are dropped entirely. */
 const landlordCreateSchema = createUserSchema.omit({
@@ -21,6 +22,7 @@ const landlordUpdateSchema = z.object({
   bio: z.string().trim().max(1000).nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
   status: z.enum(["active", "inactive", "suspended", "pending"]).optional(),
+  profile_image: z.string().trim().max(1000).nullable().optional(),
 });
 
 export const createLandlord = createServerFn({ method: "POST" })
@@ -85,4 +87,13 @@ export const updateLandlord = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     return { ok: true };
+  });
+
+/** Assignment history: who registered/unassigned which meter to this landlord and when. */
+export const listLandlordAssignmentHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => assignmentHistorySchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { buildAssignmentHistory } = await import("@/lib/assignment-history.server");
+    return buildAssignmentHistory(context.supabase, "landlord_id", data);
   });

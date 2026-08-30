@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
+import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 
 export const Route = createFileRoute("/_authenticated/vendors/$id/")({
   head: () => ({
@@ -350,17 +351,13 @@ function VendorDetailPage() {
             <aside className="space-y-5">
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex flex-col items-center text-center">
-                  {vendor.profile_image ? (
-                    <img
-                      src={vendor.profile_image}
-                      alt={vendor.name ?? "Vendor avatar"}
-                      className="size-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                      {initials}
-                    </div>
-                  )}
+                  <ProfileImageEditor
+                    kind="vendor"
+                    userId={id}
+                    imageUrl={vendor.profile_image ?? null}
+                    name={vendor.name ?? null}
+                    initials={initials}
+                  />
                   <h2 className="mt-4 text-lg font-bold text-foreground">
                     {vendor.name ?? "Unnamed vendor"}
                   </h2>

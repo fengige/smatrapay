@@ -905,6 +905,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_meter_assignment: {
+        Args: {
+          p_action: string
+          p_holder: string
+          p_holder_id: string
+          p_meter_ids: string[]
+        }
+        Returns: Json
+      }
       bulk_add_meters: { Args: { p_payload: Json }; Returns: Json }
       has_role: {
         Args: {

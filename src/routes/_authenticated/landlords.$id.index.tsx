@@ -29,6 +29,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AssignmentHistorySection } from "@/components/AssignmentHistorySection";
+import { ProfileImageEditor } from "@/components/ProfileImageEditor";
+
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
@@ -377,17 +380,13 @@ function LandlordDetailPage() {
             <aside className="space-y-5">
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex flex-col items-center text-center">
-                  {landlord.profile_image ? (
-                    <img
-                      src={landlord.profile_image}
-                      alt={landlord.name ?? "Landlord avatar"}
-                      className="size-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                      {initials}
-                    </div>
-                  )}
+                  <ProfileImageEditor
+                    kind="landlord"
+                    userId={id}
+                    imageUrl={landlord.profile_image ?? null}
+                    name={landlord.name ?? null}
+                    initials={initials}
+                  />
                   <h2 className="mt-4 text-lg font-bold text-foreground">
                     {landlord.name ?? "Unnamed landlord"}
                   </h2>
@@ -708,11 +707,7 @@ function LandlordDetailPage() {
 
               {tab === "meters" && (
                 <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
-                  <EmptyTabState
-                    icon={<Gauge className="size-8" />}
-                    title="No meters assigned"
-                    description="Water and electricity meters linked to this landlord's unit will appear here."
-                  />
+                  <AssignmentHistorySection kind="landlord" ownerId={id} />
                 </Section>
               )}
 

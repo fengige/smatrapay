@@ -1,38 +1,5 @@
-- [x] Lock/retry strategy for bulk meter duplicate handling (Skip/Update under concurrency)
-- [x] Confirmation step + success/error feedback on meter assignment dialog
-- [x] Empty-state and loading skeleton for the “Add Meters” flow
-- [x] Activity timeline entries for meter CSV imports and edits on meter details page
-- [x] Clear import error report with row-level failure reasons and actionable messages
-- [x] Duplicate detection during CSV import with summary of skipped/updated rows
-- [x] Bulk Add Meters: made SGC/KRN/TI/EA/KEN optional (client + server validation)
-- [x] Bulk assign meters: review step before confirming
-- [x] Audit/activity log entry for bulk assignments (meters trigger)
-- [x] "Unassign from units" bulk action
-- [x] Token Management page (meter search + token actions)
-- [x] Price Management page: bulk meter price-per-unit configuration
-- [x] Audit/activity log for bulk price changes
-- [x] Price history timeline on meter details page
-- [x] CSV export of filtered meter prices + bulk price configuration
+# Roadmap
 
-- [x] POS shift report page (totals by payment method + CSV export)
-- [x] Reprint token receipts from POS recent sales
-- [x] Price Management: filter meters by property and by assigned user type (agent/landlord/vendor)
-- [x] Property add page: default State/County to Nairobi
-- [x] Create Zones table with RLS and admin policies
-- [x] Create Routes table linked to Zones with RLS and admin policies
-- [x] Create Streets table linked to Routes with RLS and admin policies
-- [x] Zone page: inline Route Management, Streets Management, CSV import, audit viewer
-- [x] Zones: View + activate/deactivate actions
-- [x] Streets CSV import with row-level validation on Route section
-- [x] Bulk street create + bulk delete with checkboxes and confirmation
-- [x] Route Active/Inactive toggle in Zone page with validation
-
-- [x] Property CSV import with zone/route/street row validation
-- [x] Show Zone/Route/Street names in property table and detail views
-
-- [x] Vendor management pages (list, details, edit, add)
-- [x] Agent management pages (list, details, edit, add)
-
-- [x] Vendor details: meter assignment UI (register/unassign meters to a vendor)
-- [x] Agent details: meter assignment UI (register/unassign meters to an agent)
-- [x] Agent/vendor meter assignment: history, richer picker filters, bulk result summary, conflict validation
+- [x] Transactional locking for meter assignment mutations
+- [x] Pagination + sorting on agent/vendor/landlord assignment history
+- [x] Edit profile image on agent, vendor and landlord detail pages
