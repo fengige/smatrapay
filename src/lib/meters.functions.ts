@@ -81,7 +81,10 @@ const meterInput = z.object({
   agent_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
   meter_number: identifier("Meter number"),
-  serial_number: identifier("Serial number"),
+  serial_number: z
+    .union([identifier("Serial number"), z.literal("")])
+    .optional()
+    .transform((v) => (v ? v.trim() : undefined)),
   type: z.enum(["electricity", "water", "gas"]),
   initial_reading: numOrZero,
   price_per_unit: numOrZero,
