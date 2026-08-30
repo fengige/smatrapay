@@ -1068,10 +1068,10 @@ export const getMeter = createServerFn({ method: "GET" })
       agent_name: person(m.agent_id ?? null)?.name ?? null,
       unit_id: m.unit_id ?? null,
       unit_label: unit
-      property_id: unit?.property_id ?? null,
-      property_name: unit?.property_name ?? null,
         ? `${unit.property_name ? `${unit.property_name} · ` : ""}Unit ${unit.unit_number}`
         : null,
+      property_id: unit?.property_id ?? null,
+      property_name: unit?.property_name ?? null,
       meter_number: m.meter_number ?? "",
       serial_number: m.serial_number ?? "",
       type: (m.type ?? "").toLowerCase(),
