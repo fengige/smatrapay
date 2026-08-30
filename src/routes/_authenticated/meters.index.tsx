@@ -147,6 +147,7 @@ function MetersPage() {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<MeterRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [assigning, setAssigning] = useState<MeterRow | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<null | "delete" | "deactivate" | "activate">(null);
@@ -339,10 +340,17 @@ function MetersPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="size-4" /> Add Meter
+          </button>
+          <button
+            type="button"
             onClick={() => navigate({ to: "/meters/bulk-add" })}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
-            <Plus className="size-4" /> Add Meters
+            <Plus className="size-4" /> Bulk Add Meters
           </button>
           <button
             type="button"
@@ -539,7 +547,7 @@ function MetersPage() {
                 ) : paged.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
-                      No meters match your filters. Use “Add Meters” or “Import CSV” to register meters.
+                      No meters match your filters. Use “Add Meter”, “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
                 ) : (
@@ -839,6 +847,23 @@ function MetersPage() {
             setEditing(null);
             await queryClient.invalidateQueries({ queryKey: ["meters"] });
             toast.success("Meter updated");
+          }}
+        />
+      )}
+
+      {creating && (
+        <MeterDialog
+          meter={null}
+          landlords={landlords}
+          agents={agents}
+          units={unitOptions}
+          suppliers={supplierOptions}
+          existing={meters}
+          onClose={() => setCreating(false)}
+          onSaved={async () => {
+            setCreating(false);
+            await queryClient.invalidateQueries({ queryKey: ["meters"] });
+            toast.success("Meter added");
           }}
         />
       )}
@@ -2061,7 +2086,7 @@ function BulkAddMetersDialog({
     >
       <div className="my-8 w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg">
         <h2 id="add-meters-title" className="text-lg font-bold">
-          Add Meters
+          Bulk Add Meters
         </h2>
         <p className="text-sm text-muted-foreground">
           Pick a supplier and owner, choose how many meters, then fill in each meter row.
