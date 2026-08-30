@@ -308,6 +308,8 @@ function MeterDetailPage() {
 
           <MeterAssignmentHistory meterId={meterId} currentLabel={meter.unit_label ?? null} />
 
+          <MeterPriceHistory meterId={meterId} currentPrice={meter.price_per_unit} />
+
           <MeterHistoryPanel meterId={meterId} />
 
           {showAssign && (
