@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -131,6 +131,33 @@ function BulkAddMetersPage() {
     const size = Math.min(500, n);
     setRows((prev) => Array.from({ length: size }, (_, i) => prev[i] ?? emptyRow()));
   };
+
+  const isDirty =
+    Boolean(meterType || supplierId || ownerType || ownerId) ||
+    rows.some((r) => Object.values(r).some((v) => v.trim()));
+
+  const attemptLeave = () => {
+    if (mutation.isPending) return;
+    if (
+      isDirty &&
+      !result &&
+      !window.confirm("You have unsaved meter entries. Leave this page and discard them?")
+    )
+      return;
+    void navigate({
+      to: "/meters",
+      search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
+    });
+  };
+
+  useEffect(() => {
+    if (!isDirty || result) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty, result]);
 
   const setRow = (i: number, key: keyof Row, value: string) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
@@ -342,13 +369,13 @@ function BulkAddMetersPage() {
               e.target.value = "";
             }}
           />
-          <Link
-            to="/meters"
-            search={{ page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" }}
+          <button
+            type="button"
+            onClick={attemptLeave}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
             <ArrowLeft className="size-4" /> Back
-          </Link>
+          </button>
         </div>
       }
     >
@@ -645,13 +672,13 @@ function BulkAddMetersPage() {
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-        <Link
-          to="/meters"
-            search={{ page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" }}
+        <button
+          type="button"
+          onClick={attemptLeave}
           className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent/10"
         >
           Cancel
-        </Link>
+        </button>
         <button
           type="button"
           onClick={openReview}

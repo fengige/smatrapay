@@ -898,11 +898,29 @@ const IDENTIFIER_RE = /^[A-Za-z0-9][A-Za-z0-9/_-]*$/;
 function identifierError(label: string, value: string) {
   const v = value.trim();
   if (!v) return `${label} is required`;
-  if (v.length < 4) return `${label} must be at least 4 characters`;
-  if (v.length > 64) return `${label} must be at most 64 characters`;
-  if (!IDENTIFIER_RE.test(v)) return `${label} may only contain letters, numbers, - _ /`;
+  if (v.length < 4) return `${label} must be at least 4 characters (you entered ${v.length})`;
+  if (v.length > 64) return `${label} must be at most 64 characters (you entered ${v.length})`;
+  if (!IDENTIFIER_RE.test(v))
+    return `${label} may only contain letters, numbers, hyphens, underscores and slashes`;
   return null;
 }
+
+function decimalError(label: string, value: string) {
+  const v = value.trim();
+  if (!v) return `${label} is required`;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return `${label} must be a number`;
+  if (n < 0) return `${label} cannot be negative`;
+  return null;
+}
+
+function stsFieldError(label: string, value: string) {
+  const v = value.trim();
+  if (!v) return null;
+  if (!/^\d+$/.test(v)) return `${label} must be a whole number (digits only)`;
+  return null;
+}
+
 
 function MeterDialog({
   meter,
@@ -949,14 +967,55 @@ function MeterDialog({
     ea: meter?.ea != null ? String(meter.ea) : "",
     ken: meter?.ken != null ? String(meter.ken) : "",
   });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  const touch = (key: string) => setTouched((prev) => ({ ...prev, [key]: true }));
+
+  const initialSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        vendorId,
+        supplierId,
+        landlordId,
+        agentId,
+        unitId,
+        meterNumber,
+        serialNumber,
+        meterType,
+        initialReading,
+        pricePerUnit,
+        status,
+        sts,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const isDirty =
+    JSON.stringify({
+      vendorId,
+      supplierId,
+      landlordId,
+      agentId,
+      unitId,
+      meterNumber,
+      serialNumber,
+      meterType,
+      initialReading,
+      pricePerUnit,
+      status,
+      sts,
+    }) !== initialSnapshot;
+
+  const attemptClose = (pending: boolean) => {
+    if (pending) return;
+    if (
+      isDirty &&
+      !window.confirm("You have unsaved changes. Discard them and close this dialog?")
+    )
+      return;
+    onClose();
+  };
 
   const others = useMemo(
     () => existing.filter((m) => m.id !== meter?.id),
@@ -983,12 +1042,38 @@ function MeterDialog({
     return null;
   }, [serialNumber, meterNumber, others]);
 
-  const vendorError = vendorId.trim() ? null : "Vendor is required";
-  const hasErrors = Boolean(meterNumberError || serialNumberError || vendorError);
+  const vendorError = vendorId.trim() ? null : "Vendor is required — enter the meter vendor code";
+  const priceError = useMemo(
+    () => decimalError("Price per unit", pricePerUnit),
+    [pricePerUnit],
+  );
+  const readingError = useMemo(
+    () => decimalError("Initial reading", initialReading),
+    [initialReading],
+  );
+  const stsErrors = useMemo(
+    () => ({
+      sgc: stsFieldError("SGC", sts.sgc),
+      krn: stsFieldError("KRN", sts.krn),
+      ti: stsFieldError("TI", sts.ti),
+      ea: stsFieldError("EA", sts.ea),
+      ken: stsFieldError("KEN", sts.ken),
+    }),
+    [sts],
+  );
+  const firstStsError = Object.values(stsErrors).find(Boolean) ?? null;
+  const hasErrors = Boolean(
+    meterNumberError || serialNumberError || vendorError || priceError || readingError || firstStsError,
+  );
+  const visible = (key: string, error: string | null) =>
+    (touched[key] || submitAttempted) && error ? error : null;
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (hasErrors) throw new Error(vendorError || meterNumberError || serialNumberError || "");
+      if (hasErrors)
+        throw new Error(
+          vendorError || meterNumberError || serialNumberError || priceError || readingError || firstStsError || "",
+        );
       const payload = {
         vendor_id: vendorId.trim(),
         supplier_id: supplierId || null,
@@ -1015,6 +1100,15 @@ function MeterDialog({
       toast.error(err.message || (isEdit ? "Could not update meter" : "Could not add meter")),
   });
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") attemptClose(mutation.isPending);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, isDirty, mutation.isPending]);
+
   const field = "h-11 w-full rounded-xl border bg-background px-3 text-sm";
   const fieldError = (msg: string | null) =>
     msg ? `${field} border-destructive focus:border-destructive` : field;
@@ -1023,7 +1117,7 @@ function MeterDialog({
     <div
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) attemptClose(mutation.isPending);
       }}
       role="dialog"
       aria-modal="true"
@@ -1049,11 +1143,17 @@ function MeterDialog({
               id="meter-vendor"
               value={vendorId}
               onChange={(e) => setVendorId(e.target.value)}
+              onBlur={() => touch("vendor")}
               placeholder="e.g. STRON"
-              aria-invalid={Boolean(vendorError)}
-              className={fieldError(vendorError)}
+              aria-invalid={Boolean(visible("vendor", vendorError))}
+              aria-describedby="meter-vendor-error"
+              className={fieldError(visible("vendor", vendorError))}
             />
-            {vendorError && <p className="mt-1 text-xs text-destructive">{vendorError}</p>}
+            {visible("vendor", vendorError) && (
+              <p id="meter-vendor-error" className="mt-1 text-xs text-destructive">
+                {vendorError}
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
@@ -1135,12 +1235,13 @@ function MeterDialog({
               id="meter-number"
               value={meterNumber}
               onChange={(e) => setMeterNumber(e.target.value)}
+              onBlur={() => touch("meterNumber")}
               placeholder="e.g. 01234567890"
-              aria-invalid={Boolean(meterNumberError)}
+              aria-invalid={Boolean(visible("meterNumber", meterNumberError))}
               aria-describedby="meter-number-error"
-              className={fieldError(meterNumberError)}
+              className={fieldError(visible("meterNumber", meterNumberError))}
             />
-            {meterNumberError && (
+            {visible("meterNumber", meterNumberError) && (
               <p id="meter-number-error" className="mt-1 text-xs text-destructive">
                 {meterNumberError}
               </p>
@@ -1154,12 +1255,13 @@ function MeterDialog({
               id="meter-serial"
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
+              onBlur={() => touch("serialNumber")}
               placeholder="e.g. EM-2026-001"
-              aria-invalid={Boolean(serialNumberError)}
+              aria-invalid={Boolean(visible("serialNumber", serialNumberError))}
               aria-describedby="meter-serial-error"
-              className={fieldError(serialNumberError)}
+              className={fieldError(visible("serialNumber", serialNumberError))}
             />
-            {serialNumberError && (
+            {visible("serialNumber", serialNumberError) && (
               <p id="meter-serial-error" className="mt-1 text-xs text-destructive">
                 {serialNumberError}
               </p>
@@ -1206,8 +1308,16 @@ function MeterDialog({
               min="0"
               value={pricePerUnit}
               onChange={(e) => setPricePerUnit(e.target.value)}
-              className={field}
+              onBlur={() => touch("price")}
+              aria-invalid={Boolean(visible("price", priceError))}
+              aria-describedby="meter-price-error"
+              className={fieldError(visible("price", priceError))}
             />
+            {visible("price", priceError) && (
+              <p id="meter-price-error" className="mt-1 text-xs text-destructive">
+                {priceError}
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-initial">
@@ -1220,8 +1330,16 @@ function MeterDialog({
               min="0"
               value={initialReading}
               onChange={(e) => setInitialReading(e.target.value)}
-              className={field}
+              onBlur={() => touch("reading")}
+              aria-invalid={Boolean(visible("reading", readingError))}
+              aria-describedby="meter-initial-error"
+              className={fieldError(visible("reading", readingError))}
             />
+            {visible("reading", readingError) && (
+              <p id="meter-initial-error" className="mt-1 text-xs text-destructive">
+                {readingError}
+              </p>
+            )}
           </div>
         </div>
 
@@ -1248,8 +1366,15 @@ function MeterDialog({
                   type="number"
                   value={sts[key]}
                   onChange={(e) => setSts((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="h-10 w-full rounded-lg border bg-background px-2 text-sm"
+                  onBlur={() => touch(`sts-${key}`)}
+                  aria-invalid={Boolean(visible(`sts-${key}`, stsErrors[key]))}
+                  className={`h-10 w-full rounded-lg border bg-background px-2 text-sm ${
+                    visible(`sts-${key}`, stsErrors[key]) ? "border-destructive" : ""
+                  }`}
                 />
+                {visible(`sts-${key}`, stsErrors[key]) && (
+                  <p className="mt-1 text-[11px] text-destructive">{stsErrors[key]}</p>
+                )}
               </div>
             ))}
           </div>
@@ -1257,18 +1382,27 @@ function MeterDialog({
 
         {isEdit && meter && <MeterHistory meterId={meter.id} />}
 
+        {submitAttempted && hasErrors && (
+          <p role="alert" className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+            Please fix the highlighted fields before saving.
+          </p>
+        )}
+
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => attemptClose(mutation.isPending)}
             className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
           >
             Cancel
           </button>
           <button
             type="button"
-            disabled={mutation.isPending || hasErrors}
-            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending || (submitAttempted && hasErrors)}
+            onClick={() => {
+              setSubmitAttempted(true);
+              if (!hasErrors) mutation.mutate();
+            }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
