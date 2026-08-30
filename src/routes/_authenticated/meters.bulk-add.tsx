@@ -103,6 +103,7 @@ function BulkAddMetersPage() {
   const [confirmUpdate, setConfirmUpdate] = useState(false);
   const [review, setReview] = useState(false);
   const [result, setResult] = useState<BulkAddResult | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     setOwnerId("");
@@ -150,47 +151,52 @@ function BulkAddMetersPage() {
   };
 
   const onTemplateFile = async (file: File) => {
-    const text = await file.text();
-    const lines = text
-      .replace(/^\uFEFF/, "")
-      .split(/\r?\n/)
-      .filter((l) => l.trim());
-    if (lines.length < 2) {
-      toast.error("The CSV has no data rows");
-      return;
-    }
-    const split = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const header = split(lines[0]!).map((h) => h.toLowerCase());
-    const idx = (name: string) => header.indexOf(name);
-    const cols = {
-      meter_number: idx("meter_number"),
-      serial: idx("serial_no") >= 0 ? idx("serial_no") : idx("serial_number"),
-      sgc: idx("sgc"),
-      krn: idx("krn"),
-      ti: idx("ti"),
-      ea: idx("ea"),
-      ken: idx("ken"),
-    };
-    if (cols.meter_number < 0) {
-      toast.error("CSV must include a meter_number column");
-      return;
-    }
-    const parsed: Row[] = lines.slice(1, 501).map((line) => {
-      const c = split(line);
-      const get = (i: number) => (i >= 0 ? (c[i] ?? "") : "");
-      return {
-        meter_number: get(cols.meter_number),
-        serial_number: get(cols.serial),
-        sgc: get(cols.sgc),
-        krn: get(cols.krn),
-        ti: get(cols.ti),
-        ea: get(cols.ea),
-        ken: get(cols.ken),
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .filter((l) => l.trim());
+      if (lines.length < 2) {
+        toast.error("The CSV has no data rows");
+        return;
+      }
+      const split = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+      const header = split(lines[0]!).map((h) => h.toLowerCase());
+      const idx = (name: string) => header.indexOf(name);
+      const cols = {
+        meter_number: idx("meter_number"),
+        serial: idx("serial_no") >= 0 ? idx("serial_no") : idx("serial_number"),
+        sgc: idx("sgc"),
+        krn: idx("krn"),
+        ti: idx("ti"),
+        ea: idx("ea"),
+        ken: idx("ken"),
       };
-    });
-    setRows(parsed);
-    setCount(String(parsed.length));
-    toast.success(`${parsed.length} row${parsed.length === 1 ? "" : "s"} loaded from CSV`);
+      if (cols.meter_number < 0) {
+        toast.error("CSV must include a meter_number column");
+        return;
+      }
+      const parsed: Row[] = lines.slice(1, 501).map((line) => {
+        const c = split(line);
+        const get = (i: number) => (i >= 0 ? (c[i] ?? "") : "");
+        return {
+          meter_number: get(cols.meter_number),
+          serial_number: get(cols.serial),
+          sgc: get(cols.sgc),
+          krn: get(cols.krn),
+          ti: get(cols.ti),
+          ea: get(cols.ea),
+          ken: get(cols.ken),
+        };
+      });
+      setRows(parsed);
+      setCount(String(parsed.length));
+      toast.success(`${parsed.length} row${parsed.length === 1 ? "" : "s"} loaded from CSV`);
+    } finally {
+      setImporting(false);
+    }
   };
 
   /* ------------------------------ validation ------------------------------ */
