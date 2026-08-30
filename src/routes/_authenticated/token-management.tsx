@@ -459,7 +459,7 @@ function TokenManagementPage() {
                   </p>
                   <StatusBadge status={token.status} />
                 </div>
-                <p className="mt-1 font-mono text-xl font-bold tracking-wider">{token.value ?? token.token}</p>
+                <p className="mt-1 font-mono text-xl font-bold tracking-wider">{token.token}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {token.action === "credit"
                     ? `${token.units.toFixed(2)} units · KES ${token.amount.toFixed(2)} · `
