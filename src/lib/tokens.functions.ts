@@ -362,3 +362,46 @@ export const revokeMeterToken = createServerFn({ method: "POST" })
     const [serialized] = await serialize(supabase, [row]);
     return serialized!;
   });
+
+/** Re-send the receipt for an existing token via SMS without recreating the sale. */
+export const resendTokenSms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        customer_phone: z.string().trim().max(30).optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<IssuedToken> => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: existing, error: readErr } = await supabase
+      .from("meter_tokens")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!existing) throw new Error("Token not found");
+    if ((existing as any).status === "revoked")
+      throw new Error("This token has been revoked — the receipt cannot be re-sent");
+    if (new Date((existing as any).expires_at).getTime() < Date.now())
+      throw new Error("This token has expired — issue a new token instead");
+
+    const phone = (data.customer_phone ?? (existing as any).customer_phone ?? "").trim();
+    if (phone.length < 7)
+      throw new Error("Enter a valid phone number to send the receipt to");
+
+    const { data: row, error } = await supabase
+      .from("meter_tokens")
+      .update({ customer_phone: phone, sms_requested: true } as never)
+      .eq("id", data.id)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const [serialized] = await serialize(supabase, [row]);
+    return serialized!;
+  });

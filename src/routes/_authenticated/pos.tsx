@@ -17,6 +17,7 @@ import { PortalLayout } from "@/components/PortalLayout";
 import {
   issueMeterToken,
   listMeterTokens,
+  resendTokenSms,
   searchTokenMeters,
   type IssuedToken,
   type TokenMeterMatch,
@@ -69,10 +70,27 @@ function PosPage() {
   const [confirming, setConfirming] = useState(false);
   const [sale, setSale] = useState<IssuedToken | null>(null);
   const [reprint, setReprint] = useState<IssuedToken | null>(null);
+  const [smsTarget, setSmsTarget] = useState<IssuedToken | null>(null);
+  const [smsPhone, setSmsPhone] = useState("");
 
   const runSearch = useServerFn(searchTokenMeters);
   const runIssue = useServerFn(issueMeterToken);
   const runList = useServerFn(listMeterTokens);
+  const runResendSms = useServerFn(resendTokenSms);
+
+  const resendSms = useMutation({
+    mutationFn: async () =>
+      runResendSms({
+        data: { id: smsTarget!.id, customer_phone: smsPhone.trim() || null },
+      } as never),
+    onSuccess: () => {
+      toast.success(`Receipt queued for SMS delivery to ${smsPhone.trim()}`);
+      setSmsTarget(null);
+      setSmsPhone("");
+      void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to send SMS"),
+  });
 
   const search = useMutation({
     mutationFn: async () => runSearch({ data: { q: query.trim() } } as never),
@@ -477,13 +495,31 @@ function PosPage() {
                       <td className="py-2 pr-4">{t.reference ?? "—"}</td>
                       <td className="py-2 pr-4 capitalize">{t.status}</td>
                       <td className="py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setReprint(t)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
-                        >
-                          <Printer className="size-3.5" /> Reprint
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setReprint(t)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                          >
+                            <Printer className="size-3.5" /> Reprint
+                          </button>
+                          <button
+                            type="button"
+                            disabled={t.status === "revoked"}
+                            title={
+                              t.status === "revoked"
+                                ? "Revoked tokens cannot be re-sent"
+                                : "Re-send this receipt via SMS"
+                            }
+                            onClick={() => {
+                              setSmsTarget(t);
+                              setSmsPhone(t.customer_phone ?? "");
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <MessageSquare className="size-3.5" /> SMS
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -553,6 +589,74 @@ function PosPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               >
                 <Printer className="size-4" /> Print
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {smsTarget && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Re-send receipt via SMS"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !resendSms.isPending) setSmsTarget(null);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+            <h3 className="font-semibold">Re-send receipt via SMS</h3>
+            <dl className="mt-3 space-y-2 text-sm">
+              {[
+                ["Meter", smsTarget.meter_number],
+                ["Token", smsTarget.token],
+                ["Units", smsTarget.units.toFixed(2)],
+                ["Amount", money(smsTarget.amount)],
+                ["Date", new Date(smsTarget.created_at).toLocaleString()],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{k}</dt>
+                  <dd className="text-right font-medium">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <label className="mt-4 block text-sm">
+              <span className="text-muted-foreground">Send to phone number</span>
+              <input
+                type="tel"
+                value={smsPhone}
+                onChange={(e) => setSmsPhone(e.target.value)}
+                placeholder="e.g. 0712 345 678"
+                autoFocus
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              />
+            </label>
+            <p className="mt-2 text-xs text-muted-foreground">
+              The original sale is not changed — the existing token receipt is queued for SMS
+              delivery to this number.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSmsTarget(null)}
+                disabled={resendSms.isPending}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => resendSms.mutate()}
+                disabled={resendSms.isPending || smsPhone.trim().length < 7}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                {resendSms.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <MessageSquare className="size-4" />
+                )}
+                Send SMS
               </button>
             </div>
           </div>
