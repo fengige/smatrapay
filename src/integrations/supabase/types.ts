@@ -453,6 +453,36 @@ export type Database = {
           },
         ]
       }
+      property_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          property_id: string | null
+          property_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          property_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          property_name?: string | null
+        }
+        Relationships: []
+      }
       routes: {
         Row: {
           created_at: string
