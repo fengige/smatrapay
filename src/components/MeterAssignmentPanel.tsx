@@ -20,6 +20,14 @@ import {
 
 type Kind = "agent" | "vendor";
 
+type AssignableMeter = {
+  id: string;
+  meter_number: string;
+  serial_number: string;
+  type: string;
+  status: string;
+};
+
 type OwnedMeter = {
   id: string;
   meter_number: string;
@@ -57,7 +65,7 @@ export function MeterAssignmentPanel({
 
   const { data, isLoading } = useQuery({
     queryKey: ownedKey,
-    queryFn: () => (listOwned as (o: { data: unknown }) => Promise<{ meters: OwnedMeter[] }>)({
+    queryFn: () => (listOwned as unknown as (o: { data: unknown }) => Promise<{ meters: OwnedMeter[] }>)({
       data: ownerArg(),
     }),
   });
@@ -89,7 +97,7 @@ export function MeterAssignmentPanel({
   const { data: assignableData, isLoading: assignableLoading } = useQuery({
     queryKey: [`assignable-${kind}-meters`],
     queryFn: () =>
-      (listAssignable as (o: { data: unknown }) => Promise<{ meters: OwnedMeter[] }>)({
+      (listAssignable as unknown as (o: { data: unknown }) => Promise<{ meters: AssignableMeter[] }>)({
         data: {} as never,
       }),
     enabled: dialogOpen,
@@ -113,7 +121,7 @@ export function MeterAssignmentPanel({
 
   const assignMutation = useMutation({
     mutationFn: () =>
-      (assign as (o: { data: unknown }) => Promise<{ assigned: number; skipped: string[] }>)({
+      (assign as unknown as (o: { data: unknown }) => Promise<{ assigned: number; skipped: string[] }>)({
         data: ownerArg({ meterIds: pickerSelected }),
       }),
     onSuccess: (res) => {
@@ -131,7 +139,7 @@ export function MeterAssignmentPanel({
 
   const unassignMutation = useMutation({
     mutationFn: () =>
-      (unassign as (o: { data: unknown }) => Promise<{ unassigned: number }>)({
+      (unassign as unknown as (o: { data: unknown }) => Promise<{ unassigned: number }>)({
         data: ownerArg({ meterIds: selected }),
       }),
     onSuccess: (res) => {
