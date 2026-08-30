@@ -29,6 +29,8 @@ import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
+import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenticated/agents.index'
+import { Route as AuthenticatedAgentsNewRouteImport } from './routes/_authenticated/agents.new'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
@@ -47,7 +49,11 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
+import { Route as AuthenticatedVendorsIndexRouteImport } from './routes/_authenticated/vendors.index'
+import { Route as AuthenticatedVendorsNewRouteImport } from './routes/_authenticated/vendors.new'
 import { Route as AuthenticatedZonesIndexRouteImport } from './routes/_authenticated/zones.index'
+import { Route as AuthenticatedAgentsIdIndexRouteImport } from './routes/_authenticated/agents.$id.index'
+import { Route as AuthenticatedAgentsIdEditRouteImport } from './routes/_authenticated/agents.$id.edit'
 import { Route as AuthenticatedLandlordsIdIndexRouteImport } from './routes/_authenticated/landlords.$id.index'
 import { Route as AuthenticatedLandlordsIdEditRouteImport } from './routes/_authenticated/landlords.$id.edit'
 import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_authenticated/properties.$id.index'
@@ -56,6 +62,8 @@ import { Route as AuthenticatedResidentsIdIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedResidentsIdEditRouteImport } from './routes/_authenticated/residents.$id.edit'
 import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authenticated/users.$id.index'
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
+import { Route as AuthenticatedVendorsIdIndexRouteImport } from './routes/_authenticated/vendors.$id.index'
+import { Route as AuthenticatedVendorsIdEditRouteImport } from './routes/_authenticated/vendors.$id.edit'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 
@@ -165,6 +173,17 @@ const AuthenticatedAgentDashboardRoute =
     path: '/agent/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAgentsIndexRoute =
+  AuthenticatedAgentsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAgentsRoute,
+  } as any)
+const AuthenticatedAgentsNewRoute = AuthenticatedAgentsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedAgentsRoute,
+} as any)
 const AuthenticatedLandlordDashboardRoute =
   AuthenticatedLandlordDashboardRouteImport.update({
     id: '/landlord/dashboard',
@@ -270,11 +289,34 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorsIndexRoute =
+  AuthenticatedVendorsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedVendorsRoute,
+  } as any)
+const AuthenticatedVendorsNewRoute = AuthenticatedVendorsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedVendorsRoute,
+} as any)
 const AuthenticatedZonesIndexRoute = AuthenticatedZonesIndexRouteImport.update({
   id: '/zones/',
   path: '/zones/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAgentsIdIndexRoute =
+  AuthenticatedAgentsIdIndexRouteImport.update({
+    id: '/$id/',
+    path: '/$id/',
+    getParentRoute: () => AuthenticatedAgentsRoute,
+  } as any)
+const AuthenticatedAgentsIdEditRoute =
+  AuthenticatedAgentsIdEditRouteImport.update({
+    id: '/$id/edit',
+    path: '/$id/edit',
+    getParentRoute: () => AuthenticatedAgentsRoute,
+  } as any)
 const AuthenticatedLandlordsIdIndexRoute =
   AuthenticatedLandlordsIdIndexRouteImport.update({
     id: '/$id/',
@@ -323,6 +365,18 @@ const AuthenticatedUsersIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedUsersIdRoute,
   } as any)
+const AuthenticatedVendorsIdIndexRoute =
+  AuthenticatedVendorsIdIndexRouteImport.update({
+    id: '/$id/',
+    path: '/$id/',
+    getParentRoute: () => AuthenticatedVendorsRoute,
+  } as any)
+const AuthenticatedVendorsIdEditRoute =
+  AuthenticatedVendorsIdEditRouteImport.update({
+    id: '/$id/edit',
+    path: '/$id/edit',
+    getParentRoute: () => AuthenticatedVendorsRoute,
+  } as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -340,7 +394,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
-  '/agents': typeof AuthenticatedAgentsRoute
+  '/agents': typeof AuthenticatedAgentsRouteWithChildren
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -350,10 +404,11 @@ export interface FileRoutesByFullPath {
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
-  '/vendors': typeof AuthenticatedVendorsRoute
+  '/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
+  '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -366,23 +421,30 @@ export interface FileRoutesByFullPath {
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/vendors/new': typeof AuthenticatedVendorsNewRoute
+  '/agents/': typeof AuthenticatedAgentsIndexRoute
   '/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters/': typeof AuthenticatedMetersIndexRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/zones/': typeof AuthenticatedZonesIndexRoute
+  '/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
+  '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/agents/$id/': typeof AuthenticatedAgentsIdIndexRoute
   '/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
   '/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id/': typeof AuthenticatedUsersIdIndexRoute
+  '/vendors/$id/': typeof AuthenticatedVendorsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -390,16 +452,15 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
-  '/agents': typeof AuthenticatedAgentsRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
-  '/vendors': typeof AuthenticatedVendorsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
+  '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -411,23 +472,30 @@ export interface FileRoutesByTo {
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/vendors/new': typeof AuthenticatedVendorsNewRoute
+  '/agents': typeof AuthenticatedAgentsIndexRoute
   '/landlords': typeof AuthenticatedLandlordsIndexRoute
   '/meter-suppliers': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters': typeof AuthenticatedMetersIndexRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/vendors': typeof AuthenticatedVendorsIndexRoute
   '/zones': typeof AuthenticatedZonesIndexRoute
+  '/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
+  '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/agents/$id': typeof AuthenticatedAgentsIdIndexRoute
   '/landlords/$id': typeof AuthenticatedLandlordsIdIndexRoute
   '/properties/$id': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id': typeof AuthenticatedUsersIdIndexRoute
+  '/vendors/$id': typeof AuthenticatedVendorsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -437,7 +505,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
-  '/_authenticated/agents': typeof AuthenticatedAgentsRoute
+  '/_authenticated/agents': typeof AuthenticatedAgentsRouteWithChildren
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -447,10 +515,11 @@ export interface FileRoutesById {
   '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
-  '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
+  '/_authenticated/agents/new': typeof AuthenticatedAgentsNewRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -463,23 +532,30 @@ export interface FileRoutesById {
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/_authenticated/vendors/new': typeof AuthenticatedVendorsNewRoute
+  '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
   '/_authenticated/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/_authenticated/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/_authenticated/meters/': typeof AuthenticatedMetersIndexRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/_authenticated/zones/': typeof AuthenticatedZonesIndexRoute
+  '/_authenticated/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
   '/_authenticated/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/_authenticated/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
+  '/_authenticated/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/_authenticated/agents/$id/': typeof AuthenticatedAgentsIdIndexRoute
   '/_authenticated/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
   '/_authenticated/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/_authenticated/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/_authenticated/users/$id/': typeof AuthenticatedUsersIdIndexRoute
+  '/_authenticated/vendors/$id/': typeof AuthenticatedVendorsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -503,6 +579,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/settings'
     | '/agent/dashboard'
+    | '/agents/new'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -515,23 +592,30 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/users/new'
     | '/vendor/dashboard'
+    | '/vendors/new'
+    | '/agents/'
     | '/landlords/'
     | '/meter-suppliers/'
     | '/meters/'
     | '/properties/'
     | '/residents/'
     | '/users/'
+    | '/vendors/'
     | '/zones/'
+    | '/agents/$id/edit'
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
     | '/users/$id/edit'
+    | '/vendors/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/agents/$id/'
     | '/landlords/$id/'
     | '/properties/$id/'
     | '/residents/$id/'
     | '/users/$id/'
+    | '/vendors/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -539,16 +623,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
-    | '/agents'
     | '/pos'
     | '/pos-shift-report'
     | '/price-management'
     | '/service-providers'
     | '/token-management'
-    | '/vendors'
     | '/admin/dashboard'
     | '/admin/settings'
     | '/agent/dashboard'
+    | '/agents/new'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -560,23 +643,30 @@ export interface FileRouteTypes {
     | '/units/$unitId'
     | '/users/new'
     | '/vendor/dashboard'
+    | '/vendors/new'
+    | '/agents'
     | '/landlords'
     | '/meter-suppliers'
     | '/meters'
     | '/properties'
     | '/residents'
     | '/users'
+    | '/vendors'
     | '/zones'
+    | '/agents/$id/edit'
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
     | '/users/$id/edit'
+    | '/vendors/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/agents/$id'
     | '/landlords/$id'
     | '/properties/$id'
     | '/residents/$id'
     | '/users/$id'
+    | '/vendors/$id'
   id:
     | '__root__'
     | '/'
@@ -599,6 +689,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/settings'
     | '/_authenticated/agent/dashboard'
+    | '/_authenticated/agents/new'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meters/$meterId'
@@ -611,23 +702,30 @@ export interface FileRouteTypes {
     | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
     | '/_authenticated/vendor/dashboard'
+    | '/_authenticated/vendors/new'
+    | '/_authenticated/agents/'
     | '/_authenticated/landlords/'
     | '/_authenticated/meter-suppliers/'
     | '/_authenticated/meters/'
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
     | '/_authenticated/users/'
+    | '/_authenticated/vendors/'
     | '/_authenticated/zones/'
+    | '/_authenticated/agents/$id/edit'
     | '/_authenticated/landlords/$id/edit'
     | '/_authenticated/properties/$id/edit'
     | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
+    | '/_authenticated/vendors/$id/edit'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/_authenticated/agents/$id/'
     | '/_authenticated/landlords/$id/'
     | '/_authenticated/properties/$id/'
     | '/_authenticated/residents/$id/'
     | '/_authenticated/users/$id/'
+    | '/_authenticated/vendors/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -783,6 +881,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/agents/': {
+      id: '/_authenticated/agents/'
+      path: '/'
+      fullPath: '/agents/'
+      preLoaderRoute: typeof AuthenticatedAgentsIndexRouteImport
+      parentRoute: typeof AuthenticatedAgentsRoute
+    }
+    '/_authenticated/agents/new': {
+      id: '/_authenticated/agents/new'
+      path: '/new'
+      fullPath: '/agents/new'
+      preLoaderRoute: typeof AuthenticatedAgentsNewRouteImport
+      parentRoute: typeof AuthenticatedAgentsRoute
+    }
     '/_authenticated/landlord/dashboard': {
       id: '/_authenticated/landlord/dashboard'
       path: '/landlord/dashboard'
@@ -909,12 +1021,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendors/': {
+      id: '/_authenticated/vendors/'
+      path: '/'
+      fullPath: '/vendors/'
+      preLoaderRoute: typeof AuthenticatedVendorsIndexRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
+    '/_authenticated/vendors/new': {
+      id: '/_authenticated/vendors/new'
+      path: '/new'
+      fullPath: '/vendors/new'
+      preLoaderRoute: typeof AuthenticatedVendorsNewRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
     '/_authenticated/zones/': {
       id: '/_authenticated/zones/'
       path: '/zones'
       fullPath: '/zones/'
       preLoaderRoute: typeof AuthenticatedZonesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agents/$id/': {
+      id: '/_authenticated/agents/$id/'
+      path: '/$id'
+      fullPath: '/agents/$id/'
+      preLoaderRoute: typeof AuthenticatedAgentsIdIndexRouteImport
+      parentRoute: typeof AuthenticatedAgentsRoute
+    }
+    '/_authenticated/agents/$id/edit': {
+      id: '/_authenticated/agents/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/agents/$id/edit'
+      preLoaderRoute: typeof AuthenticatedAgentsIdEditRouteImport
+      parentRoute: typeof AuthenticatedAgentsRoute
     }
     '/_authenticated/landlords/$id/': {
       id: '/_authenticated/landlords/$id/'
@@ -972,6 +1112,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersIdEditRouteImport
       parentRoute: typeof AuthenticatedUsersIdRoute
     }
+    '/_authenticated/vendors/$id/': {
+      id: '/_authenticated/vendors/$id/'
+      path: '/$id'
+      fullPath: '/vendors/$id/'
+      preLoaderRoute: typeof AuthenticatedVendorsIdIndexRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
+    '/_authenticated/vendors/$id/edit': {
+      id: '/_authenticated/vendors/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/vendors/$id/edit'
+      preLoaderRoute: typeof AuthenticatedVendorsIdEditRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -988,6 +1142,23 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedAgentsRouteChildren {
+  AuthenticatedAgentsNewRoute: typeof AuthenticatedAgentsNewRoute
+  AuthenticatedAgentsIndexRoute: typeof AuthenticatedAgentsIndexRoute
+  AuthenticatedAgentsIdEditRoute: typeof AuthenticatedAgentsIdEditRoute
+  AuthenticatedAgentsIdIndexRoute: typeof AuthenticatedAgentsIdIndexRoute
+}
+
+const AuthenticatedAgentsRouteChildren: AuthenticatedAgentsRouteChildren = {
+  AuthenticatedAgentsNewRoute: AuthenticatedAgentsNewRoute,
+  AuthenticatedAgentsIndexRoute: AuthenticatedAgentsIndexRoute,
+  AuthenticatedAgentsIdEditRoute: AuthenticatedAgentsIdEditRoute,
+  AuthenticatedAgentsIdIndexRoute: AuthenticatedAgentsIdIndexRoute,
+}
+
+const AuthenticatedAgentsRouteWithChildren =
+  AuthenticatedAgentsRoute._addFileChildren(AuthenticatedAgentsRouteChildren)
 
 interface AuthenticatedLandlordsRouteChildren {
   AuthenticatedLandlordsNewRoute: typeof AuthenticatedLandlordsNewRoute
@@ -1077,8 +1248,25 @@ const AuthenticatedUsersRouteChildren: AuthenticatedUsersRouteChildren = {
 const AuthenticatedUsersRouteWithChildren =
   AuthenticatedUsersRoute._addFileChildren(AuthenticatedUsersRouteChildren)
 
+interface AuthenticatedVendorsRouteChildren {
+  AuthenticatedVendorsNewRoute: typeof AuthenticatedVendorsNewRoute
+  AuthenticatedVendorsIndexRoute: typeof AuthenticatedVendorsIndexRoute
+  AuthenticatedVendorsIdEditRoute: typeof AuthenticatedVendorsIdEditRoute
+  AuthenticatedVendorsIdIndexRoute: typeof AuthenticatedVendorsIdIndexRoute
+}
+
+const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
+  AuthenticatedVendorsNewRoute: AuthenticatedVendorsNewRoute,
+  AuthenticatedVendorsIndexRoute: AuthenticatedVendorsIndexRoute,
+  AuthenticatedVendorsIdEditRoute: AuthenticatedVendorsIdEditRoute,
+  AuthenticatedVendorsIdIndexRoute: AuthenticatedVendorsIdIndexRoute,
+}
+
+const AuthenticatedVendorsRouteWithChildren =
+  AuthenticatedVendorsRoute._addFileChildren(AuthenticatedVendorsRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
+  AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedPosShiftReportRoute: typeof AuthenticatedPosShiftReportRoute
@@ -1088,7 +1276,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
-  AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
@@ -1105,7 +1293,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
+  AuthenticatedAgentsRoute: AuthenticatedAgentsRouteWithChildren,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedPosShiftReportRoute: AuthenticatedPosShiftReportRoute,
@@ -1115,7 +1303,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
-  AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,

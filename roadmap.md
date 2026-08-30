@@ -29,3 +29,6 @@
 
 - [x] Property CSV import with zone/route/street row validation
 - [x] Show Zone/Route/Street names in property table and detail views
+
+- [x] Vendor management pages (list, details, edit, add)
+- [x] Agent management pages (list, details, edit, add)
