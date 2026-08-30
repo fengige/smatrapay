@@ -50,6 +50,7 @@ import {
   importAssignments,
   listAssignableUsers,
   upsertUnit,
+  listGeography,
 } from "@/lib/properties.functions";
 import { PropertyAuditViewer } from "@/components/properties/PropertyAuditViewer";
 import { PortalLayout } from "@/components/PortalLayout";
@@ -312,6 +313,12 @@ function PropertyDetailPage() {
   const removeAssignment = useServerFn(deleteAssignment);
   const runImport = useServerFn(importAssignments);
   const removeProperty = useServerFn(deleteProperty);
+
+  const fetchGeography = useServerFn(listGeography);
+  const { data: geoData } = useQuery({
+    queryKey: ["properties", "geography"],
+    queryFn: () => fetchGeography(),
+  });
 
   const [tab, setTab] = useState<TabId>("units");
   const [query, setQuery] = useState("");
