@@ -260,7 +260,8 @@ export const addMeter = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase } = context;
 
-    await assertMeterIdentifiersFree(supabase, data);
+    const serial = data.serial_number?.trim() || data.meter_number;
+    await assertMeterIdentifiersFree(supabase, { meter_number: data.meter_number, serial_number: serial });
 
     const { data: inserted, error } = await supabase
       .from("meters")
@@ -271,7 +272,7 @@ export const addMeter = createServerFn({ method: "POST" })
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
-        serial_number: data.serial_number,
+        serial_number: serial,
         type: data.type,
         initial_reading: data.initial_reading,
         price_per_unit: data.price_per_unit,
