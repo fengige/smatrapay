@@ -363,11 +363,14 @@ export type Database = {
           number_of_units: number | null
           postal_code: string | null
           property_type: string
+          route_id: number | null
           state: string | null
           status: Database["public"]["Enums"]["property_status"]
+          street_id: number | null
           subtype: string | null
           updated_at: string
           updated_by: string | null
+          zone_id: number | null
         }
         Insert: {
           address_line1?: string | null
@@ -385,11 +388,14 @@ export type Database = {
           number_of_units?: number | null
           postal_code?: string | null
           property_type?: string
+          route_id?: number | null
           state?: string | null
           status?: Database["public"]["Enums"]["property_status"]
+          street_id?: number | null
           subtype?: string | null
           updated_at?: string
           updated_by?: string | null
+          zone_id?: number | null
         }
         Update: {
           address_line1?: string | null
@@ -407,11 +413,14 @@ export type Database = {
           number_of_units?: number | null
           postal_code?: string | null
           property_type?: string
+          route_id?: number | null
           state?: string | null
           status?: Database["public"]["Enums"]["property_status"]
+          street_id?: number | null
           subtype?: string | null
           updated_at?: string
           updated_by?: string | null
+          zone_id?: number | null
         }
         Relationships: [
           {
@@ -420,6 +429,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["route_id"]
+          },
+          {
+            foreignKeyName: "properties_street_id_fkey"
+            columns: ["street_id"]
+            isOneToOne: false
+            referencedRelation: "streets"
+            referencedColumns: ["street_id"]
+          },
+          {
+            foreignKeyName: "properties_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["zone_id"]
           },
         ]
       }
