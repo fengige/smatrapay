@@ -10,6 +10,7 @@ import {
   Home,
   KeyRound,
   Settings,
+  ShoppingCart,
   Store,
   UserCheck,
   UserCircle,
@@ -36,6 +37,9 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
     {
       items: [
         { label: "Dashboard", to: dashboardForRoles(roles), icon: Grid2x2 },
+        ...(roles.includes("admin")
+          ? [{ label: "POS", to: "/pos", icon: ShoppingCart }]
+          : []),
       ],
     },
   ];
