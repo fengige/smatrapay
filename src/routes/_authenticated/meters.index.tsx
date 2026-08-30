@@ -340,10 +340,17 @@ function MetersPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="size-4" /> Add Meter
+          </button>
+          <button
+            type="button"
             onClick={() => navigate({ to: "/meters/bulk-add" })}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
-            <Plus className="size-4" /> Add Meters
+            <Plus className="size-4" /> Bulk Add Meters
           </button>
           <button
             type="button"
