@@ -8,6 +8,7 @@ import {
   Gauge,
   Loader2,
   MessageSquare,
+  Printer,
   Receipt,
   Search,
   ShoppingCart,
@@ -67,6 +68,7 @@ function PosPage() {
   const [phone, setPhone] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [sale, setSale] = useState<IssuedToken | null>(null);
+  const [reprint, setReprint] = useState<IssuedToken | null>(null);
 
   const runSearch = useServerFn(searchTokenMeters);
   const runIssue = useServerFn(issueMeterToken);
@@ -461,7 +463,8 @@ function PosPage() {
                     <th className="py-2 pr-4">Units</th>
                     <th className="py-2 pr-4">Amount</th>
                     <th className="py-2 pr-4">Reference</th>
-                    <th className="py-2">Status</th>
+                    <th className="py-2 pr-4">Status</th>
+                    <th className="py-2 text-right">Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +475,16 @@ function PosPage() {
                       <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
                       <td className="py-2 pr-4">{money(t.amount)}</td>
                       <td className="py-2 pr-4">{t.reference ?? "—"}</td>
-                      <td className="py-2 capitalize">{t.status}</td>
+                      <td className="py-2 pr-4 capitalize">{t.status}</td>
+                      <td className="py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setReprint(t)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                        >
+                          <Printer className="size-3.5" /> Reprint
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -481,6 +493,71 @@ function PosPage() {
           )}
         </section>
       </div>
+
+      {reprint && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reprint receipt"
+        >
+          <div
+            id="pos-reprint-receipt"
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl"
+          >
+            <h3 className="text-center font-semibold">SmatraPay receipt (reprint)</h3>
+            <dl className="mt-3 space-y-1.5 text-sm">
+              {[
+                ["Meter", reprint.meter_number],
+                ["Date", new Date(reprint.created_at).toLocaleString()],
+                ["Units", reprint.units.toFixed(2)],
+                ["Amount", money(reprint.amount)],
+                ["Reference", reprint.reference ?? "—"],
+                ["Status", reprint.status],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{k}</dt>
+                  <dd className="text-right font-medium capitalize">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 rounded-lg bg-muted/40 p-3 text-center font-mono text-base tracking-widest">
+              {reprint.token}
+            </p>
+            {reprint.status === "revoked" && (
+              <p className="mt-2 text-center text-xs text-destructive">
+                This token was revoked and can no longer be used.
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReprint(null)}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard.writeText(reprint.token);
+                  toast.success("Token copied");
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent/10"
+              >
+                <Copy className="size-4" /> Copy
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Printer className="size-4" /> Print
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirming && meter && (
         <div
