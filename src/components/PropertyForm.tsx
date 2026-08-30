@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Building2, Check, ChevronDown, ClipboardCheck, L
 
 import { cn } from "@/lib/utils";
 import { listLandlords } from "@/lib/properties.functions";
+import { listZones, listRoutes, listStreets } from "@/lib/zones.functions";
 import { COUNTRY_GROUPS, STATE_MAP } from "@/lib/countries";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
@@ -49,6 +50,9 @@ export type PropertyFormValues = {
   status: "active" | "archived";
   number_of_units: string;
   landlord_id: string;
+  zone_id: string;
+  route_id: string;
+  street_id: string;
 };
 
 export const emptyProperty: PropertyFormValues = {
@@ -67,6 +71,9 @@ export const emptyProperty: PropertyFormValues = {
   status: "active",
   number_of_units: "",
   landlord_id: "",
+  zone_id: "",
+  route_id: "",
+  street_id: "",
 };
 
 function Field({
@@ -237,6 +244,42 @@ export function PropertyForm({
   });
   const landlords = landlordsQuery.data?.landlords ?? [];
   const selectedLandlord = landlords.find((l) => l.id === values.landlord_id);
+
+  // Cascading Zone → Route → Street selection for zone-type properties.
+  const fetchZones = useServerFn(listZones);
+  const fetchRoutes = useServerFn(listRoutes);
+  const fetchStreets = useServerFn(listStreets);
+  const zonesQuery = useQuery({
+    queryKey: ["zone-options"],
+    queryFn: () => fetchZones(),
+    enabled: values.property_type === "zone",
+  });
+  const zones = (zonesQuery.data?.zones ?? []) as {
+    zone_id: number;
+    zone_name: string;
+  }[];
+  const routesQuery = useQuery({
+    queryKey: ["route-options", values.zone_id],
+    queryFn: () => fetchRoutes({ data: { zone_id: Number(values.zone_id) } } as never),
+    enabled: values.property_type === "zone" && Boolean(values.zone_id),
+  });
+  const routes = (routesQuery.data?.routes ?? []) as {
+    route_id: number;
+    route_code: string;
+    route_name: string;
+  }[];
+  const streetsQuery = useQuery({
+    queryKey: ["street-options", values.route_id],
+    queryFn: () => fetchStreets({ data: { route_id: Number(values.route_id) } } as never),
+    enabled: values.property_type === "zone" && Boolean(values.route_id),
+  });
+  const streets = (streetsQuery.data?.streets ?? []) as {
+    street_id: number;
+    street_name: string;
+  }[];
+  const selectedZone = zones.find((z) => String(z.zone_id) === values.zone_id);
+  const selectedRoute = routes.find((r) => String(r.route_id) === values.route_id);
+  const selectedStreet = streets.find((s) => String(s.street_id) === values.street_id);
 
   const set = <K extends keyof PropertyFormValues>(key: K, value: PropertyFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
