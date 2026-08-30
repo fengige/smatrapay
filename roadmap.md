@@ -19,3 +19,4 @@
 - [x] Price Management: filter meters by property and by assigned user type (agent/landlord/vendor)
 - [x] Property add page: default State/County to Nairobi
 - [ ] Create Routes table linked to Zones with RLS and admin policies
+- [ ] Create Streets table linked to Routes with RLS and admin policies
