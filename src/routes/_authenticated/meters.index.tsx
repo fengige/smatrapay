@@ -1308,8 +1308,16 @@ function MeterDialog({
               min="0"
               value={pricePerUnit}
               onChange={(e) => setPricePerUnit(e.target.value)}
-              className={field}
+              onBlur={() => touch("price")}
+              aria-invalid={Boolean(visible("price", priceError))}
+              aria-describedby="meter-price-error"
+              className={fieldError(visible("price", priceError))}
             />
+            {visible("price", priceError) && (
+              <p id="meter-price-error" className="mt-1 text-xs text-destructive">
+                {priceError}
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-initial">
@@ -1322,8 +1330,16 @@ function MeterDialog({
               min="0"
               value={initialReading}
               onChange={(e) => setInitialReading(e.target.value)}
-              className={field}
+              onBlur={() => touch("reading")}
+              aria-invalid={Boolean(visible("reading", readingError))}
+              aria-describedby="meter-initial-error"
+              className={fieldError(visible("reading", readingError))}
             />
+            {visible("reading", readingError) && (
+              <p id="meter-initial-error" className="mt-1 text-xs text-destructive">
+                {readingError}
+              </p>
+            )}
           </div>
         </div>
 
@@ -1350,8 +1366,15 @@ function MeterDialog({
                   type="number"
                   value={sts[key]}
                   onChange={(e) => setSts((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="h-10 w-full rounded-lg border bg-background px-2 text-sm"
+                  onBlur={() => touch(`sts-${key}`)}
+                  aria-invalid={Boolean(visible(`sts-${key}`, stsErrors[key]))}
+                  className={`h-10 w-full rounded-lg border bg-background px-2 text-sm ${
+                    visible(`sts-${key}`, stsErrors[key]) ? "border-destructive" : ""
+                  }`}
                 />
+                {visible(`sts-${key}`, stsErrors[key]) && (
+                  <p className="mt-1 text-[11px] text-destructive">{stsErrors[key]}</p>
+                )}
               </div>
             ))}
           </div>
@@ -1359,18 +1382,27 @@ function MeterDialog({
 
         {isEdit && meter && <MeterHistory meterId={meter.id} />}
 
+        {submitAttempted && hasErrors && (
+          <p role="alert" className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+            Please fix the highlighted fields before saving.
+          </p>
+        )}
+
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={attemptClose}
             className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent/10"
           >
             Cancel
           </button>
           <button
             type="button"
-            disabled={mutation.isPending || hasErrors}
-            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending || (submitAttempted && hasErrors)}
+            onClick={() => {
+              setSubmitAttempted(true);
+              if (!hasErrors) mutation.mutate();
+            }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
