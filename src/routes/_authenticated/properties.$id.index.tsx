@@ -844,6 +844,14 @@ function PropertyDetailPage() {
   const unitCountMissing = configuredUnitCount == null;
   const unitCountMismatch = configuredUnitCount != null && configuredUnitCount !== actualUnitCount;
 
+  const zoneName =
+    geoData?.zones.find((z) => z.zone_id === Number(property?.["zone_id"]))?.zone_name ?? null;
+  const routeRow = geoData?.routes.find((r) => r.route_id === Number(property?.["route_id"]));
+  const routeName = routeRow ? `${routeRow.route_code} · ${routeRow.route_name}` : null;
+  const streetName =
+    geoData?.streets.find((st) => st.street_id === Number(property?.["street_id"]))?.street_name ??
+    null;
+
   const stats = [
     { label: "Units", value: configuredUnitCount ?? "—", icon: Layers },
     { label: "Current residents", value: residentsCurrent.length, icon: UsersIcon },
@@ -943,6 +951,9 @@ function PropertyDetailPage() {
                 <p className="text-xs text-muted-foreground">
                   {[
                     property?.["code"],
+                    zoneName,
+                    routeName,
+                    streetName,
                     property?.["address_line1"],
                     property?.["city"],
                     property?.["country"],
@@ -1107,6 +1118,9 @@ function PropertyDetailPage() {
                   </div>
                   <dl className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {[
+                      { label: "Zone", value: zoneName },
+                      { label: "Route", value: routeName },
+                      { label: "Street", value: streetName },
                       { label: "Address line 1", value: property?.["address_line1"] },
                       { label: "Address line 2", value: property?.["address_line2"] },
                       { label: "City / Town", value: property?.["city"] },
