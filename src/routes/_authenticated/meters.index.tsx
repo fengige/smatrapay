@@ -1429,6 +1429,7 @@ function ImportMetersDialog({
   onImported: () => Promise<void> | void;
 }) {
   const runImport = useServerFn(importMeters);
+  const runPreview = useServerFn(previewImportDuplicates);
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
