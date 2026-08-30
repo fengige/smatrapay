@@ -1007,8 +1007,8 @@ function MeterDialog({
       sts,
     }) !== initialSnapshot;
 
-  const attemptClose = () => {
-    if (mutation.isPending) return;
+  const attemptClose = (pending: boolean) => {
+    if (pending) return;
     if (
       isDirty &&
       !window.confirm("You have unsaved changes. Discard them and close this dialog?")
@@ -1016,15 +1016,6 @@ function MeterDialog({
       return;
     onClose();
   };
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") attemptClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose, isDirty, mutation.isPending]);
 
   const others = useMemo(
     () => existing.filter((m) => m.id !== meter?.id),
