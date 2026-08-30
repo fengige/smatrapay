@@ -644,7 +644,7 @@ export const importMeters = createServerFn({ method: "POST" })
             duplicates.push({
               row: r.row,
               meter_number: parsed.meter_number,
-              serial_number: parsed.serial_number ?? "",
+              serial_number: parsedSerial,
               reason,
             });
             skipped += 1;
@@ -680,7 +680,7 @@ export const importMeters = createServerFn({ method: "POST" })
           landlord_id,
           agent_id,
           meter_number: parsed.meter_number,
-          serial_number: parsed.serial_number ?? "",
+          serial_number: parsedSerial,
           type: parsed.type,
           initial_reading: parsed.initial_reading,
           price_per_unit: parsed.price_per_unit,
@@ -697,16 +697,16 @@ export const importMeters = createServerFn({ method: "POST" })
           duplicates.push({
             row: r.row,
             meter_number: parsed.meter_number,
-            serial_number: parsed.serial_number ?? "",
+            serial_number: parsedSerial,
             reason: "Existing meter will be updated",
           });
           toUpdate.push({ id: existingId, values });
           // Keep the lookup fresh so later rows see the new identifiers.
-          meterByNumber.set(mKey, { id: existingId, serial: parsed.serial_number ?? "" });
+          meterByNumber.set(mKey, { id: existingId, serial: parsedSerial });
           meterBySerial.set(sKey, { id: existingId, number: parsed.meter_number });
         } else {
           toInsert.push({ ...values, unit_id: null });
-          meterByNumber.set(mKey, { id: "pending", serial: parsed.serial_number ?? "" });
+          meterByNumber.set(mKey, { id: "pending", serial: parsedSerial });
           meterBySerial.set(sKey, { id: "pending", number: parsed.meter_number });
         }
       } catch (e: any) {
