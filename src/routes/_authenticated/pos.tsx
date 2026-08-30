@@ -17,6 +17,7 @@ import { PortalLayout } from "@/components/PortalLayout";
 import {
   issueMeterToken,
   listMeterTokens,
+  resendTokenSms,
   searchTokenMeters,
   type IssuedToken,
   type TokenMeterMatch,
@@ -69,6 +70,8 @@ function PosPage() {
   const [confirming, setConfirming] = useState(false);
   const [sale, setSale] = useState<IssuedToken | null>(null);
   const [reprint, setReprint] = useState<IssuedToken | null>(null);
+  const [smsTarget, setSmsTarget] = useState<IssuedToken | null>(null);
+  const [smsPhone, setSmsPhone] = useState("");
 
   const runSearch = useServerFn(searchTokenMeters);
   const runIssue = useServerFn(issueMeterToken);
