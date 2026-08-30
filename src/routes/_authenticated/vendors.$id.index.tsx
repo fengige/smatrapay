@@ -33,6 +33,7 @@ import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/us
 import { PortalLayout } from "@/components/PortalLayout";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
+import { ProfileImageHistory } from "@/components/ProfileImageHistory";
 
 export const Route = createFileRoute("/_authenticated/vendors/$id/")({
   head: () => ({
@@ -385,6 +386,8 @@ function VendorDetailPage() {
                   />
                 </div>
               </div>
+
+              <ProfileImageHistory userId={id} />
 
               <div className="rounded-2xl border border-border bg-card p-6">
                 <h3 className="text-sm font-bold text-foreground">Actions</h3>

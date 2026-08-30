@@ -19,6 +19,7 @@ import {
   listVendorMeters,
   unassignMetersFromVendor,
 } from "@/lib/vendors.functions";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 type MeterResult = { id: string; meter_number: string; ok: boolean; reason?: string };
 
@@ -153,6 +154,12 @@ export function MeterAssignmentPanel({
       allAssignable.filter((m) => pickerSelected.includes(m.id) && conflictOf(m)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [allAssignable, pickerSelected],
+  );
+
+  useRealtimeRefresh(
+    `${kind}-meters`,
+    ["meters", "meter_audit_logs"],
+    [ownedKey, [`assignable-${kind}-meters`], [`${kind}-assignment-history`, ownerId]],
   );
 
   const refresh = () => {

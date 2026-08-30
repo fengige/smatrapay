@@ -45,6 +45,7 @@ export function ProfileImageEditor({
     });
     await queryClient.invalidateQueries({ queryKey: ["user", userId] });
     await queryClient.invalidateQueries({ queryKey: ["users", kind] });
+    await queryClient.invalidateQueries({ queryKey: ["profile-image-audit", userId] });
   };
 
   const onPick = async (file: File | undefined) => {

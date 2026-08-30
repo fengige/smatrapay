@@ -31,6 +31,7 @@ import { toast } from "sonner";
 
 import { AssignmentHistorySection } from "@/components/AssignmentHistorySection";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
+import { ProfileImageHistory } from "@/components/ProfileImageHistory";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
@@ -414,6 +415,8 @@ function LandlordDetailPage() {
                   />
                 </div>
               </div>
+
+              <ProfileImageHistory userId={id} />
 
               <div className="rounded-2xl border border-border bg-card p-6">
                 <h3 className="text-sm font-bold text-foreground">Actions</h3>
