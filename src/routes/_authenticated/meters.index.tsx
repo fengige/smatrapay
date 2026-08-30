@@ -1646,6 +1646,51 @@ function ImportMetersDialog({
 
           {parseError && <p className="text-sm text-destructive">{parseError}</p>}
 
+          {progress && (
+            <div
+              className="rounded-xl border border-border bg-muted/20 p-3"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-foreground">
+                  {progress.phase === "validating"
+                    ? "Validating rows…"
+                    : `Importing ${progress.done} of ${progress.total} rows…`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    cancelRef.current = true;
+                    setCancelled(true);
+                  }}
+                  disabled={cancelRef.current}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent/10 disabled:opacity-60"
+                >
+                  {cancelled ? "Cancelling…" : "Cancel import"}
+                </button>
+              </div>
+              <div
+                className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={progress.total}
+                aria-valuenow={progress.done}
+              >
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{
+                    width: `${progress.total ? Math.round((progress.done / progress.total) * 100) : 0}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Cancelling stops before the next batch — rows already saved are kept.
+              </p>
+            </div>
+          )}
+
+
           {!result && (
             <fieldset className="rounded-xl border border-border p-3">
               <legend className="px-1 text-xs font-semibold uppercase text-muted-foreground">
