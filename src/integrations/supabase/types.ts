@@ -183,6 +183,74 @@ export type Database = {
         }
         Relationships: []
       }
+      meter_tokens: {
+        Row: {
+          action: Database["public"]["Enums"]["meter_token_action"]
+          amount: number
+          created_at: string
+          customer_phone: string | null
+          expires_at: string
+          id: string
+          issued_by: string | null
+          meter_id: string
+          reference: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          sms_requested: boolean
+          status: Database["public"]["Enums"]["meter_token_status"]
+          token: string
+          units: number
+          updated_at: string
+        }
+        Insert: {
+          action?: Database["public"]["Enums"]["meter_token_action"]
+          amount?: number
+          created_at?: string
+          customer_phone?: string | null
+          expires_at?: string
+          id?: string
+          issued_by?: string | null
+          meter_id: string
+          reference?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sms_requested?: boolean
+          status?: Database["public"]["Enums"]["meter_token_status"]
+          token: string
+          units?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["meter_token_action"]
+          amount?: number
+          created_at?: string
+          customer_phone?: string | null
+          expires_at?: string
+          id?: string
+          issued_by?: string | null
+          meter_id?: string
+          reference?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sms_requested?: boolean
+          status?: Database["public"]["Enums"]["meter_token_status"]
+          token?: string
+          units?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_tokens_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meters: {
         Row: {
           agent_id: string | null
@@ -626,6 +694,12 @@ export type Database = {
         | "agent"
         | "service_provider"
       assignment_role: "resident" | "landlord"
+      meter_token_action:
+        | "credit"
+        | "key_change"
+        | "clear_tamper"
+        | "clear_credit"
+      meter_token_status: "issued" | "revoked" | "expired"
       meter_utility_type: "Electricity" | "Water" | "Gas" | "Multi-Utility"
       property_status: "active" | "archived"
       supplier_status: "Active" | "Inactive" | "Suspended"
@@ -769,6 +843,13 @@ export const Constants = {
         "service_provider",
       ],
       assignment_role: ["resident", "landlord"],
+      meter_token_action: [
+        "credit",
+        "key_change",
+        "clear_tamper",
+        "clear_credit",
+      ],
+      meter_token_status: ["issued", "revoked", "expired"],
       meter_utility_type: ["Electricity", "Water", "Gas", "Multi-Utility"],
       property_status: ["active", "archived"],
       supplier_status: ["Active", "Inactive", "Suspended"],

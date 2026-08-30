@@ -166,3 +166,199 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
       } satisfies TokenMeterMatch;
     });
   });
+
+/* ------------------------------------------------------------------ *
+ * Token issuance, listing and revocation
+ * ------------------------------------------------------------------ */
+
+export type TokenAction = "credit" | "key_change" | "clear_tamper" | "clear_credit";
+
+export type IssuedToken = {
+  id: string;
+  meter_id: string;
+  meter_number: string;
+  action: TokenAction;
+  token: string;
+  units: number;
+  amount: number;
+  reference: string | null;
+  customer_phone: string | null;
+  sms_requested: boolean;
+  status: "issued" | "revoked" | "expired";
+  expires_at: string;
+  revoked_at: string | null;
+  revoke_reason: string | null;
+  issued_by_name: string | null;
+  created_at: string;
+};
+
+const tokenAction = z.enum(["credit", "key_change", "clear_tamper", "clear_credit"]);
+
+/** 20-digit STS-style token, formatted in groups of four. */
+function generateTokenValue() {
+  let out = "";
+  for (let i = 0; i < 20; i += 1) out += Math.floor(Math.random() * 10);
+  return out.replace(/(\d{4})(?=\d)/g, "$1-");
+}
+
+function effectiveStatus(row: any): "issued" | "revoked" | "expired" {
+  if (row.status === "issued" && new Date(row.expires_at).getTime() < Date.now()) return "expired";
+  return row.status;
+}
+
+async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
+  if (!rows.length) return [];
+  const meterIds = [...new Set(rows.map((r) => r.meter_id))];
+  const { data: meters } = await supabase
+    .from("meters")
+    .select("id, meter_number")
+    .in("id", meterIds);
+  const meterById = new Map<string, string>(
+    (meters ?? []).map((m: any) => [m.id as string, m.meter_number as string]),
+  );
+
+  const actorIds = [...new Set(rows.map((r) => r.issued_by).filter(Boolean))] as string[];
+  const actorById = new Map<string, string>();
+  if (actorIds.length) {
+    const { data: users } = await supabase.from("users").select("id, name, email").in("id", actorIds);
+    for (const u of (users ?? []) as any[]) actorById.set(u.id, u.name ?? u.email ?? u.id);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    meter_id: r.meter_id,
+    meter_number: meterById.get(r.meter_id) ?? "—",
+    action: r.action as TokenAction,
+    token: r.token,
+    units: Number(r.units ?? 0),
+    amount: Number(r.amount ?? 0),
+    reference: r.reference ?? null,
+    customer_phone: r.customer_phone ?? null,
+    sms_requested: !!r.sms_requested,
+    status: effectiveStatus(r),
+    expires_at: r.expires_at,
+    revoked_at: r.revoked_at ?? null,
+    revoke_reason: r.revoke_reason ?? null,
+    issued_by_name: r.issued_by ? (actorById.get(r.issued_by) ?? null) : null,
+    created_at: r.created_at,
+  }));
+}
+
+/** Issue a token for a meter and persist it with an expiry window. */
+export const issueMeterToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        meter_id: z.string().uuid(),
+        action: tokenAction,
+        units: z.number().nonnegative().default(0),
+        amount: z.number().nonnegative().default(0),
+        reference: z.string().trim().max(120).optional().nullable(),
+        customer_phone: z.string().trim().max(30).optional().nullable(),
+        sms_requested: z.boolean().default(false),
+        expires_in_days: z.number().int().min(1).max(365).default(30),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<IssuedToken> => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: meter, error: meterErr } = await supabase
+      .from("meters")
+      .select("id, status")
+      .eq("id", data.meter_id)
+      .maybeSingle();
+    if (meterErr) throw new Error(meterErr.message);
+    if (!meter) throw new Error("Meter not found");
+    if ((meter as any).status !== "active")
+      throw new Error("This meter is not active — activate it before issuing tokens");
+    if (data.action === "credit" && data.amount <= 0)
+      throw new Error("Enter an amount greater than zero");
+    if (data.sms_requested && (data.customer_phone ?? "").trim().length < 7)
+      throw new Error("Enter a valid phone number for SMS delivery");
+
+    const expires = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
+    const { data: row, error } = await supabase
+      .from("meter_tokens")
+      .insert({
+        meter_id: data.meter_id,
+        action: data.action,
+        token: generateTokenValue(),
+        units: data.units,
+        amount: data.amount,
+        reference: data.reference?.trim() || null,
+        customer_phone: data.customer_phone?.trim() || null,
+        sms_requested: data.sms_requested,
+        expires_at: expires,
+        issued_by: context.userId,
+      } as never)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const [serialized] = await serialize(supabase, [row]);
+    return serialized!;
+  });
+
+/** Recent tokens, optionally scoped to one meter. */
+export const listMeterTokens = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ meter_id: z.string().uuid().optional().nullable() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<IssuedToken[]> => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+    let query = supabase
+      .from("meter_tokens")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (data.meter_id) query = query.eq("meter_id", data.meter_id);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return serialize(supabase, (rows ?? []) as any[]);
+  });
+
+/** Revoke a previously issued token so it can no longer be used. */
+export const revokeMeterToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        reason: z.string().trim().max(200).optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<IssuedToken> => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: existing, error: readErr } = await supabase
+      .from("meter_tokens")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!existing) throw new Error("Token not found");
+    if ((existing as any).status === "revoked") throw new Error("This token is already revoked");
+
+    const { data: row, error } = await supabase
+      .from("meter_tokens")
+      .update({
+        status: "revoked",
+        revoked_at: new Date().toISOString(),
+        revoked_by: context.userId,
+        revoke_reason: data.reason?.trim() || null,
+      } as never)
+      .eq("id", data.id)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const [serialized] = await serialize(supabase, [row]);
+    return serialized!;
+  });
