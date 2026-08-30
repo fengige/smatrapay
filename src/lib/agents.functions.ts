@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createUserSchema } from "@/lib/user-schema";
 import { assignmentHistorySchema } from "@/lib/assignment-history";
-import { buildAssignmentHistory } from "@/lib/assignment-history.server";
 
 
 /** Agents never carry residency details, so those fields are dropped entirely. */
@@ -24,6 +23,7 @@ const agentUpdateSchema = z.object({
   bio: z.string().trim().max(1000).nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
   status: z.enum(["active", "inactive", "suspended", "pending"]).optional(),
+  profile_image: z.string().trim().max(1000).nullable().optional(),
 });
 
 export const createAgent = createServerFn({ method: "POST" })
@@ -198,6 +198,7 @@ export const listAgentAssignmentHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => assignmentHistorySchema.parse(data))
   .handler(async ({ data, context }) => {
+    const { buildAssignmentHistory } = await import("@/lib/assignment-history.server");
     return buildAssignmentHistory(context.supabase, "agent_id", data);
   });
 
