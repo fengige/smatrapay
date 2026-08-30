@@ -9,3 +9,4 @@
 - [x] Audit/activity log entry for bulk assignments (meters trigger)
 - [x] "Unassign from units" bulk action
 - [x] Token Management page (meter search + token actions)
+- [x] Price Management page: bulk meter price-per-unit configuration
