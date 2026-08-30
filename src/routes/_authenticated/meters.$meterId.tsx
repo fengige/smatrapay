@@ -457,16 +457,25 @@ function MeterHistoryPanel({ meterId }: { meterId: string }) {
         <ol className="mt-4 space-y-3">
           {entries.map((log) => (
             <li key={log.id} className="border-l-2 border-primary/40 pl-3">
-              <p className="text-xs text-muted-foreground">
-                {new Date(log.created_at).toLocaleString()} ·{" "}
-                <span className="font-medium text-foreground">{log.actor_name ?? "System"}</span>
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {new Date(log.created_at).toLocaleString()} ·{" "}
+                  <span className="font-medium text-foreground">{log.actor_name ?? "System"}</span>
+                </p>
+                {actionBadge(log.action)}
+              </div>
               <ul className="mt-1 space-y-0.5 text-xs">
                 {log.changes.map(([field, diff]) => (
                   <li key={field}>
                     <span className="font-medium">{HISTORY_LABELS[field] ?? field}:</span>{" "}
-                    <span className="text-muted-foreground line-through">{diff.old ?? "—"}</span> →{" "}
-                    <span className="font-semibold">{diff.new ?? "—"}</span>
+                    {log.action === "create" ? (
+                      <span className="font-semibold">{diff.new ?? "—"}</span>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground line-through">{diff.old ?? "—"}</span> →{" "}
+                        <span className="font-semibold">{diff.new ?? "—"}</span>
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
