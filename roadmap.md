@@ -1,5 +1,5 @@
 # Roadmap
 
-- [ ] Transactional locking for meter assignment mutations (in progress)
-- [ ] Pagination + sorting on agent/vendor/landlord assignment history (in progress)
-- [ ] Edit profile image on agent, vendor and landlord detail pages
+- [x] Transactional locking for meter assignment mutations
+- [x] Pagination + sorting on agent/vendor/landlord assignment history
+- [x] Edit profile image on agent, vendor and landlord detail pages
