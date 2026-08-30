@@ -835,9 +835,9 @@ function MetersPage() {
       {editing && (
         <MeterDialog
           meter={editing}
+          vendors={vendors}
           landlords={landlords}
           agents={agents}
-          units={unitOptions}
           suppliers={supplierOptions}
           existing={meters}
           onClose={() => {
@@ -854,9 +854,9 @@ function MetersPage() {
       {creating && (
         <MeterDialog
           meter={null}
+          vendors={vendors}
           landlords={landlords}
           agents={agents}
-          units={unitOptions}
           suppliers={supplierOptions}
           existing={meters}
           onClose={() => setCreating(false)}
