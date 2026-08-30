@@ -60,7 +60,7 @@ export const emptyProperty: PropertyFormValues = {
   address_line1: "",
   address_line2: "",
   city: "",
-  state: "",
+  state: "Nairobi",
   country: "Kenya",
   postal_code: "",
   description: "",

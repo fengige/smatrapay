@@ -15,12 +15,16 @@ import {
 } from "lucide-react";
 import { PortalLayout } from "@/components/PortalLayout";
 import {
+  bulkResendTokenSms,
   issueMeterToken,
   listMeterTokens,
+  listTokenSmsLogs,
   resendTokenSms,
   searchTokenMeters,
   type IssuedToken,
+  type SmsDeliveryStatus,
   type TokenMeterMatch,
+  type TokenSmsLog,
 } from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/_authenticated/pos")({
@@ -55,6 +59,13 @@ const PAYMENT_METHODS = [
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["id"];
 
+/** Badge colours for an SMS delivery attempt result. */
+function smsBadgeClass(status: SmsDeliveryStatus) {
+  if (status === "sent") return "bg-emerald-500/15 text-emerald-500";
+  if (status === "failed") return "bg-destructive/15 text-destructive";
+  return "bg-amber-500/15 text-amber-500";
+}
+
 function PosPage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
@@ -72,11 +83,16 @@ function PosPage() {
   const [reprint, setReprint] = useState<IssuedToken | null>(null);
   const [smsTarget, setSmsTarget] = useState<IssuedToken | null>(null);
   const [smsPhone, setSmsPhone] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [historyFor, setHistoryFor] = useState<IssuedToken | null>(null);
 
   const runSearch = useServerFn(searchTokenMeters);
   const runIssue = useServerFn(issueMeterToken);
   const runList = useServerFn(listMeterTokens);
   const runResendSms = useServerFn(resendTokenSms);
+  const runBulkResend = useServerFn(bulkResendTokenSms);
+  const runSmsLogs = useServerFn(listTokenSmsLogs);
 
   const resendSms = useMutation({
     mutationFn: async () =>
@@ -88,6 +104,7 @@ function PosPage() {
       setSmsTarget(null);
       setSmsPhone("");
       void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["token-sms-logs"] });
     },
     onError: (err: Error) => toast.error(err.message || "Failed to send SMS"),
   });
@@ -107,6 +124,67 @@ function PosPage() {
     queryKey: ["meter-tokens", meter?.id ?? null],
     queryFn: async () =>
       (await runList({ data: { meter_id: meter?.id ?? null } } as never)) as IssuedToken[],
+  });
+
+  const recentRows = useMemo(() => (recent.data ?? []).slice(0, 20), [recent.data]);
+  const recentIds = useMemo(() => recentRows.map((t) => t.id), [recentRows]);
+
+  const smsLogs = useQuery({
+    queryKey: ["token-sms-logs", recentIds],
+    enabled: recentIds.length > 0,
+    queryFn: async () =>
+      (await runSmsLogs({ data: { token_ids: recentIds } } as never)) as TokenSmsLog[],
+  });
+
+  /** Newest attempt per token — logs come back newest first. */
+  const latestLogByToken = useMemo(() => {
+    const map = new Map<string, TokenSmsLog>();
+    for (const log of smsLogs.data ?? []) if (!map.has(log.token_id)) map.set(log.token_id, log);
+    return map;
+  }, [smsLogs.data]);
+
+  const logsByToken = useMemo(() => {
+    const map = new Map<string, TokenSmsLog[]>();
+    for (const log of smsLogs.data ?? []) {
+      const list = map.get(log.token_id) ?? [];
+      list.push(log);
+      map.set(log.token_id, list);
+    }
+    return map;
+  }, [smsLogs.data]);
+
+  const selectable = useMemo(
+    () => recentRows.filter((t) => t.status !== "revoked").map((t) => t.id),
+    [recentRows],
+  );
+  const selectedRows = useMemo(
+    () => recentRows.filter((t) => selected.includes(t.id)),
+    [recentRows, selected],
+  );
+
+  const bulkResend = useMutation({
+    mutationFn: async () =>
+      (await runBulkResend({ data: { ids: selected } } as never)) as {
+        queued: number;
+        failed: number;
+        results: { meter_number: string; phone: string; status: SmsDeliveryStatus; error: string | null }[];
+      },
+    onSuccess: (res) => {
+      setBulkConfirm(false);
+      setSelected([]);
+      if (res.failed === 0) toast.success(`${res.queued} receipt(s) queued for SMS delivery`);
+      else
+        toast.warning(
+          `${res.queued} queued, ${res.failed} failed — ${res.results
+            .filter((r) => r.status === "failed")
+            .slice(0, 3)
+            .map((r) => `${r.meter_number}: ${r.error}`)
+            .join("; ")}`,
+        );
+      void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["token-sms-logs"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Bulk SMS re-send failed"),
   });
 
   const amountNumber = Number(amount);
@@ -464,70 +542,221 @@ function PosPage() {
 
         {/* Recent sales */}
         <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="text-sm font-bold">
-            {meter ? `Recent sales — ${meter.meter_number}` : "Recent sales"}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-bold">
+              {meter ? `Recent sales — ${meter.meter_number}` : "Recent sales"}
+            </h2>
+            {selected.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{selected.length} selected</span>
+                <button
+                  type="button"
+                  onClick={() => setSelected([])}
+                  className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkConfirm(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  <MessageSquare className="size-3.5" /> Re-send {selected.length} by SMS
+                </button>
+              </div>
+            )}
+          </div>
           {recent.isLoading ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
-          ) : (recent.data ?? []).length === 0 ? (
+          ) : recentRows.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No sales recorded yet.</p>
           ) : (
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs uppercase text-muted-foreground">
                   <tr>
+                    <th className="py-2 pr-3">
+                      <input
+                        type="checkbox"
+                        aria-label="Select all sales for SMS re-send"
+                        checked={selectable.length > 0 && selected.length === selectable.length}
+                        onChange={(e) => setSelected(e.target.checked ? selectable : [])}
+                      />
+                    </th>
                     <th className="py-2 pr-4">When</th>
                     <th className="py-2 pr-4">Token</th>
                     <th className="py-2 pr-4">Units</th>
                     <th className="py-2 pr-4">Amount</th>
                     <th className="py-2 pr-4">Reference</th>
                     <th className="py-2 pr-4">Status</th>
+                    <th className="py-2 pr-4">SMS</th>
                     <th className="py-2 text-right">Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(recent.data ?? []).slice(0, 20).map((t) => (
-                    <tr key={t.id} className="border-t border-border">
-                      <td className="py-2 pr-4">{new Date(t.created_at).toLocaleString()}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
-                      <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
-                      <td className="py-2 pr-4">{money(t.amount)}</td>
-                      <td className="py-2 pr-4">{t.reference ?? "—"}</td>
-                      <td className="py-2 pr-4 capitalize">{t.status}</td>
-                      <td className="py-2 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setReprint(t)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
-                          >
-                            <Printer className="size-3.5" /> Reprint
-                          </button>
-                          <button
-                            type="button"
+                  {recentRows.map((t) => {
+                    const log = latestLogByToken.get(t.id);
+                    return (
+                      <tr key={t.id} className="border-t border-border">
+                        <td className="py-2 pr-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select sale ${t.token} for SMS re-send`}
                             disabled={t.status === "revoked"}
-                            title={
-                              t.status === "revoked"
-                                ? "Revoked tokens cannot be re-sent"
-                                : "Re-send this receipt via SMS"
+                            checked={selected.includes(t.id)}
+                            onChange={(e) =>
+                              setSelected((prev) =>
+                                e.target.checked ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                              )
                             }
-                            onClick={() => {
-                              setSmsTarget(t);
-                              setSmsPhone(t.customer_phone ?? "");
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <MessageSquare className="size-3.5" /> SMS
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          />
+                        </td>
+                        <td className="py-2 pr-4">{new Date(t.created_at).toLocaleString()}</td>
+                        <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
+                        <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
+                        <td className="py-2 pr-4">{money(t.amount)}</td>
+                        <td className="py-2 pr-4">{t.reference ?? "—"}</td>
+                        <td className="py-2 pr-4 capitalize">{t.status}</td>
+                        <td className="py-2 pr-4">
+                          {log ? (
+                            <button
+                              type="button"
+                              onClick={() => setHistoryFor(t)}
+                              title={`${log.status} · ${log.phone} · ${new Date(log.created_at).toLocaleString()}${log.error ? ` · ${log.error}` : ""}`}
+                              className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${smsBadgeClass(log.status)}`}
+                            >
+                              {log.status}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not sent</span>
+                          )}
+                        </td>
+                        <td className="py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setReprint(t)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10"
+                            >
+                              <Printer className="size-3.5" /> Reprint
+                            </button>
+                            <button
+                              type="button"
+                              disabled={t.status === "revoked"}
+                              title={
+                                t.status === "revoked"
+                                  ? "Revoked tokens cannot be re-sent"
+                                  : "Re-send this receipt via SMS"
+                              }
+                              onClick={() => {
+                                setSmsTarget(t);
+                                setSmsPhone(t.customer_phone ?? "");
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <MessageSquare className="size-3.5" /> SMS
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </section>
+
+        {/* Bulk re-send confirmation */}
+        {bulkConfirm && (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm bulk SMS re-send"
+          >
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+              <h3 className="font-semibold">Re-send {selectedRows.length} receipt(s) by SMS</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Existing tokens are re-sent to the phone number on each sale. No new sales are created.
+              </p>
+              <ul className="mt-3 max-h-56 space-y-1 overflow-y-auto text-sm">
+                {selectedRows.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between gap-3 border-b border-border/60 py-1">
+                    <span className="font-mono text-xs">{t.token}</span>
+                    <span className={t.customer_phone ? "" : "text-destructive"}>
+                      {t.customer_phone ?? "No phone on file"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkConfirm(false)}
+                  disabled={bulkResend.isPending}
+                  className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => bulkResend.mutate()}
+                  disabled={bulkResend.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                >
+                  {bulkResend.isPending ? <Loader2 className="size-4 animate-spin" /> : <MessageSquare className="size-4" />}
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SMS delivery history */}
+        {historyFor && (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="SMS delivery history"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setHistoryFor(null);
+            }}
+          >
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
+              <h3 className="font-semibold">SMS delivery history</h3>
+              <p className="mt-1 font-mono text-xs text-muted-foreground">{historyFor.token}</p>
+              <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto text-sm">
+                {(logsByToken.get(historyFor.id) ?? []).map((log) => (
+                  <li key={log.id} className="rounded-lg border border-border p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${smsBadgeClass(log.status)}`}>
+                        {log.status}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(log.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs">
+                      {log.phone} · by {log.actor_name ?? "system"}
+                    </p>
+                    {log.error && <p className="mt-1 text-xs text-destructive">{log.error}</p>}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setHistoryFor(null)}
+                  className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent/10"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {reprint && (

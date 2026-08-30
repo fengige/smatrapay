@@ -363,6 +363,82 @@ export const revokeMeterToken = createServerFn({ method: "POST" })
     return serialized!;
   });
 
+/* ------------------------------------------------------------------ *
+ * SMS receipt re-send + delivery audit trail
+ * ------------------------------------------------------------------ */
+
+export type SmsDeliveryStatus = "queued" | "sent" | "failed";
+
+export type TokenSmsLog = {
+  id: string;
+  token_id: string;
+  phone: string;
+  status: SmsDeliveryStatus;
+  error: string | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  created_at: string;
+};
+
+async function logSmsAttempt(
+  supabase: any,
+  entry: {
+    token_id: string;
+    phone: string;
+    status: SmsDeliveryStatus;
+    error?: string | null;
+    actor_id: string | null;
+  },
+) {
+  await supabase.from("token_sms_logs").insert({
+    token_id: entry.token_id,
+    phone: entry.phone,
+    status: entry.status,
+    error: entry.error ?? null,
+    actor_id: entry.actor_id,
+  } as never);
+}
+
+/** Attempt one re-send; records an audit entry for the attempt either way. */
+async function resendOne(
+  supabase: any,
+  actorId: string | null,
+  id: string,
+  requestedPhone?: string | null,
+): Promise<{ id: string; status: SmsDeliveryStatus; phone: string; error: string | null; row: any | null }> {
+  const { data: existing, error: readErr } = await supabase
+    .from("meter_tokens")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  const phone = (requestedPhone ?? (existing as any)?.customer_phone ?? "").trim();
+
+  const fail = async (message: string) => {
+    if (existing) await logSmsAttempt(supabase, { token_id: id, phone: phone || "—", status: "failed", error: message, actor_id: actorId });
+    return { id, status: "failed" as const, phone, error: message, row: null };
+  };
+
+  if (readErr) return { id, status: "failed", phone, error: readErr.message, row: null };
+  if (!existing) return { id, status: "failed", phone, error: "Token not found", row: null };
+  if ((existing as any).status === "revoked")
+    return await fail("This token has been revoked — the receipt cannot be re-sent");
+  if (new Date((existing as any).expires_at).getTime() < Date.now())
+    return await fail("This token has expired — issue a new token instead");
+  if (phone.length < 7) return await fail("No valid phone number on file for this sale");
+
+  const { data: row, error } = await supabase
+    .from("meter_tokens")
+    .update({ customer_phone: phone, sms_requested: true } as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) return await fail(error.message);
+
+  await logSmsAttempt(supabase, { token_id: id, phone, status: "queued", actor_id: actorId });
+  return { id, status: "queued", phone, error: null, row };
+}
+
 /** Re-send the receipt for an existing token via SMS without recreating the sale. */
 export const resendTokenSms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -376,32 +452,105 @@ export const resendTokenSms = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<IssuedToken> => {
     await assertAdmin(context as never);
-    const { supabase } = context;
+    const { supabase, userId } = context as any;
 
-    const { data: existing, error: readErr } = await supabase
-      .from("meter_tokens")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (readErr) throw new Error(readErr.message);
-    if (!existing) throw new Error("Token not found");
-    if ((existing as any).status === "revoked")
-      throw new Error("This token has been revoked — the receipt cannot be re-sent");
-    if (new Date((existing as any).expires_at).getTime() < Date.now())
-      throw new Error("This token has expired — issue a new token instead");
+    const result = await resendOne(supabase, userId ?? null, data.id, data.customer_phone ?? null);
+    if (result.status === "failed" || !result.row) throw new Error(result.error ?? "Failed to send SMS");
 
-    const phone = (data.customer_phone ?? (existing as any).customer_phone ?? "").trim();
-    if (phone.length < 7)
-      throw new Error("Enter a valid phone number to send the receipt to");
-
-    const { data: row, error } = await supabase
-      .from("meter_tokens")
-      .update({ customer_phone: phone, sms_requested: true } as never)
-      .eq("id", data.id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-
-    const [serialized] = await serialize(supabase, [row]);
+    const [serialized] = await serialize(supabase, [result.row]);
     return serialized!;
   });
+
+/** Re-send receipts for several sales at once. */
+export const bulkResendTokenSms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }).parse(d),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      queued: number;
+      failed: number;
+      results: { id: string; meter_number: string; phone: string; status: SmsDeliveryStatus; error: string | null }[];
+    }> => {
+      await assertAdmin(context as never);
+      const { supabase, userId } = context as any;
+
+      const results: {
+        id: string;
+        meter_number: string;
+        phone: string;
+        status: SmsDeliveryStatus;
+        error: string | null;
+      }[] = [];
+
+      const rows: any[] = [];
+      for (const id of data.ids) {
+        const r = await resendOne(supabase, userId ?? null, id);
+        if (r.row) rows.push(r.row);
+        results.push({ id: r.id, meter_number: "—", phone: r.phone, status: r.status, error: r.error });
+      }
+
+      // Attach meter numbers for a readable summary.
+      const { data: tokens } = await supabase
+        .from("meter_tokens")
+        .select("id, meter_id")
+        .in("id", data.ids);
+      const meterIds = [...new Set((tokens ?? []).map((t: any) => t.meter_id))];
+      if (meterIds.length) {
+        const { data: meters } = await supabase.from("meters").select("id, meter_number").in("id", meterIds);
+        const meterById = new Map((meters ?? []).map((m: any) => [m.id, m.meter_number]));
+        const numberByToken = new Map(
+          (tokens ?? []).map((t: any) => [t.id, meterById.get(t.meter_id) ?? "—"]),
+        );
+        for (const r of results) r.meter_number = (numberByToken.get(r.id) as string) ?? "—";
+      }
+
+      return {
+        queued: results.filter((r) => r.status !== "failed").length,
+        failed: results.filter((r) => r.status === "failed").length,
+        results,
+      };
+    },
+  );
+
+/** SMS delivery attempts for the given tokens, newest first. */
+export const listTokenSmsLogs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ token_ids: z.array(z.string().uuid()).max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<TokenSmsLog[]> => {
+    const { supabase } = context;
+    if (!data.token_ids.length) return [];
+
+    const { data: rows, error } = await supabase
+      .from("token_sms_logs")
+      .select("*")
+      .in("token_id", data.token_ids)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+
+    const actorIds = [...new Set((rows ?? []).map((r: any) => r.actor_id).filter(Boolean))] as string[];
+    const actorById = new Map<string, string>();
+    if (actorIds.length) {
+      const { data: users } = await supabase.from("users").select("id, name, email").in("id", actorIds);
+      for (const u of (users ?? []) as any[]) actorById.set(u.id, u.name ?? u.email ?? u.id);
+    }
+
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      token_id: r.token_id,
+      phone: r.phone,
+      status: r.status,
+      error: r.error ?? null,
+      actor_id: r.actor_id ?? null,
+      actor_name: r.actor_id ? (actorById.get(r.actor_id) ?? null) : null,
+      created_at: r.created_at,
+    }));
+  });
+
