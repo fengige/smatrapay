@@ -891,7 +891,7 @@ export const getMeter = createServerFn({ method: "GET" })
         .select("id, company_name, utility_type, status, contact_name, email, phone_number")
         .eq("id", m.supplier_id)
         .maybeSingle();
-      if (s) supplier = s as never;
+      if (s) supplier = s as unknown as MeterDetail["supplier"];
     }
 
     let unit: MeterDetail["unit"] = null;
@@ -932,7 +932,7 @@ export const getMeter = createServerFn({ method: "GET" })
       id: m.id,
       vendor_id: m.vendor_id ?? "",
       supplier_id: m.supplier_id ?? null,
-      supplier_name: supplier?.company_name ?? null,
+      supplier_name: supplier ? supplier.company_name : null,
       landlord_id: m.landlord_id ?? null,
       landlord_name: person(m.landlord_id ?? null)?.name ?? null,
       agent_id: m.agent_id ?? null,
