@@ -18,3 +18,4 @@
 - [x] Reprint token receipts from POS recent sales
 - [x] Price Management: filter meters by property and by assigned user type (agent/landlord/vendor)
 - [x] Property add page: default State/County to Nairobi
+- [ ] Create Routes table linked to Zones with RLS and admin policies
