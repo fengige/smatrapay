@@ -922,20 +922,22 @@ function stsFieldError(label: string, value: string) {
 }
 
 
+type OwnerType = "vendor" | "landlord" | "agent";
+
 function MeterDialog({
   meter,
+  vendors,
   landlords,
   agents,
-  units,
   suppliers,
   existing,
   onClose,
   onSaved,
 }: {
   meter: MeterRow | null;
+  vendors: { id: string; name: string }[];
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
-  units: { id: string; label: string }[];
   suppliers: { id: string; name: string }[];
   existing: MeterRow[];
   onClose: () => void;
@@ -945,20 +947,23 @@ function MeterDialog({
   const createMeter = useServerFn(addMeter);
   const editMeter = useServerFn(updateMeter);
 
-  const [vendorId, setVendorId] = useState(meter?.vendor_id ?? "");
-  const [supplierId, setSupplierId] = useState(meter?.supplier_id ?? "");
-  const [landlordId, setLandlordId] = useState(meter?.landlord_id ?? "");
-  const [agentId, setAgentId] = useState(meter?.agent_id ?? "");
-  const [unitId, setUnitId] = useState(meter?.unit_id ?? "");
-  const [meterNumber, setMeterNumber] = useState(meter?.meter_number ?? "");
-  const [serialNumber, setSerialNumber] = useState(meter?.serial_number ?? "");
+  const inferOwnerType = (): OwnerType => {
+    if (meter?.landlord_id) return "landlord";
+    if (meter?.agent_id) return "agent";
+    return "vendor";
+  };
+
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">(
-    (meter?.type as "electricity" | "water" | "gas") ?? "electricity",
+    (meter?.type as "electricity" | "water" | "gas") ?? "",
   );
-  const [initialReading, setInitialReading] = useState(String(meter?.initial_reading ?? "0"));
-  const [pricePerUnit, setPricePerUnit] = useState(String(meter?.price_per_unit ?? "0"));
-  const [status, setStatus] = useState<"active" | "inactive">(
-    meter?.status === "inactive" ? "inactive" : "active",
+  const [supplierId, setSupplierId] = useState(meter?.supplier_id ?? "");
+  const [ownerType, setOwnerType] = useState<OwnerType>(inferOwnerType);
+  const [ownerId, setOwnerId] = useState(
+    meter?.landlord_id ?? meter?.agent_id ?? (meter && vendors.some((v) => v.id === meter.vendor_id) ? meter?.vendor_id : "") ?? "",
+  );
+  const [meterNumber, setMeterNumber] = useState(meter?.meter_number ?? "");
+  const [serialNumber, setSerialNumber] = useState(
+    meter && meter.serial_number !== meter.meter_number ? meter.serial_number : "",
   );
   const [sts, setSts] = useState({
     sgc: meter?.sgc != null ? String(meter.sgc) : "",
@@ -974,38 +979,13 @@ function MeterDialog({
 
   const initialSnapshot = useMemo(
     () =>
-      JSON.stringify({
-        vendorId,
-        supplierId,
-        landlordId,
-        agentId,
-        unitId,
-        meterNumber,
-        serialNumber,
-        meterType,
-        initialReading,
-        pricePerUnit,
-        status,
-        sts,
-      }),
+      JSON.stringify({ meterType, supplierId, ownerType, ownerId, meterNumber, serialNumber, sts }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   const isDirty =
-    JSON.stringify({
-      vendorId,
-      supplierId,
-      landlordId,
-      agentId,
-      unitId,
-      meterNumber,
-      serialNumber,
-      meterType,
-      initialReading,
-      pricePerUnit,
-      status,
-      sts,
-    }) !== initialSnapshot;
+    JSON.stringify({ meterType, supplierId, ownerType, ownerId, meterNumber, serialNumber, sts }) !==
+    initialSnapshot;
 
   const attemptClose = (pending: boolean) => {
     if (pending) return;
@@ -1017,10 +997,19 @@ function MeterDialog({
     onClose();
   };
 
+  const ownerOptions =
+    ownerType === "vendor" ? vendors : ownerType === "landlord" ? landlords : agents;
+
   const others = useMemo(
     () => existing.filter((m) => m.id !== meter?.id),
     [existing, meter?.id],
   );
+
+  const meterTypeError = meterType ? null : "Select a meter type";
+  const supplierError = supplierId ? null : "Select a supplier";
+  const ownerError = ownerId
+    ? null
+    : `Select a ${ownerType} — the meter must be linked to a user`;
 
   const meterNumberError = useMemo(() => {
     const base = identifierError("Meter number", meterNumber);
@@ -1032,25 +1021,17 @@ function MeterDialog({
   }, [meterNumber, others]);
 
   const serialNumberError = useMemo(() => {
+    if (!serialNumber.trim()) return null; // optional
     const base = identifierError("Serial number", serialNumber);
     if (base) return base;
     const v = serialNumber.trim().toLowerCase();
     if (others.some((m) => m.serial_number.toLowerCase() === v))
       return "This serial number is already registered";
-    if (v && v === meterNumber.trim().toLowerCase())
+    if (v === meterNumber.trim().toLowerCase())
       return "Serial number must differ from the meter number";
     return null;
   }, [serialNumber, meterNumber, others]);
 
-  const vendorError = vendorId.trim() ? null : "Vendor is required — enter the meter vendor code";
-  const priceError = useMemo(
-    () => decimalError("Price per unit", pricePerUnit),
-    [pricePerUnit],
-  );
-  const readingError = useMemo(
-    () => decimalError("Initial reading", initialReading),
-    [initialReading],
-  );
   const stsErrors = useMemo(
     () => ({
       sgc: stsFieldError("SGC", sts.sgc),
@@ -1063,7 +1044,7 @@ function MeterDialog({
   );
   const firstStsError = Object.values(stsErrors).find(Boolean) ?? null;
   const hasErrors = Boolean(
-    meterNumberError || serialNumberError || vendorError || priceError || readingError || firstStsError,
+    meterTypeError || supplierError || ownerError || meterNumberError || serialNumberError || firstStsError,
   );
   const visible = (key: string, error: string | null) =>
     (touched[key] || submitAttempted) && error ? error : null;
@@ -1072,20 +1053,20 @@ function MeterDialog({
     mutationFn: async () => {
       if (hasErrors)
         throw new Error(
-          vendorError || meterNumberError || serialNumberError || priceError || readingError || firstStsError || "",
+          meterTypeError || supplierError || ownerError || meterNumberError || serialNumberError || firstStsError || "",
         );
       const payload = {
-        vendor_id: vendorId.trim(),
+        vendor_id: ownerId,
         supplier_id: supplierId || null,
-        landlord_id: landlordId || null,
-        agent_id: agentId || null,
-        unit_id: unitId || null,
+        landlord_id: ownerType === "landlord" ? ownerId : null,
+        agent_id: ownerType === "agent" ? ownerId : null,
+        unit_id: meter?.unit_id ?? null,
         meter_number: meterNumber.trim(),
         serial_number: serialNumber.trim(),
         type: meterType,
-        initial_reading: initialReading,
-        price_per_unit: pricePerUnit,
-        status,
+        initial_reading: String(meter?.initial_reading ?? 0),
+        price_per_unit: String(meter?.price_per_unit ?? 0),
+        status: meter?.status === "inactive" ? "inactive" : "active",
         sgc: sts.sgc,
         krn: sts.krn,
         ti: sts.ti,
@@ -1133,99 +1114,94 @@ function MeterDialog({
             : "Register a meter in the meter registry."}
         </p>
 
-
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-vendor">
-              Vendor
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-type">
+              Meter Type
             </label>
-            <input
-              id="meter-vendor"
-              value={vendorId}
-              onChange={(e) => setVendorId(e.target.value)}
-              onBlur={() => touch("vendor")}
-              placeholder="e.g. STRON"
-              aria-invalid={Boolean(visible("vendor", vendorError))}
-              aria-describedby="meter-vendor-error"
-              className={fieldError(visible("vendor", vendorError))}
-            />
-            {visible("vendor", vendorError) && (
-              <p id="meter-vendor-error" className="mt-1 text-xs text-destructive">
-                {vendorError}
-              </p>
+            <select
+              id="meter-type"
+              value={meterType}
+              onChange={(e) => setMeterType(e.target.value as typeof meterType)}
+              onBlur={() => touch("meterType")}
+              aria-invalid={Boolean(visible("meterType", meterTypeError))}
+              className={fieldError(visible("meterType", meterTypeError))}
+            >
+              <option value="">Select meter type</option>
+              <option value="electricity">Electricity</option>
+              <option value="water">Water</option>
+              <option value="gas">Gas</option>
+            </select>
+            {visible("meterType", meterTypeError) && (
+              <p className="mt-1 text-xs text-destructive">{meterTypeError}</p>
             )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-supplier">
-              Supplier <span className="text-muted-foreground">(optional)</span>
+              Supplier
             </label>
             <select
               id="meter-supplier"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              className={field}
+              onBlur={() => touch("supplier")}
+              aria-invalid={Boolean(visible("supplier", supplierError))}
+              className={fieldError(visible("supplier", supplierError))}
             >
-              <option value="">No supplier</option>
+              <option value="">Select supplier</option>
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
             </select>
+            {visible("supplier", supplierError) && (
+              <p className="mt-1 text-xs text-destructive">{supplierError}</p>
+            )}
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-landlord">
-              Landlord
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-owner-type">
+              User Type
             </label>
             <select
-              id="meter-landlord"
-              value={landlordId}
-              onChange={(e) => setLandlordId(e.target.value)}
+              id="meter-owner-type"
+              value={ownerType}
+              onChange={(e) => {
+                setOwnerType(e.target.value as OwnerType);
+                setOwnerId("");
+              }}
               className={field}
             >
-              <option value="">Unassigned</option>
-              {landlords.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-unit">
-              Unit <span className="text-muted-foreground">(optional)</span>
-            </label>
-            <select
-              id="meter-unit"
-              value={unitId}
-              onChange={(e) => setUnitId(e.target.value)}
-              className={field}
-            >
-              <option value="">Not linked to a unit</option>
-              {units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.label}
-                </option>
-              ))}
+              <option value="vendor">Vendor</option>
+              <option value="landlord">Landlord</option>
+              <option value="agent">Agent</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-agent">
-              Agent
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-owner">
+              User
             </label>
             <select
-              id="meter-agent"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              className={field}
+              id="meter-owner"
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
+              onBlur={() => touch("owner")}
+              aria-invalid={Boolean(visible("owner", ownerError))}
+              className={fieldError(visible("owner", ownerError))}
             >
-              <option value="">Unassigned</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
+              <option value="">
+                Select {ownerType}
+                {ownerOptions.length === 0 ? " (none available)" : ""}
+              </option>
+              {ownerOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
                 </option>
               ))}
             </select>
+            {visible("owner", ownerError) && (
+              <p className="mt-1 text-xs text-destructive">{ownerError}</p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-number">
@@ -1249,14 +1225,14 @@ function MeterDialog({
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-serial">
-              Serial Number
+              Serial Number <span className="text-muted-foreground">(optional)</span>
             </label>
             <input
               id="meter-serial"
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
               onBlur={() => touch("serialNumber")}
-              placeholder="e.g. EM-2026-001"
+              placeholder="Defaults to the meter number"
               aria-invalid={Boolean(visible("serialNumber", serialNumberError))}
               aria-describedby="meter-serial-error"
               className={fieldError(visible("serialNumber", serialNumberError))}
@@ -1264,80 +1240,6 @@ function MeterDialog({
             {visible("serialNumber", serialNumberError) && (
               <p id="meter-serial-error" className="mt-1 text-xs text-destructive">
                 {serialNumberError}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-status">
-              Status
-            </label>
-            <select
-              id="meter-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-              className={field}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-type">
-              Meter Type
-            </label>
-            <select
-              id="meter-type"
-              value={meterType}
-              onChange={(e) => setMeterType(e.target.value as typeof meterType)}
-              className={field}
-            >
-              <option value="electricity">Electricity</option>
-              <option value="water">Water</option>
-              <option value="gas">Gas</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-price">
-              Price per unit
-            </label>
-            <input
-              id="meter-price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={pricePerUnit}
-              onChange={(e) => setPricePerUnit(e.target.value)}
-              onBlur={() => touch("price")}
-              aria-invalid={Boolean(visible("price", priceError))}
-              aria-describedby="meter-price-error"
-              className={fieldError(visible("price", priceError))}
-            />
-            {visible("price", priceError) && (
-              <p id="meter-price-error" className="mt-1 text-xs text-destructive">
-                {priceError}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="meter-initial">
-              Initial reading
-            </label>
-            <input
-              id="meter-initial"
-              type="number"
-              step="0.01"
-              min="0"
-              value={initialReading}
-              onChange={(e) => setInitialReading(e.target.value)}
-              onBlur={() => touch("reading")}
-              aria-invalid={Boolean(visible("reading", readingError))}
-              aria-describedby="meter-initial-error"
-              className={fieldError(visible("reading", readingError))}
-            />
-            {visible("reading", readingError) && (
-              <p id="meter-initial-error" className="mt-1 text-xs text-destructive">
-                {readingError}
               </p>
             )}
           </div>
