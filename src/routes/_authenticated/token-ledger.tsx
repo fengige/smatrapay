@@ -205,6 +205,49 @@ function TokenLedgerPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card">
+          <div className="border-b border-border p-4">
+            <p className="text-sm font-semibold text-foreground">Revenue by meter type</p>
+            <p className="text-xs text-muted-foreground">
+              Unit type, average price per unit and revenue over the last {days} days
+            </p>
+          </div>
+          {(data?.revenueByType ?? []).length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              No token transactions in this window.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="p-3 text-left">Unit type</th>
+                    <th className="p-3 text-right">Meters</th>
+                    <th className="p-3 text-right">Transactions</th>
+                    <th className="p-3 text-right">Avg price / unit</th>
+                    <th className="p-3 text-right">Units</th>
+                    <th className="p-3 text-right">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.revenueByType ?? []).map((r) => (
+                    <tr key={r.type} className="border-t border-border">
+                      <td className="p-3 font-medium capitalize text-foreground">{r.type}</td>
+                      <td className="p-3 text-right">{number(r.meters)}</td>
+                      <td className="p-3 text-right">{number(r.transactions)}</td>
+                      <td className="p-3 text-right">{number(r.avgPricePerUnit, 2)}</td>
+                      <td className="p-3 text-right">{number(r.units, 2)}</td>
+                      <td className="p-3 text-right font-semibold text-foreground">
+                        {number(r.amount, 2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card">
           <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
             <div className="relative min-w-56 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -343,7 +386,9 @@ function TokenLedgerPage() {
                       >
                         {e.meter_number}
                       </Link>
-                      <p className="text-xs text-muted-foreground">{e.meter_type}</p>
+                      <p className="text-xs capitalize text-muted-foreground">
+                        {e.meter_type || "—"} · {number(e.price_per_unit, 2)}/unit
+                      </p>
                     </td>
                     <td className="p-3 capitalize">{e.action.replace(/_/g, " ")}</td>
                     <td className="p-3 capitalize">{e.status}</td>

@@ -10,6 +10,7 @@ export type LedgerEntry = {
   meter_id: string;
   meter_number: string;
   meter_type: string;
+  price_per_unit: number;
   action: string;
   status: string;
   units: number;
@@ -17,6 +18,15 @@ export type LedgerEntry = {
   /** Meter index after this token was applied (initial reading + cumulative units). */
   reading: number;
   holders: { kind: LedgerHolderKind; id: string; name: string }[];
+};
+
+export type LedgerTypeRevenue = {
+  type: string;
+  meters: number;
+  transactions: number;
+  units: number;
+  amount: number;
+  avgPricePerUnit: number;
 };
 
 export type LedgerHolderTotals = {
@@ -68,7 +78,7 @@ export const getTokenLedger = createServerFn({ method: "GET" })
 
     const { data: meters, error: meterError } = await supabase
       .from("meters")
-      .select("id, meter_number, type, initial_reading, agent_id, vendor_id, landlord_id");
+      .select("id, meter_number, type, price_per_unit, initial_reading, agent_id, vendor_id, landlord_id");
     if (meterError) throw new Error(meterError.message);
     const meterRows = (meters ?? []) as any[];
     const meterById = new Map(meterRows.map((m) => [m.id as string, m]));
@@ -138,6 +148,7 @@ export const getTokenLedger = createServerFn({ method: "GET" })
         meter_id: t.meter_id as string,
         meter_number: (meter.meter_number as string) ?? "",
         meter_type: (meter.type as string) ?? "",
+        price_per_unit: Number(meter.price_per_unit ?? 0),
         action: t.action as string,
         status,
         units,
@@ -200,6 +211,37 @@ export const getTokenLedger = createServerFn({ method: "GET" })
       )
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+    // Revenue per meter (unit) type across the filtered window.
+    const typeAgg = new Map<
+      string,
+      { type: string; metersSet: Set<string>; transactions: number; units: number; amount: number; priceSum: number }
+    >();
+    for (const e of entries) {
+      const type = e.meter_type || "Unknown";
+      let row = typeAgg.get(type);
+      if (!row) {
+        row = { type, metersSet: new Set(), transactions: 0, units: 0, amount: 0, priceSum: 0 };
+        typeAgg.set(type, row);
+      }
+      if (!row.metersSet.has(e.meter_id)) {
+        row.metersSet.add(e.meter_id);
+        row.priceSum += e.price_per_unit;
+      }
+      row.transactions += 1;
+      row.units += e.units;
+      row.amount += e.amount;
+    }
+    const revenueByType: LedgerTypeRevenue[] = [...typeAgg.values()]
+      .map((r) => ({
+        type: r.type,
+        meters: r.metersSet.size,
+        transactions: r.transactions,
+        units: r.units,
+        amount: r.amount,
+        avgPricePerUnit: r.metersSet.size ? r.priceSum / r.metersSet.size : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
     const shown = entries.slice(0, limit);
 
     const globalTrend = Array.from({ length: days }, () => 0);
@@ -222,6 +264,7 @@ export const getTokenLedger = createServerFn({ method: "GET" })
         amount: entries.reduce((s, e) => s + e.amount, 0),
         meters: new Set(entries.map((e) => e.meter_id)).size,
       },
+      revenueByType,
       holders: [...totalsByHolder.values()].sort((a, b) => b.units - a.units),
       entries: shown,
       truncated: entries.length > shown.length,

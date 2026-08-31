@@ -61,6 +61,13 @@ function number(value: number, digits = 0) {
   });
 }
 
+const money = (n: number) =>
+  `KES ${new Intl.NumberFormat("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
+
+function typeLabel(type: string) {
+  return type ? type.charAt(0).toUpperCase() + type.slice(1) : "Unknown";
+}
+
 function Sparkline({ values, className }: { values: number[]; className?: string }) {
   const max = Math.max(1, ...values);
   return (
@@ -177,6 +184,47 @@ function MeterDashboardPage() {
             </p>
           </div>
           <Sparkline values={data?.globalTrend ?? []} className="mt-4 h-16" />
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card">
+          <div className="border-b border-border p-4">
+            <p className="text-sm font-semibold text-foreground">Revenue by meter type</p>
+            <p className="text-xs text-muted-foreground">
+              Unit type, average price per unit and revenue vended, last {days} days
+            </p>
+          </div>
+          {(data?.revenueByType ?? []).length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              No meters registered yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Unit type</th>
+                    <th className="px-4 py-3 text-right">Meters</th>
+                    <th className="px-4 py-3 text-right">Avg price / unit</th>
+                    <th className="px-4 py-3 text-right">Units ({days}d)</th>
+                    <th className="px-4 py-3 text-right">Revenue ({days}d)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(data?.revenueByType ?? []).map((r) => (
+                    <tr key={r.type}>
+                      <td className="px-4 py-3 font-medium text-foreground">{typeLabel(r.type)}</td>
+                      <td className="px-4 py-3 text-right">{number(r.meters)}</td>
+                      <td className="px-4 py-3 text-right">{money(r.avgPricePerUnit)}</td>
+                      <td className="px-4 py-3 text-right">{number(r.units, 2)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-foreground">
+                        {money(r.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-card">

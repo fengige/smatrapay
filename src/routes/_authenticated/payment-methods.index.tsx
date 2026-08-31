@@ -1,25 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  CheckCircle2,
+  AlertTriangle,
   CreditCard,
-  Eye,
+  ImageIcon,
   Loader2,
-  Pencil,
   Plus,
-  Power,
   RefreshCw,
   Search,
+  Settings,
   Trash2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { supabase } from "@/integrations/supabase/client";
 import {
   addPaymentMethod,
   deletePaymentMethod,
   listPaymentMethods,
+  setPaymentMethodLogo,
   setPaymentMethodStatus,
   updatePaymentMethod,
   type PaymentMethodRow,
@@ -29,16 +31,16 @@ import { PortalLayout } from "@/components/PortalLayout";
 export const Route = createFileRoute("/_authenticated/payment-methods/")({
   head: () => ({
     meta: [
-      { title: "Payment Methods · SmatraPay" },
+      { title: "Payment Methods Setup · SmatraPay" },
       {
         name: "description",
         content:
-          "Configure the digital payment methods available for collections — mobile money and bank channels.",
+          "Configure digital and offline payment methods, upload their logos and enable the channels used for collections.",
       },
-      { property: "og:title", content: "Payment Methods · SmatraPay" },
+      { property: "og:title", content: "Payment Methods Setup · SmatraPay" },
       {
         property: "og:description",
-        content: "Add, edit, enable or disable the payment channels used for collections.",
+        content: "Add, configure, brand and enable the payment channels used for collections.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -50,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/payment-methods/")({
   ),
 });
 
-const PAGE_SIZE = 10;
+type Tab = "digital" | "offline";
 
 function PaymentMethodsPage() {
   const queryClient = useQueryClient();
@@ -58,11 +60,10 @@ function PaymentMethodsPage() {
   const removeMethod = useServerFn(deletePaymentMethod);
   const statusFn = useServerFn(setPaymentMethodStatus);
 
+  const [tab, setTab] = useState<Tab>("digital");
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
-  const [editing, setEditing] = useState<PaymentMethodRow | null>(null);
-  const [viewing, setViewing] = useState<PaymentMethodRow | null>(null);
+  const [setupId, setSetupId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<PaymentMethodRow | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useQuery({
@@ -70,23 +71,27 @@ function PaymentMethodsPage() {
     queryFn: () => fetchMethods(),
   });
 
-  const methods = data?.methods ?? [];
+  const methods = useMemo(() => data?.methods ?? [], [data]);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return methods;
-    return methods.filter((m) =>
-      [m.name, m.code, m.description ?? ""].join(" ").toLowerCase().includes(needle),
-    );
-  }, [methods, q]);
+    return methods
+      .filter((m) => m.payment_type === tab)
+      .filter((m) =>
+        needle
+          ? [m.name, m.code, m.description ?? ""].join(" ").toLowerCase().includes(needle)
+          : true,
+      );
+  }, [methods, q, tab]);
+
+  const setupMethod = useMemo(
+    () => methods.find((m) => m.id === setupId) ?? null,
+    [methods, setupId],
+  );
 
   useEffect(() => {
-    setPage(1);
-  }, [q]);
-
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paged = rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+    if (setupId && !setupMethod) setSetupId(null);
+  }, [setupId, setupMethod]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => removeMethod({ data: { id } } as never),
@@ -108,14 +113,11 @@ function PaymentMethodsPage() {
     onError: (e: Error) => toast.error(e.message || "Could not update status"),
   });
 
-  const activeCount = methods.filter((m) => m.is_active).length;
-  const configuredCount = methods.filter((m) => m.is_configured).length;
-
   return (
     <PortalLayout
       roles={["admin"]}
-      title="Payment Methods"
-      description="Digital payment channels available for collections"
+      title="Payment Methods Setup"
+      description="Configure the digital and offline channels available for collections"
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -141,31 +143,51 @@ function PaymentMethodsPage() {
         <span className="font-medium text-foreground">Payment Methods</span>
       </nav>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total methods</span>
-            <CreditCard className="size-4 text-primary" />
+      <div
+        role="tablist"
+        aria-label="Payment method groups"
+        className="flex flex-wrap items-center gap-2"
+      >
+        {(
+          [
+            ["digital", "Digital payment"],
+            ["offline", "Offline payment"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            type="button"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+              tab === key
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent/10"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-foreground">
+        <div className="flex gap-2">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <div>
+            <p>
+              Configure each payment gateway with its credentials (e.g. API keys) from the provider
+              before enabling it.
+            </p>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+              <li>To collect {tab} payments you need at least one configured method.</li>
+              <li>Upload a logo so the method is recognisable in the app and receipts.</li>
+            </ul>
           </div>
-          <div className="mt-2 text-2xl font-bold">{methods.length}</div>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Enabled</span>
-            <CheckCircle2 className="size-4 text-emerald-600" />
-          </div>
-          <div className="mt-2 text-2xl font-bold">{activeCount}</div>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Configured</span>
-            <Power className="size-4 text-muted-foreground" />
-          </div>
-          <div className="mt-2 text-2xl font-bold">{configuredCount}</div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
+      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -178,153 +200,78 @@ function PaymentMethodsPage() {
         </div>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 text-left">Payment method</th>
-              <th className="px-4 py-3 text-left">Code</th>
-              <th className="px-4 py-3 text-left">Description</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                  <Loader2 className="mx-auto size-5 animate-spin" />
-                </td>
-              </tr>
-            )}
-            {!isLoading && !rows.length && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                  No payment methods match your search. Use “Add Payment Method” to create one.
-                </td>
-              </tr>
-            )}
-            {paged.map((m) => (
-              <tr key={m.id} className="border-t border-border/70">
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-foreground">{m.name}</span>
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[0.65rem] font-medium uppercase text-emerald-600">
-                      {m.environment}
-                    </span>
-                    {!m.is_configured && (
-                      <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[0.65rem] font-medium text-destructive">
-                        Not Configured
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{m.code}</td>
-                <td className="max-w-md px-4 py-3">
-                  <span className="line-clamp-2">{m.description ?? "—"}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                      m.is_active
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {m.is_active ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setViewing(m)}
-                      aria-label={`View ${m.name}`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent/10"
-                    >
-                      <Eye className="size-3.5" /> View
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditing(m)}
-                      aria-label={`Edit ${m.name}`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent/10"
-                    >
-                      <Pencil className="size-3.5" /> Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        statusMutation.mutate({ id: m.id, is_active: !m.is_active })
-                      }
-                      disabled={statusMutation.isPending}
-                      aria-label={`${m.is_active ? "Disable" : "Enable"} ${m.name}`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent/10 disabled:opacity-60"
-                    >
-                      <Power className="size-3.5" /> {m.is_active ? "Disable" : "Enable"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleting(m)}
-                      aria-label={`Delete ${m.name}`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="size-3.5" /> Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+        <h2 className="text-sm font-bold text-foreground">
+          {tab === "digital" ? "Digital" : "Offline"} Payment Methods List
+        </h2>
 
-      {rows.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-          <span>
-            Showing {(safePage - 1) * PAGE_SIZE + 1}–
-            {Math.min(safePage * PAGE_SIZE, rows.length)} of {rows.length}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage <= 1}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="text-xs">
-              Page {safePage} of {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage >= totalPages}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
-            >
-              Next
-            </button>
+        {isLoading ? (
+          <div className="py-12 text-center text-muted-foreground">
+            <Loader2 className="mx-auto size-5 animate-spin" />
           </div>
-        </div>
-      )}
+        ) : rows.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            No {tab} payment methods yet. Use “Add Payment Method” to create one.
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {rows.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-4"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <MethodLogo method={m} />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-semibold text-foreground">{m.name}</span>
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[0.65rem] font-medium uppercase text-emerald-600">
+                        {m.environment}
+                      </span>
+                      {!m.is_configured && (
+                        <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[0.65rem] font-medium text-destructive">
+                          Not Configured
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {m.description || m.code}
+                    </p>
+                  </div>
+                </div>
 
-      {showAdd && <MethodDialog onClose={() => setShowAdd(false)} />}
-      {editing && <MethodDialog method={editing} onClose={() => setEditing(null)} />}
+                <div className="flex shrink-0 items-center gap-2">
+                  <Toggle
+                    checked={m.is_active}
+                    disabled={statusMutation.isPending}
+                    label={`${m.is_active ? "Disable" : "Enable"} ${m.name}`}
+                    onChange={(next) => statusMutation.mutate({ id: m.id, is_active: next })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSetupId(m.id)}
+                    aria-label={`Set up ${m.name}`}
+                    className="inline-flex size-9 items-center justify-center rounded-lg border border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                  >
+                    <Settings className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleting(m)}
+                    aria-label={`Delete ${m.name}`}
+                    className="inline-flex size-9 items-center justify-center rounded-lg border border-destructive/40 text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-      {viewing && (
-        <Modal title={viewing.name} onClose={() => setViewing(null)}>
-          <dl className="space-y-3 text-sm">
-            <Row label="Code" value={viewing.code} />
-            <Row label="Description" value={viewing.description ?? "—"} />
-            <Row label="Environment" value={viewing.environment} />
-            <Row label="Configured" value={viewing.is_configured ? "Yes" : "No"} />
-            <Row label="Status" value={viewing.is_active ? "Active" : "Inactive"} />
-            <Row label="Created" value={new Date(viewing.created_at).toLocaleString()} />
-            <Row label="Updated" value={new Date(viewing.updated_at).toLocaleString()} />
-          </dl>
-        </Modal>
-      )}
+      {showAdd && <MethodDialog defaultType={tab} onClose={() => setShowAdd(false)} />}
+      {setupMethod && <SetupDrawer method={setupMethod} onClose={() => setSetupId(null)} />}
 
       {deleting && (
         <Modal title="Delete payment method" onClose={() => setDeleting(null)}>
@@ -355,11 +302,244 @@ function PaymentMethodsPage() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function MethodLogo({ method, size = 40 }: { method: PaymentMethodRow; size?: number }) {
+  if (method.logo_url) {
+    return (
+      <img
+        src={method.logo_url}
+        alt={`${method.name} logo`}
+        width={size}
+        height={size}
+        loading="lazy"
+        className="shrink-0 rounded-lg border border-border bg-background object-contain p-1"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-border/60 pb-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-right font-medium text-foreground">{value}</dd>
+    <span
+      aria-hidden="true"
+      className="inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
+      style={{ width: size, height: size }}
+    >
+      <CreditCard className="size-4" />
+    </span>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-60 ${
+        checked ? "bg-primary" : "bg-muted-foreground/30"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 size-5 rounded-full bg-background transition-all ${
+          checked ? "left-[1.375rem]" : "left-0.5"
+        }`}
+      />
+    </button>
+  );
+}
+
+function SetupDrawer({ method, onClose }: { method: PaymentMethodRow; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const statusFn = useServerFn(setPaymentMethodStatus);
+  const logoFn = useServerFn(setPaymentMethodLogo);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [isActive, setIsActive] = useState(method.is_active);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(method.logo_url);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  function pickFile(f: File | null) {
+    setError(null);
+    if (!f) return;
+    if (!/^image\/(png|jpeg|jpg|gif|webp)$/.test(f.type)) {
+      setError("Use a JPEG, PNG, JPG, GIF or WEBP image");
+      return;
+    }
+    if (f.size > 2 * 1024 * 1024) {
+      setError("Image must be 2MB or smaller");
+      return;
+    }
+    setFile(f);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (file) {
+        const ext = (file.name.split(".").pop() || "png").toLowerCase();
+        const path = `${method.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("payment-logos")
+          .upload(path, file, { upsert: true, contentType: file.type });
+        if (uploadError) throw new Error(uploadError.message);
+        await logoFn({ data: { id: method.id, path } } as never);
+      }
+      if (isActive !== method.is_active) {
+        await statusFn({ data: { id: method.id, is_active: isActive } } as never);
+      }
+      return true;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
+      toast.success(`${method.name} updated`);
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not save payment method setup"),
+  });
+
+  const removeLogo = useMutation({
+    mutationFn: () => logoFn({ data: { id: method.id, path: null } } as never),
+    onSuccess: async () => {
+      setFile(null);
+      setPreview(null);
+      await queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
+      toast.success("Logo removed");
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not remove logo"),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <button aria-label="Close setup panel" className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Setup ${method.name}`}
+        className="relative z-10 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-border bg-card"
+      >
+        <header className="flex items-center justify-between border-b border-border p-5">
+          <h2 className="text-base font-bold text-foreground">Setup - {method.name}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+          >
+            <X className="size-4" />
+          </button>
+        </header>
+
+        <div className="space-y-5 p-5">
+          {!method.is_configured && (
+            <div className="flex gap-2 rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <p>Please configure your payment method before enabling the status.</p>
+            </div>
+          )}
+
+          <div className="rounded-xl bg-muted/40 p-4">
+            <p className="font-semibold text-foreground">{method.name}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              If you turn this off, customers cannot pay through this payment gateway.
+            </p>
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3">
+              <span className="text-sm font-medium text-foreground">Status</span>
+              <Toggle
+                checked={isActive}
+                onChange={setIsActive}
+                label={`Toggle ${method.name} status`}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-muted/40 p-4">
+            <p className="font-semibold text-foreground">
+              Choose Logo <span className="text-destructive">*</span>
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">It will show in website &amp; app.</p>
+
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="mt-3 flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-background"
+            >
+              {preview ? (
+                <img
+                  src={preview}
+                  alt={`${method.name} logo preview`}
+                  className="max-h-full max-w-full object-contain p-2"
+                />
+              ) : (
+                <span className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                  <ImageIcon className="size-6" /> Click to upload a logo
+                </span>
+              )}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+              className="sr-only"
+              onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+            />
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              JPEG, PNG, JPG, GIF, WEBP · Max 2MB (Ratio 3 : 1)
+            </p>
+            {error && <p className="mt-1 text-center text-xs text-destructive">{error}</p>}
+            {method.logo_path && (
+              <button
+                type="button"
+                onClick={() => removeLogo.mutate()}
+                disabled={removeLogo.isPending}
+                className="mt-2 w-full text-center text-xs font-medium text-destructive hover:underline disabled:opacity-60"
+              >
+                Remove current logo
+              </button>
+            )}
+          </div>
+        </div>
+
+        <footer className="mt-auto grid grid-cols-2 gap-3 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={() => {
+              setFile(null);
+              setPreview(method.logo_url);
+              setIsActive(method.is_active);
+              setError(null);
+            }}
+            className="rounded-lg bg-muted px-4 py-2.5 text-sm font-semibold text-foreground"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={() => save.mutate()}
+            disabled={save.isPending}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {save.isPending && <Loader2 className="size-4 animate-spin" />} Submit
+          </button>
+        </footer>
+      </aside>
     </div>
   );
 }
@@ -375,11 +555,7 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <button aria-label="Close dialog" className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
@@ -395,9 +571,11 @@ function Modal({
 
 function MethodDialog({
   method,
+  defaultType,
   onClose,
 }: {
   method?: PaymentMethodRow;
+  defaultType?: Tab;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -407,6 +585,9 @@ function MethodDialog({
   const [name, setName] = useState(method?.name ?? "");
   const [code, setCode] = useState(method?.code ?? "");
   const [description, setDescription] = useState(method?.description ?? "");
+  const [paymentType, setPaymentType] = useState<Tab>(
+    method?.payment_type ?? defaultType ?? "digital",
+  );
   const [isActive, setIsActive] = useState(method?.is_active ?? false);
   const [isConfigured, setIsConfigured] = useState(method?.is_configured ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -417,6 +598,7 @@ function MethodDialog({
         name: name.trim(),
         code: code.trim().toLowerCase(),
         description: description.trim() || null,
+        payment_type: paymentType,
         is_active: isActive,
         is_configured: isConfigured,
       };
@@ -470,6 +652,20 @@ function MethodDialog({
             className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
           />
           {errors["code"] && <p className="mt-1 text-xs text-destructive">{errors["code"]}</p>}
+        </div>
+        <div>
+          <label htmlFor="pm-type" className="mb-1 block text-sm font-medium">
+            Payment Type
+          </label>
+          <select
+            id="pm-type"
+            value={paymentType}
+            onChange={(e) => setPaymentType(e.target.value as Tab)}
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="digital">Digital payment</option>
+            <option value="offline">Offline payment</option>
+          </select>
         </div>
         <div>
           <label htmlFor="pm-desc" className="mb-1 block text-sm font-medium">
