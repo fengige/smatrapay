@@ -19,6 +19,7 @@ import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedMeterDashboardRouteImport } from './routes/_authenticated/meter-dashboard'
+import { Route as AuthenticatedPaymentHistoryRouteImport } from './routes/_authenticated/payment-history'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
 import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authenticated/pos-shift-report'
 import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_authenticated/price-management'
@@ -128,6 +129,12 @@ const AuthenticatedMeterDashboardRoute =
   AuthenticatedMeterDashboardRouteImport.update({
     id: '/meter-dashboard',
     path: '/meter-dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPaymentHistoryRoute =
+  AuthenticatedPaymentHistoryRouteImport.update({
+    id: '/payment-history',
+    path: '/payment-history',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
@@ -482,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
@@ -549,6 +557,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
@@ -616,6 +625,7 @@ export interface FileRoutesById {
   '/_authenticated/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/_authenticated/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/_authenticated/price-management': typeof AuthenticatedPriceManagementRoute
@@ -688,6 +698,7 @@ export interface FileRouteTypes {
     | '/configurations'
     | '/landlords'
     | '/meter-dashboard'
+    | '/payment-history'
     | '/pos'
     | '/pos-shift-report'
     | '/price-management'
@@ -755,6 +766,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/meter-dashboard'
+    | '/payment-history'
     | '/pos'
     | '/pos-shift-report'
     | '/price-management'
@@ -821,6 +833,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations'
     | '/_authenticated/landlords'
     | '/_authenticated/meter-dashboard'
+    | '/_authenticated/payment-history'
     | '/_authenticated/pos'
     | '/_authenticated/pos-shift-report'
     | '/_authenticated/price-management'
@@ -964,6 +977,13 @@ declare module '@tanstack/react-router' {
       path: '/meter-dashboard'
       fullPath: '/meter-dashboard'
       preLoaderRoute: typeof AuthenticatedMeterDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payment-history': {
+      id: '/_authenticated/payment-history'
+      path: '/payment-history'
+      fullPath: '/payment-history'
+      preLoaderRoute: typeof AuthenticatedPaymentHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pos': {
@@ -1540,6 +1560,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedMeterDashboardRoute: typeof AuthenticatedMeterDashboardRoute
+  AuthenticatedPaymentHistoryRoute: typeof AuthenticatedPaymentHistoryRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedPosShiftReportRoute: typeof AuthenticatedPosShiftReportRoute
   AuthenticatedPriceManagementRoute: typeof AuthenticatedPriceManagementRoute
@@ -1572,6 +1593,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedConfigurationsRouteWithChildren,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedMeterDashboardRoute: AuthenticatedMeterDashboardRoute,
+  AuthenticatedPaymentHistoryRoute: AuthenticatedPaymentHistoryRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedPosShiftReportRoute: AuthenticatedPosShiftReportRoute,
   AuthenticatedPriceManagementRoute: AuthenticatedPriceManagementRoute,
