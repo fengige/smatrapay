@@ -346,6 +346,97 @@ export type Database = {
           },
         ]
       }
+      mpesa_transactions: {
+        Row: {
+          account_reference: string | null
+          amount: number | null
+          callback_payload: Json | null
+          checkout_request_id: string | null
+          created_at: string
+          environment: string
+          flow: string
+          id: string
+          merchant_request_id: string | null
+          mpesa_receipt_number: string | null
+          payment_id: string | null
+          payment_method_id: string | null
+          phone_number: string | null
+          result_code: string | null
+          result_desc: string | null
+          status: string
+          transaction_date: string | null
+          transaction_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          account_reference?: string | null
+          amount?: number | null
+          callback_payload?: Json | null
+          checkout_request_id?: string | null
+          created_at?: string
+          environment?: string
+          flow?: string
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          payment_id?: string | null
+          payment_method_id?: string | null
+          phone_number?: string | null
+          result_code?: string | null
+          result_desc?: string | null
+          status?: string
+          transaction_date?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_reference?: string | null
+          amount?: number | null
+          callback_payload?: Json | null
+          checkout_request_id?: string | null
+          created_at?: string
+          environment?: string
+          flow?: string
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          payment_id?: string | null
+          payment_method_id?: string | null
+          phone_number?: string | null
+          result_code?: string | null
+          result_desc?: string | null
+          status?: string
+          transaction_date?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mpesa_transactions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mpesa_transactions_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mpesa_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_method_accounts: {
         Row: {
           account_name: string | null
@@ -444,6 +535,98 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_method_configurations: {
+        Row: {
+          account_reference: string | null
+          b2c_enabled: boolean
+          b2c_initiator_name: string | null
+          b2c_occasion: string | null
+          b2c_remarks: string | null
+          b2c_security_credential: string | null
+          b2c_short_code: string | null
+          business_short_code: string | null
+          c2b_enabled: boolean
+          c2b_response_type: string
+          c2b_short_code: string | null
+          consumer_key: string | null
+          consumer_secret: string | null
+          country: string
+          created_at: string
+          currency: string
+          enabled: boolean
+          environment: string
+          id: string
+          passkey: string | null
+          payment_method_id: string
+          stk_enabled: boolean
+          transaction_desc: string | null
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          account_reference?: string | null
+          b2c_enabled?: boolean
+          b2c_initiator_name?: string | null
+          b2c_occasion?: string | null
+          b2c_remarks?: string | null
+          b2c_security_credential?: string | null
+          b2c_short_code?: string | null
+          business_short_code?: string | null
+          c2b_enabled?: boolean
+          c2b_response_type?: string
+          c2b_short_code?: string | null
+          consumer_key?: string | null
+          consumer_secret?: string | null
+          country?: string
+          created_at?: string
+          currency?: string
+          enabled?: boolean
+          environment?: string
+          id?: string
+          passkey?: string | null
+          payment_method_id: string
+          stk_enabled?: boolean
+          transaction_desc?: string | null
+          transaction_type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_reference?: string | null
+          b2c_enabled?: boolean
+          b2c_initiator_name?: string | null
+          b2c_occasion?: string | null
+          b2c_remarks?: string | null
+          b2c_security_credential?: string | null
+          b2c_short_code?: string | null
+          business_short_code?: string | null
+          c2b_enabled?: boolean
+          c2b_response_type?: string
+          c2b_short_code?: string | null
+          consumer_key?: string | null
+          consumer_secret?: string | null
+          country?: string
+          created_at?: string
+          currency?: string
+          enabled?: boolean
+          environment?: string
+          id?: string
+          passkey?: string | null
+          payment_method_id?: string
+          stk_enabled?: boolean
+          transaction_desc?: string | null
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_method_configurations_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
             referencedColumns: ["id"]
           },
         ]
