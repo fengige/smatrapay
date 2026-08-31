@@ -76,6 +76,7 @@ import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
 import { Route as AuthenticatedVendorsIdIndexRouteImport } from './routes/_authenticated/vendors.$id.index'
 import { Route as AuthenticatedVendorsIdEditRouteImport } from './routes/_authenticated/vendors.$id.edit'
+import { Route as ApiPublicMpesaC2bConfirmationRouteImport } from './routes/api/public/mpesa/c2b-confirmation'
 import { Route as ApiPublicMpesaC2bValidationRouteImport } from './routes/api/public/mpesa/c2b-validation'
 import { Route as ApiPublicMpesaStkCallbackRouteImport } from './routes/api/public/mpesa/stk-callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -464,6 +465,12 @@ const AuthenticatedVendorsIdEditRoute =
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedVendorsRoute,
   } as any)
+const ApiPublicMpesaC2bConfirmationRoute =
+  ApiPublicMpesaC2bConfirmationRouteImport.update({
+    id: '/api/public/mpesa/c2b-confirmation',
+    path: '/api/public/mpesa/c2b-confirmation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMpesaC2bValidationRoute =
   ApiPublicMpesaC2bValidationRouteImport.update({
     id: '/api/public/mpesa/c2b-validation',
@@ -554,6 +561,7 @@ export interface FileRoutesByFullPath {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -619,6 +627,7 @@ export interface FileRoutesByTo {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -694,6 +703,7 @@ export interface FileRoutesById {
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/_authenticated/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -769,6 +779,7 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendors/$id/edit'
+    | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
     | '/lovable/email/auth/preview'
@@ -834,6 +845,7 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendors/$id/edit'
+    | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
     | '/lovable/email/auth/preview'
@@ -908,6 +920,7 @@ export interface FileRouteTypes {
     | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/_authenticated/vendors/$id/edit'
+    | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
     | '/lovable/email/auth/preview'
@@ -928,6 +941,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicMpesaC2bConfirmationRoute: typeof ApiPublicMpesaC2bConfirmationRoute
   ApiPublicMpesaC2bValidationRoute: typeof ApiPublicMpesaC2bValidationRoute
   ApiPublicMpesaStkCallbackRoute: typeof ApiPublicMpesaStkCallbackRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1406,6 +1420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorsIdEditRouteImport
       parentRoute: typeof AuthenticatedVendorsRoute
     }
+    '/api/public/mpesa/c2b-confirmation': {
+      id: '/api/public/mpesa/c2b-confirmation'
+      path: '/api/public/mpesa/c2b-confirmation'
+      fullPath: '/api/public/mpesa/c2b-confirmation'
+      preLoaderRoute: typeof ApiPublicMpesaC2bConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mpesa/c2b-validation': {
       id: '/api/public/mpesa/c2b-validation'
       path: '/api/public/mpesa/c2b-validation'
@@ -1673,6 +1694,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiPublicMpesaC2bConfirmationRoute: ApiPublicMpesaC2bConfirmationRoute,
   ApiPublicMpesaC2bValidationRoute: ApiPublicMpesaC2bValidationRoute,
   ApiPublicMpesaStkCallbackRoute: ApiPublicMpesaStkCallbackRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
