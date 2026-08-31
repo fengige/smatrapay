@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Mail tab: send-test email button (managed mail pipeline)
-- [ ] Google Map tab: live map preview with configured key
-- [ ] Admin dashboard: currency conversion helper card
+- [x] Mail tab: send-test email button (managed mail pipeline)
+- [x] Google Map tab: live map preview with configured key
+- [x] Admin dashboard: currency conversion helper card
 
 - [x] Transactional locking for meter assignment mutations
 - [x] Pagination + sorting on agent/vendor/landlord assignment history
