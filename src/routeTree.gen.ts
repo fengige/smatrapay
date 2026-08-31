@@ -38,6 +38,7 @@ import { Route as AuthenticatedConfigurationsIndexRouteImport } from './routes/_
 import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './routes/_authenticated/configurations.app-settings'
 import { Route as AuthenticatedConfigurationsGoogleMapRouteImport } from './routes/_authenticated/configurations.google-map'
 import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
+import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './routes/_authenticated/configurations.social-media'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
@@ -232,6 +233,12 @@ const AuthenticatedConfigurationsMailRoute =
   AuthenticatedConfigurationsMailRouteImport.update({
     id: '/mail',
     path: '/mail',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsSocialMediaRoute =
+  AuthenticatedConfigurationsSocialMediaRouteImport.update({
+    id: '/social-media',
+    path: '/social-media',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
   } as any)
 const AuthenticatedLandlordDashboardRoute =
@@ -471,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
   '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -530,6 +538,7 @@ export interface FileRoutesByTo {
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
   '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -597,6 +606,7 @@ export interface FileRoutesById {
   '/_authenticated/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
   '/_authenticated/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -665,6 +675,7 @@ export interface FileRouteTypes {
     | '/configurations/app-settings'
     | '/configurations/google-map'
     | '/configurations/mail'
+    | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -724,6 +735,7 @@ export interface FileRouteTypes {
     | '/configurations/app-settings'
     | '/configurations/google-map'
     | '/configurations/mail'
+    | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -790,6 +802,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations/app-settings'
     | '/_authenticated/configurations/google-map'
     | '/_authenticated/configurations/mail'
+    | '/_authenticated/configurations/social-media'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meters/$meterId'
@@ -1044,6 +1057,13 @@ declare module '@tanstack/react-router' {
       path: '/mail'
       fullPath: '/configurations/mail'
       preLoaderRoute: typeof AuthenticatedConfigurationsMailRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/social-media': {
+      id: '/_authenticated/configurations/social-media'
+      path: '/social-media'
+      fullPath: '/configurations/social-media'
+      preLoaderRoute: typeof AuthenticatedConfigurationsSocialMediaRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/landlord/dashboard': {
@@ -1322,6 +1342,7 @@ interface AuthenticatedConfigurationsRouteChildren {
   AuthenticatedConfigurationsAppSettingsRoute: typeof AuthenticatedConfigurationsAppSettingsRoute
   AuthenticatedConfigurationsGoogleMapRoute: typeof AuthenticatedConfigurationsGoogleMapRoute
   AuthenticatedConfigurationsMailRoute: typeof AuthenticatedConfigurationsMailRoute
+  AuthenticatedConfigurationsSocialMediaRoute: typeof AuthenticatedConfigurationsSocialMediaRoute
   AuthenticatedConfigurationsIndexRoute: typeof AuthenticatedConfigurationsIndexRoute
 }
 
@@ -1332,6 +1353,8 @@ const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRoute
     AuthenticatedConfigurationsGoogleMapRoute:
       AuthenticatedConfigurationsGoogleMapRoute,
     AuthenticatedConfigurationsMailRoute: AuthenticatedConfigurationsMailRoute,
+    AuthenticatedConfigurationsSocialMediaRoute:
+      AuthenticatedConfigurationsSocialMediaRoute,
     AuthenticatedConfigurationsIndexRoute:
       AuthenticatedConfigurationsIndexRoute,
   }
