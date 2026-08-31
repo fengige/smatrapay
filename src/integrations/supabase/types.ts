@@ -490,6 +490,82 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          id: string
+          paid_at: string | null
+          payee_id: string
+          payee_type: string
+          payment_account_id: string | null
+          payment_method_id: string | null
+          reference: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          payee_id: string
+          payee_type: string
+          payment_account_id?: string | null
+          payment_method_id?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          payee_id?: string
+          payee_type?: string
+          payment_account_id?: string | null
+          payment_method_id?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_payee_id_fkey"
+            columns: ["payee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "payment_method_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           address_line1: string | null
@@ -1219,6 +1295,7 @@ export type Database = {
         | "clear_credit"
       meter_token_status: "issued" | "revoked" | "expired"
       meter_utility_type: "Electricity" | "Water" | "Gas" | "Multi-Utility"
+      payment_status: "pending" | "completed" | "failed" | "cancelled"
       property_status: "active" | "archived"
       sms_delivery_status: "queued" | "sent" | "failed"
       supplier_status: "Active" | "Inactive" | "Suspended"
@@ -1370,6 +1447,7 @@ export const Constants = {
       ],
       meter_token_status: ["issued", "revoked", "expired"],
       meter_utility_type: ["Electricity", "Water", "Gas", "Multi-Utility"],
+      payment_status: ["pending", "completed", "failed", "cancelled"],
       property_status: ["active", "archived"],
       sms_delivery_status: ["queued", "sent", "failed"],
       supplier_status: ["Active", "Inactive", "Suspended"],

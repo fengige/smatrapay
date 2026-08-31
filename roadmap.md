@@ -13,3 +13,4 @@
 - [x] Token ledger page with per-holder transactions, units and readings
 - [x] Meter unit type + price per unit surfaced; revenue per meter type on dashboard and ledger
 - [ ] Payment methods: redesign to Digital/Offline tabs with logo upload shown beside each method
+- [x] Payment History page grouped by landlord/agent/vendor with method and account
