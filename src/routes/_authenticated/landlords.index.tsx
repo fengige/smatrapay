@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -132,18 +132,21 @@ function LandlordsPage() {
   }, [search, statusFilter]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["users", "landlord", statusFilter, search],
+    queryKey: ["users", "landlord", statusFilter, search, currentPage, pageSize, sortKey, sortDir],
     queryFn: () =>
       fetchLandlords({
         data: {
           role: "landlord",
           ...(statusFilter !== "all" ? { status: statusFilter } : {}),
           ...(search.trim() ? { q: search.trim() } : {}),
+          page: currentPage,
+          limit: pageSize,
+          sortBy: sortKey,
+          sortDir,
         },
       }),
+    placeholderData: (prev) => prev,
   });
-
-  const landlords = useMemo(() => (data?.users ?? []) as unknown as Row[], [data]);
 
   const statusMutation = useMutation({
     mutationFn: (vars: { id: string; status: string }) =>
@@ -166,22 +169,13 @@ function LandlordsPage() {
 
   const busy = statusMutation.isPending || deleteMutation.isPending;
 
-  const sortedRows = useMemo(
-    () =>
-      [...landlords].sort((a, b) => {
-        const av = String(a[sortKey] ?? "").toLowerCase();
-        const bv = String(b[sortKey] ?? "").toLowerCase();
-        if (av === bv) return 0;
-        return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
-      }),
-    [landlords, sortKey, sortDir],
-  );
-
-  const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const page = Math.min(currentPage, totalPages);
-  const paged = sortedRows.slice((page - 1) * pageSize, page * pageSize);
+  const paged = (data?.users ?? []) as unknown as Row[];
 
   const toggleSort = (key: SortKey) => {
+    setPage(1);
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
@@ -334,19 +328,24 @@ function LandlordsPage() {
     );
   };
 
-  const stats = useMemo(
-    () => ({
-      total: landlords.length,
-      active: landlords.filter((r) => r.status === "active").length,
-      pending: landlords.filter((r) => r.status === "pending").length,
-      suspended: landlords.filter((r) => r.status === "suspended").length,
-    }),
-    [landlords],
-  );
+  const stats = data?.counts ?? { total: 0, active: 0, pending: 0, suspended: 0 };
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
+    const res = await fetchLandlords({
+      data: {
+        role: "landlord",
+        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+        ...(search.trim() ? { q: search.trim() } : {}),
+      },
+    });
+    const all = [...((res.users ?? []) as unknown as Row[])].sort((a, b) => {
+      const av = String(a[sortKey] ?? "").toLowerCase();
+      const bv = String(b[sortKey] ?? "").toLowerCase();
+      if (av === bv) return 0;
+      return sortDir === "asc" ? (av > bv ? 1 : -1) : av > bv ? -1 : 1;
+    });
     const header = ["Full Name", "Email", "Phone", "Status", "Joined"];
-    const rows = sortedRows.map((r) => [
+    const rows = all.map((r) => [
       r.name ?? "",
       r.email ?? "",
       r.phone ?? "",
@@ -395,11 +394,11 @@ function LandlordsPage() {
           </Link>
           <button
             type="button"
-            onClick={exportCsv}
-            disabled={!sortedRows.length}
+            onClick={() => void exportCsv()}
+            disabled={!total}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
           >
-            <Download className="size-4" /> Export CSV ({sortedRows.length})
+            <Download className="size-4" /> Export CSV ({total})
           </button>
           <button
             type="button"
@@ -564,8 +563,8 @@ function LandlordsPage() {
                 ))}
               </select>
               <span>
-                {sortedRows.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-                {Math.min(page * pageSize, sortedRows.length)} of {sortedRows.length}
+                {total === 0 ? 0 : (page - 1) * pageSize + 1}–
+                {Math.min(page * pageSize, total)} of {total}
               </span>
             </div>
             <div className="flex items-center gap-2">
