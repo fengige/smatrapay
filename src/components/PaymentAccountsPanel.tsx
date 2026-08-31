@@ -231,8 +231,11 @@ export function PaymentAccountsPanel({
         </div>
       ) : rows.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          No payment accounts yet. Use “Add Payment Account” to create one.
+          {lockUser
+            ? `No payment methods saved for ${lockUser.name} yet. Use “Add Payment Account” to add one.`
+            : "No payment accounts yet. Use “Add Payment Account” to create one."}
         </p>
+
       ) : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
