@@ -64,10 +64,10 @@ function CurrencyConverterCard() {
   });
 
   const values = data?.values ?? {};
-  const code = values.currency_code || "KES";
-  const symbol = values.currency_symbol || "KSh";
-  const name = values.currency_name || "Default currency";
-  const decimals = Math.min(4, Math.max(0, parseInt(values.currency_decimals || "2", 10) || 2));
+  const code = values["currency_code"] || "KES";
+  const symbol = values["currency_symbol"] || "KSh";
+  const name = values["currency_name"] || "Default currency";
+  const decimals = Math.min(4, Math.max(0, parseInt(values["currency_decimals"] || "2", 10) || 2));
 
   const [foreign, setForeign] = useState("USD");
   const [amount, setAmount] = useState("100");

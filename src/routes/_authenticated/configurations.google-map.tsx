@@ -36,9 +36,9 @@ function MapPreview() {
   const [failed, setFailed] = useState(false);
 
   const values = data?.values ?? {};
-  const apiKey = values.google_maps_api_key ?? "";
-  const enabled = values.google_maps_enabled === "true";
-  const center = values.google_maps_default_center || "-1.286389,36.817223";
+  const apiKey = values["google_maps_api_key"] ?? "";
+  const enabled = values["google_maps_enabled"] === "true";
+  const center = values["google_maps_default_center"] || "-1.286389,36.817223";
 
   const src = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
     center,
