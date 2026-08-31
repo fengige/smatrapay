@@ -16,6 +16,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedMeterDashboardRouteImport } from './routes/_authenticated/meter-dashboard'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
@@ -104,6 +105,12 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfigurationsRoute =
+  AuthenticatedConfigurationsRouteImport.update({
+    id: '/configurations',
+    path: '/configurations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
   id: '/landlords',
   path: '/landlords',
@@ -416,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRouteWithChildren
+  '/configurations': typeof AuthenticatedConfigurationsRoute
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/pos': typeof AuthenticatedPosRoute
@@ -476,6 +484,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/configurations': typeof AuthenticatedConfigurationsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -533,6 +542,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/_authenticated/agents': typeof AuthenticatedAgentsRouteWithChildren
+  '/_authenticated/configurations': typeof AuthenticatedConfigurationsRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/_authenticated/pos': typeof AuthenticatedPosRoute
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/agents'
+    | '/configurations'
     | '/landlords'
     | '/meter-dashboard'
     | '/pos'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/configurations'
     | '/meter-dashboard'
     | '/pos'
     | '/pos-shift-report'
@@ -712,6 +724,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/_authenticated/agents'
+    | '/_authenticated/configurations'
     | '/_authenticated/landlords'
     | '/_authenticated/meter-dashboard'
     | '/_authenticated/pos'
@@ -827,6 +840,13 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configurations': {
+      id: '/_authenticated/configurations'
+      path: '/configurations'
+      fullPath: '/configurations'
+      preLoaderRoute: typeof AuthenticatedConfigurationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/landlords': {
@@ -1327,6 +1347,7 @@ const AuthenticatedVendorsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
+  AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedMeterDashboardRoute: typeof AuthenticatedMeterDashboardRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
@@ -1357,6 +1378,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRouteWithChildren,
+  AuthenticatedConfigurationsRoute: AuthenticatedConfigurationsRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedMeterDashboardRoute: AuthenticatedMeterDashboardRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
