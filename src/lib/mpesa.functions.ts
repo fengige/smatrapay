@@ -341,7 +341,7 @@ export const initiateStkPush = createServerFn({ method: "POST" })
       PhoneNumber: msisdn,
       CallBackURL: urls.stk_callback_url,
       AccountReference: reference.slice(0, 12),
-      TransactionDesc: (row.transaction_desc || "Payment").slice(0, ived_max()),
+      TransactionDesc: (row.transaction_desc || "Payment").slice(0, 100),
     });
 
     const body = res.body ?? {};
