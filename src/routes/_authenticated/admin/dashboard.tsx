@@ -5,12 +5,14 @@ import {
   Activity,
   Building2,
   ChevronRight,
+  Coins,
   Gauge,
   MessageSquare,
   ShieldCheck,
   Users,
   Zap,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -22,6 +24,7 @@ import {
 } from "recharts";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { getAdminStats } from "@/lib/stats.functions";
+import { getConfiguration } from "@/lib/configurations.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { useSessionIdentity } from "@/components/PortalLayout";
 import { roleLabel } from "@/lib/portals";
@@ -51,6 +54,104 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
 
 function fmt(n: number | undefined) {
   return typeof n === "number" ? n.toLocaleString() : "—";
+}
+
+function CurrencyConverterCard() {
+  const load = useServerFn(getConfiguration);
+  const { data } = useQuery({
+    queryKey: ["configuration", "currency"],
+    queryFn: () => load({ data: { group: "currency" } } as never),
+  });
+
+  const values = data?.values ?? {};
+  const code = values["currency_code"] || "KES";
+  const symbol = values["currency_symbol"] || "KSh";
+  const name = values["currency_name"] || "Default currency";
+  const decimals = Math.min(4, Math.max(0, parseInt(values["currency_decimals"] || "2", 10) || 2));
+
+  const [foreign, setForeign] = useState("USD");
+  const [amount, setAmount] = useState("100");
+  const [rate, setRate] = useState("");
+
+  const parsedAmount = Number.parseFloat(amount);
+  const parsedRate = Number.parseFloat(rate);
+  const valid =
+    Number.isFinite(parsedAmount) && parsedAmount >= 0 && Number.isFinite(parsedRate) && parsedRate > 0;
+  const converted = valid ? parsedAmount * parsedRate : null;
+
+  let formatted = "—";
+  if (converted !== null) {
+    try {
+      formatted = new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: code,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(converted);
+    } catch {
+      formatted = `${symbol} ${converted.toFixed(decimals)}`;
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+          <Coins className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-foreground">Currency conversion</h2>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            Converts into {name} ({code})
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">Foreign currency</span>
+            <input
+              value={foreign}
+              onChange={(e) => setForeign(e.target.value.toUpperCase().slice(0, 3))}
+              placeholder="USD"
+              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">Amount</span>
+            <input
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              inputMode="decimal"
+              placeholder="100"
+              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            />
+          </label>
+        </div>
+        <label className="block space-y-1">
+          <span className="text-xs font-medium text-muted-foreground">
+            Rate (1 {foreign || "unit"} = ? {code})
+          </span>
+          <input
+            value={rate}
+            onChange={(e) => setRate(e.target.value)}
+            inputMode="decimal"
+            placeholder="129.50"
+            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          />
+        </label>
+        <div className="rounded-xl bg-secondary px-4 py-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            {valid
+              ? `${parsedAmount.toLocaleString()} ${foreign || ""} equals`
+              : "Enter an amount and rate to convert"}
+          </p>
+          <p className="mt-1 text-xl font-extrabold tracking-tight text-foreground">{formatted}</p>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function AdminDashboard() {
@@ -248,6 +349,7 @@ function AdminDashboard() {
         </section>
 
         <div className="space-y-4">
+          <CurrencyConverterCard />
           <section className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h2 className="text-sm font-bold text-foreground">Recent Vendors</h2>

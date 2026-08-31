@@ -155,6 +155,33 @@ export const saveConfiguration = createServerFn({ method: "POST" })
     return { saved: rows.length };
   });
 
+/** Send a test email to the signed-in admin using the managed mail pipeline. */
+export const sendMailTest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { data: user } = await context.supabase
+      .from("users")
+      .select("email, name")
+      .eq("id", context.userId)
+      .single();
+    if (!user?.email) throw new Error("Your account has no email address");
+
+    const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+    try {
+      const result = await sendTemplateEmail("mail-test", user.email, {
+        templateData: { name: user.name || "Administrator" },
+        idempotencyKey: `mail-test-${context.userId}-${Date.now()}`,
+      });
+      if (!result.sent) {
+        return { sent: false as const, reason: result.reason, email: user.email };
+      }
+      return { sent: true as const, email: user.email };
+    } catch (err: any) {
+      throw new Error(err?.message || "Test email could not be sent");
+    }
+  });
+
 /* ---------------------------------- SMS ---------------------------------- */
 
 export type SmsConfigRow = {
