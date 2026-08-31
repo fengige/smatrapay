@@ -35,6 +35,7 @@ import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authe
 import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenticated/agents.index'
 import { Route as AuthenticatedAgentsNewRouteImport } from './routes/_authenticated/agents.new'
 import { Route as AuthenticatedConfigurationsIndexRouteImport } from './routes/_authenticated/configurations.index'
+import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './routes/_authenticated/configurations.app-settings'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
@@ -211,6 +212,12 @@ const AuthenticatedConfigurationsIndexRoute =
   AuthenticatedConfigurationsIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsAppSettingsRoute =
+  AuthenticatedConfigurationsAppSettingsRouteImport.update({
+    id: '/app-settings',
+    path: '/app-settings',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
   } as any)
 const AuthenticatedLandlordDashboardRoute =
@@ -447,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
+  '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -503,6 +511,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
+  '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -567,6 +576,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/agents/new': typeof AuthenticatedAgentsNewRoute
+  '/_authenticated/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -632,6 +642,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/agent/dashboard'
     | '/agents/new'
+    | '/configurations/app-settings'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -688,6 +699,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/agent/dashboard'
     | '/agents/new'
+    | '/configurations/app-settings'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -751,6 +763,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/agents/new'
+    | '/_authenticated/configurations/app-settings'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meters/$meterId'
@@ -984,6 +997,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/configurations/'
       preLoaderRoute: typeof AuthenticatedConfigurationsIndexRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/app-settings': {
+      id: '/_authenticated/configurations/app-settings'
+      path: '/app-settings'
+      fullPath: '/configurations/app-settings'
+      preLoaderRoute: typeof AuthenticatedConfigurationsAppSettingsRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/landlord/dashboard': {
@@ -1259,11 +1279,14 @@ const AuthenticatedAgentsRouteWithChildren =
   AuthenticatedAgentsRoute._addFileChildren(AuthenticatedAgentsRouteChildren)
 
 interface AuthenticatedConfigurationsRouteChildren {
+  AuthenticatedConfigurationsAppSettingsRoute: typeof AuthenticatedConfigurationsAppSettingsRoute
   AuthenticatedConfigurationsIndexRoute: typeof AuthenticatedConfigurationsIndexRoute
 }
 
 const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRouteChildren =
   {
+    AuthenticatedConfigurationsAppSettingsRoute:
+      AuthenticatedConfigurationsAppSettingsRoute,
     AuthenticatedConfigurationsIndexRoute:
       AuthenticatedConfigurationsIndexRoute,
   }
