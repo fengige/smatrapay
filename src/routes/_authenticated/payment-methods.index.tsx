@@ -145,6 +145,37 @@ function PaymentMethodsPage() {
 
       <div
         role="tablist"
+        aria-label="Payment methods sections"
+        className="mb-4 flex flex-wrap items-center gap-2 border-b border-border"
+      >
+        {(
+          [
+            ["methods", "Payment Methods"],
+            ["accounts", "Payment Accounts"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            type="button"
+            aria-selected={section === key}
+            onClick={() => setSection(key)}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+              section === key
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === "methods" && (
+      <>
+      <div
+
+        role="tablist"
         aria-label="Payment method groups"
         className="flex flex-wrap items-center gap-2"
       >
