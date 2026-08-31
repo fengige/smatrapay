@@ -95,5 +95,36 @@ function MailTab() {
         },
       ]}
     />
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 rounded-lg bg-primary/10 p-2 text-primary">
+              <MailCheck className="size-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Send a test email</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sends a test message to your own admin email address so you can verify
+                outgoing mail is working.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {mutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" />
+            )}
+            {mutation.isPending ? "Sending…" : "Send test email"}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
