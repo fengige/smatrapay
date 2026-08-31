@@ -521,6 +521,63 @@ export type Database = {
           },
         ]
       }
+      sms_configurations: {
+        Row: {
+          account_id: string | null
+          api_key: string | null
+          api_secret: string | null
+          api_url: string | null
+          client_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          password: string | null
+          provider_code: string
+          provider_name: string
+          sender_id: string | null
+          status: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          api_key?: string | null
+          api_secret?: string | null
+          api_url?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          password?: string | null
+          provider_code: string
+          provider_name: string
+          sender_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          api_key?: string | null
+          api_secret?: string | null
+          api_url?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          password?: string | null
+          provider_code?: string
+          provider_name?: string
+          sender_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       streets: {
         Row: {
           created_at: string
