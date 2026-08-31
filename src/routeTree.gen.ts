@@ -40,6 +40,7 @@ import { Route as AuthenticatedMeterSuppliersIndexRouteImport } from './routes/_
 import { Route as AuthenticatedMetersIndexRouteImport } from './routes/_authenticated/meters.index'
 import { Route as AuthenticatedMetersMeterIdRouteImport } from './routes/_authenticated/meters.$meterId'
 import { Route as AuthenticatedMetersBulkAddRouteImport } from './routes/_authenticated/meters.bulk-add'
+import { Route as AuthenticatedPaymentMethodsIndexRouteImport } from './routes/_authenticated/payment-methods.index'
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
 import { Route as AuthenticatedPropertiesNewRouteImport } from './routes/_authenticated/properties.new'
 import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_authenticated/resident/dashboard'
@@ -238,6 +239,12 @@ const AuthenticatedMetersBulkAddRoute =
   AuthenticatedMetersBulkAddRouteImport.update({
     id: '/meters/bulk-add',
     path: '/meters/bulk-add',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPaymentMethodsIndexRoute =
+  AuthenticatedPaymentMethodsIndexRouteImport.update({
+    id: '/payment-methods/',
+    path: '/payment-methods/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPropertiesIndexRoute =
@@ -442,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters/': typeof AuthenticatedMetersIndexRoute
+  '/payment-methods/': typeof AuthenticatedPaymentMethodsIndexRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
@@ -495,6 +503,7 @@ export interface FileRoutesByTo {
   '/landlords': typeof AuthenticatedLandlordsIndexRoute
   '/meter-suppliers': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters': typeof AuthenticatedMetersIndexRoute
+  '/payment-methods': typeof AuthenticatedPaymentMethodsIndexRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -557,6 +566,7 @@ export interface FileRoutesById {
   '/_authenticated/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/_authenticated/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/_authenticated/meters/': typeof AuthenticatedMetersIndexRoute
+  '/_authenticated/payment-methods/': typeof AuthenticatedPaymentMethodsIndexRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/landlords/'
     | '/meter-suppliers/'
     | '/meters/'
+    | '/payment-methods/'
     | '/properties/'
     | '/residents/'
     | '/users/'
@@ -672,6 +683,7 @@ export interface FileRouteTypes {
     | '/landlords'
     | '/meter-suppliers'
     | '/meters'
+    | '/payment-methods'
     | '/properties'
     | '/residents'
     | '/users'
@@ -733,6 +745,7 @@ export interface FileRouteTypes {
     | '/_authenticated/landlords/'
     | '/_authenticated/meter-suppliers/'
     | '/_authenticated/meters/'
+    | '/_authenticated/payment-methods/'
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
     | '/_authenticated/users/'
@@ -982,6 +995,13 @@ declare module '@tanstack/react-router' {
       path: '/meters/bulk-add'
       fullPath: '/meters/bulk-add'
       preLoaderRoute: typeof AuthenticatedMetersBulkAddRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payment-methods/': {
+      id: '/_authenticated/payment-methods/'
+      path: '/payment-methods'
+      fullPath: '/payment-methods/'
+      preLoaderRoute: typeof AuthenticatedPaymentMethodsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/properties/': {
@@ -1331,6 +1351,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
+  AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
   AuthenticatedZonesIndexRoute: typeof AuthenticatedZonesIndexRoute
 }
 
@@ -1361,6 +1382,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
+  AuthenticatedPaymentMethodsIndexRoute: AuthenticatedPaymentMethodsIndexRoute,
   AuthenticatedZonesIndexRoute: AuthenticatedZonesIndexRoute,
 }
 

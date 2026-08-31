@@ -5,6 +5,7 @@ import {
   Briefcase,
   Building2,
   Cog,
+  CreditCard,
   Gauge,
   Grid2x2,
   Home,
@@ -91,6 +92,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         items: [
           { label: "Account Settings", icon: Settings },
           { label: "Configurations", icon: Cog, to: "/admin/settings" },
+          { label: "Payment Methods", icon: CreditCard, to: "/payment-methods" },
         ],
       }
     );

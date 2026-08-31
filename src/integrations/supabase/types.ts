@@ -346,6 +346,42 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          environment: string
+          id: string
+          is_active: boolean
+          is_configured: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          environment?: string
+          id?: string
+          is_active?: boolean
+          is_configured?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          environment?: string
+          id?: string
+          is_active?: boolean
+          is_configured?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address_line1: string | null
