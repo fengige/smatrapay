@@ -21,10 +21,20 @@ export type HolderMeterSummary = {
   meters: HolderMeterRow[];
 };
 
+export type TypeRevenueRow = {
+  type: string;
+  meters: number;
+  tokens: number;
+  units: number;
+  amount: number;
+  avgPricePerUnit: number;
+};
+
 export type HolderMeterRow = {
   id: string;
   meter_number: string;
   type: string;
+  pricePerUnit: number;
   status: string;
   assigned: boolean;
   tokens: number;
@@ -53,7 +63,7 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
 
     const { data: meters, error } = await supabase
       .from("meters")
-      .select("id, meter_number, type, status, unit_id, agent_id, vendor_id, landlord_id");
+      .select("id, meter_number, type, price_per_unit, status, unit_id, agent_id, vendor_id, landlord_id");
     if (error) throw new Error(error.message);
     const meterRows = meters ?? [];
 
@@ -173,6 +183,7 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
           id: m.id as string,
           meter_number: (m.meter_number as string) ?? "",
           type,
+          pricePerUnit: Number(m.price_per_unit ?? 0),
           status: (m.status as string) ?? "",
           assigned: !!m.unit_id,
           tokens: usage?.tokens ?? 0,
@@ -192,6 +203,31 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
       if (!attached) unassigned += 1;
     }
 
+    // Revenue grouped by meter (unit) type — uses each meter's price per unit.
+    const typeAgg = new Map<string, TypeRevenueRow & { priceSum: number }>();
+    for (const m of meterRows as any[]) {
+      const type = (m.type as string) || "Unknown";
+      let row = typeAgg.get(type);
+      if (!row) {
+        row = { type, meters: 0, tokens: 0, units: 0, amount: 0, avgPricePerUnit: 0, priceSum: 0 };
+        typeAgg.set(type, row);
+      }
+      row.meters += 1;
+      row.priceSum += Number(m.price_per_unit ?? 0);
+      const usage = perMeter.get(m.id as string);
+      if (usage) {
+        row.tokens += usage.tokens;
+        row.units += usage.units;
+        row.amount += usage.amount;
+      }
+    }
+    const revenueByType: TypeRevenueRow[] = [...typeAgg.values()]
+      .map(({ priceSum, ...r }) => ({
+        ...r,
+        avgPricePerUnit: r.meters ? priceSum / r.meters : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount || b.meters - a.meters);
+
     const rows = [...holders.values()].sort((a, b) => b.total - a.total || b.units - a.units);
 
     const totals = {
@@ -208,5 +244,5 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
       new Date(windowStart.getTime() + i * dayMs).toISOString().slice(0, 10),
     );
 
-    return { days, trendDates, globalTrend, totals, rows };
+    return { days, trendDates, globalTrend, totals, revenueByType, rows };
   });
