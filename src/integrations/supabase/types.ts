@@ -578,6 +578,56 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_messages: {
+        Row: {
+          configuration_id: string | null
+          created_at: string | null
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          provider_message_id: string | null
+          recipient_phone: string
+          sender_id: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          configuration_id?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          provider_message_id?: string | null
+          recipient_phone: string
+          sender_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          configuration_id?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          provider_message_id?: string | null
+          recipient_phone?: string
+          sender_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_messages_configuration_id_fkey"
+            columns: ["configuration_id"]
+            isOneToOne: false
+            referencedRelation: "sms_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streets: {
         Row: {
           created_at: string
