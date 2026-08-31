@@ -312,12 +312,15 @@ export const listUsersByRole = createServerFn({ method: "GET" })
     const { data: profiles, error, count } = await q;
     if (error) throw new Error(error.message);
 
-    const { data: assignments, error: aErr } = await supabase
-      .from("unit_assignments")
-      .select("id, user_id, unit_id, start_date, end_date")
-      .in("user_id", ids)
-      .eq("role", "resident")
-      .order("start_date", { ascending: false });
+    const profileIds = (profiles ?? []).map((p) => p.id);
+    const { data: assignments, error: aErr } = profileIds.length
+      ? await supabase
+          .from("unit_assignments")
+          .select("id, user_id, unit_id, start_date, end_date")
+          .in("user_id", profileIds)
+          .eq("role", "resident")
+          .order("start_date", { ascending: false })
+      : { data: [], error: null };
     if (aErr) throw new Error(aErr.message);
 
     const unitIds = [...new Set((assignments ?? []).map((a) => a.unit_id).filter(Boolean))];
@@ -361,5 +364,12 @@ export const listUsersByRole = createServerFn({ method: "GET" })
         role: data.role as string,
         assignments: (byUser.get(p.id) ?? []) as { id: string; user_id: string; start_date: string; end_date: string | null; unit: { unit_number: string; property: { name: string } | null } | null }[],
       })),
+      total: count ?? (profiles ?? []).length,
+      counts: {
+        total: count ?? 0,
+        active,
+        pending,
+        suspended,
+      },
     };
   });
