@@ -28,6 +28,7 @@ import {
 } from "@/lib/payment-methods.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
+import { MpesaConfigPanel } from "@/components/MpesaConfigPanel";
 
 export const Route = createFileRoute("/_authenticated/payment-methods/")({
   head: () => ({
@@ -404,6 +405,8 @@ function SetupDrawer({ method, onClose }: { method: PaymentMethodRow; onClose: (
   const logoFn = useServerFn(setPaymentMethodLogo);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const isMpesa = /m-?pesa|daraja/i.test(`${method.code} ${method.name}`);
+
   const [isActive, setIsActive] = useState(method.is_active);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(method.logo_url);
@@ -472,7 +475,9 @@ function SetupDrawer({ method, onClose }: { method: PaymentMethodRow; onClose: (
         role="dialog"
         aria-modal="true"
         aria-label={`Setup ${method.name}`}
-        className="relative z-10 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-border bg-card"
+        className={`relative z-10 flex h-full w-full flex-col overflow-y-auto border-l border-border bg-card ${
+          isMpesa ? "max-w-3xl" : "max-w-md"
+        }`}
       >
         <header className="flex items-center justify-between border-b border-border p-5">
           <h2 className="text-base font-bold text-foreground">Setup - {method.name}</h2>
@@ -554,6 +559,19 @@ function SetupDrawer({ method, onClose }: { method: PaymentMethodRow; onClose: (
               </button>
             )}
           </div>
+
+          {isMpesa && (
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">API Settings</h3>
+                <p className="text-xs text-muted-foreground">
+                  Safaricom Daraja integration settings. Credentials are stored securely on the
+                  server and never shown again after saving.
+                </p>
+              </div>
+              <MpesaConfigPanel paymentMethodId={method.id} />
+            </div>
+          )}
         </div>
 
         <footer className="mt-auto grid grid-cols-2 gap-3 border-t border-border p-5">

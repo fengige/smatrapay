@@ -76,6 +76,11 @@ import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
 import { Route as AuthenticatedVendorsIdIndexRouteImport } from './routes/_authenticated/vendors.$id.index'
 import { Route as AuthenticatedVendorsIdEditRouteImport } from './routes/_authenticated/vendors.$id.edit'
+import { Route as ApiPublicMpesaB2cResultRouteImport } from './routes/api/public/mpesa/b2c-result'
+import { Route as ApiPublicMpesaB2cTimeoutRouteImport } from './routes/api/public/mpesa/b2c-timeout'
+import { Route as ApiPublicMpesaC2bConfirmationRouteImport } from './routes/api/public/mpesa/c2b-confirmation'
+import { Route as ApiPublicMpesaC2bValidationRouteImport } from './routes/api/public/mpesa/c2b-validation'
+import { Route as ApiPublicMpesaStkCallbackRouteImport } from './routes/api/public/mpesa/stk-callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -462,6 +467,35 @@ const AuthenticatedVendorsIdEditRoute =
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedVendorsRoute,
   } as any)
+const ApiPublicMpesaB2cResultRoute = ApiPublicMpesaB2cResultRouteImport.update({
+  id: '/api/public/mpesa/b2c-result',
+  path: '/api/public/mpesa/b2c-result',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMpesaB2cTimeoutRoute =
+  ApiPublicMpesaB2cTimeoutRouteImport.update({
+    id: '/api/public/mpesa/b2c-timeout',
+    path: '/api/public/mpesa/b2c-timeout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMpesaC2bConfirmationRoute =
+  ApiPublicMpesaC2bConfirmationRouteImport.update({
+    id: '/api/public/mpesa/c2b-confirmation',
+    path: '/api/public/mpesa/c2b-confirmation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMpesaC2bValidationRoute =
+  ApiPublicMpesaC2bValidationRouteImport.update({
+    id: '/api/public/mpesa/c2b-validation',
+    path: '/api/public/mpesa/c2b-validation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMpesaStkCallbackRoute =
+  ApiPublicMpesaStkCallbackRouteImport.update({
+    id: '/api/public/mpesa/stk-callback',
+    path: '/api/public/mpesa/stk-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -540,6 +574,11 @@ export interface FileRoutesByFullPath {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
+  '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
+  '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
+  '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
+  '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -603,6 +642,11 @@ export interface FileRoutesByTo {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
+  '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
+  '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
+  '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
+  '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -676,6 +720,11 @@ export interface FileRoutesById {
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/_authenticated/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
+  '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
+  '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
+  '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
+  '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -749,6 +798,11 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendors/$id/edit'
+    | '/api/public/mpesa/b2c-result'
+    | '/api/public/mpesa/b2c-timeout'
+    | '/api/public/mpesa/c2b-confirmation'
+    | '/api/public/mpesa/c2b-validation'
+    | '/api/public/mpesa/stk-callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -812,6 +866,11 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendors/$id/edit'
+    | '/api/public/mpesa/b2c-result'
+    | '/api/public/mpesa/b2c-timeout'
+    | '/api/public/mpesa/c2b-confirmation'
+    | '/api/public/mpesa/c2b-validation'
+    | '/api/public/mpesa/stk-callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -884,6 +943,11 @@ export interface FileRouteTypes {
     | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/_authenticated/vendors/$id/edit'
+    | '/api/public/mpesa/b2c-result'
+    | '/api/public/mpesa/b2c-timeout'
+    | '/api/public/mpesa/c2b-confirmation'
+    | '/api/public/mpesa/c2b-validation'
+    | '/api/public/mpesa/stk-callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -902,6 +966,11 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicMpesaB2cResultRoute: typeof ApiPublicMpesaB2cResultRoute
+  ApiPublicMpesaB2cTimeoutRoute: typeof ApiPublicMpesaB2cTimeoutRoute
+  ApiPublicMpesaC2bConfirmationRoute: typeof ApiPublicMpesaC2bConfirmationRoute
+  ApiPublicMpesaC2bValidationRoute: typeof ApiPublicMpesaC2bValidationRoute
+  ApiPublicMpesaStkCallbackRoute: typeof ApiPublicMpesaStkCallbackRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1378,6 +1447,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorsIdEditRouteImport
       parentRoute: typeof AuthenticatedVendorsRoute
     }
+    '/api/public/mpesa/b2c-result': {
+      id: '/api/public/mpesa/b2c-result'
+      path: '/api/public/mpesa/b2c-result'
+      fullPath: '/api/public/mpesa/b2c-result'
+      preLoaderRoute: typeof ApiPublicMpesaB2cResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mpesa/b2c-timeout': {
+      id: '/api/public/mpesa/b2c-timeout'
+      path: '/api/public/mpesa/b2c-timeout'
+      fullPath: '/api/public/mpesa/b2c-timeout'
+      preLoaderRoute: typeof ApiPublicMpesaB2cTimeoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mpesa/c2b-confirmation': {
+      id: '/api/public/mpesa/c2b-confirmation'
+      path: '/api/public/mpesa/c2b-confirmation'
+      fullPath: '/api/public/mpesa/c2b-confirmation'
+      preLoaderRoute: typeof ApiPublicMpesaC2bConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mpesa/c2b-validation': {
+      id: '/api/public/mpesa/c2b-validation'
+      path: '/api/public/mpesa/c2b-validation'
+      fullPath: '/api/public/mpesa/c2b-validation'
+      preLoaderRoute: typeof ApiPublicMpesaC2bValidationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mpesa/stk-callback': {
+      id: '/api/public/mpesa/stk-callback'
+      path: '/api/public/mpesa/stk-callback'
+      fullPath: '/api/public/mpesa/stk-callback'
+      preLoaderRoute: typeof ApiPublicMpesaStkCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -1631,6 +1735,11 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiPublicMpesaB2cResultRoute: ApiPublicMpesaB2cResultRoute,
+  ApiPublicMpesaB2cTimeoutRoute: ApiPublicMpesaB2cTimeoutRoute,
+  ApiPublicMpesaC2bConfirmationRoute: ApiPublicMpesaC2bConfirmationRoute,
+  ApiPublicMpesaC2bValidationRoute: ApiPublicMpesaC2bValidationRoute,
+  ApiPublicMpesaStkCallbackRoute: ApiPublicMpesaStkCallbackRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
