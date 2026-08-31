@@ -284,7 +284,7 @@ export function MeterAssignmentPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {meters.map((m) => (
+              {pagedMeters.map((m) => (
                 <tr key={m.id} className="hover:bg-accent/5">
                   <td className="px-6 py-3">
                     <input
