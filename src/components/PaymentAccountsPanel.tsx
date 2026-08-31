@@ -134,7 +134,16 @@ export function PaymentAccountsPanel({
   return (
     <section className="rounded-2xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-bold text-foreground">Payment Accounts</h2>
+        <div>
+          <h2 className="text-sm font-bold text-foreground">
+            {lockUser ? "Payment Methods & Accounts" : "Payment Accounts"}
+          </h2>
+          {lockUser && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Payment methods and account details saved for {lockUser.name}.
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -147,7 +156,9 @@ export function PaymentAccountsPanel({
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div
+        className={`mt-4 grid gap-3 md:grid-cols-2 ${lockUser ? "xl:grid-cols-3" : "xl:grid-cols-5"}`}
+      >
         <div className="relative xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -171,32 +182,36 @@ export function PaymentAccountsPanel({
             </option>
           ))}
         </select>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          aria-label="Filter by user type"
-          className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
-        >
-          <option value="">All user types</option>
-          {USER_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={userFilter}
-          onChange={(e) => setUserFilter(e.target.value)}
-          aria-label="Filter by user"
-          className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
-        >
-          <option value="">All users</option>
-          {userOptions.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
+        {!lockUser && (
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            aria-label="Filter by user type"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="">All user types</option>
+            {USER_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        )}
+        {!lockUser && (
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+            aria-label="Filter by user"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="">All users</option>
+            {userOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -208,6 +223,7 @@ export function PaymentAccountsPanel({
           <option value="inactive">Inactive</option>
         </select>
       </div>
+
 
       {isLoading ? (
         <div className="py-12 text-center">
