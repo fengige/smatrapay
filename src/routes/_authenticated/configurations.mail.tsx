@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, MailCheck, Send } from "lucide-react";
+import { toast } from "sonner";
+
 import { SettingsCardForm } from "@/components/configurations/SettingsCardForm";
+import { sendMailTest } from "@/lib/configurations.functions";
 
 export const Route = createFileRoute("/_authenticated/configurations/mail")({
   head: () => ({
