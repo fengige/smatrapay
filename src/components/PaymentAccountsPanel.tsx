@@ -453,10 +453,12 @@ function Dialog({
 function AccountDialog({
   methods,
   account,
+  lockUser,
   onClose,
 }: {
   methods: PaymentMethodRow[];
   account: PaymentAccountRow | null;
+  lockUser?: LockedPaymentUser;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -465,8 +467,11 @@ function AccountDialog({
   const fetchUsers = useServerFn(listPaymentUsers);
 
   const [methodId, setMethodId] = useState(account?.payment_method_id ?? "");
-  const [userType, setUserType] = useState<PaymentUserType | "">(account?.user_type ?? "");
-  const [userId, setUserId] = useState(account?.user_id ?? "");
+  const [userType, setUserType] = useState<PaymentUserType | "">(
+    account?.user_type ?? lockUser?.type ?? "",
+  );
+  const [userId, setUserId] = useState(account?.user_id ?? lockUser?.id ?? "");
+
   const [accountName, setAccountName] = useState(account?.account_name ?? "");
   const [accountNumber, setAccountNumber] = useState(account?.account_number ?? "");
   const [bankName, setBankName] = useState(account?.bank_name ?? "");
