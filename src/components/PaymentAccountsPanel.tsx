@@ -86,6 +86,7 @@ export function PaymentAccountsPanel({
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return accounts.filter((a) => {
+      if (lockUser && a.user_id !== lockUser.id) return false;
       if (methodFilter && a.payment_method_id !== methodFilter) return false;
       if (typeFilter && a.user_type !== typeFilter) return false;
       if (userFilter && a.user_id !== userFilter) return false;
@@ -97,7 +98,8 @@ export function PaymentAccountsPanel({
         .toLowerCase()
         .includes(needle);
     });
-  }, [accounts, q, methodFilter, typeFilter, userFilter, statusFilter]);
+  }, [accounts, q, methodFilter, typeFilter, userFilter, statusFilter, lockUser]);
+
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["payment-accounts"] });
 
