@@ -5,12 +5,14 @@ import {
   Activity,
   Building2,
   ChevronRight,
+  Coins,
   Gauge,
   MessageSquare,
   ShieldCheck,
   Users,
   Zap,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -22,6 +24,7 @@ import {
 } from "recharts";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { getAdminStats } from "@/lib/stats.functions";
+import { getConfiguration } from "@/lib/configurations.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { useSessionIdentity } from "@/components/PortalLayout";
 import { roleLabel } from "@/lib/portals";
