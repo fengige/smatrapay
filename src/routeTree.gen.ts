@@ -16,6 +16,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedMeterDashboardRouteImport } from './routes/_authenticated/meter-dashboard'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
@@ -33,6 +34,13 @@ import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
 import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenticated/agents.index'
 import { Route as AuthenticatedAgentsNewRouteImport } from './routes/_authenticated/agents.new'
+import { Route as AuthenticatedConfigurationsIndexRouteImport } from './routes/_authenticated/configurations.index'
+import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './routes/_authenticated/configurations.app-settings'
+import { Route as AuthenticatedConfigurationsCurrencyRouteImport } from './routes/_authenticated/configurations.currency'
+import { Route as AuthenticatedConfigurationsGoogleMapRouteImport } from './routes/_authenticated/configurations.google-map'
+import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
+import { Route as AuthenticatedConfigurationsSmsRouteImport } from './routes/_authenticated/configurations.sms'
+import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './routes/_authenticated/configurations.social-media'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
@@ -104,6 +112,12 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfigurationsRoute =
+  AuthenticatedConfigurationsRouteImport.update({
+    id: '/configurations',
+    path: '/configurations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
   id: '/landlords',
   path: '/landlords',
@@ -199,6 +213,48 @@ const AuthenticatedAgentsNewRoute = AuthenticatedAgentsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthenticatedAgentsRoute,
 } as any)
+const AuthenticatedConfigurationsIndexRoute =
+  AuthenticatedConfigurationsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsAppSettingsRoute =
+  AuthenticatedConfigurationsAppSettingsRouteImport.update({
+    id: '/app-settings',
+    path: '/app-settings',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsCurrencyRoute =
+  AuthenticatedConfigurationsCurrencyRouteImport.update({
+    id: '/currency',
+    path: '/currency',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsGoogleMapRoute =
+  AuthenticatedConfigurationsGoogleMapRouteImport.update({
+    id: '/google-map',
+    path: '/google-map',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsMailRoute =
+  AuthenticatedConfigurationsMailRouteImport.update({
+    id: '/mail',
+    path: '/mail',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsSmsRoute =
+  AuthenticatedConfigurationsSmsRouteImport.update({
+    id: '/sms',
+    path: '/sms',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsSocialMediaRoute =
+  AuthenticatedConfigurationsSocialMediaRouteImport.update({
+    id: '/social-media',
+    path: '/social-media',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
 const AuthenticatedLandlordDashboardRoute =
   AuthenticatedLandlordDashboardRouteImport.update({
     id: '/landlord/dashboard',
@@ -416,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRouteWithChildren
+  '/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/pos': typeof AuthenticatedPosRoute
@@ -432,6 +489,12 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
+  '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
+  '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
+  '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
+  '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -446,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
+  '/configurations/': typeof AuthenticatedConfigurationsIndexRoute
   '/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters/': typeof AuthenticatedMetersIndexRoute
@@ -487,6 +551,12 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
+  '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
+  '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
+  '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
+  '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -500,6 +570,7 @@ export interface FileRoutesByTo {
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
+  '/configurations': typeof AuthenticatedConfigurationsIndexRoute
   '/landlords': typeof AuthenticatedLandlordsIndexRoute
   '/meter-suppliers': typeof AuthenticatedMeterSuppliersIndexRoute
   '/meters': typeof AuthenticatedMetersIndexRoute
@@ -533,6 +604,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/_authenticated/agents': typeof AuthenticatedAgentsRouteWithChildren
+  '/_authenticated/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/_authenticated/pos': typeof AuthenticatedPosRoute
@@ -549,6 +621,12 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/agents/new': typeof AuthenticatedAgentsNewRoute
+  '/_authenticated/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/_authenticated/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
+  '/_authenticated/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
+  '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/_authenticated/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
+  '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -563,6 +641,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
+  '/_authenticated/configurations/': typeof AuthenticatedConfigurationsIndexRoute
   '/_authenticated/landlords/': typeof AuthenticatedLandlordsIndexRoute
   '/_authenticated/meter-suppliers/': typeof AuthenticatedMeterSuppliersIndexRoute
   '/_authenticated/meters/': typeof AuthenticatedMetersIndexRoute
@@ -596,6 +675,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/agents'
+    | '/configurations'
     | '/landlords'
     | '/meter-dashboard'
     | '/pos'
@@ -612,6 +692,12 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/agent/dashboard'
     | '/agents/new'
+    | '/configurations/app-settings'
+    | '/configurations/currency'
+    | '/configurations/google-map'
+    | '/configurations/mail'
+    | '/configurations/sms'
+    | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -626,6 +712,7 @@ export interface FileRouteTypes {
     | '/vendor/dashboard'
     | '/vendors/new'
     | '/agents/'
+    | '/configurations/'
     | '/landlords/'
     | '/meter-suppliers/'
     | '/meters/'
@@ -667,6 +754,12 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/agent/dashboard'
     | '/agents/new'
+    | '/configurations/app-settings'
+    | '/configurations/currency'
+    | '/configurations/google-map'
+    | '/configurations/mail'
+    | '/configurations/sms'
+    | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -680,6 +773,7 @@ export interface FileRouteTypes {
     | '/vendor/dashboard'
     | '/vendors/new'
     | '/agents'
+    | '/configurations'
     | '/landlords'
     | '/meter-suppliers'
     | '/meters'
@@ -712,6 +806,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/_authenticated/agents'
+    | '/_authenticated/configurations'
     | '/_authenticated/landlords'
     | '/_authenticated/meter-dashboard'
     | '/_authenticated/pos'
@@ -728,6 +823,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/agents/new'
+    | '/_authenticated/configurations/app-settings'
+    | '/_authenticated/configurations/currency'
+    | '/_authenticated/configurations/google-map'
+    | '/_authenticated/configurations/mail'
+    | '/_authenticated/configurations/sms'
+    | '/_authenticated/configurations/social-media'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meters/$meterId'
@@ -742,6 +843,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/vendors/new'
     | '/_authenticated/agents/'
+    | '/_authenticated/configurations/'
     | '/_authenticated/landlords/'
     | '/_authenticated/meter-suppliers/'
     | '/_authenticated/meters/'
@@ -827,6 +929,13 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configurations': {
+      id: '/_authenticated/configurations'
+      path: '/configurations'
+      fullPath: '/configurations'
+      preLoaderRoute: typeof AuthenticatedConfigurationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/landlords': {
@@ -947,6 +1056,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/agents/new'
       preLoaderRoute: typeof AuthenticatedAgentsNewRouteImport
       parentRoute: typeof AuthenticatedAgentsRoute
+    }
+    '/_authenticated/configurations/': {
+      id: '/_authenticated/configurations/'
+      path: '/'
+      fullPath: '/configurations/'
+      preLoaderRoute: typeof AuthenticatedConfigurationsIndexRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/app-settings': {
+      id: '/_authenticated/configurations/app-settings'
+      path: '/app-settings'
+      fullPath: '/configurations/app-settings'
+      preLoaderRoute: typeof AuthenticatedConfigurationsAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/currency': {
+      id: '/_authenticated/configurations/currency'
+      path: '/currency'
+      fullPath: '/configurations/currency'
+      preLoaderRoute: typeof AuthenticatedConfigurationsCurrencyRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/google-map': {
+      id: '/_authenticated/configurations/google-map'
+      path: '/google-map'
+      fullPath: '/configurations/google-map'
+      preLoaderRoute: typeof AuthenticatedConfigurationsGoogleMapRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/mail': {
+      id: '/_authenticated/configurations/mail'
+      path: '/mail'
+      fullPath: '/configurations/mail'
+      preLoaderRoute: typeof AuthenticatedConfigurationsMailRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/sms': {
+      id: '/_authenticated/configurations/sms'
+      path: '/sms'
+      fullPath: '/configurations/sms'
+      preLoaderRoute: typeof AuthenticatedConfigurationsSmsRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/social-media': {
+      id: '/_authenticated/configurations/social-media'
+      path: '/social-media'
+      fullPath: '/configurations/social-media'
+      preLoaderRoute: typeof AuthenticatedConfigurationsSocialMediaRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/landlord/dashboard': {
       id: '/_authenticated/landlord/dashboard'
@@ -1220,6 +1378,37 @@ const AuthenticatedAgentsRouteChildren: AuthenticatedAgentsRouteChildren = {
 const AuthenticatedAgentsRouteWithChildren =
   AuthenticatedAgentsRoute._addFileChildren(AuthenticatedAgentsRouteChildren)
 
+interface AuthenticatedConfigurationsRouteChildren {
+  AuthenticatedConfigurationsAppSettingsRoute: typeof AuthenticatedConfigurationsAppSettingsRoute
+  AuthenticatedConfigurationsCurrencyRoute: typeof AuthenticatedConfigurationsCurrencyRoute
+  AuthenticatedConfigurationsGoogleMapRoute: typeof AuthenticatedConfigurationsGoogleMapRoute
+  AuthenticatedConfigurationsMailRoute: typeof AuthenticatedConfigurationsMailRoute
+  AuthenticatedConfigurationsSmsRoute: typeof AuthenticatedConfigurationsSmsRoute
+  AuthenticatedConfigurationsSocialMediaRoute: typeof AuthenticatedConfigurationsSocialMediaRoute
+  AuthenticatedConfigurationsIndexRoute: typeof AuthenticatedConfigurationsIndexRoute
+}
+
+const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRouteChildren =
+  {
+    AuthenticatedConfigurationsAppSettingsRoute:
+      AuthenticatedConfigurationsAppSettingsRoute,
+    AuthenticatedConfigurationsCurrencyRoute:
+      AuthenticatedConfigurationsCurrencyRoute,
+    AuthenticatedConfigurationsGoogleMapRoute:
+      AuthenticatedConfigurationsGoogleMapRoute,
+    AuthenticatedConfigurationsMailRoute: AuthenticatedConfigurationsMailRoute,
+    AuthenticatedConfigurationsSmsRoute: AuthenticatedConfigurationsSmsRoute,
+    AuthenticatedConfigurationsSocialMediaRoute:
+      AuthenticatedConfigurationsSocialMediaRoute,
+    AuthenticatedConfigurationsIndexRoute:
+      AuthenticatedConfigurationsIndexRoute,
+  }
+
+const AuthenticatedConfigurationsRouteWithChildren =
+  AuthenticatedConfigurationsRoute._addFileChildren(
+    AuthenticatedConfigurationsRouteChildren,
+  )
+
 interface AuthenticatedLandlordsRouteChildren {
   AuthenticatedLandlordsNewRoute: typeof AuthenticatedLandlordsNewRoute
   AuthenticatedLandlordsIndexRoute: typeof AuthenticatedLandlordsIndexRoute
@@ -1327,6 +1516,7 @@ const AuthenticatedVendorsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
+  AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedMeterDashboardRoute: typeof AuthenticatedMeterDashboardRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
@@ -1357,6 +1547,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRouteWithChildren,
+  AuthenticatedConfigurationsRoute:
+    AuthenticatedConfigurationsRouteWithChildren,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedMeterDashboardRoute: AuthenticatedMeterDashboardRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
