@@ -27,6 +27,7 @@ import {
   type PaymentMethodRow,
 } from "@/lib/payment-methods.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
 
 export const Route = createFileRoute("/_authenticated/payment-methods/")({
   head: () => ({
@@ -60,6 +61,7 @@ function PaymentMethodsPage() {
   const removeMethod = useServerFn(deletePaymentMethod);
   const statusFn = useServerFn(setPaymentMethodStatus);
 
+  const [section, setSection] = useState<"methods" | "accounts">("methods");
   const [tab, setTab] = useState<Tab>("digital");
   const [q, setQ] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -122,6 +124,7 @@ function PaymentMethodsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            hidden={section !== "methods"}
             onClick={() => setShowAdd(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
