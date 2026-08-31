@@ -12,6 +12,13 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 }
 
 const environmentSchema = z.enum(["sandbox", "production"]);
+/** null / omitted = the shared platform-wide configuration. */
+const ownerSchema = z.string().uuid().nullable().optional();
+
+/** Scopes a query to a specific owner's config, or the shared one. */
+function scopeOwner(query: any, ownerId: string | null | undefined) {
+  return ownerId ? query.eq("owner_id", ownerId) : query.is("owner_id", null);
+}
 
 /** Public base URL used to build the Daraja callback endpoints. */
 function appBaseUrl(): string {
@@ -38,6 +45,7 @@ export function mpesaCallbackUrls(base: string) {
 
 export type MpesaConfigView = {
   payment_method_id: string;
+  owner_id: string | null;
   environment: "sandbox" | "production";
   enabled: boolean;
   country: string;
@@ -69,9 +77,11 @@ function toView(
   environment: "sandbox" | "production",
   row: any | null,
   base: string,
+  ownerId: string | null = null,
 ): MpesaConfigView {
   return {
     payment_method_id: paymentMethodId,
+    owner_id: ownerId,
     environment,
     enabled: Boolean(row?.enabled),
     country: row?.country ?? "KE",
@@ -102,24 +112,37 @@ export const getMpesaConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ payment_method_id: z.string().uuid(), environment: environmentSchema })
+      .object({
+        payment_method_id: z.string().uuid(),
+        environment: environmentSchema,
+        owner_id: ownerSchema,
+      })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { data: row, error } = await context.supabase
-      .from("payment_method_configurations")
-      .select("*")
-      .eq("payment_method_id", data.payment_method_id)
-      .eq("environment", data.environment)
-      .maybeSingle();
+    const { data: row, error } = await scopeOwner(
+      context.supabase
+        .from("payment_method_configurations")
+        .select("*")
+        .eq("payment_method_id", data.payment_method_id)
+        .eq("environment", data.environment),
+      data.owner_id,
+    ).maybeSingle();
     if (error) throw new Error(error.message);
-    return toView(data.payment_method_id, data.environment, row, appBaseUrl());
+    return toView(
+      data.payment_method_id,
+      data.environment,
+      row,
+      appBaseUrl(),
+      data.owner_id ?? null,
+    );
   });
 
 const saveInput = z.object({
   payment_method_id: z.string().uuid(),
   environment: environmentSchema,
+  owner_id: ownerSchema,
   enabled: z.boolean(),
   country: z.string().trim().min(2).max(4).default("KE"),
   currency: z.string().trim().min(3).max(4).default("KES"),
@@ -156,16 +179,19 @@ export const saveMpesaConfig = createServerFn({ method: "POST" })
       if (missing.length) throw new Error(`Please provide: ${missing.join(", ")}`);
     }
 
-    const { data: existing } = await context.supabase
-      .from("payment_method_configurations")
-      .select("id, consumer_secret, passkey, b2c_security_credential")
-      .eq("payment_method_id", data.payment_method_id)
-      .eq("environment", data.environment)
-      .maybeSingle();
+    const { data: existing } = await scopeOwner(
+      context.supabase
+        .from("payment_method_configurations")
+        .select("id, consumer_secret, passkey, b2c_security_credential")
+        .eq("payment_method_id", data.payment_method_id)
+        .eq("environment", data.environment),
+      data.owner_id,
+    ).maybeSingle();
 
     const payload: Record<string, unknown> = {
       payment_method_id: data.payment_method_id,
       environment: data.environment,
+      owner_id: data.owner_id ?? null,
       enabled: data.enabled,
       country: data.country,
       currency: data.currency,
@@ -202,33 +228,48 @@ export const saveMpesaConfig = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    // Keep the payment method flagged as configured once credentials exist.
-    await context.supabase
-      .from("payment_methods")
-      .update({ is_configured: Boolean(payload["consumer_key"] && payload["consumer_secret"]) } as never)
-      .eq("id", data.payment_method_id);
+    // Only the shared platform configuration drives the method-level flag.
+    if (!data.owner_id) {
+      await context.supabase
+        .from("payment_methods")
+        .update({
+          is_configured: Boolean(payload["consumer_key"] && payload["consumer_secret"]),
+        } as never)
+        .eq("id", data.payment_method_id);
+    }
 
-    const { data: row } = await context.supabase
-      .from("payment_method_configurations")
-      .select("*")
-      .eq("payment_method_id", data.payment_method_id)
-      .eq("environment", data.environment)
-      .maybeSingle();
+    const { data: row } = await scopeOwner(
+      context.supabase
+        .from("payment_method_configurations")
+        .select("*")
+        .eq("payment_method_id", data.payment_method_id)
+        .eq("environment", data.environment),
+      data.owner_id,
+    ).maybeSingle();
 
-    return toView(data.payment_method_id, data.environment, row, appBaseUrl());
+    return toView(
+      data.payment_method_id,
+      data.environment,
+      row,
+      appBaseUrl(),
+      data.owner_id ?? null,
+    );
   });
 
 async function loadCredentials(
   context: any,
   payment_method_id: string,
   environment: "sandbox" | "production",
+  owner_id?: string | null,
 ) {
-  const { data: row, error } = await context.supabase
-    .from("payment_method_configurations")
-    .select("*")
-    .eq("payment_method_id", payment_method_id)
-    .eq("environment", environment)
-    .maybeSingle();
+  const { data: row, error } = await scopeOwner(
+    context.supabase
+      .from("payment_method_configurations")
+      .select("*")
+      .eq("payment_method_id", payment_method_id)
+      .eq("environment", environment),
+    owner_id,
+  ).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) throw new Error("Save the M-Pesa configuration for this environment first.");
   return row as any;
@@ -237,11 +278,22 @@ async function loadCredentials(
 export const testMpesaConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ payment_method_id: z.string().uuid(), environment: environmentSchema }).parse(d),
+    z
+      .object({
+        payment_method_id: z.string().uuid(),
+        environment: environmentSchema,
+        owner_id: ownerSchema,
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const row = await loadCredentials(context, data.payment_method_id, data.environment);
+    const row = await loadCredentials(
+      context,
+      data.payment_method_id,
+      data.environment,
+      data.owner_id,
+    );
     if (!row.consumer_key || !row.consumer_secret) {
       return { ok: false, message: "Enter and save the Consumer Key and Consumer Secret first." };
     }
@@ -262,11 +314,22 @@ export const testMpesaConnection = createServerFn({ method: "POST" })
 export const registerC2BUrls = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ payment_method_id: z.string().uuid(), environment: environmentSchema }).parse(d),
+    z
+      .object({
+        payment_method_id: z.string().uuid(),
+        environment: environmentSchema,
+        owner_id: ownerSchema,
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const row = await loadCredentials(context, data.payment_method_id, data.environment);
+    const row = await loadCredentials(
+      context,
+      data.payment_method_id,
+      data.environment,
+      data.owner_id,
+    );
     if (!row.c2b_enabled) return { ok: false, message: "Enable C2B and save before registering URLs." };
     const shortCode = row.c2b_short_code || row.business_short_code;
     if (!shortCode) return { ok: false, message: "A C2B short code is required." };
@@ -298,6 +361,7 @@ export const initiateStkPush = createServerFn({ method: "POST" })
       .object({
         payment_method_id: z.string().uuid(),
         environment: environmentSchema,
+        owner_id: ownerSchema,
         phone: z.string().trim().min(9, "Enter a valid phone number").max(15),
         amount: z.coerce.number().positive("Amount must be greater than zero"),
         account_reference: z.string().trim().max(50).optional(),
@@ -308,7 +372,12 @@ export const initiateStkPush = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const row = await loadCredentials(context, data.payment_method_id, data.environment);
+    const row = await loadCredentials(
+      context,
+      data.payment_method_id,
+      data.environment,
+      data.owner_id,
+    );
     if (!row.enabled || !row.stk_enabled) {
       return { ok: false, message: "Enable the M-Pesa integration and STK Push first." };
     }
@@ -350,7 +419,7 @@ export const initiateStkPush = createServerFn({ method: "POST" })
     await context.supabase.from("mpesa_transactions").insert({
       payment_method_id: data.payment_method_id,
       payment_id: data.payment_id ?? null,
-      user_id: data.user_id ?? null,
+      user_id: data.user_id ?? data.owner_id ?? null,
       environment: data.environment,
       flow: "stk",
       merchant_request_id: body.MerchantRequestID ?? null,
@@ -377,16 +446,24 @@ export const initiateStkPush = createServerFn({ method: "POST" })
 export const listMpesaTransactions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ payment_method_id: z.string().uuid(), limit: z.number().max(100).default(25) }).parse(d),
+    z
+      .object({
+        payment_method_id: z.string().uuid(),
+        owner_id: ownerSchema,
+        limit: z.number().max(100).default(25),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { data: rows, error } = await context.supabase
+    let query = context.supabase
       .from("mpesa_transactions")
       .select(
         "id, environment, flow, checkout_request_id, phone_number, amount, account_reference, mpesa_receipt_number, result_code, result_desc, status, transaction_date, created_at",
       )
-      .eq("payment_method_id", data.payment_method_id)
+      .eq("payment_method_id", data.payment_method_id);
+    if (data.owner_id) query = query.eq("user_id", data.owner_id);
+    const { data: rows, error } = await query
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
