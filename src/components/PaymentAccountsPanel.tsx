@@ -15,7 +15,10 @@ import {
   type PaymentAccountRow,
   type PaymentUserType,
 } from "@/lib/payment-accounts.functions";
-import type { PaymentMethodRow } from "@/lib/payment-methods.functions";
+import { listPaymentMethods, type PaymentMethodRow } from "@/lib/payment-methods.functions";
+
+export type LockedPaymentUser = { id: string; name: string; type: PaymentUserType };
+
 
 const USER_TYPES: { value: PaymentUserType; label: string }[] = [
   { value: "landlord", label: "Landlord" },
@@ -36,12 +39,27 @@ export function fieldsFor(method?: Pick<PaymentMethodRow, "code" | "name"> | nul
   };
 }
 
-export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] }) {
+export function PaymentAccountsPanel({
+  methods: methodsProp,
+  lockUser,
+}: {
+  methods?: PaymentMethodRow[];
+  lockUser?: LockedPaymentUser;
+}) {
   const queryClient = useQueryClient();
   const fetchAccounts = useServerFn(listPaymentAccounts);
+  const fetchMethods = useServerFn(listPaymentMethods);
   const statusFn = useServerFn(setPaymentAccountStatus);
   const defaultFn = useServerFn(setDefaultPaymentAccount);
   const removeFn = useServerFn(deletePaymentAccount);
+
+  const methodsQuery = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: () => fetchMethods(),
+    enabled: !methodsProp,
+  });
+  const methods = methodsProp ?? methodsQuery.data?.methods ?? [];
+
 
   const [q, setQ] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
@@ -68,6 +86,7 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return accounts.filter((a) => {
+      if (lockUser && a.user_id !== lockUser.id) return false;
       if (methodFilter && a.payment_method_id !== methodFilter) return false;
       if (typeFilter && a.user_type !== typeFilter) return false;
       if (userFilter && a.user_id !== userFilter) return false;
@@ -79,7 +98,8 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
         .toLowerCase()
         .includes(needle);
     });
-  }, [accounts, q, methodFilter, typeFilter, userFilter, statusFilter]);
+  }, [accounts, q, methodFilter, typeFilter, userFilter, statusFilter, lockUser]);
+
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["payment-accounts"] });
 
@@ -114,7 +134,16 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
   return (
     <section className="rounded-2xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-bold text-foreground">Payment Accounts</h2>
+        <div>
+          <h2 className="text-sm font-bold text-foreground">
+            {lockUser ? "Payment Methods & Accounts" : "Payment Accounts"}
+          </h2>
+          {lockUser && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Payment methods and account details saved for {lockUser.name}.
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -127,7 +156,9 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div
+        className={`mt-4 grid gap-3 md:grid-cols-2 ${lockUser ? "xl:grid-cols-3" : "xl:grid-cols-5"}`}
+      >
         <div className="relative xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -151,32 +182,36 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
             </option>
           ))}
         </select>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          aria-label="Filter by user type"
-          className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
-        >
-          <option value="">All user types</option>
-          {USER_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={userFilter}
-          onChange={(e) => setUserFilter(e.target.value)}
-          aria-label="Filter by user"
-          className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
-        >
-          <option value="">All users</option>
-          {userOptions.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
+        {!lockUser && (
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            aria-label="Filter by user type"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="">All user types</option>
+            {USER_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        )}
+        {!lockUser && (
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+            aria-label="Filter by user"
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="">All users</option>
+            {userOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -189,14 +224,18 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
         </select>
       </div>
 
+
       {isLoading ? (
         <div className="py-12 text-center">
           <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
         </div>
       ) : rows.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          No payment accounts yet. Use “Add Payment Account” to create one.
+          {lockUser
+            ? `No payment methods saved for ${lockUser.name} yet. Use “Add Payment Account” to add one.`
+            : "No payment accounts yet. Use “Add Payment Account” to create one."}
         </p>
+
       ) : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
@@ -286,7 +325,8 @@ export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] 
         <AccountDialog
           methods={methods}
           account={editing}
-          onClose={() => {
+          {...(lockUser ? { lockUser } : {})}
+
             setShowForm(false);
             setEditing(null);
           }}
