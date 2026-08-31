@@ -35,6 +35,7 @@ import { ProfileImageHistory } from "@/components/ProfileImageHistory";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
+import { listLandlordMeters } from "@/lib/landlords.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
@@ -710,6 +711,7 @@ function LandlordDetailPage() {
 
               {tab === "meters" && (
                 <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
+                  <LandlordMetersList landlordId={id} />
                   <AssignmentHistorySection kind="landlord" ownerId={id} />
                 </Section>
               )}
