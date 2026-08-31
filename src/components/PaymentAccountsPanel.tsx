@@ -564,49 +564,59 @@ function AccountDialog({
           </select>
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="User Type" id="pa-type" error={errors["userType"]}>
-            <select
-              id="pa-type"
-              value={userType}
-              onChange={(e) => {
-                setUserType(e.target.value as PaymentUserType);
-                setUserId("");
-              }}
-              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            >
-              <option value="">Select user type</option>
-              {USER_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </Field>
+        {lockUser ? (
+          <div className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm">
+            <span className="text-muted-foreground">Account holder: </span>
+            <span className="font-medium capitalize text-foreground">
+              {lockUser.name} ({lockUser.type})
+            </span>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="User Type" id="pa-type" error={errors["userType"]}>
+              <select
+                id="pa-type"
+                value={userType}
+                onChange={(e) => {
+                  setUserType(e.target.value as PaymentUserType);
+                  setUserId("");
+                }}
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              >
+                <option value="">Select user type</option>
+                {USER_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
-          <Field label="User" id="pa-user" error={errors["user"]}>
-            <select
-              id="pa-user"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              disabled={!userType || usersQuery.isLoading}
-              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm disabled:opacity-60"
-            >
-              <option value="">
-                {!userType
-                  ? "Select user type first"
-                  : usersQuery.isLoading
-                    ? "Loading users…"
-                    : "Select user"}
-              </option>
-              {(usersQuery.data?.users ?? []).map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
+            <Field label="User" id="pa-user" error={errors["user"]}>
+              <select
+                id="pa-user"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                disabled={!userType || usersQuery.isLoading}
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm disabled:opacity-60"
+              >
+                <option value="">
+                  {!userType
+                    ? "Select user type first"
+                    : usersQuery.isLoading
+                      ? "Loading users…"
+                      : "Select user"}
                 </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+                {(usersQuery.data?.users ?? []).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        )}
+
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Account Name" id="pa-name">
