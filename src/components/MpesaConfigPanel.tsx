@@ -64,7 +64,14 @@ function fromView(v: MpesaConfigView): FormState {
   };
 }
 
-export function MpesaConfigPanel({ paymentMethodId }: { paymentMethodId: string }) {
+export function MpesaConfigPanel({
+  paymentMethodId,
+  ownerId = null,
+}: {
+  paymentMethodId: string;
+  /** When set, reads/writes this user's own M-Pesa credentials instead of the shared ones. */
+  ownerId?: string | null;
+}) {
   const queryClient = useQueryClient();
   const fetchConfig = useServerFn(getMpesaConfig);
   const saveFn = useServerFn(saveMpesaConfig);
@@ -82,13 +89,17 @@ export function MpesaConfigPanel({ paymentMethodId }: { paymentMethodId: string 
   const [stkAmount, setStkAmount] = useState("1");
 
   const { data: config, isLoading } = useQuery({
-    queryKey: ["mpesa-config", paymentMethodId, environment],
-    queryFn: () => fetchConfig({ data: { payment_method_id: paymentMethodId, environment } } as never),
+    queryKey: ["mpesa-config", paymentMethodId, environment, ownerId],
+    queryFn: () =>
+      fetchConfig({
+        data: { payment_method_id: paymentMethodId, environment, owner_id: ownerId },
+      } as never),
   });
 
   const { data: txData } = useQuery({
-    queryKey: ["mpesa-transactions", paymentMethodId],
-    queryFn: () => txFn({ data: { payment_method_id: paymentMethodId, limit: 10 } } as never),
+    queryKey: ["mpesa-transactions", paymentMethodId, ownerId],
+    queryFn: () =>
+      txFn({ data: { payment_method_id: paymentMethodId, owner_id: ownerId, limit: 10 } } as never),
   });
 
   useEffect(() => {
@@ -124,11 +135,13 @@ export function MpesaConfigPanel({ paymentMethodId }: { paymentMethodId: string 
       if (!form) return;
       if (!validate(form)) throw new Error("Please fix the highlighted fields");
       return saveFn({
-        data: { payment_method_id: paymentMethodId, environment, ...form },
+        data: { payment_method_id: paymentMethodId, environment, owner_id: ownerId, ...form },
       } as never);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["mpesa-config", paymentMethodId, environment] });
+      await queryClient.invalidateQueries({
+        queryKey: ["mpesa-config", paymentMethodId, environment, ownerId],
+      });
       await queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
       toast.success("M-Pesa configuration saved");
     },
@@ -137,7 +150,9 @@ export function MpesaConfigPanel({ paymentMethodId }: { paymentMethodId: string 
 
   const test = useMutation({
     mutationFn: () =>
-      testFn({ data: { payment_method_id: paymentMethodId, environment } } as never) as Promise<{
+      testFn({
+        data: { payment_method_id: paymentMethodId, environment, owner_id: ownerId },
+      } as never) as Promise<{
         ok: boolean;
         message: string;
       }>,
@@ -150,7 +165,9 @@ export function MpesaConfigPanel({ paymentMethodId }: { paymentMethodId: string 
 
   const register = useMutation({
     mutationFn: () =>
-      registerFn({ data: { payment_method_id: paymentMethodId, environment } } as never) as Promise<{
+      registerFn({
+        data: { payment_method_id: paymentMethodId, environment, owner_id: ownerId },
+      } as never) as Promise<{
         ok: boolean;
         message: string;
         response: unknown;
@@ -170,13 +187,16 @@ export function MpesaConfigPanel({ paymentMethodId }: { paymentMethodId: string 
         data: {
           payment_method_id: paymentMethodId,
           environment,
+          owner_id: ownerId,
           phone: stkPhone,
           amount: Number(stkAmount),
         },
       } as never) as Promise<{ ok: boolean; message: string }>,
     onSuccess: async (r) => {
       r.ok ? toast.success(r.message) : toast.error(r.message);
-      await queryClient.invalidateQueries({ queryKey: ["mpesa-transactions", paymentMethodId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["mpesa-transactions", paymentMethodId, ownerId],
+      });
     },
     onError: (e: Error) => toast.error(e.message || "STK Push failed"),
   });
