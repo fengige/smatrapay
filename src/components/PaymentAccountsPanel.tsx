@@ -15,7 +15,10 @@ import {
   type PaymentAccountRow,
   type PaymentUserType,
 } from "@/lib/payment-accounts.functions";
-import type { PaymentMethodRow } from "@/lib/payment-methods.functions";
+import { listPaymentMethods, type PaymentMethodRow } from "@/lib/payment-methods.functions";
+
+export type LockedPaymentUser = { id: string; name: string; type: PaymentUserType };
+
 
 const USER_TYPES: { value: PaymentUserType; label: string }[] = [
   { value: "landlord", label: "Landlord" },
