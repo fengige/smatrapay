@@ -37,6 +37,7 @@ import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/us
 import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
 import { listLandlordMeters } from "@/lib/landlords.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
   head: () => ({
@@ -108,7 +109,7 @@ function LandlordDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
+    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit" | "paymethods"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
@@ -451,6 +452,7 @@ function LandlordDetailPage() {
                     ["units", "Assigned Units"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
+                    ["paymethods", "Payment Methods"],
                     ["meters", "Meters"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
@@ -714,6 +716,17 @@ function LandlordDetailPage() {
                   <LandlordMetersList landlordId={id} />
                   <AssignmentHistorySection kind="landlord" ownerId={id} />
                 </Section>
+              )}
+
+
+              {tab === "paymethods" && (
+                <PaymentAccountsPanel
+                  lockUser={{
+                    id,
+                    name: landlord?.name || landlord?.email || "this landlord",
+                    type: "landlord",
+                  }}
+                />
               )}
 
               {tab === "audit" && (
