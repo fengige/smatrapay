@@ -11,3 +11,5 @@
 - [x] Meter dashboard: assigned meters, status and usage trends per agent/vendor/landlord
 - [x] Meter management create/edit/delete + live meter readings panel per holder
 - [x] Token ledger page with per-holder transactions, units and readings
+- [x] Meter unit type + price per unit surfaced; revenue per meter type on dashboard and ledger
+- [ ] Payment methods: redesign to Digital/Offline tabs with logo upload shown beside each method
