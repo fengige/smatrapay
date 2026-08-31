@@ -269,6 +269,11 @@ function PaymentMethodsPage() {
           </div>
         )}
       </section>
+      </>
+      )}
+
+      {section === "accounts" && <PaymentAccountsPanel methods={methods} />}
+
 
       {showAdd && <MethodDialog defaultType={tab} onClose={() => setShowAdd(false)} />}
       {setupMethod && <SetupDrawer method={setupMethod} onClose={() => setSetupId(null)} />}
