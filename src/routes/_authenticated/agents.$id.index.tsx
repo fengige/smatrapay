@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
+import { UserMpesaConfigSection } from "@/components/UserMpesaConfigSection";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { ProfileImageHistory } from "@/components/ProfileImageHistory";
@@ -519,13 +520,19 @@ function AgentDetailPage() {
 
 
               {tab === "paymethods" && (
-                <PaymentAccountsPanel
-                  lockUser={{
-                    id,
-                    name: agent?.name || agent?.email || "this agent",
-                    type: "agent",
-                  }}
-                />
+                <>
+                  <PaymentAccountsPanel
+                    lockUser={{
+                      id,
+                      name: agent?.name || agent?.email || "this agent",
+                      type: "agent",
+                    }}
+                  />
+                  <UserMpesaConfigSection
+                    ownerId={id}
+                    ownerName={agent?.name || agent?.email || "this agent"}
+                  />
+                </>
               )}
 
               {tab === "audit" && (

@@ -560,6 +560,7 @@ export type Database = {
           enabled: boolean
           environment: string
           id: string
+          owner_id: string | null
           passkey: string | null
           payment_method_id: string
           stk_enabled: boolean
@@ -587,6 +588,7 @@ export type Database = {
           enabled?: boolean
           environment?: string
           id?: string
+          owner_id?: string | null
           passkey?: string | null
           payment_method_id: string
           stk_enabled?: boolean
@@ -614,6 +616,7 @@ export type Database = {
           enabled?: boolean
           environment?: string
           id?: string
+          owner_id?: string | null
           passkey?: string | null
           payment_method_id?: string
           stk_enabled?: boolean
@@ -622,6 +625,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_method_configurations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_method_configurations_payment_method_id_fkey"
             columns: ["payment_method_id"]
