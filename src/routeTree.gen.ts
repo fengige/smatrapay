@@ -36,6 +36,7 @@ import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAgentsNewRouteImport } from './routes/_authenticated/agents.new'
 import { Route as AuthenticatedConfigurationsIndexRouteImport } from './routes/_authenticated/configurations.index'
 import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './routes/_authenticated/configurations.app-settings'
+import { Route as AuthenticatedConfigurationsCurrencyRouteImport } from './routes/_authenticated/configurations.currency'
 import { Route as AuthenticatedConfigurationsGoogleMapRouteImport } from './routes/_authenticated/configurations.google-map'
 import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
 import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './routes/_authenticated/configurations.social-media'
@@ -221,6 +222,12 @@ const AuthenticatedConfigurationsAppSettingsRoute =
   AuthenticatedConfigurationsAppSettingsRouteImport.update({
     id: '/app-settings',
     path: '/app-settings',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsCurrencyRoute =
+  AuthenticatedConfigurationsCurrencyRouteImport.update({
+    id: '/currency',
+    path: '/currency',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
   } as any)
 const AuthenticatedConfigurationsGoogleMapRoute =
@@ -476,6 +483,7 @@ export interface FileRoutesByFullPath {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
   '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
@@ -536,6 +544,7 @@ export interface FileRoutesByTo {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
   '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
@@ -604,6 +613,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/agents/new': typeof AuthenticatedAgentsNewRoute
   '/_authenticated/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/_authenticated/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
   '/_authenticated/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
@@ -673,6 +683,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agents/new'
     | '/configurations/app-settings'
+    | '/configurations/currency'
     | '/configurations/google-map'
     | '/configurations/mail'
     | '/configurations/social-media'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agents/new'
     | '/configurations/app-settings'
+    | '/configurations/currency'
     | '/configurations/google-map'
     | '/configurations/mail'
     | '/configurations/social-media'
@@ -800,6 +812,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/agents/new'
     | '/_authenticated/configurations/app-settings'
+    | '/_authenticated/configurations/currency'
     | '/_authenticated/configurations/google-map'
     | '/_authenticated/configurations/mail'
     | '/_authenticated/configurations/social-media'
@@ -1043,6 +1056,13 @@ declare module '@tanstack/react-router' {
       path: '/app-settings'
       fullPath: '/configurations/app-settings'
       preLoaderRoute: typeof AuthenticatedConfigurationsAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/currency': {
+      id: '/_authenticated/configurations/currency'
+      path: '/currency'
+      fullPath: '/configurations/currency'
+      preLoaderRoute: typeof AuthenticatedConfigurationsCurrencyRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/configurations/google-map': {
@@ -1340,6 +1360,7 @@ const AuthenticatedAgentsRouteWithChildren =
 
 interface AuthenticatedConfigurationsRouteChildren {
   AuthenticatedConfigurationsAppSettingsRoute: typeof AuthenticatedConfigurationsAppSettingsRoute
+  AuthenticatedConfigurationsCurrencyRoute: typeof AuthenticatedConfigurationsCurrencyRoute
   AuthenticatedConfigurationsGoogleMapRoute: typeof AuthenticatedConfigurationsGoogleMapRoute
   AuthenticatedConfigurationsMailRoute: typeof AuthenticatedConfigurationsMailRoute
   AuthenticatedConfigurationsSocialMediaRoute: typeof AuthenticatedConfigurationsSocialMediaRoute
@@ -1350,6 +1371,8 @@ const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRoute
   {
     AuthenticatedConfigurationsAppSettingsRoute:
       AuthenticatedConfigurationsAppSettingsRoute,
+    AuthenticatedConfigurationsCurrencyRoute:
+      AuthenticatedConfigurationsCurrencyRoute,
     AuthenticatedConfigurationsGoogleMapRoute:
       AuthenticatedConfigurationsGoogleMapRoute,
     AuthenticatedConfigurationsMailRoute: AuthenticatedConfigurationsMailRoute,
