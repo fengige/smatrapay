@@ -326,6 +326,8 @@ export function PaymentAccountsPanel({
           methods={methods}
           account={editing}
           {...(lockUser ? { lockUser } : {})}
+          onClose={() => {
+
 
             setShowForm(false);
             setEditing(null);
