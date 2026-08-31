@@ -76,6 +76,7 @@ import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
 import { Route as AuthenticatedVendorsIdIndexRouteImport } from './routes/_authenticated/vendors.$id.index'
 import { Route as AuthenticatedVendorsIdEditRouteImport } from './routes/_authenticated/vendors.$id.edit'
+import { Route as ApiPublicMpesaB2cResultRouteImport } from './routes/api/public/mpesa/b2c-result'
 import { Route as ApiPublicMpesaC2bConfirmationRouteImport } from './routes/api/public/mpesa/c2b-confirmation'
 import { Route as ApiPublicMpesaC2bValidationRouteImport } from './routes/api/public/mpesa/c2b-validation'
 import { Route as ApiPublicMpesaStkCallbackRouteImport } from './routes/api/public/mpesa/stk-callback'
@@ -465,6 +466,11 @@ const AuthenticatedVendorsIdEditRoute =
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedVendorsRoute,
   } as any)
+const ApiPublicMpesaB2cResultRoute = ApiPublicMpesaB2cResultRouteImport.update({
+  id: '/api/public/mpesa/b2c-result',
+  path: '/api/public/mpesa/b2c-result',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMpesaC2bConfirmationRoute =
   ApiPublicMpesaC2bConfirmationRouteImport.update({
     id: '/api/public/mpesa/c2b-confirmation',
@@ -561,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
@@ -627,6 +634,7 @@ export interface FileRoutesByTo {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
@@ -703,6 +711,7 @@ export interface FileRoutesById {
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/_authenticated/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
@@ -779,6 +788,7 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendors/$id/edit'
+    | '/api/public/mpesa/b2c-result'
     | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
@@ -845,6 +855,7 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendors/$id/edit'
+    | '/api/public/mpesa/b2c-result'
     | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
@@ -920,6 +931,7 @@ export interface FileRouteTypes {
     | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/_authenticated/vendors/$id/edit'
+    | '/api/public/mpesa/b2c-result'
     | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
@@ -941,6 +953,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicMpesaB2cResultRoute: typeof ApiPublicMpesaB2cResultRoute
   ApiPublicMpesaC2bConfirmationRoute: typeof ApiPublicMpesaC2bConfirmationRoute
   ApiPublicMpesaC2bValidationRoute: typeof ApiPublicMpesaC2bValidationRoute
   ApiPublicMpesaStkCallbackRoute: typeof ApiPublicMpesaStkCallbackRoute
@@ -1420,6 +1433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorsIdEditRouteImport
       parentRoute: typeof AuthenticatedVendorsRoute
     }
+    '/api/public/mpesa/b2c-result': {
+      id: '/api/public/mpesa/b2c-result'
+      path: '/api/public/mpesa/b2c-result'
+      fullPath: '/api/public/mpesa/b2c-result'
+      preLoaderRoute: typeof ApiPublicMpesaB2cResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mpesa/c2b-confirmation': {
       id: '/api/public/mpesa/c2b-confirmation'
       path: '/api/public/mpesa/c2b-confirmation'
@@ -1694,6 +1714,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiPublicMpesaB2cResultRoute: ApiPublicMpesaB2cResultRoute,
   ApiPublicMpesaC2bConfirmationRoute: ApiPublicMpesaC2bConfirmationRoute,
   ApiPublicMpesaC2bValidationRoute: ApiPublicMpesaC2bValidationRoute,
   ApiPublicMpesaStkCallbackRoute: ApiPublicMpesaStkCallbackRoute,
