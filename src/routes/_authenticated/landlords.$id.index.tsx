@@ -35,6 +35,7 @@ import { ProfileImageHistory } from "@/components/ProfileImageHistory";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { listLandlordProperties, listUserAssignments } from "@/lib/properties.functions";
+import { listLandlordMeters } from "@/lib/landlords.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
@@ -710,6 +711,7 @@ function LandlordDetailPage() {
 
               {tab === "meters" && (
                 <Section title="Meters" icon={<Gauge className="size-4 text-primary" />}>
+                  <LandlordMetersList landlordId={id} />
                   <AssignmentHistorySection kind="landlord" ownerId={id} />
                 </Section>
               )}
@@ -954,6 +956,109 @@ function Detail({ label, value, mono }: { label: string; value: string; mono?: b
       >
         {value}
       </dd>
+    </div>
+  );
+}
+
+function LandlordMetersList({ landlordId }: { landlordId: string }) {
+  const fetchMeters = useServerFn(listLandlordMeters);
+  const { data, isLoading } = useQuery({
+    queryKey: ["landlord-meters", landlordId],
+    queryFn: () => fetchMeters({ data: { landlordId } }),
+  });
+  const meters = data?.meters ?? [];
+
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(meters.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paged = meters.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center border-b border-border p-10 text-muted-foreground">
+        <Loader2 className="size-5 animate-spin" />
+      </div>
+    );
+  }
+
+  if (meters.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 border-b border-border p-10 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Gauge className="size-8" />
+        </span>
+        <p className="text-sm font-semibold text-foreground">No meters assigned</p>
+        <p className="max-w-sm text-xs text-muted-foreground">
+          Meters registered to this landlord will appear here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-border">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[620px] text-left text-sm">
+          <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-6 py-3 font-semibold">Meter no.</th>
+              <th className="px-6 py-3 font-semibold">Serial</th>
+              <th className="px-6 py-3 font-semibold">Type</th>
+              <th className="px-6 py-3 font-semibold">Price / unit</th>
+              <th className="px-6 py-3 font-semibold">Status</th>
+              <th className="px-6 py-3" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {paged.map((m) => (
+              <tr key={m.id} className="hover:bg-accent/5">
+                <td className="px-6 py-3 font-medium text-foreground">{m.meter_number}</td>
+                <td className="px-6 py-3 text-muted-foreground">{m.serial_number}</td>
+                <td className="px-6 py-3 capitalize text-muted-foreground">{m.type}</td>
+                <td className="px-6 py-3 text-muted-foreground">{m.price_per_unit}</td>
+                <td className="px-6 py-3 capitalize text-muted-foreground">{m.status}</td>
+                <td className="px-6 py-3 text-right">
+                  <Link
+                    to="/meters/$meterId"
+                    params={{ meterId: m.id }}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    View
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
+        <p className="text-xs text-muted-foreground">
+          Showing {(safePage - 1) * PAGE_SIZE + 1}–
+          {Math.min(safePage * PAGE_SIZE, meters.length)} of {meters.length} meters
+        </p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={safePage <= 1}
+            onClick={() => setPage(safePage - 1)}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent/10 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="px-2 text-xs text-muted-foreground">
+            Page {safePage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={safePage >= totalPages}
+            onClick={() => setPage(safePage + 1)}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent/10 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -89,6 +89,21 @@ export const updateLandlord = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Meters currently assigned to this landlord. */
+export const listLandlordMeters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ landlordId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("meters")
+      .select("id, meter_number, serial_number, type, status, price_per_unit")
+      .eq("landlord_id", data.landlordId)
+      .order("meter_number", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { meters: rows ?? [] };
+  });
+
 /** Assignment history: who registered/unassigned which meter to this landlord and when. */
 export const listLandlordAssignmentHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

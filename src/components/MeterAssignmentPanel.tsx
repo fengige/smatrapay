@@ -80,6 +80,15 @@ export function MeterAssignmentPanel({
 
   const meters = data?.meters ?? [];
 
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(meters.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedMeters = useMemo(
+    () => meters.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [meters, safePage],
+  );
+
   const [selected, setSelected] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmUnassign, setConfirmUnassign] = useState(false);
@@ -206,7 +215,7 @@ export function MeterAssignmentPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const allSelected = meters.length > 0 && selected.length === meters.length;
+  const allSelected = pagedMeters.length > 0 && pagedMeters.every((m) => selected.includes(m.id));
 
   return (
     <section className="rounded-2xl border border-border bg-card">
@@ -261,7 +270,9 @@ export function MeterAssignmentPanel({
                     type="checkbox"
                     aria-label="Select all meters"
                     checked={allSelected}
-                    onChange={(e) => setSelected(e.target.checked ? meters.map((m) => m.id) : [])}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? pagedMeters.map((m) => m.id) : [])
+                    }
                   />
                 </th>
                 <th className="px-6 py-3 font-semibold">Meter no.</th>
@@ -273,7 +284,7 @@ export function MeterAssignmentPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {meters.map((m) => (
+              {pagedMeters.map((m) => (
                 <tr key={m.id} className="hover:bg-accent/5">
                   <td className="px-6 py-3">
                     <input
@@ -305,6 +316,33 @@ export function MeterAssignmentPanel({
               ))}
             </tbody>
           </table>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-6 py-3">
+            <p className="text-xs text-muted-foreground">
+              Showing {(safePage - 1) * PAGE_SIZE + 1}–
+              {Math.min(safePage * PAGE_SIZE, meters.length)} of {meters.length} meters
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={safePage <= 1}
+                onClick={() => setPage(safePage - 1)}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent/10 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="px-2 text-xs text-muted-foreground">
+                Page {safePage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage(safePage + 1)}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent/10 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
