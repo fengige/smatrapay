@@ -28,8 +28,26 @@ export const Route = createFileRoute("/_authenticated/configurations/mail")({
 });
 
 function MailTab() {
+  const test = useServerFn(sendMailTest);
+  const mutation = useMutation({
+    mutationFn: () => test({} as never),
+    onSuccess: (result: any) => {
+      if (result?.sent) {
+        toast.success(`Test email sent to ${result.email}`);
+      } else if (result?.reason === "recipient_suppressed") {
+        toast.warning(
+          `Test email to ${result.email} was not sent — this address previously bounced or unsubscribed.`,
+        );
+      } else {
+        toast.error("Test email was not sent");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message || "Test email could not be sent"),
+  });
+
   return (
-    <SettingsCardForm
+    <div className="space-y-4">
+      <SettingsCardForm
       group="mail"
       sections={[
         {
