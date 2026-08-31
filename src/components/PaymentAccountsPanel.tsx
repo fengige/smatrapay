@@ -496,7 +496,8 @@ function AccountDialog({
   });
 
   useEffect(() => {
-    if (!userType) return;
+    if (!userType || lockUser) return;
+
     const list = usersQuery.data?.users ?? [];
     if (userId && list.length && !list.some((u) => u.id === userId)) setUserId("");
   }, [usersQuery.data, userType, userId]);
