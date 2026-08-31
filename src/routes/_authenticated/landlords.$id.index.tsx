@@ -38,6 +38,7 @@ import { listLandlordProperties, listUserAssignments } from "@/lib/properties.fu
 import { listLandlordMeters } from "@/lib/landlords.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
+import { UserMpesaConfigSection } from "@/components/UserMpesaConfigSection";
 
 export const Route = createFileRoute("/_authenticated/landlords/$id/")({
   head: () => ({
@@ -720,13 +721,19 @@ function LandlordDetailPage() {
 
 
               {tab === "paymethods" && (
-                <PaymentAccountsPanel
-                  lockUser={{
-                    id,
-                    name: landlord?.name || landlord?.email || "this landlord",
-                    type: "landlord",
-                  }}
-                />
+                <>
+                  <PaymentAccountsPanel
+                    lockUser={{
+                      id,
+                      name: landlord?.name || landlord?.email || "this landlord",
+                      type: "landlord",
+                    }}
+                  />
+                  <UserMpesaConfigSection
+                    ownerId={id}
+                    ownerName={landlord?.name || landlord?.email || "this landlord"}
+                  />
+                </>
               )}
 
               {tab === "audit" && (
