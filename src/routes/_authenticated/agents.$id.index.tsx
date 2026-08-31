@@ -31,6 +31,7 @@ import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { ProfileImageHistory } from "@/components/ProfileImageHistory";
@@ -103,7 +104,7 @@ function AgentDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "meters" | "invoices" | "payments" | "history" | "notes" | "audit"
+    "meters" | "invoices" | "payments" | "history" | "notes" | "audit" | "paymethods"
   >("meters");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
@@ -420,6 +421,7 @@ function AgentDetailPage() {
                     ["meters", "Meters"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
+                    ["paymethods", "Payment Methods"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
                     ["audit", "Audit Logs"],
@@ -512,6 +514,17 @@ function AgentDetailPage() {
                   kind="agent"
                   ownerId={id}
                   ownerName={agent?.name || agent?.email || "this agent"}
+                />
+              )}
+
+
+              {tab === "paymethods" && (
+                <PaymentAccountsPanel
+                  lockUser={{
+                    id,
+                    name: agent?.name || agent?.email || "this agent",
+                    type: "agent",
+                  }}
                 />
               )}
 
