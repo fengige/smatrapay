@@ -549,7 +549,7 @@ function Field({
   children,
 }: {
   label: string;
-  error?: string;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -572,7 +572,7 @@ function SecretField({
   value: string;
   stored: boolean;
   onChange: (v: string) => void;
-  error?: string;
+  error?: string | undefined;
 }) {
   const [show, setShow] = useState(false);
   return (
