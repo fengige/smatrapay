@@ -39,6 +39,7 @@ import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './ro
 import { Route as AuthenticatedConfigurationsCurrencyRouteImport } from './routes/_authenticated/configurations.currency'
 import { Route as AuthenticatedConfigurationsGoogleMapRouteImport } from './routes/_authenticated/configurations.google-map'
 import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
+import { Route as AuthenticatedConfigurationsSmsRouteImport } from './routes/_authenticated/configurations.sms'
 import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './routes/_authenticated/configurations.social-media'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
@@ -240,6 +241,12 @@ const AuthenticatedConfigurationsMailRoute =
   AuthenticatedConfigurationsMailRouteImport.update({
     id: '/mail',
     path: '/mail',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsSmsRoute =
+  AuthenticatedConfigurationsSmsRouteImport.update({
+    id: '/sms',
+    path: '/sms',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
   } as any)
 const AuthenticatedConfigurationsSocialMediaRoute =
@@ -486,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
   '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
@@ -547,6 +555,7 @@ export interface FileRoutesByTo {
   '/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
   '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
@@ -616,6 +625,7 @@ export interface FileRoutesById {
   '/_authenticated/configurations/currency': typeof AuthenticatedConfigurationsCurrencyRoute
   '/_authenticated/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
+  '/_authenticated/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
@@ -686,6 +696,7 @@ export interface FileRouteTypes {
     | '/configurations/currency'
     | '/configurations/google-map'
     | '/configurations/mail'
+    | '/configurations/sms'
     | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
@@ -747,6 +758,7 @@ export interface FileRouteTypes {
     | '/configurations/currency'
     | '/configurations/google-map'
     | '/configurations/mail'
+    | '/configurations/sms'
     | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
@@ -815,6 +827,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations/currency'
     | '/_authenticated/configurations/google-map'
     | '/_authenticated/configurations/mail'
+    | '/_authenticated/configurations/sms'
     | '/_authenticated/configurations/social-media'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
@@ -1077,6 +1090,13 @@ declare module '@tanstack/react-router' {
       path: '/mail'
       fullPath: '/configurations/mail'
       preLoaderRoute: typeof AuthenticatedConfigurationsMailRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/sms': {
+      id: '/_authenticated/configurations/sms'
+      path: '/sms'
+      fullPath: '/configurations/sms'
+      preLoaderRoute: typeof AuthenticatedConfigurationsSmsRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/configurations/social-media': {
@@ -1363,6 +1383,7 @@ interface AuthenticatedConfigurationsRouteChildren {
   AuthenticatedConfigurationsCurrencyRoute: typeof AuthenticatedConfigurationsCurrencyRoute
   AuthenticatedConfigurationsGoogleMapRoute: typeof AuthenticatedConfigurationsGoogleMapRoute
   AuthenticatedConfigurationsMailRoute: typeof AuthenticatedConfigurationsMailRoute
+  AuthenticatedConfigurationsSmsRoute: typeof AuthenticatedConfigurationsSmsRoute
   AuthenticatedConfigurationsSocialMediaRoute: typeof AuthenticatedConfigurationsSocialMediaRoute
   AuthenticatedConfigurationsIndexRoute: typeof AuthenticatedConfigurationsIndexRoute
 }
@@ -1376,6 +1397,7 @@ const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRoute
     AuthenticatedConfigurationsGoogleMapRoute:
       AuthenticatedConfigurationsGoogleMapRoute,
     AuthenticatedConfigurationsMailRoute: AuthenticatedConfigurationsMailRoute,
+    AuthenticatedConfigurationsSmsRoute: AuthenticatedConfigurationsSmsRoute,
     AuthenticatedConfigurationsSocialMediaRoute:
       AuthenticatedConfigurationsSocialMediaRoute,
     AuthenticatedConfigurationsIndexRoute:
