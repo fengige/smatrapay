@@ -39,12 +39,27 @@ export function fieldsFor(method?: Pick<PaymentMethodRow, "code" | "name"> | nul
   };
 }
 
-export function PaymentAccountsPanel({ methods }: { methods: PaymentMethodRow[] }) {
+export function PaymentAccountsPanel({
+  methods: methodsProp,
+  lockUser,
+}: {
+  methods?: PaymentMethodRow[];
+  lockUser?: LockedPaymentUser;
+}) {
   const queryClient = useQueryClient();
   const fetchAccounts = useServerFn(listPaymentAccounts);
+  const fetchMethods = useServerFn(listPaymentMethods);
   const statusFn = useServerFn(setPaymentAccountStatus);
   const defaultFn = useServerFn(setDefaultPaymentAccount);
   const removeFn = useServerFn(deletePaymentAccount);
+
+  const methodsQuery = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: () => fetchMethods(),
+    enabled: !methodsProp,
+  });
+  const methods = methodsProp ?? methodsQuery.data?.methods ?? [];
+
 
   const [q, setQ] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
