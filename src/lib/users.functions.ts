@@ -275,7 +275,7 @@ export const listUsersByRole = createServerFn({ method: "GET" })
         .from("users")
         .select("id", { count: "exact", head: true })
         .in("id", ids);
-      if (status) c = c.eq("status", status);
+      if (status) c = c.eq("status", status as "active");
       if (term) c = c.or(`name.ilike.${term},email.ilike.${term}`);
       const { count, error: cErr } = await c;
       if (cErr) throw new Error(cErr.message);
