@@ -36,6 +36,7 @@ import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAgentsNewRouteImport } from './routes/_authenticated/agents.new'
 import { Route as AuthenticatedConfigurationsIndexRouteImport } from './routes/_authenticated/configurations.index'
 import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './routes/_authenticated/configurations.app-settings'
+import { Route as AuthenticatedConfigurationsGoogleMapRouteImport } from './routes/_authenticated/configurations.google-map'
 import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
@@ -219,6 +220,12 @@ const AuthenticatedConfigurationsAppSettingsRoute =
   AuthenticatedConfigurationsAppSettingsRouteImport.update({
     id: '/app-settings',
     path: '/app-settings',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsGoogleMapRoute =
+  AuthenticatedConfigurationsGoogleMapRouteImport.update({
+    id: '/google-map',
+    path: '/google-map',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
   } as any)
 const AuthenticatedConfigurationsMailRoute =
@@ -462,6 +469,7 @@ export interface FileRoutesByFullPath {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
@@ -520,6 +528,7 @@ export interface FileRoutesByTo {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
@@ -586,6 +595,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/agents/new': typeof AuthenticatedAgentsNewRoute
   '/_authenticated/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/_authenticated/configurations/google-map': typeof AuthenticatedConfigurationsGoogleMapRoute
   '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agents/new'
     | '/configurations/app-settings'
+    | '/configurations/google-map'
     | '/configurations/mail'
     | '/landlord/dashboard'
     | '/landlords/new'
@@ -711,6 +722,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agents/new'
     | '/configurations/app-settings'
+    | '/configurations/google-map'
     | '/configurations/mail'
     | '/landlord/dashboard'
     | '/landlords/new'
@@ -776,6 +788,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/agents/new'
     | '/_authenticated/configurations/app-settings'
+    | '/_authenticated/configurations/google-map'
     | '/_authenticated/configurations/mail'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
@@ -1017,6 +1030,13 @@ declare module '@tanstack/react-router' {
       path: '/app-settings'
       fullPath: '/configurations/app-settings'
       preLoaderRoute: typeof AuthenticatedConfigurationsAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/google-map': {
+      id: '/_authenticated/configurations/google-map'
+      path: '/google-map'
+      fullPath: '/configurations/google-map'
+      preLoaderRoute: typeof AuthenticatedConfigurationsGoogleMapRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/configurations/mail': {
@@ -1300,6 +1320,7 @@ const AuthenticatedAgentsRouteWithChildren =
 
 interface AuthenticatedConfigurationsRouteChildren {
   AuthenticatedConfigurationsAppSettingsRoute: typeof AuthenticatedConfigurationsAppSettingsRoute
+  AuthenticatedConfigurationsGoogleMapRoute: typeof AuthenticatedConfigurationsGoogleMapRoute
   AuthenticatedConfigurationsMailRoute: typeof AuthenticatedConfigurationsMailRoute
   AuthenticatedConfigurationsIndexRoute: typeof AuthenticatedConfigurationsIndexRoute
 }
@@ -1308,6 +1329,8 @@ const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRoute
   {
     AuthenticatedConfigurationsAppSettingsRoute:
       AuthenticatedConfigurationsAppSettingsRoute,
+    AuthenticatedConfigurationsGoogleMapRoute:
+      AuthenticatedConfigurationsGoogleMapRoute,
     AuthenticatedConfigurationsMailRoute: AuthenticatedConfigurationsMailRoute,
     AuthenticatedConfigurationsIndexRoute:
       AuthenticatedConfigurationsIndexRoute,
