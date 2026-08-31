@@ -346,6 +346,108 @@ export type Database = {
           },
         ]
       }
+      payment_method_accounts: {
+        Row: {
+          account_name: string | null
+          account_number: string
+          agent_id: string | null
+          bank_name: string | null
+          branch: string | null
+          created_at: string
+          created_by: string | null
+          details: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          landlord_id: string | null
+          paybill_number: string | null
+          payment_method_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          user_type: string
+          vendor_id: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number: string
+          agent_id?: string | null
+          bank_name?: string | null
+          branch?: string | null
+          created_at?: string
+          created_by?: string | null
+          details?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          landlord_id?: string | null
+          paybill_number?: string | null
+          payment_method_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+          user_type: string
+          vendor_id?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string
+          agent_id?: string | null
+          bank_name?: string | null
+          branch?: string | null
+          created_at?: string
+          created_by?: string | null
+          details?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          landlord_id?: string | null
+          paybill_number?: string | null
+          payment_method_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          user_type?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_method_accounts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_method_accounts_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_method_accounts_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_method_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_method_accounts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           code: string

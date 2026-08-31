@@ -27,6 +27,7 @@ import {
   type PaymentMethodRow,
 } from "@/lib/payment-methods.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
 
 export const Route = createFileRoute("/_authenticated/payment-methods/")({
   head: () => ({
@@ -60,6 +61,7 @@ function PaymentMethodsPage() {
   const removeMethod = useServerFn(deletePaymentMethod);
   const statusFn = useServerFn(setPaymentMethodStatus);
 
+  const [section, setSection] = useState<"methods" | "accounts">("methods");
   const [tab, setTab] = useState<Tab>("digital");
   const [q, setQ] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -122,6 +124,7 @@ function PaymentMethodsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            hidden={section !== "methods"}
             onClick={() => setShowAdd(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
@@ -144,6 +147,37 @@ function PaymentMethodsPage() {
       </nav>
 
       <div
+        role="tablist"
+        aria-label="Payment methods sections"
+        className="mb-4 flex flex-wrap items-center gap-2 border-b border-border"
+      >
+        {(
+          [
+            ["methods", "Payment Methods"],
+            ["accounts", "Payment Accounts"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            type="button"
+            aria-selected={section === key}
+            onClick={() => setSection(key)}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+              section === key
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === "methods" && (
+      <>
+      <div
+
         role="tablist"
         aria-label="Payment method groups"
         className="flex flex-wrap items-center gap-2"
@@ -269,6 +303,11 @@ function PaymentMethodsPage() {
           </div>
         )}
       </section>
+      </>
+      )}
+
+      {section === "accounts" && <PaymentAccountsPanel methods={methods} />}
+
 
       {showAdd && <MethodDialog defaultType={tab} onClose={() => setShowAdd(false)} />}
       {setupMethod && <SetupDrawer method={setupMethod} onClose={() => setSetupId(null)} />}
