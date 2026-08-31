@@ -91,14 +91,23 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
     const personById = new Map(people.map((p) => [p.id as string, p]));
 
     // Usage per meter over the window, and a global daily trend.
-    const perMeter = new Map<string, { tokens: number; units: number; amount: number; trend: number[] }>();
+    const perMeter = new Map<
+      string,
+      { tokens: number; units: number; amount: number; trend: number[]; last: string | null }
+    >();
     const globalTrend = Array.from({ length: days }, () => 0);
 
     for (const t of tokenRows as any[]) {
       const meterId = t.meter_id as string;
       const bucket =
         perMeter.get(meterId) ??
-        { tokens: 0, units: 0, amount: 0, trend: Array.from({ length: days }, () => 0) };
+        {
+          tokens: 0,
+          units: 0,
+          amount: 0,
+          trend: Array.from({ length: days }, () => 0),
+          last: null as string | null,
+        };
       const idx = Math.floor((new Date(t.created_at).getTime() - windowStart.getTime()) / dayMs);
       const units = Number(t.units ?? 0);
       bucket.tokens += 1;
@@ -107,6 +116,9 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
       if (idx >= 0 && idx < days) {
         bucket.trend[idx] = (bucket.trend[idx] ?? 0) + units;
         globalTrend[idx] = (globalTrend[idx] ?? 0) + units;
+      }
+      if (!bucket.last || new Date(t.created_at).getTime() > new Date(bucket.last).getTime()) {
+        bucket.last = t.created_at as string;
       }
       perMeter.set(meterId, bucket);
     }
@@ -131,6 +143,7 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
           units: 0,
           amount: 0,
           trend: Array.from({ length: days }, () => 0),
+          meters: [],
         };
         holders.set(key, holder);
       }
@@ -156,6 +169,17 @@ export const getMeterDashboard = createServerFn({ method: "GET" })
         if (m.unit_id) holder.assignedToUnits += 1;
         const type = (m.type as string) || "Unknown";
         holder.byType[type] = (holder.byType[type] ?? 0) + 1;
+        holder.meters.push({
+          id: m.id as string,
+          meter_number: (m.meter_number as string) ?? "",
+          type,
+          status: (m.status as string) ?? "",
+          assigned: !!m.unit_id,
+          tokens: usage?.tokens ?? 0,
+          units: usage?.units ?? 0,
+          amount: usage?.amount ?? 0,
+          lastReadingAt: usage?.last ?? null,
+        });
         if (usage) {
           holder.tokens += usage.tokens;
           holder.units += usage.units;
