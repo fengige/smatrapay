@@ -24,6 +24,7 @@ import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_auth
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
 import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_authenticated/service-providers'
+import { Route as AuthenticatedTokenLedgerRouteImport } from './routes/_authenticated/token-ledger'
 import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -144,6 +145,12 @@ const AuthenticatedServiceProvidersRoute =
   AuthenticatedServiceProvidersRouteImport.update({
     id: '/service-providers',
     path: '/service-providers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTokenLedgerRoute =
+  AuthenticatedTokenLedgerRouteImport.update({
+    id: '/token-ledger',
+    path: '/token-ledger',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTokenManagementRoute =
@@ -410,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
@@ -465,6 +473,7 @@ export interface FileRoutesByTo {
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -523,6 +532,7 @@ export interface FileRoutesById {
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
+  '/_authenticated/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
@@ -584,6 +594,7 @@ export interface FileRouteTypes {
     | '/properties'
     | '/residents'
     | '/service-providers'
+    | '/token-ledger'
     | '/token-management'
     | '/users'
     | '/vendors'
@@ -639,6 +650,7 @@ export interface FileRouteTypes {
     | '/pos-shift-report'
     | '/price-management'
     | '/service-providers'
+    | '/token-ledger'
     | '/token-management'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -696,6 +708,7 @@ export interface FileRouteTypes {
     | '/_authenticated/properties'
     | '/_authenticated/residents'
     | '/_authenticated/service-providers'
+    | '/_authenticated/token-ledger'
     | '/_authenticated/token-management'
     | '/_authenticated/users'
     | '/_authenticated/vendors'
@@ -857,6 +870,13 @@ declare module '@tanstack/react-router' {
       path: '/service-providers'
       fullPath: '/service-providers'
       preLoaderRoute: typeof AuthenticatedServiceProvidersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/token-ledger': {
+      id: '/_authenticated/token-ledger'
+      path: '/token-ledger'
+      fullPath: '/token-ledger'
+      preLoaderRoute: typeof AuthenticatedTokenLedgerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/token-management': {
@@ -1295,6 +1315,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
   AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
+  AuthenticatedTokenLedgerRoute: typeof AuthenticatedTokenLedgerRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
@@ -1323,6 +1344,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
   AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
+  AuthenticatedTokenLedgerRoute: AuthenticatedTokenLedgerRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
