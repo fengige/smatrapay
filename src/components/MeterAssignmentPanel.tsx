@@ -80,6 +80,15 @@ export function MeterAssignmentPanel({
 
   const meters = data?.meters ?? [];
 
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(meters.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedMeters = useMemo(
+    () => meters.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [meters, safePage],
+  );
+
   const [selected, setSelected] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmUnassign, setConfirmUnassign] = useState(false);
