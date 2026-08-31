@@ -215,7 +215,7 @@ export function MeterAssignmentPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const allSelected = meters.length > 0 && selected.length === meters.length;
+  const allSelected = pagedMeters.length > 0 && pagedMeters.every((m) => selected.includes(m.id));
 
   return (
     <section className="rounded-2xl border border-border bg-card">
@@ -270,7 +270,9 @@ export function MeterAssignmentPanel({
                     type="checkbox"
                     aria-label="Select all meters"
                     checked={allSelected}
-                    onChange={(e) => setSelected(e.target.checked ? meters.map((m) => m.id) : [])}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? pagedMeters.map((m) => m.id) : [])
+                    }
                   />
                 </th>
                 <th className="px-6 py-3 font-semibold">Meter no.</th>
