@@ -73,6 +73,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       {
         heading: "UNITS",
         items: [
+          { label: "Meter Dashboard", icon: BarChart3, to: "/meter-dashboard" },
           { label: "Meter Management", icon: Gauge, to: "/meters" },
           { label: "Meter Suppliers", icon: Gauge, to: "/meter-suppliers" },
           { label: "Price Management", icon: BadgeDollarSign, to: "/price-management" },
