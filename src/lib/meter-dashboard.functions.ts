@@ -18,6 +18,19 @@ export type HolderMeterSummary = {
   units: number;
   amount: number;
   trend: number[];
+  meters: HolderMeterRow[];
+};
+
+export type HolderMeterRow = {
+  id: string;
+  meter_number: string;
+  type: string;
+  status: string;
+  assigned: boolean;
+  tokens: number;
+  units: number;
+  amount: number;
+  lastReadingAt: string | null;
 };
 
 const inputSchema = z.object({
