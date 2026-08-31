@@ -36,6 +36,7 @@ import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAgentsNewRouteImport } from './routes/_authenticated/agents.new'
 import { Route as AuthenticatedConfigurationsIndexRouteImport } from './routes/_authenticated/configurations.index'
 import { Route as AuthenticatedConfigurationsAppSettingsRouteImport } from './routes/_authenticated/configurations.app-settings'
+import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
@@ -218,6 +219,12 @@ const AuthenticatedConfigurationsAppSettingsRoute =
   AuthenticatedConfigurationsAppSettingsRouteImport.update({
     id: '/app-settings',
     path: '/app-settings',
+    getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedConfigurationsMailRoute =
+  AuthenticatedConfigurationsMailRouteImport.update({
+    id: '/mail',
+    path: '/mail',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
   } as any)
 const AuthenticatedLandlordDashboardRoute =
@@ -455,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -512,6 +520,7 @@ export interface FileRoutesByTo {
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/agents/new': typeof AuthenticatedAgentsNewRoute
   '/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -577,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
   '/_authenticated/agents/new': typeof AuthenticatedAgentsNewRoute
   '/_authenticated/configurations/app-settings': typeof AuthenticatedConfigurationsAppSettingsRoute
+  '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agents/new'
     | '/configurations/app-settings'
+    | '/configurations/mail'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -700,6 +711,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agents/new'
     | '/configurations/app-settings'
+    | '/configurations/mail'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meters/$meterId'
@@ -764,6 +776,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/dashboard'
     | '/_authenticated/agents/new'
     | '/_authenticated/configurations/app-settings'
+    | '/_authenticated/configurations/mail'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meters/$meterId'
@@ -1004,6 +1017,13 @@ declare module '@tanstack/react-router' {
       path: '/app-settings'
       fullPath: '/configurations/app-settings'
       preLoaderRoute: typeof AuthenticatedConfigurationsAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/configurations/mail': {
+      id: '/_authenticated/configurations/mail'
+      path: '/mail'
+      fullPath: '/configurations/mail'
+      preLoaderRoute: typeof AuthenticatedConfigurationsMailRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
     }
     '/_authenticated/landlord/dashboard': {
@@ -1280,6 +1300,7 @@ const AuthenticatedAgentsRouteWithChildren =
 
 interface AuthenticatedConfigurationsRouteChildren {
   AuthenticatedConfigurationsAppSettingsRoute: typeof AuthenticatedConfigurationsAppSettingsRoute
+  AuthenticatedConfigurationsMailRoute: typeof AuthenticatedConfigurationsMailRoute
   AuthenticatedConfigurationsIndexRoute: typeof AuthenticatedConfigurationsIndexRoute
 }
 
@@ -1287,6 +1308,7 @@ const AuthenticatedConfigurationsRouteChildren: AuthenticatedConfigurationsRoute
   {
     AuthenticatedConfigurationsAppSettingsRoute:
       AuthenticatedConfigurationsAppSettingsRoute,
+    AuthenticatedConfigurationsMailRoute: AuthenticatedConfigurationsMailRoute,
     AuthenticatedConfigurationsIndexRoute:
       AuthenticatedConfigurationsIndexRoute,
   }
