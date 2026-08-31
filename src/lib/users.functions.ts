@@ -270,19 +270,20 @@ export const listUsersByRole = createServerFn({ method: "GET" })
 
     const term = data.q ? `%${data.q}%` : null;
 
-    const countByStatus = async (status: string) => {
+    const countByStatus = async (status?: string) => {
       let c = supabase
         .from("users")
         .select("id", { count: "exact", head: true })
-        .in("id", ids)
-        .eq("status", status);
+        .in("id", ids);
+      if (status) c = c.eq("status", status);
       if (term) c = c.or(`name.ilike.${term},email.ilike.${term}`);
       const { count, error: cErr } = await c;
       if (cErr) throw new Error(cErr.message);
       return count ?? 0;
     };
 
-    const [active, pending, suspended] = await Promise.all([
+    const [all, active, pending, suspended] = await Promise.all([
+      countByStatus(),
       countByStatus("active"),
       countByStatus("pending"),
       countByStatus("suspended"),
@@ -366,7 +367,7 @@ export const listUsersByRole = createServerFn({ method: "GET" })
       })),
       total: count ?? (profiles ?? []).length,
       counts: {
-        total: count ?? 0,
+        total: all,
         active,
         pending,
         suspended,
