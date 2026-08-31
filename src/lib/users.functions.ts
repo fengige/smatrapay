@@ -227,6 +227,8 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
     return { ok: true, email: profile.email };
   });
 
+const listSortColumns = ["name", "email", "phone", "status", "created_at"] as const;
+
 export const listUsersByRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -235,6 +237,10 @@ export const listUsersByRole = createServerFn({ method: "GET" })
         role: roleEnum,
         status: statusEnum.optional(),
         q: z.string().trim().max(100).optional(),
+        page: z.number().int().min(1).max(10000).optional(),
+        limit: z.number().int().min(5).max(200).optional(),
+        sortBy: z.enum(listSortColumns).optional(),
+        sortDir: z.enum(["asc", "desc"]).optional(),
       })
       .parse(data),
   )
@@ -254,20 +260,56 @@ export const listUsersByRole = createServerFn({ method: "GET" })
     if (rolesError) throw new Error(rolesError.message);
 
     const ids = (roleRows ?? []).map((r) => r.user_id);
-    if (ids.length === 0) return { users: [] };
+    if (ids.length === 0) {
+      return {
+        users: [],
+        total: 0,
+        counts: { total: 0, active: 0, pending: 0, suspended: 0 },
+      };
+    }
 
-    let q = supabase.from("users").select("*").in("id", ids);
+    const term = data.q ? `%${data.q}%` : null;
+
+    const countByStatus = async (status: string) => {
+      let c = supabase
+        .from("users")
+        .select("id", { count: "exact", head: true })
+        .in("id", ids)
+        .eq("status", status);
+      if (term) c = c.or(`name.ilike.${term},email.ilike.${term}`);
+      const { count, error: cErr } = await c;
+      if (cErr) throw new Error(cErr.message);
+      return count ?? 0;
+    };
+
+    const [active, pending, suspended] = await Promise.all([
+      countByStatus("active"),
+      countByStatus("pending"),
+      countByStatus("suspended"),
+    ]);
+
+    const paginated = data.page != null && data.limit != null;
+
+    let q = supabase.from("users").select("*", { count: "exact" }).in("id", ids);
 
     if (data.status) {
       q = q.eq("status", data.status);
     }
 
-    if (data.q) {
-      const term = `%${data.q}%`;
+    if (term) {
       q = q.or(`name.ilike.${term},email.ilike.${term}`);
     }
 
-    const { data: profiles, error } = await q.order("created_at", { ascending: false });
+    q = q.order(data.sortBy ?? "created_at", {
+      ascending: (data.sortDir ?? "desc") === "asc",
+    });
+
+    if (paginated) {
+      const start = (data.page! - 1) * data.limit!;
+      q = q.range(start, start + data.limit! - 1);
+    }
+
+    const { data: profiles, error, count } = await q;
     if (error) throw new Error(error.message);
 
     const { data: assignments, error: aErr } = await supabase
