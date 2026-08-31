@@ -18,6 +18,11 @@ export type PaymentMethodRow = {
   environment: string;
   is_configured: boolean;
   is_active: boolean;
+  payment_type: "digital" | "offline";
+  /** Storage object path in the payment-logos bucket. */
+  logo_path: string | null;
+  /** Short-lived signed URL for the logo, when one is stored. */
+  logo_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -39,6 +44,7 @@ const methodInput = z.object({
     .transform((v) => (v ? v : null)),
   is_active: z.boolean().optional().default(false),
   is_configured: z.boolean().optional().default(false),
+  payment_type: z.enum(["digital", "offline"]).optional().default("digital"),
 });
 
 const methodUpdateInput = methodInput.extend({ id: z.string().uuid() });
@@ -52,6 +58,9 @@ function mapRow(r: any): PaymentMethodRow {
     environment: r.environment ?? "live",
     is_configured: Boolean(r.is_configured),
     is_active: Boolean(r.is_active),
+    payment_type: (r.payment_type === "offline" ? "offline" : "digital") as "digital" | "offline",
+    logo_path: r.logo_url ?? null,
+    logo_url: null,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
@@ -66,7 +75,20 @@ export const listPaymentMethods = createServerFn({ method: "GET" })
       .select("*")
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return { methods: ((data ?? []) as any[]).map(mapRow) };
+    const methods = ((data ?? []) as any[]).map(mapRow);
+    const paths = methods.map((m) => m.logo_path).filter((p): p is string => !!p);
+    if (paths.length) {
+      const { data: signed } = await context.supabase.storage
+        .from("payment-logos")
+        .createSignedUrls(paths, 3600);
+      const byPath = new Map(
+        ((signed ?? []) as any[]).map((s: any) => [s.path as string, s.signedUrl as string]),
+      );
+      for (const m of methods) {
+        if (m.logo_path) m.logo_url = byPath.get(m.logo_path) ?? null;
+      }
+    }
+    return { methods };
   });
 
 export const getPaymentMethod = createServerFn({ method: "POST" })
@@ -130,6 +152,24 @@ export const setPaymentMethodStatus = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("payment_methods")
       .update({ is_active: data.is_active } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Saves (or clears) the storage path of a payment method logo. */
+export const setPaymentMethodLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({ id: z.string().uuid(), path: z.string().trim().max(300).nullable() })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { error } = await context.supabase
+      .from("payment_methods")
+      .update({ logo_url: data.path } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
