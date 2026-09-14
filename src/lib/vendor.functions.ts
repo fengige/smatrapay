@@ -98,7 +98,8 @@ export type VendorActivityEntry = {
   id: string;
   meter_id: string;
   action: string;
-  changes: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  changes: Record<string, any>;
   created_at: string;
 };
 
