@@ -68,10 +68,20 @@ type Property = {
   country: string | null;
   status: string;
   property_type: string | null;
+  owner_type: "landlord" | "agent" | "vendor";
+  landlord_id: string | null;
   zone_id: number | null;
   route_id: number | null;
   street_id: number | null;
   created_at: string;
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    status: string | null;
+    profile_image: string | null;
+  } | null;
 };
 
 type Unit = {
