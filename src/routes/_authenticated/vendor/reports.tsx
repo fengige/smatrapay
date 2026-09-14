@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Download } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
@@ -14,6 +16,11 @@ import {
   useVendorScope,
 } from "@/components/vendor/VendorUI";
 import { INSTALLATION_STATUSES } from "@/lib/vendor.functions";
+import {
+  listServiceRequests,
+  listVendorReadings,
+  listVendorTokens,
+} from "@/lib/vendor-ops.functions";
 
 export const Route = createFileRoute("/_authenticated/vendor/reports")({
   head: () => ({
