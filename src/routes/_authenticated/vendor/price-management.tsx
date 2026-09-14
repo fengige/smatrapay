@@ -88,24 +88,36 @@ function VendorPriceManagement() {
     setBusy(true);
     try {
       const result = await applyPrices({
-        data: { ids: selected, mode: mode as never, value: numeric },
+        data: {
+          ids: selected,
+          mode: mode as never,
+          value: numeric,
+          ...(note.trim() ? { note: note.trim() } : {}),
+        },
       });
-      setMessage(`${result.updated} meter(s) updated, ${result.unchanged} unchanged.`);
+      setMessage(
+        `${result.submitted} price change(s) sent for admin approval, ${result.unchanged} unchanged.`,
+      );
       setSelected([]);
       setValue("");
+      setNote("");
       await queryClient.invalidateQueries({ queryKey: ["vendor-scope"] });
+      await queryClient.invalidateQueries({ queryKey: ["vendor-price-requests"] });
     } catch (e) {
-      setFailure(e instanceof Error ? e.message : "Could not update prices.");
+      setFailure(e instanceof Error ? e.message : "Could not submit price changes.");
     } finally {
       setBusy(false);
     }
   }
 
+  const requests = requestsQuery.data ?? [];
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+
   return (
     <DashboardShell
       access={access}
       title="Price management"
-      description="Set the price per unit on your own meters."
+      description="Propose price per unit changes on your own meters. An admin approves them before they go live."
     >
       {error ? (
         <ErrorBlock message={(error as Error).message} />
