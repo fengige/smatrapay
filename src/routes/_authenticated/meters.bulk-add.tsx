@@ -164,8 +164,19 @@ function BulkAddMetersPage() {
   };
 
   const isDirty =
-    Boolean(meterType || supplierId || ownerType || ownerId) ||
+    Boolean(meterType || (supplierId && !lockedSupplierId) || ownerType || ownerId) ||
     rows.some((r) => Object.values(r).some((v) => v.trim()));
+
+  const goBack = () => {
+    if (returnTo) {
+      void navigate({ to: returnTo });
+      return;
+    }
+    void navigate({
+      to: "/meters",
+      search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
+    });
+  };
 
   const attemptLeave = () => {
     if (mutation.isPending) return;
@@ -175,10 +186,7 @@ function BulkAddMetersPage() {
       !window.confirm("You have unsaved meter entries. Leave this page and discard them?")
     )
       return;
-    void navigate({
-      to: "/meters",
-      search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
-    });
+    goBack();
   };
 
   useEffect(() => {
