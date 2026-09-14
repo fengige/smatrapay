@@ -30,9 +30,10 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { listPaymentMethods, type PaymentMethodRow } from "@/lib/payment-methods.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
-import { UserMpesaConfigSection } from "@/components/UserMpesaConfigSection";
+import { UserMpesaConfigSection, isMpesa } from "@/components/UserMpesaConfigSection";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { ProfileImageHistory } from "@/components/ProfileImageHistory";
@@ -98,6 +99,7 @@ function VendorDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchVendor = useServerFn(getUserById);
+  const fetchMethods = useServerFn(listPaymentMethods);
   const saveVendor = useServerFn(updateUser);
   const removeVendor = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -116,6 +118,13 @@ function VendorDetailPage() {
     queryKey: ["user", id],
     queryFn: () => fetchVendor({ data: { id } }),
   });
+
+  const { data: methodsData } = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: () => fetchMethods(),
+  });
+  const allMethods = (methodsData?.methods ?? []) as PaymentMethodRow[];
+  const mpesaMethods = allMethods.filter(isMpesa);
 
   const vendor = data?.user;
 
@@ -522,16 +531,20 @@ function VendorDetailPage() {
               {tab === "paymethods" && (
                 <>
                   <PaymentAccountsPanel
+                    methods={allMethods}
                     lockUser={{
                       id,
                       name: vendor?.name || vendor?.email || "this vendor",
                       type: "vendor",
                     }}
                   />
-                  <UserMpesaConfigSection
-                    ownerId={id}
-                    ownerName={vendor?.name || vendor?.email || "this vendor"}
-                  />
+                  {mpesaMethods.length > 0 && (
+                    <UserMpesaConfigSection
+                      ownerId={id}
+                      ownerName={vendor?.name || vendor?.email || "this vendor"}
+                      methods={mpesaMethods}
+                    />
+                  )}
                 </>
               )}
 
