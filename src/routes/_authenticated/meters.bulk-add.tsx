@@ -91,6 +91,7 @@ type DuplicateMode = "reject" | "skip" | "update";
 
 function BulkAddMetersPage() {
   const navigate = useNavigate();
+  const { supplier: lockedSupplierId, from: returnTo } = Route.useSearch();
   const queryClient = useQueryClient();
   const loadOptions = useServerFn(listBulkMeterOptions);
   const bulkCreate = useServerFn(bulkAddMeters);
@@ -120,7 +121,10 @@ function BulkAddMetersPage() {
 
 
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas" | "">("");
-  const [supplierId, setSupplierId] = useState("");
+  const [supplierId, setSupplierId] = useState(lockedSupplierId ?? "");
+  const lockedSupplierName = lockedSupplierId
+    ? (suppliers.find((s) => s.id === lockedSupplierId)?.name ?? "Selected supplier")
+    : null;
   const [ownerType, setOwnerType] = useState<"" | "vendor" | "landlord" | "agent">("");
   const [ownerId, setOwnerId] = useState("");
   const [count, setCount] = useState("1");
