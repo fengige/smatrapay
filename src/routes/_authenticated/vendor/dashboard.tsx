@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getVendorOpsSummary } from "@/lib/vendor-ops.functions";
 import { checkRoleAccess } from "@/lib/auth.functions";
+
 import { DashboardShell } from "@/components/DashboardShell";
 import {
   EmptyState,
@@ -39,6 +43,9 @@ export const Route = createFileRoute("/_authenticated/vendor/dashboard")({
 function VendorDashboard() {
   const access = Route.useLoaderData();
   const { data, isLoading, error } = useVendorScope();
+  const fetchOps = useServerFn(getVendorOpsSummary);
+  const opsSummary = useQuery({ queryKey: ["vendor-ops-summary"], queryFn: () => fetchOps() });
+
 
   const meters = data?.meters ?? [];
   const zones = data?.zones ?? [];
