@@ -228,26 +228,85 @@ export function PortalLayout({
               aria-label="Messages"
             >
               <MessageSquare className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
             </button>
-            <button
-              className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
-              aria-label="Notifications"
-            >
-              <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
-            </button>
-            {identity.profile_image ? (
-              <img
-                src={identity.profile_image}
-                alt={identity.name || "Profile"}
-                className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:size-9"
-              />
+
+            {isVendor ? (
+              <Link
+                to="/vendor/notifications"
+                aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
+                className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+              >
+                <Bell className="size-4" />
+                {unread > 0 && (
+                  <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[0.6rem] font-bold leading-4 text-white">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </Link>
             ) : (
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
-                {avatar}
-              </span>
+              <button
+                className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+                aria-label="Notifications"
+              >
+                <Bell className="size-4" />
+              </button>
             )}
+
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                aria-label="Account menu"
+                className="flex items-center gap-2"
+              >
+                {identity.profile_image ? (
+                  <img
+                    src={identity.profile_image}
+                    alt={identity.name || "Profile"}
+                    className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:size-9"
+                  />
+                ) : (
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary sm:size-9">
+                    {avatar}
+                  </span>
+                )}
+                <span className="hidden max-w-32 truncate text-sm font-semibold text-foreground lg:block">
+                  {identity.name || "Account"}
+                </span>
+              </button>
+              {menuOpen && (
+                <>
+                  <button
+                    aria-label="Close account menu"
+                    className="fixed inset-0 z-40 cursor-default"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
+                  >
+                    {isVendor && (
+                      <Link
+                        to="/vendor/profile"
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-secondary"
+                      >
+                        My Profile
+                      </Link>
+                    )}
+                    <button
+                      role="menuitem"
+                      onClick={signOut}
+                      className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-secondary"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
