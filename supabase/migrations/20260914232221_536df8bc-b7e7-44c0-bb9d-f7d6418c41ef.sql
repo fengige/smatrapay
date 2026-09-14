@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.guard_meter_token_vendor_update() FROM PUBLIC, anon, authenticated;

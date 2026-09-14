@@ -65,6 +65,8 @@ import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_aut
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
+import { Route as AuthenticatedVendorPosRouteImport } from './routes/_authenticated/vendor/pos'
+import { Route as AuthenticatedVendorPosShiftReportRouteImport } from './routes/_authenticated/vendor/pos-shift-report'
 import { Route as AuthenticatedVendorProfileRouteImport } from './routes/_authenticated/vendor/profile'
 import { Route as AuthenticatedVendorReadingsRouteImport } from './routes/_authenticated/vendor/readings'
 import { Route as AuthenticatedVendorReportsRouteImport } from './routes/_authenticated/vendor/reports'
@@ -422,6 +424,17 @@ const AuthenticatedVendorNotificationsRoute =
     path: '/vendor/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorPosRoute = AuthenticatedVendorPosRouteImport.update({
+  id: '/vendor/pos',
+  path: '/vendor/pos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendorPosShiftReportRoute =
+  AuthenticatedVendorPosShiftReportRouteImport.update({
+    id: '/vendor/pos-shift-report',
+    path: '/vendor/pos-shift-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorProfileRoute =
   AuthenticatedVendorProfileRouteImport.update({
     id: '/vendor/profile',
@@ -693,6 +706,8 @@ export interface FileRoutesByFullPath {
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
+  '/vendor/pos': typeof AuthenticatedVendorPosRoute
+  '/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
@@ -780,6 +795,8 @@ export interface FileRoutesByTo {
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
+  '/vendor/pos': typeof AuthenticatedVendorPosRoute
+  '/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
@@ -877,6 +894,8 @@ export interface FileRoutesById {
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
+  '/_authenticated/vendor/pos': typeof AuthenticatedVendorPosRoute
+  '/_authenticated/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/_authenticated/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/_authenticated/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/_authenticated/vendor/reports': typeof AuthenticatedVendorReportsRoute
@@ -974,6 +993,8 @@ export interface FileRouteTypes {
     | '/vendor/assignments'
     | '/vendor/dashboard'
     | '/vendor/notifications'
+    | '/vendor/pos'
+    | '/vendor/pos-shift-report'
     | '/vendor/profile'
     | '/vendor/readings'
     | '/vendor/reports'
@@ -1061,6 +1082,8 @@ export interface FileRouteTypes {
     | '/vendor/assignments'
     | '/vendor/dashboard'
     | '/vendor/notifications'
+    | '/vendor/pos'
+    | '/vendor/pos-shift-report'
     | '/vendor/profile'
     | '/vendor/readings'
     | '/vendor/reports'
@@ -1157,6 +1180,8 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/assignments'
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/vendor/notifications'
+    | '/_authenticated/vendor/pos'
+    | '/_authenticated/vendor/pos-shift-report'
     | '/_authenticated/vendor/profile'
     | '/_authenticated/vendor/readings'
     | '/_authenticated/vendor/reports'
@@ -1617,6 +1642,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/pos': {
+      id: '/_authenticated/vendor/pos'
+      path: '/vendor/pos'
+      fullPath: '/vendor/pos'
+      preLoaderRoute: typeof AuthenticatedVendorPosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/pos-shift-report': {
+      id: '/_authenticated/vendor/pos-shift-report'
+      path: '/vendor/pos-shift-report'
+      fullPath: '/vendor/pos-shift-report'
+      preLoaderRoute: typeof AuthenticatedVendorPosShiftReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/profile': {
       id: '/_authenticated/vendor/profile'
       path: '/vendor/profile'
@@ -2069,6 +2108,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
+  AuthenticatedVendorPosRoute: typeof AuthenticatedVendorPosRoute
+  AuthenticatedVendorPosShiftReportRoute: typeof AuthenticatedVendorPosShiftReportRoute
   AuthenticatedVendorProfileRoute: typeof AuthenticatedVendorProfileRoute
   AuthenticatedVendorReadingsRoute: typeof AuthenticatedVendorReadingsRoute
   AuthenticatedVendorReportsRoute: typeof AuthenticatedVendorReportsRoute
@@ -2123,6 +2164,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
+  AuthenticatedVendorPosRoute: AuthenticatedVendorPosRoute,
+  AuthenticatedVendorPosShiftReportRoute:
+    AuthenticatedVendorPosShiftReportRoute,
   AuthenticatedVendorProfileRoute: AuthenticatedVendorProfileRoute,
   AuthenticatedVendorReadingsRoute: AuthenticatedVendorReadingsRoute,
   AuthenticatedVendorReportsRoute: AuthenticatedVendorReportsRoute,
