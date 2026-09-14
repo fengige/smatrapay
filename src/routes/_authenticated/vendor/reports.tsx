@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Download } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
@@ -14,6 +16,11 @@ import {
   useVendorScope,
 } from "@/components/vendor/VendorUI";
 import { INSTALLATION_STATUSES } from "@/lib/vendor.functions";
+import {
+  listServiceRequests,
+  listVendorReadings,
+  listVendorTokens,
+} from "@/lib/vendor-ops.functions";
 
 export const Route = createFileRoute("/_authenticated/vendor/reports")({
   head: () => ({
@@ -37,11 +44,25 @@ export const Route = createFileRoute("/_authenticated/vendor/reports")({
   errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
 });
 
-const REPORTS = ["Meters", "Residents", "Zones", "Installations"] as const;
+const REPORTS = [
+  "Meters",
+  "Residents",
+  "Zones",
+  "Installations",
+  "Transactions",
+  "Readings",
+  "Maintenance",
+] as const;
 
 function VendorReports() {
   const access = Route.useLoaderData();
   const { data, isLoading, error } = useVendorScope();
+  const fetchTokens = useServerFn(listVendorTokens);
+  const fetchReadings = useServerFn(listVendorReadings);
+  const fetchRequests = useServerFn(listServiceRequests);
+  const tokensQuery = useQuery({ queryKey: ["vendor-tokens", "", ""], queryFn: () => fetchTokens({ data: {} }) });
+  const readingsQuery = useQuery({ queryKey: ["vendor-readings"], queryFn: () => fetchReadings({ data: {} }) });
+  const requestsQuery = useQuery({ queryKey: ["vendor-service-requests"], queryFn: () => fetchRequests() });
   const [report, setReport] = useState<(typeof REPORTS)[number]>("Meters");
   const [zone, setZone] = useState("all");
   const [type, setType] = useState("all");
@@ -107,6 +128,80 @@ function VendorReports() {
         }),
       };
     }
+    const meterLookup = new Map((data?.meters ?? []).map((m) => [m.id, m]));
+    const inRange = (value: string | null | undefined) => {
+      if (!value) return !from && !to;
+      if (from && value < from) return false;
+      if (to && value > `${to}T23:59:59`) return false;
+      return true;
+    };
+    if (report === "Transactions") {
+      const rows = (tokensQuery.data?.tokens ?? []).filter((t) => {
+        const m = meterLookup.get(t.meter_id);
+        if (zone !== "all" && String(m?.zone_id ?? "") !== zone) return false;
+        return inRange(t.created_at);
+      });
+      return {
+        headers: ["Transaction", "Meter", "Resident", "Amount", "Payment status", "Token status", "Date"],
+        rows: rows.map((t) => {
+          const m = meterLookup.get(t.meter_id);
+          return [
+            t.reference ?? t.id,
+            m?.meter_number ?? "—",
+            m?.resident_name ?? "—",
+            String(t.amount),
+            titleCase(t.payment_status ?? "pending"),
+            titleCase(t.status),
+            formatDate(t.created_at),
+          ];
+        }),
+      };
+    }
+    if (report === "Readings") {
+      const rows = (readingsQuery.data?.readings ?? []).filter((r) => {
+        const m = meterLookup.get(r.meter_id);
+        if (zone !== "all" && String(m?.zone_id ?? "") !== zone) return false;
+        return inRange(r.reading_date);
+      });
+      return {
+        headers: ["Meter", "Resident", "Zone", "Previous", "Current", "Consumption", "Date"],
+        rows: rows.map((r) => {
+          const m = meterLookup.get(r.meter_id);
+          return [
+            m?.meter_number ?? "—",
+            m?.resident_name ?? "—",
+            m?.zone_name ?? "—",
+            r.previous_reading == null ? "—" : String(r.previous_reading),
+            String(r.reading),
+            r.consumption == null ? "—" : String(r.consumption),
+            formatDate(r.reading_date),
+          ];
+        }),
+      };
+    }
+    if (report === "Maintenance") {
+      const rows = (requestsQuery.data?.requests ?? []).filter((r) => {
+        const m = r.meter_id ? meterLookup.get(r.meter_id) : undefined;
+        if (zone !== "all" && String(m?.zone_id ?? "") !== zone) return false;
+        return inRange(r.created_at);
+      });
+      return {
+        headers: ["Request", "Meter", "Resident", "Issue", "Priority", "Technician", "Status", "Resolved"],
+        rows: rows.map((r) => {
+          const m = r.meter_id ? meterLookup.get(r.meter_id) : undefined;
+          return [
+            r.request_number,
+            m?.meter_number ?? "—",
+            m?.resident_name ?? "—",
+            r.issue_type,
+            titleCase(r.priority),
+            r.technician_name ?? "—",
+            titleCase(r.status),
+            formatDate(r.completed_at),
+          ];
+        }),
+      };
+    }
     return {
       headers: ["Meter", "Resident", "Zone", "Installation status", "Installation date"],
       rows: meters.map((m) => [
@@ -117,7 +212,18 @@ function VendorReports() {
         formatDate(m.installation_date),
       ]),
     };
-  }, [report, meters, residents, data]);
+  }, [
+    report,
+    meters,
+    residents,
+    data,
+    zone,
+    from,
+    to,
+    tokensQuery.data,
+    readingsQuery.data,
+    requestsQuery.data,
+  ]);
 
   return (
     <DashboardShell

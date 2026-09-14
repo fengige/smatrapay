@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { listVendorResidentPayments } from "@/lib/vendor.functions";
+import { listVendorTokens } from "@/lib/vendor-ops.functions";
 import {
   EmptyState,
   ErrorBlock,
@@ -59,6 +60,17 @@ function VendorResidentDetail() {
 
   const records = (data?.residents ?? []).filter((r) => r.id === residentId);
   const resident = records[0];
+
+  const fetchTokens = useServerFn(listVendorTokens);
+  const { data: tokenData } = useQuery({
+    queryKey: ["vendor-resident-tokens", residentId],
+    queryFn: () => fetchTokens({ data: {} }),
+  });
+  const residentUnitIds = new Set(records.map((r) => r.unit_id).filter(Boolean) as string[]);
+  const residentMeters = (data?.meters ?? []).filter((m) => m.unit_id && residentUnitIds.has(m.unit_id));
+  const residentMeterIds = new Set(residentMeters.map((m) => m.id));
+  const residentTokens = (tokenData?.tokens ?? []).filter((t) => residentMeterIds.has(t.meter_id));
+
 
   return (
     <DashboardShell
@@ -131,6 +143,63 @@ function VendorResidentDetail() {
               )}
             </section>
           ))}
+
+          <section className="rounded-2xl border border-border bg-card">
+            <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <h2 className="text-sm font-bold text-foreground">Prepaid account</h2>
+              <Link to="/vendor/tokens" className="text-xs font-semibold text-primary">
+                View token history
+              </Link>
+            </header>
+            {residentTokens.length === 0 ? (
+              <EmptyState
+                title="No prepaid activity"
+                message="No tokens have been issued for this resident's meters yet."
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <dl className="grid gap-3 px-4 py-3 sm:grid-cols-4">
+                  <Info label="Meters" value={residentMeters.map((m) => m.meter_number).join(", ") || "—"} />
+                  <Info label="Last token" value={residentTokens[0]?.token ?? "—"} />
+                  <Info label="Last token date" value={formatDate(residentTokens[0]?.created_at)} />
+                  <Info
+                    label="Tokens purchased"
+                    value={`${residentTokens.length} · ${residentTokens
+                      .reduce((s, t) => s + t.amount, 0)
+                      .toLocaleString()}`}
+                  />
+                </dl>
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-2">Date</th>
+                      <th className="px-4 py-2">Meter</th>
+                      <th className="px-4 py-2">Token</th>
+                      <th className="px-4 py-2">Units</th>
+                      <th className="px-4 py-2">Amount</th>
+                      <th className="px-4 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {residentTokens.slice(0, 10).map((t) => (
+                      <tr key={t.id} className="border-t border-border">
+                        <td className="px-4 py-2">{formatDate(t.created_at)}</td>
+                        <td className="px-4 py-2 text-muted-foreground">
+                          {residentMeters.find((m) => m.id === t.meter_id)?.meter_number ?? "—"}
+                        </td>
+                        <td className="px-4 py-2 font-mono text-xs">{t.token}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{t.units}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{t.amount.toLocaleString()}</td>
+                        <td className="px-4 py-2">
+                          <StatusBadge value={t.status} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
 
           <section className="rounded-2xl border border-border bg-card">
             <header className="border-b border-border px-4 py-3">

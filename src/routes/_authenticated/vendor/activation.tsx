@@ -380,8 +380,9 @@ function VendorActivation() {
                 deactivateMutation.mutate({
                   meter_id: deactivating.id,
                   reason,
-                  notes: notes.trim() || undefined,
+                  ...(notes.trim() ? { notes: notes.trim() } : {}),
                 })
+
               }
             >
               {deactivateMutation.isPending ? "Saving…" : "Deactivate meter"}
