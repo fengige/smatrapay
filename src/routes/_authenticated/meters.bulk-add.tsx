@@ -485,22 +485,29 @@ function BulkAddMetersPage() {
               <label className="mb-1 block text-sm font-medium" htmlFor="supplier">
                 Supplier <span className="text-destructive">*</span>
               </label>
-              <SearchSelect
-                id="supplier"
-                value={supplierId}
-                onChange={setSupplierId}
-                invalid={submitted && Boolean(headerErrors.supplierId)}
-                placeholder="Search and select supplier"
-                emptyLabel="No suppliers match your search"
-                options={suppliers.map((s) => ({
-                  id: s.id,
-                  label: s.name,
-                  hint: s.utility_type || undefined,
-                }))}
-              />
+              {lockedSupplierId ? (
+                <div className="flex h-11 items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-3 text-sm">
+                  <span className="truncate font-medium">{lockedSupplierName}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">Locked</span>
+                </div>
+              ) : (
+                <SearchSelect
+                  id="supplier"
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  invalid={submitted && Boolean(headerErrors.supplierId)}
+                  placeholder="Search and select supplier"
+                  emptyLabel="No suppliers match your search"
+                  options={suppliers.map((s) => ({
+                    id: s.id,
+                    label: s.name,
+                    hint: s.utility_type || undefined,
+                  }))}
+                />
+              )}
 
               {show(headerErrors.supplierId)}
-              {!suppliers.length && (
+              {!lockedSupplierId && !suppliers.length && (
                 <span className="mt-1 block text-xs text-muted-foreground">
                   No active suppliers yet — add one in Meter Suppliers.
                 </span>
