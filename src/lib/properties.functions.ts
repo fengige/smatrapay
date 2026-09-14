@@ -43,6 +43,7 @@ const propertyInput = z.object({
   subtype: text(60),
   number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
   landlord_id: uuid.nullable().optional(),
+  owner_type: z.enum(["landlord", "agent", "vendor"]).optional(),
   zone_id: z.number().int().positive().nullable().optional(),
   route_id: z.number().int().positive().nullable().optional(),
   street_id: z.number().int().positive().nullable().optional(),
@@ -89,7 +90,7 @@ const propertyInput = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["landlord_id"],
-        message: "A landlord is required when units are greater than 0",
+        message: "An owner is required when units are greater than 0",
       });
     }
     const countryOptions = COUNTRY_OPTIONS;
@@ -376,6 +377,7 @@ export const updateProperty = createServerFn({ method: "POST" })
         subtype: text(60),
         number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
         landlord_id: uuid.nullable().optional(),
+        owner_type: z.enum(["landlord", "agent", "vendor"]).optional(),
         zone_id: z.number().int().positive().nullable().optional(),
         route_id: z.number().int().positive().nullable().optional(),
         street_id: z.number().int().positive().nullable().optional(),
@@ -1353,6 +1355,35 @@ export const listLandlords = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     return { landlords: users ?? [] };
+  });
+
+/** Owner candidates for a property: landlord, agent or vendor accounts. */
+export const listPropertyOwners = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ owner_type: z.enum(["landlord", "agent", "vendor"]) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: roles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", data.owner_type);
+    if (rolesError) throw new Error(rolesError.message);
+
+    const ids = [...new Set((roles ?? []).map((r) => r.user_id))];
+    if (!ids.length) return { owners: [] as { id: string; name: string | null; email: string | null }[] };
+
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, name, email")
+      .in("id", ids)
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    return { owners: users ?? [] };
   });
 
 /** Audit trail of unit-assignment changes for a resident (who changed what, and old/new unit). */

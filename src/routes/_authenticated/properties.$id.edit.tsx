@@ -40,6 +40,7 @@ function clean(values: PropertyFormValues) {
     building_category: values.property_type === "building" ? values.building_category : null,
     subtype: values.property_type === "building" ? values.subtype || null : null,
     number_of_units: values.number_of_units.trim() ? Number(values.number_of_units) : null,
+    owner_type: values.owner_type,
     landlord_id: values.landlord_id || null,
     zone_id: values.property_type === "zone" && values.zone_id ? Number(values.zone_id) : null,
     route_id: values.property_type === "zone" && values.route_id ? Number(values.route_id) : null,
@@ -124,6 +125,8 @@ function EditPropertyPage() {
               property["number_of_units"] === null || property["number_of_units"] === undefined
                 ? ""
                 : String(property["number_of_units"]),
+            owner_type:
+              (property["owner_type"] as "landlord" | "agent" | "vendor") ?? "landlord",
             landlord_id: property["landlord_id"] ?? "",
             zone_id: property["zone_id"] ? String(property["zone_id"]) : "",
             route_id: property["route_id"] ? String(property["route_id"]) : "",
