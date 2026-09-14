@@ -63,12 +63,12 @@ export const Route = createFileRoute("/_authenticated/properties/$id/")({
       {
         name: "description",
         content:
-          "Property detail view with units, unit assignments, residents, landlords and audit history.",
+          "Property detail view with units, unit assignments, residents, owners and audit history.",
       },
       { property: "og:title", content: "Property Details · SmatraPay" },
       {
         property: "og:description",
-        content: "Units, residents, landlords and audit history for a SmatraPay property.",
+        content: "Units, residents, owners and audit history for a SmatraPay property.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -112,14 +112,15 @@ type Assignment = {
 
 type Person = { id: string; name: string | null; email: string | null; phone: string | null; status: string; role?: string };
 
-type Landlord = Person & { profile_image: string | null };
+type Owner = Person & { profile_image: string | null };
+type OwnerType = "landlord" | "agent" | "vendor";
 
 const TABS = [
   { id: "units", label: "Units", icon: Layers },
   { id: "address", label: "Address", icon: MapPin },
   { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
-  { id: "landlords", label: "Landlord detail", icon: Building2 },
+  { id: "landlords", label: "Owner Details", icon: Building2 },
   { id: "audit", label: "Status & Audit Logs", icon: ClipboardList },
 ] as const;
 
@@ -199,7 +200,7 @@ function slug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "property";
 }
 
-function LandlordActions({ landlord }: { landlord: Landlord }) {
+function OwnerActions({ owner, ownerType }: { owner: Owner; ownerType: OwnerType }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -223,24 +224,41 @@ function LandlordActions({ landlord }: { landlord: Landlord }) {
     };
   }, [open]);
 
+  const label = ownerType === "landlord" ? "Landlord" : ownerType === "agent" ? "Agent" : "Vendor";
+  const profileLink =
+    ownerType === "landlord" ? (
+      <Link to="/landlords/$id" params={{ id: owner.id }} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+        <Eye className="size-4" /> View Landlord Profile
+      </Link>
+    ) : ownerType === "agent" ? (
+      <Link to="/agents/$id" params={{ id: owner.id }} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+        <Eye className="size-4" /> View Agent Profile
+      </Link>
+    ) : (
+      <Link to="/vendors/$id" params={{ id: owner.id }} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+        <Eye className="size-4" /> View Vendor Profile
+      </Link>
+    );
+  const editLink =
+    ownerType === "landlord" ? (
+      <Link to="/landlords/$id/edit" params={{ id: owner.id }} search={{ page: 1, limit: 10 }} className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10">
+        <Pencil className="size-4" /> Edit Landlord
+      </Link>
+    ) : ownerType === "agent" ? (
+      <Link to="/agents/$id/edit" params={{ id: owner.id }} search={{ page: 1, limit: 10 }} className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10">
+        <Pencil className="size-4" /> Edit Agent
+      </Link>
+    ) : (
+      <Link to="/vendors/$id/edit" params={{ id: owner.id }} search={{ page: 1, limit: 10 }} className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10">
+        <Pencil className="size-4" /> Edit Vendor
+      </Link>
+    );
+
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2">
       <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2">
-        <Link
-          to="/landlords/$id"
-          params={{ id: landlord.id }}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-        >
-          <Eye className="size-4" /> View landlord profile
-        </Link>
-        <Link
-          to="/landlords/$id/edit"
-          params={{ id: landlord.id }}
-          search={{ page: 1, limit: 10 }}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
-        >
-          <Pencil className="size-4" /> Edit landlord
-        </Link>
+        {profileLink}
+        {editLink}
       </div>
 
       <div className="relative sm:hidden" ref={menuRef}>
@@ -250,7 +268,7 @@ function LandlordActions({ landlord }: { landlord: Landlord }) {
           aria-haspopup="menu"
           aria-controls={menuId}
           aria-expanded={open}
-          aria-label={`Actions for ${landlord.name || "landlord"}`}
+          aria-label={`Actions for ${owner.name || label}`}
           onClick={() => setOpen((v) => !v)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
@@ -263,25 +281,12 @@ function LandlordActions({ landlord }: { landlord: Landlord }) {
             aria-labelledby={triggerId}
             className="absolute left-0 z-20 mt-1 w-52 rounded-lg border border-border bg-card p-1 shadow-lg"
           >
-            <Link
-              to="/landlords/$id"
-              params={{ id: landlord.id }}
-              role="menuitem"
-              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
-              onClick={() => setOpen(false)}
-            >
-              <Eye className="size-3.5" aria-hidden="true" /> View landlord profile
-            </Link>
-            <Link
-              to="/landlords/$id/edit"
-              params={{ id: landlord.id }}
-              search={{ page: 1, limit: 10 }}
-              role="menuitem"
-              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-foreground hover:bg-accent/10"
-              onClick={() => setOpen(false)}
-            >
-              <Pencil className="size-3.5" aria-hidden="true" /> Edit landlord
-            </Link>
+            <div role="menuitem" onClick={() => setOpen(false)}>
+              {profileLink}
+            </div>
+            <div role="menuitem" onClick={() => setOpen(false)}>
+              {editLink}
+            </div>
           </div>
         )}
       </div>
@@ -396,7 +401,12 @@ function PropertyDetailPage() {
   });
 
   const property = (data?.property ?? null) as Record<string, string | null> | null;
-  const landlord = (data?.landlord ?? null) as Landlord | null;
+  const owner = (data?.owner ?? null) as Owner | null;
+  const ownerType: OwnerType =
+    property?.["owner_type"] === "agent" || property?.["owner_type"] === "vendor"
+      ? property["owner_type"]
+      : "landlord";
+  const ownerLabel = ownerType === "landlord" ? "Landlord" : ownerType === "agent" ? "Agent" : "Vendor";
   const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
   const assignments = useMemo(() => (data?.assignments ?? []) as unknown as Assignment[], [data]);
   const people = useMemo(() => (data?.people ?? []) as unknown as Person[], [data]);
@@ -1521,22 +1531,22 @@ function PropertyDetailPage() {
 
               {tab === "landlords" && (
                 <div className="p-4">
-                  {!landlord ? (
+                  {!owner ? (
                     <div className="rounded-xl border border-border bg-background p-8 text-center">
                       <Building2 className="mx-auto size-8 text-muted-foreground" />
-                      <p className="mt-3 text-sm font-semibold text-foreground">No landlord assigned</p>
+                      <p className="mt-3 text-sm font-semibold text-foreground">No {ownerLabel.toLowerCase()} assigned</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        This property does not have a landlord linked in the Landlord Details section.
+                        This property does not have a {ownerLabel.toLowerCase()} linked in Owner Details.
                       </p>
                     </div>
                   ) : (
                     <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-6">
                       <div className="flex items-start gap-4">
                         <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          {landlord.profile_image ? (
+                          {owner.profile_image ? (
                             <img
-                              src={landlord.profile_image}
-                              alt={landlord.name ?? ""}
+                              src={owner.profile_image}
+                              alt={owner.name ?? `${ownerLabel} profile`}
                               className="size-16 rounded-full object-cover"
                             />
                           ) : (
@@ -1546,26 +1556,26 @@ function PropertyDetailPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-bold text-foreground">
-                              {landlord.name || "Unnamed landlord"}
+                              {owner.name || `Unnamed ${ownerLabel.toLowerCase()}`}
                             </h3>
                             <span
                               className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                landlord.status === "active"
+                                owner.status === "active"
                                   ? "bg-emerald-500/12 text-emerald-600"
                                   : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {landlord.status}
+                              {owner.status}
                             </span>
                           </div>
-                          <p className="mt-0.5 text-sm text-muted-foreground">Property owner</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">{ownerLabel} · Property owner</p>
                           <div className="mt-4 grid gap-3 sm:grid-cols-2">
                             <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                               <Mail className="size-4 text-muted-foreground" />
                               <div>
                                 <p className="text-xs text-muted-foreground">Email</p>
                                 <p className="text-sm font-medium text-foreground">
-                                  {landlord.email || "—"}
+                                  {owner.email || "—"}
                                 </p>
                               </div>
                             </div>
@@ -1574,12 +1584,12 @@ function PropertyDetailPage() {
                               <div>
                                 <p className="text-xs text-muted-foreground">Phone</p>
                                 <p className="text-sm font-medium text-foreground">
-                                  {landlord.phone || "—"}
+                                  {owner.phone || "—"}
                                 </p>
                               </div>
                             </div>
                           </div>
-                          <LandlordActions landlord={landlord} />
+                          <OwnerActions owner={owner} ownerType={ownerType} />
                         </div>
                       </div>
                     </div>

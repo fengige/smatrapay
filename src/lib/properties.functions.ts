@@ -196,7 +196,7 @@ export const getProperty = createServerFn({ method: "GET" })
 
     const { data: property, error } = await supabase
       .from("properties")
-      .select("*, landlord:landlord_id (id, name, email, phone, status, profile_image)")
+      .select("*, owner:landlord_id (id, name, email, phone, status, profile_image)")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -232,7 +232,7 @@ export const getProperty = createServerFn({ method: "GET" })
       people = rows ?? [];
     }
 
-    return { property, landlord: property.landlord ?? null, units: units ?? [], assignments, people };
+    return { property, owner: property.owner ?? null, units: units ?? [], assignments, people };
   });
 
 export const getUnit = createServerFn({ method: "GET" })

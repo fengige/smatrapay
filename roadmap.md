@@ -17,3 +17,4 @@
 - [x] Vendor Portal (dashboard, zones, meters, residents, assignments, reports, notifications, profile) with server-side vendor scoping
 - [x] Vendor Prepaid Meter Operations (activation, tokens & payments, readings, service requests, installation teams, prepaid dashboard cards, meter activation/reading tabs, resident prepaid account, extended reports)
 - [x] Installation status shared across admin + vendor meter pages
+- [x] Property details: owner-specific profile card and Landlord/Agent/Vendor links
