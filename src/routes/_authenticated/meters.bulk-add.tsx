@@ -379,13 +379,17 @@ function BulkAddMetersPage() {
   useEffect(() => {
     if (!result) return;
     const timer = setTimeout(() => {
+      if (returnTo) {
+        void navigate({ to: returnTo });
+        return;
+      }
       void navigate({
         to: "/meters",
         search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
       });
     }, 2500);
     return () => clearTimeout(timer);
-  }, [result, navigate]);
+  }, [result, navigate, returnTo]);
 
   const openReview = () => {
     setSubmitted(true);
