@@ -128,6 +128,80 @@ function VendorReports() {
         }),
       };
     }
+    const meterLookup = new Map((data?.meters ?? []).map((m) => [m.id, m]));
+    const inRange = (value: string | null | undefined) => {
+      if (!value) return !from && !to;
+      if (from && value < from) return false;
+      if (to && value > `${to}T23:59:59`) return false;
+      return true;
+    };
+    if (report === "Transactions") {
+      const rows = (tokensQuery.data?.tokens ?? []).filter((t) => {
+        const m = meterLookup.get(t.meter_id);
+        if (zone !== "all" && String(m?.zone_id ?? "") !== zone) return false;
+        return inRange(t.created_at);
+      });
+      return {
+        headers: ["Transaction", "Meter", "Resident", "Amount", "Payment status", "Token status", "Date"],
+        rows: rows.map((t) => {
+          const m = meterLookup.get(t.meter_id);
+          return [
+            t.reference ?? t.id,
+            m?.meter_number ?? "—",
+            m?.resident_name ?? "—",
+            String(t.amount),
+            titleCase(t.payment_status ?? "pending"),
+            titleCase(t.status),
+            formatDate(t.created_at),
+          ];
+        }),
+      };
+    }
+    if (report === "Readings") {
+      const rows = (readingsQuery.data?.readings ?? []).filter((r) => {
+        const m = meterLookup.get(r.meter_id);
+        if (zone !== "all" && String(m?.zone_id ?? "") !== zone) return false;
+        return inRange(r.reading_date);
+      });
+      return {
+        headers: ["Meter", "Resident", "Zone", "Previous", "Current", "Consumption", "Date"],
+        rows: rows.map((r) => {
+          const m = meterLookup.get(r.meter_id);
+          return [
+            m?.meter_number ?? "—",
+            m?.resident_name ?? "—",
+            m?.zone_name ?? "—",
+            r.previous_reading == null ? "—" : String(r.previous_reading),
+            String(r.reading),
+            r.consumption == null ? "—" : String(r.consumption),
+            formatDate(r.reading_date),
+          ];
+        }),
+      };
+    }
+    if (report === "Maintenance") {
+      const rows = (requestsQuery.data?.requests ?? []).filter((r) => {
+        const m = r.meter_id ? meterLookup.get(r.meter_id) : undefined;
+        if (zone !== "all" && String(m?.zone_id ?? "") !== zone) return false;
+        return inRange(r.created_at);
+      });
+      return {
+        headers: ["Request", "Meter", "Resident", "Issue", "Priority", "Technician", "Status", "Resolved"],
+        rows: rows.map((r) => {
+          const m = r.meter_id ? meterLookup.get(r.meter_id) : undefined;
+          return [
+            r.request_number,
+            m?.meter_number ?? "—",
+            m?.resident_name ?? "—",
+            r.issue_type,
+            titleCase(r.priority),
+            r.technician_name ?? "—",
+            titleCase(r.status),
+            formatDate(r.completed_at),
+          ];
+        }),
+      };
+    }
     return {
       headers: ["Meter", "Resident", "Zone", "Installation status", "Installation date"],
       rows: meters.map((m) => [
