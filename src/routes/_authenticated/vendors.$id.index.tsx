@@ -99,6 +99,7 @@ function VendorDetailPage() {
   const queryClient = useQueryClient();
 
   const fetchVendor = useServerFn(getUserById);
+  const fetchMethods = useServerFn(listPaymentMethods);
   const saveVendor = useServerFn(updateUser);
   const removeVendor = useServerFn(deleteUser);
   const resetPassword = useServerFn(sendPasswordReset);
@@ -117,6 +118,13 @@ function VendorDetailPage() {
     queryKey: ["user", id],
     queryFn: () => fetchVendor({ data: { id } }),
   });
+
+  const { data: methodsData } = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: () => fetchMethods(),
+  });
+  const allMethods = (methodsData?.methods ?? []) as PaymentMethodRow[];
+  const mpesaMethods = allMethods.filter(isMpesa);
 
   const vendor = data?.user;
 
