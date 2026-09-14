@@ -25,6 +25,7 @@ export type SupplierRow = {
   phone_number: string | null;
   website_url: string | null;
   status: SupplierStatus;
+  logo_url: string | null;
   meter_count: number;
   created_at: string;
   updated_at: string;
@@ -60,7 +61,7 @@ const supplierInput = z.object({
 const supplierUpdateInput = supplierInput.extend({ id: uuid });
 
 const SUPPLIER_COLUMNS =
-  "id, company_name, license_number, utility_type, contact_name, email, phone_number, website_url, status, created_at, updated_at";
+  "id, company_name, license_number, utility_type, contact_name, email, phone_number, website_url, status, logo_url, created_at, updated_at";
 
 export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -91,6 +92,7 @@ export const listSuppliers = createServerFn({ method: "GET" })
       phone_number: r.phone_number ?? null,
       website_url: r.website_url ?? null,
       status: r.status,
+      logo_url: r.logo_url ?? null,
       meter_count: counts.get(r.id) ?? 0,
       created_at: r.created_at,
       updated_at: r.updated_at,
