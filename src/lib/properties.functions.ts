@@ -1357,6 +1357,35 @@ export const listLandlords = createServerFn({ method: "GET" })
     return { landlords: users ?? [] };
   });
 
+/** Owner candidates for a property: landlord, agent or vendor accounts. */
+export const listPropertyOwners = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ owner_type: z.enum(["landlord", "agent", "vendor"]) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: roles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", data.owner_type);
+    if (rolesError) throw new Error(rolesError.message);
+
+    const ids = [...new Set((roles ?? []).map((r) => r.user_id))];
+    if (!ids.length) return { owners: [] as { id: string; name: string | null; email: string | null }[] };
+
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, name, email")
+      .in("id", ids)
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    return { owners: users ?? [] };
+  });
+
 /** Audit trail of unit-assignment changes for a resident (who changed what, and old/new unit). */
 export const listAssignmentAuditLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
