@@ -564,6 +564,7 @@ function MetersPage() {
                   <SortHeader label="Unit" sortBy="unit_label" />
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
+                  <th className="px-3 py-2 font-semibold uppercase tracking-wide">Installation</th>
                   <SortHeader label="Status" sortBy="status" />
                   <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">
                     Actions
@@ -659,6 +660,9 @@ function MetersPage() {
                         </td>
                         <td className="px-3 py-2.5 text-xs text-muted-foreground">
                           {sts.length ? sts.join(" · ") : "—"}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
+                          {installationLabel(m.installation_status)}
                         </td>
                         <td className="px-3 py-2.5">
                           <span
