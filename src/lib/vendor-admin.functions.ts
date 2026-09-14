@@ -267,15 +267,32 @@ const priceInput = z.object({
   ids: z.array(uuid).min(1, "Select at least one meter").max(1000),
   mode: z.enum(["set", "increase_pct", "decrease_pct", "increase_amount", "decrease_amount"]),
   value: z.number().finite().min(0).max(1_000_000),
+  note: z.string().trim().max(500).optional().nullable(),
 });
 
 export type VendorPriceResult = {
-  updated: number;
+  submitted: number;
   unchanged: number;
   changes: { id: string; meter_number: string; from: number; to: number }[];
 };
 
-/** Bulk price-per-unit change limited to meters registered to the signed-in vendor. */
+export type VendorPriceRequestRow = {
+  id: string;
+  created_at: string;
+  reviewed_at: string | null;
+  meter_id: string;
+  meter_number: string;
+  current_price: number;
+  requested_price: number;
+  status: string;
+  note: string | null;
+  review_note: string | null;
+};
+
+/**
+ * Vendors propose price-per-unit changes on their own meters. Nothing changes
+ * on the meter until an admin approves the request in Price Management.
+ */
 export const setVendorMeterPrices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => priceInput.parse(d))
@@ -306,24 +323,76 @@ export const setVendorMeterPrices = createServerFn({ method: "POST" })
       changes.push({ id: row.id, meter_number: row.meter_number ?? "", from, to });
     }
 
-    const byPrice = new Map<number, string[]>();
-    for (const c of changes) byPrice.set(c.to, [...(byPrice.get(c.to) ?? []), c.id]);
-    for (const [price, ids] of byPrice) {
-      const { error: upErr } = await supabase
-        .from("meters")
-        .update({ price_per_unit: price })
-        .eq("vendor_id", vendorId)
-        .in("id", ids);
-      if (upErr) throw new Error(upErr.message);
-    }
-
     if (changes.length) {
-      await logVendorAction(supabase, vendorId, "VENDOR_METER_PRICE_UPDATED", { type: "meter" }, {
+      // Supersede any still-pending request for the same meters.
+      const { error: supErr } = await supabase
+        .from("meter_price_change_requests")
+        .update({ status: "rejected", review_note: "Superseded by a newer request" })
+        .eq("vendor_id", vendorId)
+        .eq("status", "pending")
+        .in("meter_id", changes.map((c) => c.id));
+      if (supErr) throw new Error(supErr.message);
+
+      const { error: insErr } = await supabase.from("meter_price_change_requests").insert(
+        changes.map((c) => ({
+          meter_id: c.id,
+          vendor_id: vendorId,
+          current_price: c.from,
+          requested_price: c.to,
+          mode: data.mode,
+          value: data.value,
+          status: "pending",
+          requested_by: vendorId,
+          ...(data.note ? { note: data.note } : {}),
+        })),
+      );
+      if (insErr) throw new Error(insErr.message);
+
+      await logVendorAction(supabase, vendorId, "VENDOR_METER_PRICE_REQUESTED", { type: "meter" }, {
         count: changes.length,
         mode: data.mode,
         value: data.value,
       });
     }
 
-    return { updated: changes.length, unchanged, changes };
+    return { submitted: changes.length, unchanged, changes };
+  });
+
+/** The signed-in vendor's own price change requests. */
+export const listVendorPriceRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<VendorPriceRequestRow[]> => {
+    const { assertVendor } = await import("@/lib/vendor.server");
+    const vendorId = await assertVendor(context as never);
+    const supabase = context.supabase as any;
+
+    const { data: rows, error } = await supabase
+      .from("meter_price_change_requests")
+      .select("id, created_at, reviewed_at, meter_id, current_price, requested_price, status, note, review_note")
+      .eq("vendor_id", vendorId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    const list = (rows ?? []) as any[];
+
+    const meterIds = [...new Set(list.map((r) => r.meter_id))];
+    let meters: any[] = [];
+    if (meterIds.length) {
+      const { data: m } = await supabase.from("meters").select("id, meter_number").in("id", meterIds);
+      meters = m ?? [];
+    }
+    const byId = new Map(meters.map((m) => [m.id as string, m.meter_number as string]));
+
+    return list.map((r) => ({
+      id: r.id,
+      created_at: r.created_at,
+      reviewed_at: r.reviewed_at ?? null,
+      meter_id: r.meter_id,
+      meter_number: byId.get(r.meter_id) ?? "—",
+      current_price: Number(r.current_price ?? 0),
+      requested_price: Number(r.requested_price ?? 0),
+      status: r.status,
+      note: r.note ?? null,
+      review_note: r.review_note ?? null,
+    }));
   });

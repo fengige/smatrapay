@@ -20,6 +20,8 @@ import {
   applyPriceMode,
   bulkSetMeterPrice,
   listPriceAuditLogs,
+  listPriceChangeRequests,
+  reviewPriceChangeRequests,
   type PriceMode,
 } from "@/lib/prices.functions";
 
@@ -84,6 +86,31 @@ function PriceManagementPage() {
   const { data: priceLogs = [], isLoading: logsLoading } = useQuery({
     queryKey: ["price-audit"],
     queryFn: () => fetchPriceLogs(),
+  });
+
+  const fetchPriceRequests = useServerFn(listPriceChangeRequests);
+  const reviewRequests = useServerFn(reviewPriceChangeRequests);
+  const { data: priceRequests = [] } = useQuery({
+    queryKey: ["price-change-requests"],
+    queryFn: () => fetchPriceRequests(),
+  });
+  const pendingRequests = priceRequests.filter((r) => r.status === "pending");
+  const reviewedRequests = priceRequests.filter((r) => r.status !== "pending").slice(0, 10);
+
+  const reviewMutation = useMutation({
+    mutationFn: (vars: { ids: string[]; decision: "approved" | "rejected" }) =>
+      reviewRequests({ data: vars }),
+    onSuccess: (res, vars) => {
+      toast.success(
+        vars.decision === "approved"
+          ? `Approved — ${res.applied} meter price(s) updated`
+          : `Rejected ${res.rejected} request(s)`,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["price-change-requests"] });
+      void queryClient.invalidateQueries({ queryKey: ["meters"] });
+      void queryClient.invalidateQueries({ queryKey: ["price-audit"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not review the request"),
   });
 
   const meters = data?.meters ?? [];
@@ -265,6 +292,115 @@ function PriceManagementPage() {
         </div>
       }
     >
+      <section className="mb-4 rounded-2xl border border-border bg-card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Vendor price change requests</h2>
+            <p className="text-xs text-muted-foreground">
+              Approve a request to apply the new rate to the meter in both portals.
+            </p>
+          </div>
+          {pendingRequests.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={reviewMutation.isPending}
+                onClick={() =>
+                  reviewMutation.mutate({
+                    ids: pendingRequests.map((r) => r.id),
+                    decision: "approved",
+                  })
+                }
+                className="rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                Approve all ({pendingRequests.length})
+              </button>
+              <button
+                type="button"
+                disabled={reviewMutation.isPending}
+                onClick={() =>
+                  reviewMutation.mutate({
+                    ids: pendingRequests.map((r) => r.id),
+                    decision: "rejected",
+                  })
+                }
+                className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
+              >
+                Reject all
+              </button>
+            </div>
+          )}
+        </div>
+
+        {pendingRequests.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">No requests waiting for approval.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="py-2 pr-4">Requested</th>
+                  <th className="py-2 pr-4">Vendor</th>
+                  <th className="py-2 pr-4">Meter</th>
+                  <th className="py-2 pr-4">Current</th>
+                  <th className="py-2 pr-4">Requested</th>
+                  <th className="py-2 pr-4">Reason</th>
+                  <th className="py-2 pr-4 text-right">Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRequests.map((r) => (
+                  <tr key={r.id} className="border-t border-border">
+                    <td className="py-2 pr-4">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="py-2 pr-4">{r.vendor_name ?? "Vendor"}</td>
+                    <td className="py-2 pr-4 font-semibold">{r.meter_number}</td>
+                    <td className="py-2 pr-4">KES {r.current_price.toFixed(2)}</td>
+                    <td className="py-2 pr-4 font-semibold">KES {r.requested_price.toFixed(2)}</td>
+                    <td className="py-2 pr-4 text-muted-foreground">{r.note ?? "—"}</td>
+                    <td className="py-2 pr-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={reviewMutation.isPending}
+                          onClick={() =>
+                            reviewMutation.mutate({ ids: [r.id], decision: "approved" })
+                          }
+                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reviewMutation.isPending}
+                          onClick={() =>
+                            reviewMutation.mutate({ ids: [r.id], decision: "rejected" })
+                          }
+                          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent/10 disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {reviewedRequests.length > 0 && (
+          <ul className="mt-4 space-y-1 text-xs text-muted-foreground">
+            {reviewedRequests.map((r) => (
+              <li key={r.id}>
+                {r.meter_number} · KES {r.current_price.toFixed(2)} → KES{" "}
+                {r.requested_price.toFixed(2)} · {r.status}
+                {r.reviewed_at ? ` · ${new Date(r.reviewed_at).toLocaleDateString()}` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
