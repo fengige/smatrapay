@@ -61,6 +61,7 @@ import { Route as AuthenticatedUnitsUnitIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
+import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
@@ -391,6 +392,12 @@ const AuthenticatedUsersNewRoute = AuthenticatedUsersNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthenticatedUsersRoute,
 } as any)
+const AuthenticatedVendorActivationRoute =
+  AuthenticatedVendorActivationRouteImport.update({
+    id: '/vendor/activation',
+    path: '/vendor/activation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorAssignmentsRoute =
   AuthenticatedVendorAssignmentsRouteImport.update({
     id: '/vendor/assignments',
@@ -640,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/users/new': typeof AuthenticatedUsersNewRoute
+  '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
@@ -720,6 +728,7 @@ export interface FileRoutesByTo {
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
+  '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
@@ -810,6 +819,7 @@ export interface FileRoutesById {
   '/_authenticated/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
+  '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
@@ -900,6 +910,7 @@ export interface FileRouteTypes {
     | '/units/$unitId'
     | '/users/$id'
     | '/users/new'
+    | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
     | '/vendor/notifications'
@@ -980,6 +991,7 @@ export interface FileRouteTypes {
     | '/service-provider/dashboard'
     | '/units/$unitId'
     | '/users/new'
+    | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
     | '/vendor/notifications'
@@ -1069,6 +1081,7 @@ export interface FileRouteTypes {
     | '/_authenticated/units/$unitId'
     | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
+    | '/_authenticated/vendor/activation'
     | '/_authenticated/vendor/assignments'
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/vendor/notifications'
@@ -1498,6 +1511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersNewRouteImport
       parentRoute: typeof AuthenticatedUsersRoute
     }
+    '/_authenticated/vendor/activation': {
+      id: '/_authenticated/vendor/activation'
+      path: '/vendor/activation'
+      fullPath: '/vendor/activation'
+      preLoaderRoute: typeof AuthenticatedVendorActivationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/assignments': {
       id: '/_authenticated/vendor/assignments'
       path: '/vendor/assignments'
@@ -1925,6 +1945,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
   AuthenticatedUnitsUnitIdRoute: typeof AuthenticatedUnitsUnitIdRoute
+  AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
@@ -1972,6 +1993,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServiceProviderDashboardRoute:
     AuthenticatedServiceProviderDashboardRoute,
   AuthenticatedUnitsUnitIdRoute: AuthenticatedUnitsUnitIdRoute,
+  AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
