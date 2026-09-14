@@ -777,10 +777,10 @@ function BulkAddMetersPage() {
           </ul>
           <button
             type="button"
-            onClick={() => navigate({ to: "/meters", search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" } })}
+            onClick={goBack}
             className="mt-4 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
-            Go to Meter Management
+            {returnTo ? "Back to supplier" : "Go to Meter Management"}
           </button>
         </div>
       )}
