@@ -127,14 +127,18 @@ function VendorPriceManagement() {
         <EmptyState title="No meters" message="No meters are registered to your vendor account yet." />
       ) : (
         <div className="space-y-4 pb-6">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Meters" value={meters.length} />
             <StatCard label="Average price / unit" value={`KES ${avgPrice.toFixed(2)}`} />
             <StatCard label="Selected" value={selected.length} />
+            <StatCard label="Awaiting approval" value={pendingCount} />
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-4">
-            <h2 className="text-sm font-bold text-foreground">Apply a price change</h2>
+            <h2 className="text-sm font-bold text-foreground">Request a price change</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Changes are sent to an admin for approval. Meter prices stay the same until approved.
+            </p>
             <div className="mt-3 flex flex-wrap items-end gap-3">
               <label className="text-xs font-semibold text-muted-foreground">
                 Change
@@ -161,13 +165,62 @@ function VendorPriceManagement() {
                   className="mt-1 block w-32 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                 />
               </label>
+              <label className="min-w-56 flex-1 text-xs font-semibold text-muted-foreground">
+                Reason (optional)
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Why this price change is needed"
+                  className="mt-1 block w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
               <button className="btn-primary px-4 py-2 text-sm" disabled={busy} onClick={submit}>
-                {busy ? "Applying…" : `Apply to ${selected.length} meter(s)`}
+                {busy ? "Submitting…" : `Request for ${selected.length} meter(s)`}
               </button>
             </div>
             {message && <p className="mt-3 text-sm text-emerald-600">{message}</p>}
             {failure && <p className="mt-3 text-sm text-destructive">{failure}</p>}
           </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+            <div className="p-4 pb-0">
+              <h2 className="text-sm font-bold text-foreground">My price change requests</h2>
+            </div>
+            <table className="mt-3 w-full text-left text-sm">
+              <thead className="text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2">Requested</th>
+                  <th className="px-4 py-2">Meter</th>
+                  <th className="px-4 py-2">Current</th>
+                  <th className="px-4 py-2">Requested price</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Admin note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((r) => (
+                  <tr key={r.id} className="border-t border-border">
+                    <td className="px-4 py-2">{formatDate(r.created_at)}</td>
+                    <td className="px-4 py-2 font-semibold">{r.meter_number}</td>
+                    <td className="px-4 py-2">KES {r.current_price.toFixed(2)}</td>
+                    <td className="px-4 py-2 font-semibold">KES {r.requested_price.toFixed(2)}</td>
+                    <td className="px-4 py-2">
+                      <StatusBadge value={r.status} />
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground">{r.review_note ?? "—"}</td>
+                  </tr>
+                ))}
+                {requests.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      No price change requests yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
 
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex min-w-56 flex-1 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm">
