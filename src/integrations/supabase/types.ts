@@ -261,6 +261,11 @@ export type Database = {
           ea: number | null
           id: string
           initial_reading: number
+          installation_date: string | null
+          installation_location: string | null
+          installation_notes: string | null
+          installation_status: Database["public"]["Enums"]["meter_installation_status"]
+          installer: string | null
           ken: number | null
           krn: number | null
           landlord_id: string | null
@@ -282,6 +287,11 @@ export type Database = {
           ea?: number | null
           id?: string
           initial_reading?: number
+          installation_date?: string | null
+          installation_location?: string | null
+          installation_notes?: string | null
+          installation_status?: Database["public"]["Enums"]["meter_installation_status"]
+          installer?: string | null
           ken?: number | null
           krn?: number | null
           landlord_id?: string | null
@@ -303,6 +313,11 @@ export type Database = {
           ea?: number | null
           id?: string
           initial_reading?: number
+          installation_date?: string | null
+          installation_location?: string | null
+          installation_notes?: string | null
+          installation_status?: Database["public"]["Enums"]["meter_installation_status"]
+          installer?: string | null
           ken?: number | null
           krn?: number | null
           landlord_id?: string | null
@@ -439,6 +454,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          metadata: Json
+          read_at: string | null
+          resource_id: string | null
+          resource_type: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json
+          read_at?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json
+          read_at?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       payment_method_accounts: {
         Row: {
@@ -1393,6 +1450,39 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          resource_id: string | null
+          resource_type: string | null
+          vendor_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          resource_id?: string | null
+          resource_type?: string | null
+          vendor_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          resource_id?: string | null
+          resource_type?: string | null
+          vendor_id?: string
+        }
+        Relationships: []
+      }
       zone_audit_logs: {
         Row: {
           action: string
@@ -1472,6 +1562,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      vendor_zone_ids: {
+        Args: { _vendor: string }
+        Returns: {
+          zone_id: number
+        }[]
+      }
     }
     Enums: {
       app_role:
@@ -1484,6 +1580,12 @@ export type Database = {
         | "agent"
         | "service_provider"
       assignment_role: "resident" | "landlord"
+      meter_installation_status:
+        | "not_installed"
+        | "scheduled"
+        | "installed"
+        | "failed"
+        | "replaced"
       meter_token_action:
         | "credit"
         | "key_change"
@@ -1635,6 +1737,13 @@ export const Constants = {
         "service_provider",
       ],
       assignment_role: ["resident", "landlord"],
+      meter_installation_status: [
+        "not_installed",
+        "scheduled",
+        "installed",
+        "failed",
+        "replaced",
+      ],
       meter_token_action: [
         "credit",
         "key_change",

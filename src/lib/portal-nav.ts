@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BadgeDollarSign,
   BarChart3,
+  Bell,
   Briefcase,
   Building2,
   Cog,
@@ -96,6 +97,29 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Payment History", icon: Receipt, to: "/payment-history" },
         ],
       }
+    );
+  } else if (roles.includes("vendor")) {
+    groups.push(
+      {
+        heading: "MANAGEMENT",
+        items: [
+          { label: "Zone Management", icon: MapPin, to: "/vendor/zones" },
+          { label: "Meter Management", icon: Gauge, to: "/vendor/meters" },
+          { label: "Resident Management", icon: Users, to: "/vendor/residents" },
+          { label: "Meter Assignments", icon: ArrowLeftRight, to: "/vendor/assignments" },
+        ],
+      },
+      {
+        heading: "INSIGHTS",
+        items: [
+          { label: "Reports", icon: BarChart3, to: "/vendor/reports" },
+          { label: "Notifications", icon: Bell, to: "/vendor/notifications" },
+        ],
+      },
+      {
+        heading: "ACCOUNT",
+        items: [{ label: "My Profile", icon: UserCircle, to: "/vendor/profile" }],
+      },
     );
   } else {
     groups.push({
