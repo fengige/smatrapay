@@ -110,6 +110,16 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         ],
       },
       {
+        heading: "PREPAID METER OPERATIONS",
+        items: [
+          { label: "Meter Activation", icon: Power, to: "/vendor/activation" },
+          { label: "Token & Payments", icon: CreditCard, to: "/vendor/tokens" },
+          { label: "Meter Readings", icon: ClipboardList, to: "/vendor/readings" },
+          { label: "Maintenance / Service", icon: Wrench, to: "/vendor/service-requests" },
+          { label: "Installation Teams", icon: HardHat, to: "/vendor/teams" },
+        ],
+      },
+      {
         heading: "INSIGHTS",
         items: [
           { label: "Reports", icon: BarChart3, to: "/vendor/reports" },
