@@ -68,10 +68,20 @@ type Property = {
   country: string | null;
   status: string;
   property_type: string | null;
+  owner_type: "landlord" | "agent" | "vendor";
+  landlord_id: string | null;
   zone_id: number | null;
   route_id: number | null;
   street_id: number | null;
   created_at: string;
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    status: string | null;
+    profile_image: string | null;
+  } | null;
 };
 
 type Unit = {
@@ -201,8 +211,18 @@ function PropertiesPage() {
       const propertyUnits = unitsByProperty.get(property.id) ?? [];
       const propertyAssignments = propertyUnits.flatMap((u) => byUnit.get(u.id) ?? []);
       const currentAssignments = propertyAssignments.filter((a) => !a.end_date);
+      const owner = property.owner ?? null;
+      const ownerLabel =
+        property.owner_type === "agent"
+          ? "Agent"
+          : property.owner_type === "vendor"
+            ? "Vendor"
+            : "Landlord";
       return {
         property,
+        owner,
+        ownerLabel,
+        ownerName: owner?.name ?? owner?.email ?? "—",
         zoneName: property.zone_id ? (geoLabels.zoneMap.get(property.zone_id) ?? null) : null,
         routeName: property.route_id ? (geoLabels.routeMap.get(property.route_id) ?? null) : null,
         streetName: property.street_id
@@ -241,6 +261,8 @@ function PropertiesPage() {
         row.property.city,
         row.property.country,
         row.property.property_type,
+        row.ownerName,
+        row.ownerLabel,
         row.zoneName,
         row.routeName,
         row.streetName,
@@ -281,7 +303,8 @@ function PropertiesPage() {
       "Unit types",
       "Units",
       "Current residents",
-      "Current landlords",
+      "Owner",
+      "Owner type",
     ];
     const lines = filtered.map((row) => [
       row.property.name,
@@ -295,7 +318,8 @@ function PropertiesPage() {
       row.unitTypes.join(" | "),
       String(row.units.length),
       String(row.residents),
-      String(row.landlords),
+      row.ownerName === "—" ? "" : row.ownerName,
+      row.ownerLabel,
     ]);
     const csv = [header, ...lines]
       .map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -481,7 +505,7 @@ function PropertiesPage() {
                   <th className="px-4 py-3 font-semibold">Unit Type</th>
                   <th className="px-4 py-3 font-semibold">Units</th>
                   <th className="px-4 py-3 font-semibold">Residents</th>
-                  <th className="px-4 py-3 font-semibold">Landlords</th>
+                  <th className="px-4 py-3 font-semibold">Owner</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
@@ -550,7 +574,36 @@ function PropertiesPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{row.units.length}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.residents}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.landlords}</td>
+                    <td className="px-4 py-3">
+                      {row.owner ? (
+                        <Link
+                          to={
+                            row.property.owner_type === "agent"
+                              ? "/agents/$id"
+                              : row.property.owner_type === "vendor"
+                                ? "/vendors/$id"
+                                : "/landlords/$id"
+                          }
+                          params={{ id: row.owner.id }}
+                          className="inline-flex flex-col gap-0.5 hover:underline"
+                        >
+                          <span className="font-medium text-foreground">{row.ownerName}</span>
+                          <span
+                            className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                              row.property.owner_type === "agent"
+                                ? "bg-blue-500/10 text-blue-600"
+                                : row.property.owner_type === "vendor"
+                                  ? "bg-purple-500/10 text-purple-600"
+                                  : "bg-amber-500/10 text-amber-600"
+                            }`}
+                          >
+                            {row.ownerLabel}
+                          </span>
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${

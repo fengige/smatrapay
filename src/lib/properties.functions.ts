@@ -149,7 +149,7 @@ export const listProperties = createServerFn({ method: "GET" })
 
     const { data: properties, error } = await supabase
       .from("properties")
-      .select("*")
+      .select("*, owner:landlord_id (id, name, email, phone, status, profile_image)")
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
 
