@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BadgeDollarSign,
   BarChart3,
+  Bell,
   Briefcase,
   Building2,
   Cog,
