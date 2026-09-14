@@ -109,11 +109,25 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
     );
     groups.push(
       {
+        heading: "TOKENS",
+        items: [{ label: "Token Management", icon: KeyRound, to: "/vendor/token-management" }],
+      },
+      {
         heading: "MANAGEMENT",
         items: [
-          { label: "Zone Management", icon: MapPin, to: "/vendor/zones" },
-          { label: "Meter Management", icon: Gauge, to: "/vendor/meters" },
           { label: "Resident Management", icon: Users, to: "/vendor/residents" },
+          { label: "Landlord Management", icon: Building2, to: "/vendor/landlords" },
+          { label: "Property Management", icon: Home, to: "/vendor/properties" },
+          { label: "Service Provider", icon: Briefcase, to: "/vendor/service-providers" },
+        ],
+      },
+      {
+        heading: "UNITS",
+        items: [
+          { label: "Meter Management", icon: Gauge, to: "/vendor/meters" },
+          { label: "Meter Suppliers", icon: Gauge, to: "/vendor/meter-suppliers" },
+          { label: "Price Management", icon: BadgeDollarSign, to: "/vendor/price-management" },
+          { label: "Zone Management", icon: MapPin, to: "/vendor/zones" },
           { label: "Meter Assignments", icon: ArrowLeftRight, to: "/vendor/assignments" },
         ],
       },
