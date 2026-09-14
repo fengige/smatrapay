@@ -90,6 +90,7 @@ import { Route as AuthenticatedVendorResidentsResidentIdRouteImport } from './ro
 import { Route as AuthenticatedVendorServiceRequestsIndexRouteImport } from './routes/_authenticated/vendor/service-requests.index'
 import { Route as AuthenticatedVendorServiceRequestsRequestIdRouteImport } from './routes/_authenticated/vendor/service-requests.$requestId'
 import { Route as AuthenticatedVendorTeamsIndexRouteImport } from './routes/_authenticated/vendor/teams.index'
+import { Route as AuthenticatedVendorTeamsTeamIdRouteImport } from './routes/_authenticated/vendor/teams.$teamId'
 import { Route as AuthenticatedVendorZonesIndexRouteImport } from './routes/_authenticated/vendor/zones.index'
 import { Route as AuthenticatedVendorZonesZoneIdRouteImport } from './routes/_authenticated/vendor/zones.$zoneId'
 import { Route as AuthenticatedVendorsIdIndexRouteImport } from './routes/_authenticated/vendors.$id.index'
@@ -569,6 +570,12 @@ const AuthenticatedVendorTeamsIndexRoute =
     path: '/vendor/teams/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorTeamsTeamIdRoute =
+  AuthenticatedVendorTeamsTeamIdRouteImport.update({
+    id: '/vendor/teams/$teamId',
+    path: '/vendor/teams/$teamId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorZonesIndexRoute =
   AuthenticatedVendorZonesIndexRouteImport.update({
     id: '/vendor/zones/',
@@ -711,6 +718,7 @@ export interface FileRoutesByFullPath {
   '/vendor/meters/bulk-add': typeof AuthenticatedVendorMetersBulkAddRoute
   '/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
   '/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
+  '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
   '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
@@ -797,6 +805,7 @@ export interface FileRoutesByTo {
   '/vendor/meters/bulk-add': typeof AuthenticatedVendorMetersBulkAddRoute
   '/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
   '/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
+  '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
   '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
@@ -893,6 +902,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/meters/bulk-add': typeof AuthenticatedVendorMetersBulkAddRoute
   '/_authenticated/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
   '/_authenticated/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
+  '/_authenticated/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/_authenticated/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
   '/_authenticated/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
   '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
@@ -989,6 +999,7 @@ export interface FileRouteTypes {
     | '/vendor/meters/bulk-add'
     | '/vendor/residents/$residentId'
     | '/vendor/service-requests/$requestId'
+    | '/vendor/teams/$teamId'
     | '/vendor/zones/$zoneId'
     | '/vendors/$id/edit'
     | '/api/public/mpesa/b2c-result'
@@ -1075,6 +1086,7 @@ export interface FileRouteTypes {
     | '/vendor/meters/bulk-add'
     | '/vendor/residents/$residentId'
     | '/vendor/service-requests/$requestId'
+    | '/vendor/teams/$teamId'
     | '/vendor/zones/$zoneId'
     | '/vendors/$id/edit'
     | '/api/public/mpesa/b2c-result'
@@ -1170,6 +1182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/meters/bulk-add'
     | '/_authenticated/vendor/residents/$residentId'
     | '/_authenticated/vendor/service-requests/$requestId'
+    | '/_authenticated/vendor/teams/$teamId'
     | '/_authenticated/vendor/zones/$zoneId'
     | '/_authenticated/vendors/$id/edit'
     | '/api/public/mpesa/b2c-result'
@@ -1779,6 +1792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorTeamsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/teams/$teamId': {
+      id: '/_authenticated/vendor/teams/$teamId'
+      path: '/vendor/teams/$teamId'
+      fullPath: '/vendor/teams/$teamId'
+      preLoaderRoute: typeof AuthenticatedVendorTeamsTeamIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/zones/': {
       id: '/_authenticated/vendor/zones/'
       path: '/vendor/zones'
@@ -2061,6 +2081,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorMetersBulkAddRoute: typeof AuthenticatedVendorMetersBulkAddRoute
   AuthenticatedVendorResidentsResidentIdRoute: typeof AuthenticatedVendorResidentsResidentIdRoute
   AuthenticatedVendorServiceRequestsRequestIdRoute: typeof AuthenticatedVendorServiceRequestsRequestIdRoute
+  AuthenticatedVendorTeamsTeamIdRoute: typeof AuthenticatedVendorTeamsTeamIdRoute
   AuthenticatedVendorZonesZoneIdRoute: typeof AuthenticatedVendorZonesZoneIdRoute
   AuthenticatedVendorMetersIndexRoute: typeof AuthenticatedVendorMetersIndexRoute
   AuthenticatedVendorResidentsIndexRoute: typeof AuthenticatedVendorResidentsIndexRoute
@@ -2116,6 +2137,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedVendorResidentsResidentIdRoute,
   AuthenticatedVendorServiceRequestsRequestIdRoute:
     AuthenticatedVendorServiceRequestsRequestIdRoute,
+  AuthenticatedVendorTeamsTeamIdRoute: AuthenticatedVendorTeamsTeamIdRoute,
   AuthenticatedVendorZonesZoneIdRoute: AuthenticatedVendorZonesZoneIdRoute,
   AuthenticatedVendorMetersIndexRoute: AuthenticatedVendorMetersIndexRoute,
   AuthenticatedVendorResidentsIndexRoute:
