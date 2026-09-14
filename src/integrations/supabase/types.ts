@@ -106,6 +106,194 @@ export type Database = {
         }
         Relationships: []
       }
+      installation_attachments: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          meter_id: string
+          storage_path: string
+          uploaded_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          meter_id: string
+          storage_path: string
+          uploaded_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          meter_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_attachments_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "meter_installation_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_attachments_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installation_team_members: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          status: string
+          team_id: string
+          updated_at: string
+          user_id: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          role?: string
+          status?: string
+          team_id: string
+          updated_at?: string
+          user_id?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          status?: string
+          team_id?: string
+          updated_at?: string
+          user_id?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "installation_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installation_teams: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          leader_name: string | null
+          name: string
+          phone: string | null
+          status: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          leader_name?: string | null
+          name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          leader_name?: string | null
+          name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
+      meter_activation_history: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          meter_id: string
+          new_status: string | null
+          notes: string | null
+          previous_status: string | null
+          reason: string | null
+          vendor_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          meter_id: string
+          new_status?: string | null
+          notes?: string | null
+          previous_status?: string | null
+          reason?: string | null
+          vendor_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          meter_id?: string
+          new_status?: string | null
+          notes?: string | null
+          previous_status?: string | null
+          reason?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_activation_history_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meter_audit_logs: {
         Row: {
           action: string
@@ -134,6 +322,201 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "meter_audit_logs_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meter_installation_assignments: {
+        Row: {
+          assigned_by: string | null
+          assignment_number: string
+          completed_at: string | null
+          completion_notes: string | null
+          completion_reading: number | null
+          created_at: string
+          id: string
+          installer_name: string | null
+          location: string | null
+          meter_id: string
+          notes: string | null
+          resident_id: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          status: Database["public"]["Enums"]["installation_assignment_status"]
+          team_id: string | null
+          updated_at: string
+          vendor_id: string
+          zone_id: number | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          assignment_number?: string
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_reading?: number | null
+          created_at?: string
+          id?: string
+          installer_name?: string | null
+          location?: string | null
+          meter_id: string
+          notes?: string | null
+          resident_id?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: Database["public"]["Enums"]["installation_assignment_status"]
+          team_id?: string | null
+          updated_at?: string
+          vendor_id: string
+          zone_id?: number | null
+        }
+        Update: {
+          assigned_by?: string | null
+          assignment_number?: string
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_reading?: number | null
+          created_at?: string
+          id?: string
+          installer_name?: string | null
+          location?: string | null
+          meter_id?: string
+          notes?: string | null
+          resident_id?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: Database["public"]["Enums"]["installation_assignment_status"]
+          team_id?: string | null
+          updated_at?: string
+          vendor_id?: string
+          zone_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_installation_assignments_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meter_installation_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "installation_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meter_installation_assignments_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["zone_id"]
+          },
+        ]
+      }
+      meter_reading_attachments: {
+        Row: {
+          created_at: string
+          id: string
+          meter_id: string
+          reading_id: string
+          storage_path: string
+          uploaded_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meter_id: string
+          reading_id: string
+          storage_path: string
+          uploaded_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meter_id?: string
+          reading_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_reading_attachments_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meter_reading_attachments_reading_id_fkey"
+            columns: ["reading_id"]
+            isOneToOne: false
+            referencedRelation: "meter_readings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meter_readings: {
+        Row: {
+          consumption: number | null
+          created_at: string
+          id: string
+          meter_id: string
+          notes: string | null
+          previous_reading: number | null
+          reading: number
+          reading_date: string
+          reading_type: string
+          recorded_by: string | null
+          resident_id: string | null
+          status: string
+          unit: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          consumption?: number | null
+          created_at?: string
+          id?: string
+          meter_id: string
+          notes?: string | null
+          previous_reading?: number | null
+          reading: number
+          reading_date?: string
+          reading_type?: string
+          recorded_by?: string | null
+          resident_id?: string | null
+          status?: string
+          unit?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          consumption?: number | null
+          created_at?: string
+          id?: string
+          meter_id?: string
+          notes?: string | null
+          previous_reading?: number | null
+          reading?: number
+          reading_date?: string
+          reading_type?: string
+          recorded_by?: string | null
+          resident_id?: string | null
+          status?: string
+          unit?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_readings_meter_id_fkey"
             columns: ["meter_id"]
             isOneToOne: false
             referencedRelation: "meters"
@@ -994,6 +1377,163 @@ export type Database = {
           },
         ]
       }
+      service_request_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: string
+          note: string | null
+          request_id: string
+          storage_path: string | null
+          to_status: string | null
+          vendor_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id: string
+          storage_path?: string | null
+          to_status?: string | null
+          vendor_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          storage_path?: string | null
+          to_status?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_requests: {
+        Row: {
+          assigned_at: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          final_reading: number | null
+          id: string
+          issue_type: string
+          meter_id: string | null
+          meter_status_after: string | null
+          parts_used: string | null
+          preferred_date: string | null
+          priority: Database["public"]["Enums"]["service_priority"]
+          request_number: string
+          resident_acknowledged: boolean
+          resident_id: string | null
+          resolution: string | null
+          status: Database["public"]["Enums"]["service_request_status"]
+          team_id: string | null
+          technician_id: string | null
+          updated_at: string
+          vendor_id: string
+          work_performed: string | null
+          zone_id: number | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          final_reading?: number | null
+          id?: string
+          issue_type: string
+          meter_id?: string | null
+          meter_status_after?: string | null
+          parts_used?: string | null
+          preferred_date?: string | null
+          priority?: Database["public"]["Enums"]["service_priority"]
+          request_number?: string
+          resident_acknowledged?: boolean
+          resident_id?: string | null
+          resolution?: string | null
+          status?: Database["public"]["Enums"]["service_request_status"]
+          team_id?: string | null
+          technician_id?: string | null
+          updated_at?: string
+          vendor_id: string
+          work_performed?: string | null
+          zone_id?: number | null
+        }
+        Update: {
+          assigned_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          final_reading?: number | null
+          id?: string
+          issue_type?: string
+          meter_id?: string | null
+          meter_status_after?: string | null
+          parts_used?: string | null
+          preferred_date?: string | null
+          priority?: Database["public"]["Enums"]["service_priority"]
+          request_number?: string
+          resident_acknowledged?: boolean
+          resident_id?: string | null
+          resolution?: string | null
+          status?: Database["public"]["Enums"]["service_request_status"]
+          team_id?: string | null
+          technician_id?: string | null
+          updated_at?: string
+          vendor_id?: string
+          work_performed?: string | null
+          zone_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "installation_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "installation_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["zone_id"]
+          },
+        ]
+      }
       sms_configurations: {
         Row: {
           account_id: string | null
@@ -1580,6 +2120,14 @@ export type Database = {
         | "agent"
         | "service_provider"
       assignment_role: "resident" | "landlord"
+      installation_assignment_status:
+        | "pending"
+        | "scheduled"
+        | "assigned"
+        | "in_progress"
+        | "completed"
+        | "failed"
+        | "cancelled"
       meter_installation_status:
         | "not_installed"
         | "scheduled"
@@ -1595,6 +2143,14 @@ export type Database = {
       meter_utility_type: "Electricity" | "Water" | "Gas" | "Multi-Utility"
       payment_status: "pending" | "completed" | "failed" | "cancelled"
       property_status: "active" | "archived"
+      service_priority: "low" | "medium" | "high" | "critical"
+      service_request_status:
+        | "open"
+        | "assigned"
+        | "in_progress"
+        | "resolved"
+        | "closed"
+        | "cancelled"
       sms_delivery_status: "queued" | "sent" | "failed"
       supplier_status: "Active" | "Inactive" | "Suspended"
       unit_status: "vacant" | "occupied" | "maintenance" | "archived"
@@ -1737,6 +2293,15 @@ export const Constants = {
         "service_provider",
       ],
       assignment_role: ["resident", "landlord"],
+      installation_assignment_status: [
+        "pending",
+        "scheduled",
+        "assigned",
+        "in_progress",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
       meter_installation_status: [
         "not_installed",
         "scheduled",
@@ -1754,6 +2319,15 @@ export const Constants = {
       meter_utility_type: ["Electricity", "Water", "Gas", "Multi-Utility"],
       payment_status: ["pending", "completed", "failed", "cancelled"],
       property_status: ["active", "archived"],
+      service_priority: ["low", "medium", "high", "critical"],
+      service_request_status: [
+        "open",
+        "assigned",
+        "in_progress",
+        "resolved",
+        "closed",
+        "cancelled",
+      ],
       sms_delivery_status: ["queued", "sent", "failed"],
       supplier_status: ["Active", "Inactive", "Suspended"],
       unit_status: ["vacant", "occupied", "maintenance", "archived"],

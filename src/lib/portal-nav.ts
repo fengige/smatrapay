@@ -5,6 +5,10 @@ import {
   Bell,
   Briefcase,
   Building2,
+  ClipboardList,
+  HardHat,
+  Power,
+  Wrench,
   Cog,
   CreditCard,
   Gauge,
@@ -107,6 +111,16 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Meter Management", icon: Gauge, to: "/vendor/meters" },
           { label: "Resident Management", icon: Users, to: "/vendor/residents" },
           { label: "Meter Assignments", icon: ArrowLeftRight, to: "/vendor/assignments" },
+        ],
+      },
+      {
+        heading: "PREPAID METER OPERATIONS",
+        items: [
+          { label: "Meter Activation", icon: Power, to: "/vendor/activation" },
+          { label: "Token & Payments", icon: CreditCard, to: "/vendor/tokens" },
+          { label: "Meter Readings", icon: ClipboardList, to: "/vendor/readings" },
+          { label: "Maintenance / Service", icon: Wrench, to: "/vendor/service-requests" },
+          { label: "Installation Teams", icon: HardHat, to: "/vendor/teams" },
         ],
       },
       {
