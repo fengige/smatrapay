@@ -46,12 +46,18 @@ function VendorPriceManagement() {
   const { data, isLoading, error } = useVendorScope();
   const queryClient = useQueryClient();
   const applyPrices = useServerFn(setVendorMeterPrices);
+  const fetchRequests = useServerFn(listVendorPriceRequests);
+  const requestsQuery = useQuery({
+    queryKey: ["vendor-price-requests"],
+    queryFn: () => fetchRequests(),
+  });
 
   const [q, setQ] = useState("");
   const [type, setType] = useState("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [mode, setMode] = useState<string>("set");
   const [value, setValue] = useState("");
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
