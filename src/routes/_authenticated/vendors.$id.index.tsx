@@ -531,16 +531,20 @@ function VendorDetailPage() {
               {tab === "paymethods" && (
                 <>
                   <PaymentAccountsPanel
+                    methods={allMethods}
                     lockUser={{
                       id,
                       name: vendor?.name || vendor?.email || "this vendor",
                       type: "vendor",
                     }}
                   />
-                  <UserMpesaConfigSection
-                    ownerId={id}
-                    ownerName={vendor?.name || vendor?.email || "this vendor"}
-                  />
+                  {mpesaMethods.length > 0 && (
+                    <UserMpesaConfigSection
+                      ownerId={id}
+                      ownerName={vendor?.name || vendor?.email || "this vendor"}
+                      methods={mpesaMethods}
+                    />
+                  )}
                 </>
               )}
 
