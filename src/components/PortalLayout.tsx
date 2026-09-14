@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listNotifications } from "@/lib/notifications.functions";
 import { Bell, LogOut, Menu, MessageSquare, Search, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,6 +79,16 @@ export function PortalLayout({
 }) {
   const signOut = usePortalSignOut();
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isVendor = roles.includes("vendor") && !roles.includes("admin");
+  const fetchNotifications = useServerFn(listNotifications);
+  const { data: notificationData } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => fetchNotifications(),
+    enabled: isVendor,
+    refetchInterval: 60_000,
+  });
+  const unread = notificationData?.unread ?? 0;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const groups = navGroupsForRoles(roles);
   const portalName = roles[0] ? roleLabel(roles[0]) : "Portal";
