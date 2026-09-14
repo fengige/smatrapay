@@ -33,6 +33,10 @@ export const Route = createFileRoute("/_authenticated/meters/bulk-add")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    supplier: typeof search['supplier'] === "string" ? (search['supplier'] as string) : undefined,
+    from: typeof search['from'] === "string" ? (search['from'] as string) : undefined,
+  }),
   component: BulkAddMetersPage,
 });
 
