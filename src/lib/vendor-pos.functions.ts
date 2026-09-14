@@ -268,13 +268,13 @@ export const sellVendorPosToken = createServerFn({ method: "POST" })
       );
     }
 
-    await logVendorAction(supabase, vendorId, "VENDOR_TOKEN_REQUESTED", {
-      type: "pos_sale",
-      meter_id: data.meter_id,
-      amount: data.amount,
-      units: data.units,
-      method: data.method,
-    });
+    await logVendorAction(
+      supabase,
+      vendorId,
+      "VENDOR_TOKEN_REQUESTED",
+      { type: "pos_sale", id: data.meter_id },
+      { amount: data.amount, units: data.units, method: data.method },
+    );
 
     const [serialized] = await serialize(supabase, [row]);
     return serialized!;
