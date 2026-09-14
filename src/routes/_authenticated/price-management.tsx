@@ -88,6 +88,31 @@ function PriceManagementPage() {
     queryFn: () => fetchPriceLogs(),
   });
 
+  const fetchPriceRequests = useServerFn(listPriceChangeRequests);
+  const reviewRequests = useServerFn(reviewPriceChangeRequests);
+  const { data: priceRequests = [] } = useQuery({
+    queryKey: ["price-change-requests"],
+    queryFn: () => fetchPriceRequests(),
+  });
+  const pendingRequests = priceRequests.filter((r) => r.status === "pending");
+  const reviewedRequests = priceRequests.filter((r) => r.status !== "pending").slice(0, 10);
+
+  const reviewMutation = useMutation({
+    mutationFn: (vars: { ids: string[]; decision: "approved" | "rejected" }) =>
+      reviewRequests({ data: vars }),
+    onSuccess: (res, vars) => {
+      toast.success(
+        vars.decision === "approved"
+          ? `Approved — ${res.applied} meter price(s) updated`
+          : `Rejected ${res.rejected} request(s)`,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["price-change-requests"] });
+      void queryClient.invalidateQueries({ queryKey: ["meters"] });
+      void queryClient.invalidateQueries({ queryKey: ["price-audit"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not review the request"),
+  });
+
   const meters = data?.meters ?? [];
   const suppliers = data?.suppliers ?? [];
   const properties = useMemo(() => {
