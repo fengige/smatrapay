@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/vendor/meters/$meterId")({
   errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
 });
 
-const TABS = ["Meter info", "Resident", "Zone", "Activity"] as const;
+const TABS = ["Meter info", "Resident", "Zone", "Activity", "Activation history", "Readings"] as const;
 
 function VendorMeterDetail() {
   const access = Route.useLoaderData();
@@ -58,6 +58,18 @@ function VendorMeterDetail() {
     queryKey: ["vendor-meter-activity", meterId],
     queryFn: () => fetchActivity({ data: { meter_id: meterId, limit: 50 } }),
   });
+
+  const fetchActivation = useServerFn(listActivationHistory);
+  const activationHistory = useQuery({
+    queryKey: ["vendor-activation-history", meterId],
+    queryFn: () => fetchActivation({ data: { meter_id: meterId } }),
+  });
+  const fetchReadings = useServerFn(listVendorReadings);
+  const readings = useQuery({
+    queryKey: ["vendor-readings", meterId],
+    queryFn: () => fetchReadings({ data: { meter_id: meterId } }),
+  });
+
 
   const saveInstall = useServerFn(updateVendorInstallation);
   const meter = data?.meters.find((m) => m.id === meterId);
