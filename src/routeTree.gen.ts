@@ -70,6 +70,7 @@ import { Route as AuthenticatedVendorPosShiftReportRouteImport } from './routes/
 import { Route as AuthenticatedVendorProfileRouteImport } from './routes/_authenticated/vendor/profile'
 import { Route as AuthenticatedVendorReadingsRouteImport } from './routes/_authenticated/vendor/readings'
 import { Route as AuthenticatedVendorReportsRouteImport } from './routes/_authenticated/vendor/reports'
+import { Route as AuthenticatedVendorTokenManagementRouteImport } from './routes/_authenticated/vendor/token-management'
 import { Route as AuthenticatedVendorTokensRouteImport } from './routes/_authenticated/vendor/tokens'
 import { Route as AuthenticatedVendorsIndexRouteImport } from './routes/_authenticated/vendors.index'
 import { Route as AuthenticatedVendorsNewRouteImport } from './routes/_authenticated/vendors.new'
@@ -453,6 +454,12 @@ const AuthenticatedVendorReportsRoute =
     path: '/vendor/reports',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorTokenManagementRoute =
+  AuthenticatedVendorTokenManagementRouteImport.update({
+    id: '/vendor/token-management',
+    path: '/vendor/token-management',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorTokensRoute =
   AuthenticatedVendorTokensRouteImport.update({
     id: '/vendor/tokens',
@@ -711,6 +718,7 @@ export interface FileRoutesByFullPath {
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
   '/vendor/tokens': typeof AuthenticatedVendorTokensRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
@@ -800,6 +808,7 @@ export interface FileRoutesByTo {
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
   '/vendor/tokens': typeof AuthenticatedVendorTokensRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
@@ -899,6 +908,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/_authenticated/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/_authenticated/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/_authenticated/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
   '/_authenticated/vendor/tokens': typeof AuthenticatedVendorTokensRoute
   '/_authenticated/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
@@ -998,6 +1008,7 @@ export interface FileRouteTypes {
     | '/vendor/profile'
     | '/vendor/readings'
     | '/vendor/reports'
+    | '/vendor/token-management'
     | '/vendor/tokens'
     | '/vendors/new'
     | '/agents/'
@@ -1087,6 +1098,7 @@ export interface FileRouteTypes {
     | '/vendor/profile'
     | '/vendor/readings'
     | '/vendor/reports'
+    | '/vendor/token-management'
     | '/vendor/tokens'
     | '/vendors/new'
     | '/agents'
@@ -1185,6 +1197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/profile'
     | '/_authenticated/vendor/readings'
     | '/_authenticated/vendor/reports'
+    | '/_authenticated/vendor/token-management'
     | '/_authenticated/vendor/tokens'
     | '/_authenticated/vendors/new'
     | '/_authenticated/agents/'
@@ -1677,6 +1690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/token-management': {
+      id: '/_authenticated/vendor/token-management'
+      path: '/vendor/token-management'
+      fullPath: '/vendor/token-management'
+      preLoaderRoute: typeof AuthenticatedVendorTokenManagementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/tokens': {
       id: '/_authenticated/vendor/tokens'
       path: '/vendor/tokens'
@@ -2113,6 +2133,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorProfileRoute: typeof AuthenticatedVendorProfileRoute
   AuthenticatedVendorReadingsRoute: typeof AuthenticatedVendorReadingsRoute
   AuthenticatedVendorReportsRoute: typeof AuthenticatedVendorReportsRoute
+  AuthenticatedVendorTokenManagementRoute: typeof AuthenticatedVendorTokenManagementRoute
   AuthenticatedVendorTokensRoute: typeof AuthenticatedVendorTokensRoute
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
@@ -2170,6 +2191,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorProfileRoute: AuthenticatedVendorProfileRoute,
   AuthenticatedVendorReadingsRoute: AuthenticatedVendorReadingsRoute,
   AuthenticatedVendorReportsRoute: AuthenticatedVendorReportsRoute,
+  AuthenticatedVendorTokenManagementRoute:
+    AuthenticatedVendorTokenManagementRoute,
   AuthenticatedVendorTokensRoute: AuthenticatedVendorTokensRoute,
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
