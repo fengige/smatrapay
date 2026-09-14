@@ -103,6 +103,10 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       }
     );
   } else if (roles.includes("vendor")) {
+    groups[0]!.items.push(
+      { label: "POS", to: "/vendor/pos", icon: ShoppingCart },
+      { label: "POS Shift Report", to: "/vendor/pos-shift-report", icon: Receipt },
+    );
     groups.push(
       {
         heading: "MANAGEMENT",
