@@ -171,6 +171,96 @@ export const listVendorSuppliers = createServerFn({ method: "GET" })
     return { suppliers: (data ?? []) as { id: string; company_name: string; utility_type: string }[] };
   });
 
+export type VendorUnitOption = {
+  id: string;
+  unit_label: string;
+  property_id: string | null;
+  property_name: string | null;
+  zone_id: number | null;
+  zone_name: string | null;
+  resident_id: string | null;
+  resident_name: string | null;
+  meter_number: string | null;
+};
+
+/** Units inside the vendor's zones, usable as assignment targets. RLS scopes the list. */
+export const listVendorUnits = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertVendor } = await import("@/lib/vendor.server");
+    const vendorId = await assertVendor(context as never);
+    const supabase = context.supabase as any;
+
+    const [unitsRes, metersRes] = await Promise.all([
+      supabase.from("units").select("id, unit_number, property_id").limit(2000),
+      supabase.from("meters").select("id, meter_number, unit_id").not("unit_id", "is", null).limit(2000),
+    ]);
+    if (unitsRes.error) throw new Error(unitsRes.error.message);
+    const units = (unitsRes.data ?? []) as any[];
+    const meterByUnit = new Map<string, any>();
+    for (const m of (metersRes.data ?? []) as any[]) meterByUnit.set(m.unit_id, m);
+
+    const propertyIds = [...new Set(units.map((u) => u.property_id).filter(Boolean))] as string[];
+    const unitIds = units.map((u) => u.id) as string[];
+
+    const [propsRes, assignRes] = await Promise.all([
+      propertyIds.length
+        ? supabase.from("properties").select("id, name, zone_id").in("id", propertyIds)
+        : Promise.resolve({ data: [] as any[] }),
+      unitIds.length
+        ? supabase
+            .from("unit_assignments")
+            .select("unit_id, user_id, end_date, start_date")
+            .in("unit_id", unitIds)
+            .eq("role", "resident")
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const properties = new Map<string, any>();
+    for (const p of (propsRes.data ?? []) as any[]) properties.set(p.id, p);
+    const zoneIds = [
+      ...new Set([...properties.values()].map((p) => p.zone_id).filter((z) => z != null)),
+    ] as number[];
+    const assignments = ((assignRes.data ?? []) as any[]).filter((a) => !a.end_date);
+    const residentIds = [...new Set(assignments.map((a) => a.user_id))] as string[];
+
+    const [zonesRes, usersRes] = await Promise.all([
+      zoneIds.length
+        ? supabase.from("zones").select("zone_id, zone_name").in("zone_id", zoneIds)
+        : Promise.resolve({ data: [] as any[] }),
+      residentIds.length
+        ? supabase.from("users").select("id, name, email").in("id", residentIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const zones = new Map<number, any>();
+    for (const z of (zonesRes.data ?? []) as any[]) zones.set(z.zone_id, z);
+    const users = new Map<string, any>();
+    for (const u of (usersRes.data ?? []) as any[]) users.set(u.id, u);
+    const residentByUnit = new Map<string, any>();
+    for (const a of assignments) if (!residentByUnit.has(a.unit_id)) residentByUnit.set(a.unit_id, a);
+
+    const options: VendorUnitOption[] = units.map((u) => {
+      const property = u.property_id ? properties.get(u.property_id) : undefined;
+      const zone = property?.zone_id != null ? zones.get(property.zone_id) : undefined;
+      const assignment = residentByUnit.get(u.id);
+      const resident = assignment ? users.get(assignment.user_id) : undefined;
+      const meter = meterByUnit.get(u.id);
+      return {
+        id: u.id,
+        unit_label: `Unit ${u.unit_number}`,
+        property_id: property?.id ?? null,
+        property_name: property?.name ?? null,
+        zone_id: zone?.zone_id ?? null,
+        zone_name: zone?.zone_name ?? null,
+        resident_id: resident?.id ?? null,
+        resident_name: resident?.name ?? resident?.email ?? null,
+        meter_number: meter?.meter_number ?? null,
+      };
+    });
+    options.sort((a, b) => (a.property_name ?? "").localeCompare(b.property_name ?? ""));
+    return { vendorId, units: options };
+  });
+
 /* ------------------------------------------------------------------ *
  * Meter writes
  * ------------------------------------------------------------------ */
