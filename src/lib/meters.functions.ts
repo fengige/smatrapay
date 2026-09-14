@@ -33,6 +33,7 @@ export type MeterRow = {
   initial_reading: number;
   price_per_unit: number;
   status: string;
+  installation_status: string | null;
   sgc: number | null;
   krn: number | null;
   ti: number | null;
@@ -43,7 +44,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, supplier_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, supplier_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
