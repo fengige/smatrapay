@@ -1217,6 +1217,7 @@ export type Database = {
           landlord_id: string | null
           name: string
           number_of_units: number | null
+          owner_type: string
           postal_code: string | null
           property_type: string
           route_id: number | null
@@ -1242,6 +1243,7 @@ export type Database = {
           landlord_id?: string | null
           name: string
           number_of_units?: number | null
+          owner_type?: string
           postal_code?: string | null
           property_type?: string
           route_id?: number | null
@@ -1267,6 +1269,7 @@ export type Database = {
           landlord_id?: string | null
           name?: string
           number_of_units?: number | null
+          owner_type?: string
           postal_code?: string | null
           property_type?: string
           route_id?: number | null
