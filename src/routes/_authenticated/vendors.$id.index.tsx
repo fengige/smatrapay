@@ -30,9 +30,10 @@ import {
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
+import { listPaymentMethods, type PaymentMethodRow } from "@/lib/payment-methods.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { PaymentAccountsPanel } from "@/components/PaymentAccountsPanel";
-import { UserMpesaConfigSection } from "@/components/UserMpesaConfigSection";
+import { UserMpesaConfigSection, isMpesa } from "@/components/UserMpesaConfigSection";
 import { MeterAssignmentPanel } from "@/components/MeterAssignmentPanel";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { ProfileImageHistory } from "@/components/ProfileImageHistory";
