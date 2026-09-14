@@ -417,6 +417,68 @@ export type Database = {
           },
         ]
       }
+      meter_price_change_requests: {
+        Row: {
+          created_at: string
+          current_price: number
+          id: string
+          meter_id: string
+          mode: string
+          note: string | null
+          requested_by: string | null
+          requested_price: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          value: number
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_price: number
+          id?: string
+          meter_id: string
+          mode: string
+          note?: string | null
+          requested_by?: string | null
+          requested_price: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          value: number
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          current_price?: number
+          id?: string
+          meter_id?: string
+          mode?: string
+          note?: string | null
+          requested_by?: string | null
+          requested_price?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          value?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_price_change_requests_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meter_reading_attachments: {
         Row: {
           created_at: string
