@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, ArrowRight, Building2, Check, ChevronDown, ClipboardCheck, Loader2, MapPin, Save, UserRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { listLandlords } from "@/lib/properties.functions";
+import { listPropertyOwners } from "@/lib/properties.functions";
 import { listZones, listRoutes, listStreets } from "@/lib/zones.functions";
 import { COUNTRY_GROUPS, STATE_MAP } from "@/lib/countries";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -12,7 +12,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 
 const STEPS = [
   { id: "property", label: "Property Details", icon: Building2 },
-  { id: "landlord", label: "Landlord Details", icon: UserRound },
+  { id: "owner", label: "Owner Details", icon: UserRound },
   { id: "address", label: "Address", icon: MapPin },
   { id: "review", label: "Review & Submit", icon: ClipboardCheck },
 ] as const;
@@ -49,6 +49,7 @@ export type PropertyFormValues = {
   description: string;
   status: "active" | "archived";
   number_of_units: string;
+  owner_type: "landlord" | "agent" | "vendor";
   landlord_id: string;
   zone_id: string;
   route_id: string;
@@ -70,6 +71,7 @@ export const emptyProperty: PropertyFormValues = {
   description: "",
   status: "active",
   number_of_units: "",
+  owner_type: "landlord",
   landlord_id: "",
   zone_id: "",
   route_id: "",
@@ -237,13 +239,19 @@ export function PropertyForm({
   const [values, setValues] = useState<PropertyFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [step, setStep] = useState(0);
-  const fetchLandlords = useServerFn(listLandlords);
-  const landlordsQuery = useQuery({
-    queryKey: ["landlord-options"],
-    queryFn: () => fetchLandlords(),
+  const fetchOwners = useServerFn(listPropertyOwners);
+  const ownersQuery = useQuery({
+    queryKey: ["owner-options", values.owner_type],
+    queryFn: () => fetchOwners({ data: { owner_type: values.owner_type } } as never),
   });
-  const landlords = landlordsQuery.data?.landlords ?? [];
-  const selectedLandlord = landlords.find((l) => l.id === values.landlord_id);
+  const owners = (ownersQuery.data?.owners ?? []) as {
+    id: string;
+    name: string | null;
+    email: string | null;
+  }[];
+  const selectedOwner = owners.find((l) => l.id === values.landlord_id);
+  const ownerLabel =
+    values.owner_type === "agent" ? "Agent" : values.owner_type === "vendor" ? "Vendor" : "Landlord";
 
   // Cascading Zone → Route → Street selection for zone-type properties.
   const fetchZones = useServerFn(listZones);
@@ -328,7 +336,7 @@ export function PropertyForm({
           next["number_of_units"] = "Number of units is too large";
       }
       if (Number(values.number_of_units) > 0 && !values.landlord_id.trim()) {
-        next["landlord_id"] = "A landlord is required when units are greater than 0";
+        next["landlord_id"] = `A ${ownerLabel.toLowerCase()} is required when units are greater than 0`;
       }
     }
     if (index === 2) {
@@ -738,8 +746,8 @@ export function PropertyForm({
             <UserRound className="size-5" />
           </span>
           <div>
-            <h2 className="text-base font-bold text-foreground">Landlord details</h2>
-            <p className="text-xs text-muted-foreground">Assign the number of units and the managing landlord.</p>
+            <h2 className="text-base font-bold text-foreground">Owner details</h2>
+            <p className="text-xs text-muted-foreground">Assign the number of units and the property owner.</p>
           </div>
         </div>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -755,17 +763,33 @@ export function PropertyForm({
               placeholder="e.g. 24"
             />
           </Field>
-          <Field label="Select Landlord" error={errors["landlord_id"]}>
+          <Field label="Select Owner" error={errors["owner_type"]}>
+            <select
+              value={values.owner_type}
+              onChange={(e) => {
+                set("owner_type", e.target.value as PropertyFormValues["owner_type"]);
+                set("landlord_id", "");
+              }}
+              className={inputClass}
+            >
+              <option value="landlord">Landlord</option>
+              <option value="agent">Agent</option>
+              <option value="vendor">Vendor</option>
+            </select>
+          </Field>
+          <Field label={`Select ${ownerLabel}`} error={errors["landlord_id"]}>
             <select
               value={values.landlord_id}
               onChange={(e) => set("landlord_id", e.target.value)}
               className={inputClass}
-              disabled={landlordsQuery.isLoading}
+              disabled={ownersQuery.isLoading}
             >
               <option value="">
-                {landlordsQuery.isLoading ? "Loading landlords…" : "Select landlord"}
+                {ownersQuery.isLoading
+                  ? `Loading ${ownerLabel.toLowerCase()}s…`
+                  : `Select ${ownerLabel.toLowerCase()}`}
               </option>
-              {landlords.map((l) => (
+              {owners.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name || l.email || l.id}
                 </option>
@@ -773,9 +797,9 @@ export function PropertyForm({
             </select>
           </Field>
         </div>
-        {!landlordsQuery.isLoading && landlords.length === 0 && (
+        {!ownersQuery.isLoading && owners.length === 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
-            No landlord accounts found. Add one from Landlord Management first.
+            No {ownerLabel.toLowerCase()} accounts found. Add one from {ownerLabel} Management first.
           </p>
         )}
       </section>
@@ -921,7 +945,7 @@ export function PropertyForm({
 
           <div>
             <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
-              <UserRound className="size-4" /> Landlord Details
+              <UserRound className="size-4" /> Owner Details
             </h3>
             <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -929,9 +953,13 @@ export function PropertyForm({
                 <dd className="mt-1 text-sm font-medium text-foreground">{values.number_of_units || "0"}</dd>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Assigned Landlord</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Owner Type</dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">{ownerLabel}</dd>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Assigned {ownerLabel}</dt>
                 <dd className="mt-1 text-sm font-medium text-foreground">
-                  {selectedLandlord ? selectedLandlord.name || selectedLandlord.email : values.landlord_id ? "Unknown" : "—"}
+                  {selectedOwner ? selectedOwner.name || selectedOwner.email : values.landlord_id ? "Unknown" : "—"}
                 </dd>
               </div>
             </dl>
