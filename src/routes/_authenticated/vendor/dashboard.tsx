@@ -81,6 +81,33 @@ function VendorDashboard() {
             ))}
           </div>
 
+          <section>
+            <h2 className="mb-2 text-sm font-bold text-foreground">Prepaid meter operations</h2>
+            {opsSummary.isLoading ? (
+              <LoadingBlock label="Loading prepaid figures…" />
+            ) : opsSummary.error ? (
+              <ErrorBlock message={(opsSummary.error as Error).message} />
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard label="Active prepaid meters" value={opsSummary.data?.active_meters ?? 0} />
+                <StatCard label="Pending activation" value={opsSummary.data?.pending_activation ?? 0} />
+                <StatCard label="Recent token requests" value={opsSummary.data?.recent_token_requests ?? 0} />
+                <StatCard label="Total token transactions" value={opsSummary.data?.tokens_total ?? 0} />
+                <StatCard
+                  label="Payments today"
+                  value={(opsSummary.data?.payments_today ?? 0).toLocaleString()}
+                />
+                <StatCard label="Open service requests" value={opsSummary.data?.open_service_requests ?? 0} />
+                <StatCard label="Pending installations" value={opsSummary.data?.pending_installations ?? 0} />
+                <StatCard
+                  label="Completed installations"
+                  value={opsSummary.data?.completed_installations ?? 0}
+                />
+              </div>
+            )}
+          </section>
+
+
           <section className="rounded-2xl border border-border bg-card">
             <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <h2 className="text-sm font-bold text-foreground">Assigned zones</h2>
