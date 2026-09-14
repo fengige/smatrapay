@@ -212,7 +212,18 @@ function VendorReports() {
         formatDate(m.installation_date),
       ]),
     };
-  }, [report, meters, residents, data]);
+  }, [
+    report,
+    meters,
+    residents,
+    data,
+    zone,
+    from,
+    to,
+    tokensQuery.data,
+    readingsQuery.data,
+    requestsQuery.data,
+  ]);
 
   return (
     <DashboardShell
