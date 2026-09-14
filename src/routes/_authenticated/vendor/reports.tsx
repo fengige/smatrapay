@@ -37,11 +37,25 @@ export const Route = createFileRoute("/_authenticated/vendor/reports")({
   errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
 });
 
-const REPORTS = ["Meters", "Residents", "Zones", "Installations"] as const;
+const REPORTS = [
+  "Meters",
+  "Residents",
+  "Zones",
+  "Installations",
+  "Transactions",
+  "Readings",
+  "Maintenance",
+] as const;
 
 function VendorReports() {
   const access = Route.useLoaderData();
   const { data, isLoading, error } = useVendorScope();
+  const fetchTokens = useServerFn(listVendorTokens);
+  const fetchReadings = useServerFn(listVendorReadings);
+  const fetchRequests = useServerFn(listServiceRequests);
+  const tokensQuery = useQuery({ queryKey: ["vendor-tokens", "", ""], queryFn: () => fetchTokens({ data: {} }) });
+  const readingsQuery = useQuery({ queryKey: ["vendor-readings"], queryFn: () => fetchReadings({ data: {} }) });
+  const requestsQuery = useQuery({ queryKey: ["vendor-service-requests"], queryFn: () => fetchRequests() });
   const [report, setReport] = useState<(typeof REPORTS)[number]>("Meters");
   const [zone, setZone] = useState("all");
   const [type, setType] = useState("all");
