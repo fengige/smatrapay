@@ -46,6 +46,7 @@ import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_au
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
 import { Route as AuthenticatedMeterSuppliersIndexRouteImport } from './routes/_authenticated/meter-suppliers.index'
+import { Route as AuthenticatedMeterSuppliersSupplierIdRouteImport } from './routes/_authenticated/meter-suppliers.$supplierId'
 import { Route as AuthenticatedMetersIndexRouteImport } from './routes/_authenticated/meters.index'
 import { Route as AuthenticatedMetersMeterIdRouteImport } from './routes/_authenticated/meters.$meterId'
 import { Route as AuthenticatedMetersBulkAddRouteImport } from './routes/_authenticated/meters.bulk-add'
@@ -290,6 +291,12 @@ const AuthenticatedMeterSuppliersIndexRoute =
   AuthenticatedMeterSuppliersIndexRouteImport.update({
     id: '/meter-suppliers/',
     path: '/meter-suppliers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMeterSuppliersSupplierIdRoute =
+  AuthenticatedMeterSuppliersSupplierIdRouteImport.update({
+    id: '/meter-suppliers/$supplierId',
+    path: '/meter-suppliers/$supplierId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMetersIndexRoute =
@@ -546,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
+  '/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
   '/meters/bulk-add': typeof AuthenticatedMetersBulkAddRoute
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
@@ -615,6 +623,7 @@ export interface FileRoutesByTo {
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
+  '/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
   '/meters/bulk-add': typeof AuthenticatedMetersBulkAddRoute
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
@@ -692,6 +701,7 @@ export interface FileRoutesById {
   '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
+  '/_authenticated/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
   '/_authenticated/meters/bulk-add': typeof AuthenticatedMetersBulkAddRoute
   '/_authenticated/properties/new': typeof AuthenticatedPropertiesNewRoute
@@ -770,6 +780,7 @@ export interface FileRouteTypes {
     | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
+    | '/meter-suppliers/$supplierId'
     | '/meters/$meterId'
     | '/meters/bulk-add'
     | '/properties/new'
@@ -839,6 +850,7 @@ export interface FileRouteTypes {
     | '/configurations/social-media'
     | '/landlord/dashboard'
     | '/landlords/new'
+    | '/meter-suppliers/$supplierId'
     | '/meters/$meterId'
     | '/meters/bulk-add'
     | '/properties/new'
@@ -915,6 +927,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations/social-media'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
+    | '/_authenticated/meter-suppliers/$supplierId'
     | '/_authenticated/meters/$meterId'
     | '/_authenticated/meters/bulk-add'
     | '/_authenticated/properties/new'
@@ -1235,6 +1248,13 @@ declare module '@tanstack/react-router' {
       path: '/meter-suppliers'
       fullPath: '/meter-suppliers/'
       preLoaderRoute: typeof AuthenticatedMeterSuppliersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/meter-suppliers/$supplierId': {
+      id: '/_authenticated/meter-suppliers/$supplierId'
+      path: '/meter-suppliers/$supplierId'
+      fullPath: '/meter-suppliers/$supplierId'
+      preLoaderRoute: typeof AuthenticatedMeterSuppliersSupplierIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/meters/': {
@@ -1679,6 +1699,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
+  AuthenticatedMeterSuppliersSupplierIdRoute: typeof AuthenticatedMeterSuppliersSupplierIdRoute
   AuthenticatedMetersMeterIdRoute: typeof AuthenticatedMetersMeterIdRoute
   AuthenticatedMetersBulkAddRoute: typeof AuthenticatedMetersBulkAddRoute
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
@@ -1712,6 +1733,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,
   AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
+  AuthenticatedMeterSuppliersSupplierIdRoute:
+    AuthenticatedMeterSuppliersSupplierIdRoute,
   AuthenticatedMetersMeterIdRoute: AuthenticatedMetersMeterIdRoute,
   AuthenticatedMetersBulkAddRoute: AuthenticatedMetersBulkAddRoute,
   AuthenticatedResidentDashboardRoute: AuthenticatedResidentDashboardRoute,
