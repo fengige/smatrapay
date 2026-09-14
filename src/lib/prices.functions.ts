@@ -181,3 +181,130 @@ export const listPriceAuditLogs = createServerFn({ method: "GET" })
 
     return batches.slice(0, 50);
   });
+
+export type PriceChangeRequest = {
+  id: string;
+  created_at: string;
+  reviewed_at: string | null;
+  meter_id: string;
+  meter_number: string;
+  meter_type: string | null;
+  vendor_id: string;
+  vendor_name: string | null;
+  current_price: number;
+  requested_price: number;
+  status: string;
+  note: string | null;
+  review_note: string | null;
+};
+
+/** Vendor-submitted price change requests awaiting (or past) admin review. */
+export const listPriceChangeRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PriceChangeRequest[]> => {
+    await assertAdmin(context as never);
+    const { supabase } = context as any;
+
+    const { data: rows, error } = await supabase
+      .from("meter_price_change_requests")
+      .select(
+        "id, created_at, reviewed_at, meter_id, vendor_id, current_price, requested_price, status, note, review_note",
+      )
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) throw new Error(error.message);
+    const list = (rows ?? []) as any[];
+
+    const meterIds = [...new Set(list.map((r) => r.meter_id))];
+    const vendorIds = [...new Set(list.map((r) => r.vendor_id))];
+
+    let meters: any[] = [];
+    if (meterIds.length) {
+      const { data } = await supabase.from("meters").select("id, meter_number, type").in("id", meterIds);
+      meters = data ?? [];
+    }
+    let vendors: any[] = [];
+    if (vendorIds.length) {
+      const { data } = await supabase.from("users").select("id, name, email").in("id", vendorIds);
+      vendors = data ?? [];
+    }
+    const meterById = new Map(meters.map((m) => [m.id as string, m]));
+    const vendorById = new Map(vendors.map((v) => [v.id as string, v]));
+
+    return list.map((r) => {
+      const m = meterById.get(r.meter_id);
+      const v = vendorById.get(r.vendor_id);
+      return {
+        id: r.id,
+        created_at: r.created_at,
+        reviewed_at: r.reviewed_at ?? null,
+        meter_id: r.meter_id,
+        meter_number: (m?.meter_number as string) ?? "Deleted meter",
+        meter_type: (m?.type as string) ?? null,
+        vendor_id: r.vendor_id,
+        vendor_name: (v?.name as string) || (v?.email as string) || null,
+        current_price: Number(r.current_price ?? 0),
+        requested_price: Number(r.requested_price ?? 0),
+        status: r.status,
+        note: r.note ?? null,
+        review_note: r.review_note ?? null,
+      };
+    });
+  });
+
+const reviewInput = z.object({
+  ids: z.array(uuid).min(1).max(500),
+  decision: z.enum(["approved", "rejected"]),
+  note: z.string().trim().max(500).optional().nullable(),
+});
+
+/** Approve or reject vendor price requests. Approval writes the new meter price. */
+export const reviewPriceChangeRequests = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => reviewInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context as any;
+
+    const { data: rows, error } = await supabase
+      .from("meter_price_change_requests")
+      .select("id, meter_id, requested_price, status")
+      .in("id", data.ids)
+      .eq("status", "pending");
+    if (error) throw new Error(error.message);
+    const list = (rows ?? []) as any[];
+    if (!list.length) return { applied: 0, rejected: 0 };
+
+    let applied = 0;
+    if (data.decision === "approved") {
+      const byPrice = new Map<number, string[]>();
+      for (const r of list) {
+        const price = Number(r.requested_price ?? 0);
+        byPrice.set(price, [...(byPrice.get(price) ?? []), r.meter_id as string]);
+      }
+      for (const [price, meterIds] of byPrice) {
+        const { error: upErr } = await supabase
+          .from("meters")
+          .update({ price_per_unit: price } as never)
+          .in("id", meterIds);
+        if (upErr) throw new Error(upErr.message);
+        applied += meterIds.length;
+      }
+    }
+
+    const { error: reviewErr } = await supabase
+      .from("meter_price_change_requests")
+      .update({
+        status: data.decision,
+        reviewed_by: userId,
+        reviewed_at: new Date().toISOString(),
+        review_note: data.note ?? null,
+      } as never)
+      .in(
+        "id",
+        list.map((r) => r.id),
+      );
+    if (reviewErr) throw new Error(reviewErr.message);
+
+    return { applied, rejected: data.decision === "rejected" ? list.length : 0 };
+  });
