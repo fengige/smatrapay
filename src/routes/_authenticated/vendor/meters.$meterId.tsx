@@ -11,6 +11,7 @@ import {
   listVendorMeterActivity,
   updateVendorInstallation,
 } from "@/lib/vendor.functions";
+import { listActivationHistory, listVendorReadings } from "@/lib/vendor-ops.functions";
 import {
   EmptyState,
   ErrorBlock,
