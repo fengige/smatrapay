@@ -33,6 +33,10 @@ export const Route = createFileRoute("/_authenticated/meters/bulk-add")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    supplier: typeof search['supplier'] === "string" ? (search['supplier'] as string) : undefined,
+    from: typeof search['from'] === "string" ? (search['from'] as string) : undefined,
+  }),
   component: BulkAddMetersPage,
 });
 
@@ -87,6 +91,7 @@ type DuplicateMode = "reject" | "skip" | "update";
 
 function BulkAddMetersPage() {
   const navigate = useNavigate();
+  const { supplier: lockedSupplierId, from: returnTo } = Route.useSearch();
   const queryClient = useQueryClient();
   const loadOptions = useServerFn(listBulkMeterOptions);
   const bulkCreate = useServerFn(bulkAddMeters);
@@ -116,7 +121,10 @@ function BulkAddMetersPage() {
 
 
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas" | "">("");
-  const [supplierId, setSupplierId] = useState("");
+  const [supplierId, setSupplierId] = useState(lockedSupplierId ?? "");
+  const lockedSupplierName = lockedSupplierId
+    ? (suppliers.find((s) => s.id === lockedSupplierId)?.name ?? "Selected supplier")
+    : null;
   const [ownerType, setOwnerType] = useState<"" | "vendor" | "landlord" | "agent">("");
   const [ownerId, setOwnerId] = useState("");
   const [count, setCount] = useState("1");
@@ -156,8 +164,19 @@ function BulkAddMetersPage() {
   };
 
   const isDirty =
-    Boolean(meterType || supplierId || ownerType || ownerId) ||
+    Boolean(meterType || (supplierId && !lockedSupplierId) || ownerType || ownerId) ||
     rows.some((r) => Object.values(r).some((v) => v.trim()));
+
+  const goBack = () => {
+    if (returnTo) {
+      void navigate({ to: returnTo });
+      return;
+    }
+    void navigate({
+      to: "/meters",
+      search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
+    });
+  };
 
   const attemptLeave = () => {
     if (mutation.isPending) return;
@@ -167,10 +186,7 @@ function BulkAddMetersPage() {
       !window.confirm("You have unsaved meter entries. Leave this page and discard them?")
     )
       return;
-    void navigate({
-      to: "/meters",
-      search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
-    });
+    goBack();
   };
 
   useEffect(() => {
@@ -363,13 +379,17 @@ function BulkAddMetersPage() {
   useEffect(() => {
     if (!result) return;
     const timer = setTimeout(() => {
+      if (returnTo) {
+        void navigate({ to: returnTo });
+        return;
+      }
       void navigate({
         to: "/meters",
         search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" },
       });
     }, 2500);
     return () => clearTimeout(timer);
-  }, [result, navigate]);
+  }, [result, navigate, returnTo]);
 
   const openReview = () => {
     setSubmitted(true);
@@ -465,22 +485,29 @@ function BulkAddMetersPage() {
               <label className="mb-1 block text-sm font-medium" htmlFor="supplier">
                 Supplier <span className="text-destructive">*</span>
               </label>
-              <SearchSelect
-                id="supplier"
-                value={supplierId}
-                onChange={setSupplierId}
-                invalid={submitted && Boolean(headerErrors.supplierId)}
-                placeholder="Search and select supplier"
-                emptyLabel="No suppliers match your search"
-                options={suppliers.map((s) => ({
-                  id: s.id,
-                  label: s.name,
-                  hint: s.utility_type || undefined,
-                }))}
-              />
+              {lockedSupplierId ? (
+                <div className="flex h-11 items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-3 text-sm">
+                  <span className="truncate font-medium">{lockedSupplierName}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">Locked</span>
+                </div>
+              ) : (
+                <SearchSelect
+                  id="supplier"
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  invalid={submitted && Boolean(headerErrors.supplierId)}
+                  placeholder="Search and select supplier"
+                  emptyLabel="No suppliers match your search"
+                  options={suppliers.map((s) => ({
+                    id: s.id,
+                    label: s.name,
+                    hint: s.utility_type || undefined,
+                  }))}
+                />
+              )}
 
               {show(headerErrors.supplierId)}
-              {!suppliers.length && (
+              {!lockedSupplierId && !suppliers.length && (
                 <span className="mt-1 block text-xs text-muted-foreground">
                   No active suppliers yet — add one in Meter Suppliers.
                 </span>
@@ -750,10 +777,10 @@ function BulkAddMetersPage() {
           </ul>
           <button
             type="button"
-            onClick={() => navigate({ to: "/meters", search: { page: 1, limit: 10, type: "all", landlordId: "all", q: "", status: "all" } })}
+            onClick={goBack}
             className="mt-4 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
-            Go to Meter Management
+            {returnTo ? "Back to supplier" : "Go to Meter Management"}
           </button>
         </div>
       )}

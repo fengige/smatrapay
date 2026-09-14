@@ -25,6 +25,7 @@ export type SupplierRow = {
   phone_number: string | null;
   website_url: string | null;
   status: SupplierStatus;
+  logo_url: string | null;
   meter_count: number;
   created_at: string;
   updated_at: string;
@@ -60,7 +61,7 @@ const supplierInput = z.object({
 const supplierUpdateInput = supplierInput.extend({ id: uuid });
 
 const SUPPLIER_COLUMNS =
-  "id, company_name, license_number, utility_type, contact_name, email, phone_number, website_url, status, created_at, updated_at";
+  "id, company_name, license_number, utility_type, contact_name, email, phone_number, website_url, status, logo_url, created_at, updated_at";
 
 export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -91,6 +92,7 @@ export const listSuppliers = createServerFn({ method: "GET" })
       phone_number: r.phone_number ?? null,
       website_url: r.website_url ?? null,
       status: r.status,
+      logo_url: r.logo_url ?? null,
       meter_count: counts.get(r.id) ?? 0,
       created_at: r.created_at,
       updated_at: r.updated_at,
@@ -143,6 +145,135 @@ export const setSupplierStatus = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("meter_suppliers")
       .update({ status: data.status } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ------------------------------------------------------------------ *
+ * Supplier details page
+ * ------------------------------------------------------------------ */
+
+export type SupplierMeterRow = {
+  id: string;
+  meter_number: string;
+  serial_number: string;
+  type: string;
+  status: string;
+  owner_type: "Vendor" | "Landlord" | "Agent" | null;
+  owner_name: string | null;
+  sgc: number | null;
+  krn: number | null;
+  ti: number | null;
+  ea: number | null;
+  ken: number | null;
+  created_at: string;
+};
+
+export type SupplierDetail = SupplierRow & {
+  meters: SupplierMeterRow[];
+};
+
+/** Full record for one supplier, plus every meter that belongs to it. */
+export const getSupplier = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase } = context;
+
+    const { data: row, error } = await supabase
+      .from("meter_suppliers")
+      .select(SUPPLIER_COLUMNS)
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Supplier not found");
+
+    const { data: meterRows, error: mErr } = await supabase
+      .from("meters")
+      .select(
+        "id, meter_number, serial_number, type, status, vendor_id, landlord_id, agent_id, sgc, krn, ti, ea, ken, created_at",
+      )
+      .eq("supplier_id", data.id)
+      .order("created_at", { ascending: false });
+    if (mErr) throw new Error(mErr.message);
+
+    const personIds = [
+      ...new Set(
+        (meterRows ?? [])
+          .flatMap((m: any) => [m.landlord_id, m.agent_id, m.vendor_id])
+          .filter((v: any): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v)),
+      ),
+    ];
+    let people: any[] = [];
+    if (personIds.length) {
+      const { data: users } = await supabase.from("users").select("id, name, email").in("id", personIds);
+      people = users ?? [];
+    }
+    const nameById = new Map(people.map((p) => [p.id, (p.name as string) || (p.email as string) || null]));
+
+    const meters: SupplierMeterRow[] = (meterRows ?? []).map((m: any) => {
+      let owner_type: SupplierMeterRow["owner_type"] = null;
+      let owner_name: string | null = null;
+      if (m.landlord_id) {
+        owner_type = "Landlord";
+        owner_name = nameById.get(m.landlord_id) ?? null;
+      } else if (m.agent_id) {
+        owner_type = "Agent";
+        owner_name = nameById.get(m.agent_id) ?? null;
+      } else if (m.vendor_id) {
+        owner_type = "Vendor";
+        owner_name = nameById.get(m.vendor_id) ?? (m.vendor_id as string);
+      }
+      return {
+        id: m.id,
+        meter_number: m.meter_number ?? "",
+        serial_number: m.serial_number ?? "",
+        type: String(m.type ?? "").toLowerCase(),
+        status: String(m.status ?? "active").toLowerCase(),
+        owner_type,
+        owner_name,
+        sgc: m.sgc ?? null,
+        krn: m.krn ?? null,
+        ti: m.ti ?? null,
+        ea: m.ea ?? null,
+        ken: m.ken ?? null,
+        created_at: m.created_at,
+      };
+    });
+
+    const supplier: SupplierDetail = {
+      id: row.id,
+      company_name: row.company_name ?? "",
+      license_number: row.license_number ?? null,
+      utility_type: row.utility_type,
+      contact_name: row.contact_name ?? null,
+      email: row.email ?? null,
+      phone_number: row.phone_number ?? null,
+      website_url: row.website_url ?? null,
+      status: row.status,
+      logo_url: row.logo_url ?? null,
+      meter_count: meters.length,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      meters,
+    };
+
+    return { supplier };
+  });
+
+/** Save or clear the supplier's profile photo. */
+export const setSupplierLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: uuid, logo_url: z.string().trim().max(2000).nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { error } = await context.supabase
+      .from("meter_suppliers")
+      .update({ logo_url: data.logo_url || null } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
