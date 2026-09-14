@@ -43,6 +43,7 @@ const propertyInput = z.object({
   subtype: text(60),
   number_of_units: z.number().int().min(0).max(100000).nullable().optional(),
   landlord_id: uuid.nullable().optional(),
+  owner_type: z.enum(["landlord", "agent", "vendor"]).optional(),
   zone_id: z.number().int().positive().nullable().optional(),
   route_id: z.number().int().positive().nullable().optional(),
   street_id: z.number().int().positive().nullable().optional(),
