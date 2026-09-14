@@ -90,7 +90,7 @@ const propertyInput = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["landlord_id"],
-        message: "A landlord is required when units are greater than 0",
+        message: "An owner is required when units are greater than 0",
       });
     }
     const countryOptions = COUNTRY_OPTIONS;
