@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { listVendorResidentPayments } from "@/lib/vendor.functions";
+import { listVendorTokens } from "@/lib/vendor-ops.functions";
 import {
   EmptyState,
   ErrorBlock,
@@ -59,6 +60,17 @@ function VendorResidentDetail() {
 
   const records = (data?.residents ?? []).filter((r) => r.id === residentId);
   const resident = records[0];
+
+  const fetchTokens = useServerFn(listVendorTokens);
+  const { data: tokenData } = useQuery({
+    queryKey: ["vendor-resident-tokens", residentId],
+    queryFn: () => fetchTokens({ data: {} }),
+  });
+  const residentUnitIds = new Set(records.map((r) => r.unit_id).filter(Boolean) as string[]);
+  const residentMeters = (data?.meters ?? []).filter((m) => m.unit_id && residentUnitIds.has(m.unit_id));
+  const residentMeterIds = new Set(residentMeters.map((m) => m.id));
+  const residentTokens = (tokenData?.tokens ?? []).filter((t) => residentMeterIds.has(t.meter_id));
+
 
   return (
     <DashboardShell
