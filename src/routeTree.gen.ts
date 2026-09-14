@@ -66,7 +66,9 @@ import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_au
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
 import { Route as AuthenticatedVendorProfileRouteImport } from './routes/_authenticated/vendor/profile'
+import { Route as AuthenticatedVendorReadingsRouteImport } from './routes/_authenticated/vendor/readings'
 import { Route as AuthenticatedVendorReportsRouteImport } from './routes/_authenticated/vendor/reports'
+import { Route as AuthenticatedVendorTokensRouteImport } from './routes/_authenticated/vendor/tokens'
 import { Route as AuthenticatedVendorsIndexRouteImport } from './routes/_authenticated/vendors.index'
 import { Route as AuthenticatedVendorsNewRouteImport } from './routes/_authenticated/vendors.new'
 import { Route as AuthenticatedZonesIndexRouteImport } from './routes/_authenticated/zones.index'
@@ -422,10 +424,22 @@ const AuthenticatedVendorProfileRoute =
     path: '/vendor/profile',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorReadingsRoute =
+  AuthenticatedVendorReadingsRouteImport.update({
+    id: '/vendor/readings',
+    path: '/vendor/readings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorReportsRoute =
   AuthenticatedVendorReportsRouteImport.update({
     id: '/vendor/reports',
     path: '/vendor/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVendorTokensRoute =
+  AuthenticatedVendorTokensRouteImport.update({
+    id: '/vendor/tokens',
+    path: '/vendor/tokens',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendorsIndexRoute =
@@ -652,7 +666,9 @@ export interface FileRoutesByFullPath {
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
+  '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/vendor/tokens': typeof AuthenticatedVendorTokensRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
   '/configurations/': typeof AuthenticatedConfigurationsIndexRoute
@@ -733,7 +749,9 @@ export interface FileRoutesByTo {
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
+  '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/vendor/tokens': typeof AuthenticatedVendorTokensRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
   '/configurations': typeof AuthenticatedConfigurationsIndexRoute
@@ -824,7 +842,9 @@ export interface FileRoutesById {
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/_authenticated/vendor/profile': typeof AuthenticatedVendorProfileRoute
+  '/_authenticated/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/_authenticated/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/_authenticated/vendor/tokens': typeof AuthenticatedVendorTokensRoute
   '/_authenticated/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
   '/_authenticated/configurations/': typeof AuthenticatedConfigurationsIndexRoute
@@ -915,7 +935,9 @@ export interface FileRouteTypes {
     | '/vendor/dashboard'
     | '/vendor/notifications'
     | '/vendor/profile'
+    | '/vendor/readings'
     | '/vendor/reports'
+    | '/vendor/tokens'
     | '/vendors/new'
     | '/agents/'
     | '/configurations/'
@@ -996,7 +1018,9 @@ export interface FileRouteTypes {
     | '/vendor/dashboard'
     | '/vendor/notifications'
     | '/vendor/profile'
+    | '/vendor/readings'
     | '/vendor/reports'
+    | '/vendor/tokens'
     | '/vendors/new'
     | '/agents'
     | '/configurations'
@@ -1086,7 +1110,9 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/vendor/notifications'
     | '/_authenticated/vendor/profile'
+    | '/_authenticated/vendor/readings'
     | '/_authenticated/vendor/reports'
+    | '/_authenticated/vendor/tokens'
     | '/_authenticated/vendors/new'
     | '/_authenticated/agents/'
     | '/_authenticated/configurations/'
@@ -1546,11 +1572,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/readings': {
+      id: '/_authenticated/vendor/readings'
+      path: '/vendor/readings'
+      fullPath: '/vendor/readings'
+      preLoaderRoute: typeof AuthenticatedVendorReadingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/reports': {
       id: '/_authenticated/vendor/reports'
       path: '/vendor/reports'
       fullPath: '/vendor/reports'
       preLoaderRoute: typeof AuthenticatedVendorReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/tokens': {
+      id: '/_authenticated/vendor/tokens'
+      path: '/vendor/tokens'
+      fullPath: '/vendor/tokens'
+      preLoaderRoute: typeof AuthenticatedVendorTokensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendors/': {
@@ -1950,7 +1990,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
   AuthenticatedVendorProfileRoute: typeof AuthenticatedVendorProfileRoute
+  AuthenticatedVendorReadingsRoute: typeof AuthenticatedVendorReadingsRoute
   AuthenticatedVendorReportsRoute: typeof AuthenticatedVendorReportsRoute
+  AuthenticatedVendorTokensRoute: typeof AuthenticatedVendorTokensRoute
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
   AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
@@ -1998,7 +2040,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
   AuthenticatedVendorProfileRoute: AuthenticatedVendorProfileRoute,
+  AuthenticatedVendorReadingsRoute: AuthenticatedVendorReadingsRoute,
   AuthenticatedVendorReportsRoute: AuthenticatedVendorReportsRoute,
+  AuthenticatedVendorTokensRoute: AuthenticatedVendorTokensRoute,
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
   AuthenticatedPaymentMethodsIndexRoute: AuthenticatedPaymentMethodsIndexRoute,
