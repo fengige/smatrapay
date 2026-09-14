@@ -6,20 +6,23 @@ import { ChevronDown, Loader2, Smartphone } from "lucide-react";
 import { listPaymentMethods, type PaymentMethodRow } from "@/lib/payment-methods.functions";
 import { MpesaConfigPanel } from "@/components/MpesaConfigPanel";
 
-function isMpesa(m: PaymentMethodRow) {
+export function isMpesa(m: PaymentMethodRow) {
   return /mpesa|m-pesa|daraja/i.test(`${m.code} ${m.name}`);
 }
 
 /**
  * Per-user M-Pesa (Daraja) gateway settings shown on the landlord / agent /
  * vendor detail pages so each user can hold their own credentials.
+ * Hidden entirely unless an MPESA payment method has been added.
  */
 export function UserMpesaConfigSection({
   ownerId,
   ownerName,
+  methods: methodsProp,
 }: {
   ownerId: string;
   ownerName: string;
+  methods?: PaymentMethodRow[];
 }) {
   const fetchMethods = useServerFn(listPaymentMethods);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -27,11 +30,12 @@ export function UserMpesaConfigSection({
   const { data, isLoading } = useQuery({
     queryKey: ["payment-methods"],
     queryFn: () => fetchMethods(),
+    enabled: methodsProp === undefined,
   });
 
-  const methods = ((data?.methods ?? []) as PaymentMethodRow[]).filter(isMpesa);
+  const methods = (methodsProp ?? ((data?.methods ?? []) as PaymentMethodRow[])).filter(isMpesa);
 
-  if (isLoading) {
+  if (methodsProp === undefined && isLoading) {
     return (
       <div className="py-8 text-center text-muted-foreground">
         <Loader2 className="mx-auto size-5 animate-spin" />
