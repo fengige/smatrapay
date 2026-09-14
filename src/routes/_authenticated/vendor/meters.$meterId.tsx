@@ -334,6 +334,66 @@ function VendorMeterDetail() {
               )}
             </div>
           )}
+
+          {tab === "Activation history" && (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              {(activationHistory.data?.entries ?? []).length === 0 ? (
+                <EmptyState
+                  title="No activation records"
+                  message="This meter has not been activated or deactivated yet."
+                />
+              ) : (
+                <ul className="space-y-2">
+                  {(activationHistory.data?.entries ?? []).map((e) => (
+                    <li key={e.id} className="rounded-xl border border-border p-3 text-sm">
+                      <p className="font-semibold text-foreground">{titleCase(e.action)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {e.previous_status ?? "—"} → {e.new_status ?? "—"} · {formatDate(e.created_at)}
+                        {e.actor_name ? ` · by ${e.actor_name}` : ""}
+                      </p>
+                      {e.reason && <p className="mt-1 text-sm text-muted-foreground">Reason: {e.reason}</p>}
+                      {e.notes && <p className="text-sm text-muted-foreground">{e.notes}</p>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {tab === "Readings" && (
+            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+              {(readings.data?.readings ?? []).length === 0 ? (
+                <EmptyState title="No readings" message="No readings have been recorded for this meter." />
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-2">Date</th>
+                      <th className="px-4 py-2">Reading</th>
+                      <th className="px-4 py-2">Previous</th>
+                      <th className="px-4 py-2">Consumption</th>
+                      <th className="px-4 py-2">Type</th>
+                      <th className="px-4 py-2">Recorded by</th>
+                      <th className="px-4 py-2">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(readings.data?.readings ?? []).map((r) => (
+                      <tr key={r.id} className="border-t border-border align-top">
+                        <td className="px-4 py-2 whitespace-nowrap">{formatDate(r.reading_date)}</td>
+                        <td className="px-4 py-2">{r.reading}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{r.previous_reading ?? "—"}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{r.consumption ?? "—"}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{titleCase(r.reading_type)}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{r.recorded_by_name ?? "—"}</td>
+                        <td className="px-4 py-2 text-xs text-muted-foreground">{r.notes ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       )}
     </DashboardShell>
