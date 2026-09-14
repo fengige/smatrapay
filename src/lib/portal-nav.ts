@@ -110,7 +110,10 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
     groups.push(
       {
         heading: "TOKENS",
-        items: [{ label: "Token Management", icon: KeyRound, to: "/vendor/token-management" }],
+        items: [
+          { label: "Token Management", icon: KeyRound, to: "/vendor/token-management" },
+          { label: "Token Ledger", icon: Receipt, to: "/vendor/token-ledger" },
+        ],
       },
       {
         heading: "MANAGEMENT",
