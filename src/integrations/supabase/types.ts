@@ -1991,6 +1991,7 @@ export type Database = {
       }
       users: {
         Row: {
+          address: string | null
           bio: string | null
           building: string | null
           created_at: string
@@ -1998,6 +1999,7 @@ export type Database = {
           email: string | null
           email_verified_at: string | null
           id: string
+          id_number: string | null
           move_in_date: string | null
           name: string | null
           notes: string | null
@@ -2012,6 +2014,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          address?: string | null
           bio?: string | null
           building?: string | null
           created_at?: string
@@ -2019,6 +2022,7 @@ export type Database = {
           email?: string | null
           email_verified_at?: string | null
           id: string
+          id_number?: string | null
           move_in_date?: string | null
           name?: string | null
           notes?: string | null
@@ -2033,6 +2037,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          address?: string | null
           bio?: string | null
           building?: string | null
           created_at?: string
@@ -2040,6 +2045,7 @@ export type Database = {
           email?: string | null
           email_verified_at?: string | null
           id?: string
+          id_number?: string | null
           move_in_date?: string | null
           name?: string | null
           notes?: string | null
