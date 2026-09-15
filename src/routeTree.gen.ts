@@ -91,6 +91,7 @@ import { Route as AuthenticatedResidentsIdIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedResidentsIdEditRouteImport } from './routes/_authenticated/residents.$id.edit'
 import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authenticated/users.$id.index'
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
+import { Route as AuthenticatedVendorLandlordsIndexRouteImport } from './routes/_authenticated/vendor/landlords.index'
 import { Route as AuthenticatedVendorMetersIndexRouteImport } from './routes/_authenticated/vendor/meters.index'
 import { Route as AuthenticatedVendorMetersMeterIdRouteImport } from './routes/_authenticated/vendor/meters.$meterId'
 import { Route as AuthenticatedVendorMetersBulkAddRouteImport } from './routes/_authenticated/vendor/meters.bulk-add'
@@ -584,6 +585,12 @@ const AuthenticatedUsersIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedUsersIdRoute,
   } as any)
+const AuthenticatedVendorLandlordsIndexRoute =
+  AuthenticatedVendorLandlordsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedVendorLandlordsRoute,
+  } as any)
 const AuthenticatedVendorMetersIndexRoute =
   AuthenticatedVendorMetersIndexRouteImport.update({
     id: '/vendor/meters/',
@@ -754,7 +761,7 @@ export interface FileRoutesByFullPath {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
-  '/vendor/landlords': typeof AuthenticatedVendorLandlordsRoute
+  '/vendor/landlords': typeof AuthenticatedVendorLandlordsRouteWithChildren
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -805,6 +812,7 @@ export interface FileRoutesByFullPath {
   '/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id/': typeof AuthenticatedUsersIdIndexRoute
+  '/vendor/landlords/': typeof AuthenticatedVendorLandlordsIndexRoute
   '/vendor/meters/': typeof AuthenticatedVendorMetersIndexRoute
   '/vendor/residents/': typeof AuthenticatedVendorResidentsIndexRoute
   '/vendor/service-requests/': typeof AuthenticatedVendorServiceRequestsIndexRoute
@@ -850,7 +858,6 @@ export interface FileRoutesByTo {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
-  '/vendor/landlords': typeof AuthenticatedVendorLandlordsRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -901,6 +908,7 @@ export interface FileRoutesByTo {
   '/properties/$id': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id': typeof AuthenticatedResidentsIdIndexRoute
   '/users/$id': typeof AuthenticatedUsersIdIndexRoute
+  '/vendor/landlords': typeof AuthenticatedVendorLandlordsIndexRoute
   '/vendor/meters': typeof AuthenticatedVendorMetersIndexRoute
   '/vendor/residents': typeof AuthenticatedVendorResidentsIndexRoute
   '/vendor/service-requests': typeof AuthenticatedVendorServiceRequestsIndexRoute
@@ -956,7 +964,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
-  '/_authenticated/vendor/landlords': typeof AuthenticatedVendorLandlordsRoute
+  '/_authenticated/vendor/landlords': typeof AuthenticatedVendorLandlordsRouteWithChildren
   '/_authenticated/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/_authenticated/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1007,6 +1015,7 @@ export interface FileRoutesById {
   '/_authenticated/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/_authenticated/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
   '/_authenticated/users/$id/': typeof AuthenticatedUsersIdIndexRoute
+  '/_authenticated/vendor/landlords/': typeof AuthenticatedVendorLandlordsIndexRoute
   '/_authenticated/vendor/meters/': typeof AuthenticatedVendorMetersIndexRoute
   '/_authenticated/vendor/residents/': typeof AuthenticatedVendorResidentsIndexRoute
   '/_authenticated/vendor/service-requests/': typeof AuthenticatedVendorServiceRequestsIndexRoute
@@ -1113,6 +1122,7 @@ export interface FileRouteTypes {
     | '/properties/$id/'
     | '/residents/$id/'
     | '/users/$id/'
+    | '/vendor/landlords/'
     | '/vendor/meters/'
     | '/vendor/residents/'
     | '/vendor/service-requests/'
@@ -1158,7 +1168,6 @@ export interface FileRouteTypes {
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
-    | '/vendor/landlords'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
     | '/vendor/pos'
@@ -1209,6 +1218,7 @@ export interface FileRouteTypes {
     | '/properties/$id'
     | '/residents/$id'
     | '/users/$id'
+    | '/vendor/landlords'
     | '/vendor/meters'
     | '/vendor/residents'
     | '/vendor/service-requests'
@@ -1314,6 +1324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/properties/$id/'
     | '/_authenticated/residents/$id/'
     | '/_authenticated/users/$id/'
+    | '/_authenticated/vendor/landlords/'
     | '/_authenticated/vendor/meters/'
     | '/_authenticated/vendor/residents/'
     | '/_authenticated/vendor/service-requests/'
@@ -1915,6 +1926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersIdEditRouteImport
       parentRoute: typeof AuthenticatedUsersIdRoute
     }
+    '/_authenticated/vendor/landlords/': {
+      id: '/_authenticated/vendor/landlords/'
+      path: '/'
+      fullPath: '/vendor/landlords/'
+      preLoaderRoute: typeof AuthenticatedVendorLandlordsIndexRouteImport
+      parentRoute: typeof AuthenticatedVendorLandlordsRoute
+    }
     '/_authenticated/vendor/meters/': {
       id: '/_authenticated/vendor/meters/'
       path: '/vendor/meters'
@@ -2218,6 +2236,21 @@ const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
 const AuthenticatedVendorsRouteWithChildren =
   AuthenticatedVendorsRoute._addFileChildren(AuthenticatedVendorsRouteChildren)
 
+interface AuthenticatedVendorLandlordsRouteChildren {
+  AuthenticatedVendorLandlordsIndexRoute: typeof AuthenticatedVendorLandlordsIndexRoute
+}
+
+const AuthenticatedVendorLandlordsRouteChildren: AuthenticatedVendorLandlordsRouteChildren =
+  {
+    AuthenticatedVendorLandlordsIndexRoute:
+      AuthenticatedVendorLandlordsIndexRoute,
+  }
+
+const AuthenticatedVendorLandlordsRouteWithChildren =
+  AuthenticatedVendorLandlordsRoute._addFileChildren(
+    AuthenticatedVendorLandlordsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
@@ -2247,7 +2280,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
-  AuthenticatedVendorLandlordsRoute: typeof AuthenticatedVendorLandlordsRoute
+  AuthenticatedVendorLandlordsRoute: typeof AuthenticatedVendorLandlordsRouteWithChildren
   AuthenticatedVendorMeterSuppliersRoute: typeof AuthenticatedVendorMeterSuppliersRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
   AuthenticatedVendorPosRoute: typeof AuthenticatedVendorPosRoute
@@ -2310,7 +2343,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
-  AuthenticatedVendorLandlordsRoute: AuthenticatedVendorLandlordsRoute,
+  AuthenticatedVendorLandlordsRoute:
+    AuthenticatedVendorLandlordsRouteWithChildren,
   AuthenticatedVendorMeterSuppliersRoute:
     AuthenticatedVendorMeterSuppliersRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
