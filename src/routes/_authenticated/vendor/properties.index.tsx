@@ -473,17 +473,28 @@ function VendorProperties() {
             </div>
           )}
 
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            options={LIMIT_OPTIONS}
-            onPage={setPage}
-            onPageSize={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3">
+            <select
+              className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {LIMIT_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n} per page
+                </option>
+              ))}
+            </select>
+            <Pagination
+              page={page}
+              pageCount={Math.max(1, Math.ceil(total / pageSize))}
+              total={total}
+              onPage={setPage}
+            />
+          </div>
         </div>
       </div>
 
