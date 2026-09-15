@@ -217,10 +217,10 @@ function VendorPropertyDetails() {
     return `https://www.google.com/maps/embed/v1/place?key=${mapsKey}&q=${encodeURIComponent(q)}`;
   }, [property]);
 
-  if (isLoading) return <DashboardShell role={access.role} title="Property Details"><LoadingBlock /></DashboardShell>;
+  if (isLoading) return <DashboardShell access={access} title="Property Details" description="Units, address, timeline, residents, owner and photos"><LoadingBlock /></DashboardShell>;
   if (error)
     return (
-      <DashboardShell role={access.role} title="Property Details">
+      <DashboardShell access={access} title="Property Details" description="Units, address, timeline, residents, owner and photos">
         <ErrorBlock message={(error as Error).message} />
       </DashboardShell>
     );
@@ -229,7 +229,7 @@ function VendorPropertyDetails() {
   const owner = data.owner as any;
 
   return (
-    <DashboardShell role={access.role} title="Property Details">
+    <DashboardShell access={access} title="Property Details" description="Units, address, timeline, residents, owner and photos">
       <div className="space-y-5">
         <nav className="text-xs text-muted-foreground">
           <Link to="/vendor/dashboard" className="hover:underline">
