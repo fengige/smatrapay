@@ -63,8 +63,8 @@ async function scopeUnits(supabase: Client) {
     : { data: [] as any[] };
 
   const zoneMap = new Map((zones ?? []).map((z: any) => [z.zone_id, z]));
-  const propertyMap = new Map(
-    propertyRows.map((p) => [
+  const propertyMap = new Map<string, any>(
+    propertyRows.map((p): [string, any] => [
       p.id,
       {
         ...p,
@@ -73,7 +73,9 @@ async function scopeUnits(supabase: Client) {
       },
     ]),
   );
-  const unitMap = new Map(unitRows.map((u) => [u.id, { ...u, property: propertyMap.get(u.property_id) ?? null }]));
+  const unitMap = new Map<string, any>(
+    unitRows.map((u): [string, any] => [u.id, { ...u, property: propertyMap.get(u.property_id) ?? null }]),
+  );
   return { unitMap, propertyMap, zoneMap };
 }
 
@@ -134,7 +136,7 @@ export const listVendorResidents = createServerFn({ method: "GET" })
           .in("id", residentIds)
       : { data: [] as any[] };
 
-    const { unitMap } = await scopeUnits(supabase);
+    const { unitMap } = await scopeUnits(supabase as never);
 
     const { data: meters } = await supabase.from("meters").select("id, meter_number, unit_id");
     const metersByUnit = new Map<string, string[]>();
@@ -216,7 +218,7 @@ export const listVendorAssignableUnits = createServerFn({ method: "GET" })
     const { supabase } = context;
     await assertVendor(context as never);
 
-    const { unitMap } = await scopeUnits(supabase);
+    const { unitMap } = await scopeUnits(supabase as never);
     const { data: assignments } = await supabase
       .from("unit_assignments")
       .select("unit_id, user_id, end_date, role")
@@ -277,7 +279,7 @@ export const getVendorResident = createServerFn({ method: "GET" })
       .eq("role", "resident")
       .order("start_date", { ascending: false });
 
-    const { unitMap } = await scopeUnits(supabase);
+    const { unitMap } = await scopeUnits(supabase as never);
     const assignmentRows = ((assignments ?? []) as any[]).map((a) => {
       const unit = unitMap.get(a.unit_id);
       const property = unit?.property ?? null;
@@ -403,7 +405,7 @@ export const getVendorResident = createServerFn({ method: "GET" })
       })),
     ].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
-    await logVendorAction(supabase, vendorId, "VENDOR_RESIDENT_VIEWED", {
+    await logVendorAction(supabase as never, vendorId, "VENDOR_RESIDENT_VIEWED", {
       type: "resident",
       id: data.id,
     });
@@ -503,7 +505,11 @@ const profileFields = {
   status: z.enum(["active", "inactive", "suspended", "pending"]).optional(),
 };
 
-const fullName = (d: { first_name?: string; middle_name?: string; last_name?: string }) =>
+const fullName = (d: {
+  first_name?: string | undefined;
+  middle_name?: string | undefined;
+  last_name?: string | undefined;
+}) =>
   [d.first_name, d.middle_name, d.last_name].map((p) => (p ?? "").trim()).filter(Boolean).join(" ");
 
 export const createVendorResident = createServerFn({ method: "POST" })
@@ -523,7 +529,7 @@ export const createVendorResident = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
 
-    if (data.unit_id) await assertUnitInScope(supabase, data.unit_id);
+    if (data.unit_id) await assertUnitInScope(supabase as never, data.unit_id);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -584,7 +590,7 @@ export const createVendorResident = createServerFn({ method: "POST" })
       detail: "Resident created from the vendor portal",
     });
     await logVendorAction(
-      supabase,
+      supabase as never,
       vendorId,
       "VENDOR_RESIDENT_CREATED",
       { type: "resident", id },
@@ -609,7 +615,7 @@ export const updateVendorResident = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
-    await assertResidentInScope(supabase, data.id);
+    await assertResidentInScope(supabase as never, data.id);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -639,7 +645,7 @@ export const updateVendorResident = createServerFn({ method: "POST" })
       { detail: photoChanged ? "Profile photo updated" : "Resident profile updated" },
     );
     await logVendorAction(
-      supabase,
+      supabase as never,
       vendorId,
       photoChanged ? "VENDOR_RESIDENT_PHOTO_UPDATED" : "VENDOR_RESIDENT_UPDATED",
       { type: "resident", id: data.id },
@@ -662,7 +668,7 @@ export const setVendorResidentStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
-    await assertResidentInScope(supabase, data.id);
+    await assertResidentInScope(supabase as never, data.id);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: before } = await supabaseAdmin
@@ -689,7 +695,7 @@ export const setVendorResidentStatus = createServerFn({ method: "POST" })
       },
     );
     await logVendorAction(
-      supabase,
+      supabase as never,
       vendorId,
       data.status === "active" ? "VENDOR_RESIDENT_ACTIVATED" : "VENDOR_RESIDENT_DEACTIVATED",
       { type: "resident", id: data.id },
@@ -711,7 +717,7 @@ export const deleteVendorResident = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
-    await assertResidentInScope(supabase, data.id);
+    await assertResidentInScope(supabase as never, data.id);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: before } = await supabaseAdmin
@@ -750,7 +756,7 @@ export const deleteVendorResident = createServerFn({ method: "POST" })
       detail: "Resident archived (soft delete) — history retained",
     });
     await logVendorAction(
-      supabase,
+      supabase as never,
       vendorId,
       "VENDOR_RESIDENT_DELETED",
       { type: "resident", id: data.id },
@@ -779,8 +785,8 @@ export const assignVendorResidentUnit = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
-    await assertResidentInScope(supabase, data.resident_id);
-    await assertUnitInScope(supabase, data.unit_id);
+    await assertResidentInScope(supabase as never, data.resident_id);
+    await assertUnitInScope(supabase as never, data.unit_id);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -835,7 +841,7 @@ export const assignVendorResidentUnit = createServerFn({ method: "POST" })
       { detail: `Unit assignment effective ${start}`, ...(data.notes ? { note: data.notes } : {}) },
     );
     await logVendorAction(
-      supabase,
+      supabase as never,
       vendorId,
       "VENDOR_RESIDENT_UNIT_ASSIGNED",
       { type: "resident", id: data.resident_id },
@@ -853,7 +859,7 @@ export const sendVendorResidentPasswordReset = createServerFn({ method: "POST" }
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
-    await assertResidentInScope(supabase, data.id);
+    await assertResidentInScope(supabase as never, data.id);
 
     const { data: profile } = await supabase
       .from("users")
@@ -871,7 +877,7 @@ export const sendVendorResidentPasswordReset = createServerFn({ method: "POST" }
     await recordResidentEvent(supabaseAdmin as never, data.id, userId, "password_reset_requested", {
       detail: `Reset email sent to ${profile.email}`,
     });
-    await logVendorAction(supabase, vendorId, "VENDOR_RESIDENT_PASSWORD_RESET", {
+    await logVendorAction(supabase as never, vendorId, "VENDOR_RESIDENT_PASSWORD_RESET", {
       type: "resident",
       id: data.id,
     });
