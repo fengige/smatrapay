@@ -287,6 +287,8 @@ export const issueMeterToken = createServerFn({ method: "POST" })
       throw new Error("This meter is not active — activate it before issuing tokens");
     if (data.action === "credit" && data.amount <= 0)
       throw new Error("Enter an amount greater than zero");
+    if (data.action === "set_max_overdraft" && data.units <= 0)
+      throw new Error("Enter a max overdraft limit greater than zero");
     if (data.sms_requested && (data.customer_phone ?? "").trim().length < 7)
       throw new Error("Enter a valid phone number for SMS delivery");
 
