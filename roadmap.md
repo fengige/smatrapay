@@ -23,3 +23,6 @@
 - [x] Vendor portal: mirror admin Property Management layout
 - [x] Admin Token Management + Token Ledger: show vendor-issued tokens and overdraft limits
 - [x] Vendor portal: mirror admin Meter Management page
+- [ ] Vendor portal: Resident Management (add/edit/assign unit/activate/deactivate/archive, resident details with 5 tabs)
+- [ ] Vendor portal: Landlord Management (add/edit/assign unit/activate/deactivate/archive, landlord details with 7 tabs)
+- [ ] Vendor portal: Property Management (add/edit/activate/deactivate/archive, property details with Units, Address, Unit Timeline, Residents, Owner Details, My Photos tabs)

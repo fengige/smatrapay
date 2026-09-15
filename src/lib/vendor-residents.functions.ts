@@ -210,8 +210,21 @@ export const listVendorResidents = createServerFn({ method: "GET" })
       });
     }
 
-    rows.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-    return { vendorId, residents: rows };
+    // Only users that actually hold the resident role belong in this list.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const candidateIds = [...new Set(rows.map((r) => r.id))];
+    const { data: roleRows } = candidateIds.length
+      ? await supabaseAdmin
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "resident")
+          .in("user_id", candidateIds)
+      : { data: [] as any[] };
+    const residentRoleIds = new Set(((roleRows ?? []) as any[]).map((r) => r.user_id));
+    const filtered = rows.filter((r) => residentRoleIds.has(r.id));
+
+    filtered.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+    return { vendorId, residents: filtered };
   });
 
 export const listVendorAssignableUnits = createServerFn({ method: "GET" })
