@@ -2,7 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type VendorTokenAction = "credit" | "key_change" | "clear_tamper" | "clear_credit";
+export type VendorTokenAction =
+  | "credit"
+  | "set_max_overdraft"
+  | "clear_tamper"
+  | "clear_credit";
 
 export type VendorTokenMeterMatch = {
   id: string;
@@ -43,7 +47,7 @@ export type VendorIssuedToken = {
   created_at: string;
 };
 
-const tokenAction = z.enum(["credit", "key_change", "clear_tamper", "clear_credit"]);
+const tokenAction = z.enum(["credit", "set_max_overdraft", "clear_tamper", "clear_credit"]);
 
 /** 20-digit STS-style token, formatted in groups of four. */
 function generateTokenValue() {
@@ -178,6 +182,8 @@ export const issueVendorMeterToken = createServerFn({ method: "POST" })
       throw new Error("This meter is not active — activate it before issuing tokens");
     if (data.action === "credit" && data.amount <= 0)
       throw new Error("Enter an amount greater than zero");
+    if (data.action === "set_max_overdraft" && data.units <= 0)
+      throw new Error("Enter a max overdraft limit greater than zero");
     if (data.sms_requested && (data.customer_phone ?? "").trim().length < 7)
       throw new Error("Enter a valid phone number for SMS delivery");
 
