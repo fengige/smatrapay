@@ -171,7 +171,12 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
  * Token issuance, listing and revocation
  * ------------------------------------------------------------------ */
 
-export type TokenAction = "credit" | "key_change" | "clear_tamper" | "clear_credit";
+export type TokenAction =
+  | "credit"
+  | "key_change"
+  | "set_max_overdraft"
+  | "clear_tamper"
+  | "clear_credit";
 
 export type IssuedToken = {
   id: string;
@@ -192,7 +197,13 @@ export type IssuedToken = {
   created_at: string;
 };
 
-const tokenAction = z.enum(["credit", "key_change", "clear_tamper", "clear_credit"]);
+const tokenAction = z.enum([
+  "credit",
+  "key_change",
+  "set_max_overdraft",
+  "clear_tamper",
+  "clear_credit",
+]);
 
 /** 20-digit STS-style token, formatted in groups of four. */
 function generateTokenValue() {
