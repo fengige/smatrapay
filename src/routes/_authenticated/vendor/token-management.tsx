@@ -369,6 +369,30 @@ function VendorTokenManagementPage() {
                 </>
               )}
 
+              {needsOverdraft && (
+                <div className="space-y-1">
+                  <label htmlFor="token-max-overdraft" className="text-sm font-medium">
+                    Max Overdraft
+                  </label>
+                  <input
+                    id="token-max-overdraft"
+                    inputMode="decimal"
+                    value={maxOverdraft}
+                    onChange={(e) => setMaxOverdraft(e.target.value)}
+                    aria-invalid={!!overdraftError}
+                    placeholder="e.g. 500"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  {overdraftError ? (
+                    <p className="text-xs text-destructive">{overdraftError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      The maximum overdraft limit to set on this meter.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label htmlFor="token-ref" className="text-sm font-medium">
@@ -458,7 +482,9 @@ function VendorTokenManagementPage() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {token.action === "credit"
                     ? `${token.units.toFixed(2)} units · KES ${token.amount.toFixed(2)} · `
-                    : ""}
+                    : token.action === "set_max_overdraft"
+                      ? `Max OD ${token.units.toFixed(2)} · `
+                      : ""}
                   {new Date(token.created_at).toLocaleString()}
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
@@ -514,7 +540,9 @@ function VendorTokenManagementPage() {
                       <td className="py-2 pr-4">
                         {t.action === "credit"
                           ? `${t.units.toFixed(2)} u · KES ${t.amount.toFixed(2)}`
-                          : "—"}
+                          : t.action === "set_max_overdraft"
+                            ? `Max OD ${t.units.toFixed(2)}`
+                            : "—"}
                       </td>
                       <td className="py-2 pr-4 text-xs text-muted-foreground">
                         {new Date(t.created_at).toLocaleString()}
@@ -562,6 +590,9 @@ function VendorTokenManagementPage() {
                       ["Units", units.toFixed(2)],
                       ["Amount", `KES ${value.toFixed(2)}`],
                     ] as [string, string][])
+                  : []),
+                ...(needsOverdraft
+                  ? ([["Max Overdraft", overdraftNumber.toFixed(2)]] as [string, string][])
                   : []),
                 ["Expires in", `${expiryNumber} day(s)`],
                 ["Reference", reference.trim() || "—"],
