@@ -21,6 +21,7 @@ import {
   propertyPayload,
   type PropertyFormState,
 } from "@/components/vendor/PropertyForm";
+import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   downloadCsv,
   EmptyState,
