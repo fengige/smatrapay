@@ -257,7 +257,7 @@ function VendorPropertyDetails() {
             )}
             <div className="min-w-[240px] flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-black text-foreground">{property.name}</h1>
+                <p className="text-xl font-black text-foreground">{property.name}</p>
                 <StatusBadge value={property.status} />
               </div>
               <p className="text-sm text-muted-foreground">

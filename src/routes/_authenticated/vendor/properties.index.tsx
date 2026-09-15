@@ -265,12 +265,7 @@ function VendorProperties() {
     <DashboardShell access={access} title="Property Management" description="Properties inside the zones assigned to your vendor account">
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-black text-foreground">Property Management</h1>
-            <p className="text-sm text-muted-foreground">
-              Properties inside the zones assigned to your vendor account.
-            </p>
-          </div>
+          <div />
           <div className="flex gap-2">
             <button
               className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
