@@ -48,6 +48,11 @@ export const Route = createFileRoute("/_authenticated/token-management")({
 const ACTIONS: { id: TokenAction; label: string; hint: string }[] = [
   { id: "credit", label: "Issue Credit", hint: "Vend units or value onto the meter" },
   { id: "key_change", label: "Key Change", hint: "Rotate the meter supply group key" },
+  {
+    id: "set_max_overdraft",
+    label: "Set Max Overdraft",
+    hint: "Set the maximum overdraft limit on the meter",
+  },
   { id: "clear_tamper", label: "Clear Tamper", hint: "Reset a tamper condition" },
   { id: "clear_credit", label: "Clear Credit", hint: "Zero the meter credit balance" },
 ];
@@ -55,6 +60,7 @@ const ACTIONS: { id: TokenAction; label: string; hint: string }[] = [
 const ACTION_LABEL: Record<TokenAction, string> = {
   credit: "Issue Credit",
   key_change: "Key Change",
+  set_max_overdraft: "Set Max Overdraft",
   clear_tamper: "Clear Tamper",
   clear_credit: "Clear Credit",
 };
@@ -86,6 +92,7 @@ function TokenManagementPage() {
   const [expiryDays, setExpiryDays] = useState("30");
   const [sendSms, setSendSms] = useState(false);
   const [phone, setPhone] = useState("");
+  const [maxOverdraft, setMaxOverdraft] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [token, setToken] = useState<IssuedToken | null>(null);
   const [revoking, setRevoking] = useState<IssuedToken | null>(null);
