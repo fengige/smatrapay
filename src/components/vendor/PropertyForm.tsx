@@ -97,16 +97,23 @@ export function PropertyFormFields({
   onChange,
   owners,
   zones,
+  section = "all",
 }: {
   form: PropertyFormState;
   onChange: (patch: Partial<PropertyFormState>) => void;
   owners: OwnerOption[];
   zones: ZoneOption[];
+  /** Limit which fields render, so a wizard can split them across steps. */
+  section?: "all" | "details" | "address";
 }) {
   const ownerChoices = owners.filter((o) => o.roles.includes(form.owner_type));
+  const showDetails = section === "all" || section === "details";
+  const showAddress = section === "all" || section === "address";
 
   return (
     <div className="space-y-4">
+      {showDetails && (
+      <>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className={label} htmlFor="p-name">
