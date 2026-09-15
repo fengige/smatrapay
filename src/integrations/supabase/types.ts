@@ -1269,14 +1269,18 @@ export type Database = {
           address_line1: string | null
           address_line2: string | null
           building_category: string | null
+          building_number: string | null
           city: string | null
           code: string | null
           country: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          estate: string | null
           id: string
           landlord_id: string | null
+          latitude: number | null
+          longitude: number | null
           name: string
           number_of_units: number | null
           owner_type: string
@@ -1295,14 +1299,18 @@ export type Database = {
           address_line1?: string | null
           address_line2?: string | null
           building_category?: string | null
+          building_number?: string | null
           city?: string | null
           code?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          estate?: string | null
           id?: string
           landlord_id?: string | null
+          latitude?: number | null
+          longitude?: number | null
           name: string
           number_of_units?: number | null
           owner_type?: string
@@ -1321,14 +1329,18 @@ export type Database = {
           address_line1?: string | null
           address_line2?: string | null
           building_category?: string | null
+          building_number?: string | null
           city?: string | null
           code?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          estate?: string | null
           id?: string
           landlord_id?: string | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           number_of_units?: number | null
           owner_type?: string
@@ -1403,6 +1415,50 @@ export type Database = {
           property_name?: string | null
         }
         Relationships: []
+      }
+      property_photos: {
+        Row: {
+          caption: string | null
+          category: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          property_id: string
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          caption?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          property_id: string
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          caption?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          property_id?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       routes: {
         Row: {
