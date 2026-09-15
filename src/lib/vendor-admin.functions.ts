@@ -15,6 +15,7 @@ export type VendorOwnerRow = {
   property_count: number;
   unit_count: number;
   meter_count: number;
+  created_at: string | null;
 };
 
 export type VendorPropertyRow = {
@@ -137,7 +138,10 @@ export const getVendorDirectory = createServerFn({ method: "GET" })
         ? supabase.from("zones").select("zone_id, zone_name").in("zone_id", zoneIds)
         : Promise.resolve({ data: [] }),
       ownerIds.length
-        ? supabase.from("users").select("id, name, email, phone, status").in("id", ownerIds)
+        ? supabase
+            .from("users")
+            .select("id, name, email, phone, status, created_at")
+            .in("id", ownerIds)
         : Promise.resolve({ data: [] }),
     ]);
 
@@ -204,6 +208,7 @@ export const getVendorDirectory = createServerFn({ method: "GET" })
         property_count: owned.length,
         unit_count: owned.reduce((s, p) => s + p.unit_count, 0),
         meter_count: owned.reduce((s, p) => s + p.meter_count, 0),
+        created_at: user.created_at ?? null,
       });
     }
     owners.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
