@@ -2204,6 +2204,7 @@ export type Database = {
         | "key_change"
         | "clear_tamper"
         | "clear_credit"
+        | "set_max_overdraft"
       meter_token_status: "issued" | "revoked" | "expired"
       meter_utility_type: "Electricity" | "Water" | "Gas" | "Multi-Utility"
       payment_status: "pending" | "completed" | "failed" | "cancelled"
@@ -2379,6 +2380,7 @@ export const Constants = {
         "key_change",
         "clear_tamper",
         "clear_credit",
+        "set_max_overdraft",
       ],
       meter_token_status: ["issued", "revoked", "expired"],
       meter_utility_type: ["Electricity", "Water", "Gas", "Multi-Utility"],

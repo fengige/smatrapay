@@ -1,0 +1,1 @@
+ALTER TYPE public.meter_token_action ADD VALUE 'set_max_overdraft';
