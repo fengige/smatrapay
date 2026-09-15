@@ -395,6 +395,30 @@ function TokenManagementPage() {
                 </>
               )}
 
+              {needsOverdraft && (
+                <div className="space-y-1">
+                  <label htmlFor="token-overdraft" className="text-sm font-medium">
+                    Max Overdraft
+                  </label>
+                  <input
+                    id="token-overdraft"
+                    inputMode="decimal"
+                    value={maxOverdraft}
+                    onChange={(e) => setMaxOverdraft(e.target.value)}
+                    aria-invalid={!!overdraftError}
+                    placeholder="e.g. 100"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  {overdraftError ? (
+                    <p className="text-xs text-destructive">{overdraftError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      The maximum overdraft limit the token will set on the meter.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label htmlFor="token-ref" className="text-sm font-medium">
@@ -484,7 +508,9 @@ function TokenManagementPage() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {token.action === "credit"
                     ? `${token.units.toFixed(2)} units · KES ${token.amount.toFixed(2)} · `
-                    : ""}
+                    : token.action === "set_max_overdraft"
+                      ? `Max overdraft ${token.units.toFixed(2)} · `
+                      : ""}
                   {new Date(token.created_at).toLocaleString()}
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
