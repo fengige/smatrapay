@@ -62,7 +62,9 @@ async function scopeUnits(supabase: Client) {
     ? await supabase.from("zones").select("zone_id, zone_name").in("zone_id", zoneIds)
     : { data: [] as any[] };
 
-  const zoneMap = new Map((zones ?? []).map((z: any) => [z.zone_id, z]));
+  const zoneMap = new Map<number, any>(
+    ((zones ?? []) as any[]).map((z): [number, any] => [z.zone_id, z]),
+  );
   const propertyMap = new Map<string, any>(
     propertyRows.map((p): [string, any] => [
       p.id,
