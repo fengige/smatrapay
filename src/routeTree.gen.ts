@@ -70,7 +70,6 @@ import { Route as AuthenticatedVendorPosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedVendorPosShiftReportRouteImport } from './routes/_authenticated/vendor/pos-shift-report'
 import { Route as AuthenticatedVendorPriceManagementRouteImport } from './routes/_authenticated/vendor/price-management'
 import { Route as AuthenticatedVendorProfileRouteImport } from './routes/_authenticated/vendor/profile'
-import { Route as AuthenticatedVendorPropertiesRouteImport } from './routes/_authenticated/vendor/properties'
 import { Route as AuthenticatedVendorReadingsRouteImport } from './routes/_authenticated/vendor/readings'
 import { Route as AuthenticatedVendorReportsRouteImport } from './routes/_authenticated/vendor/reports'
 import { Route as AuthenticatedVendorServiceProvidersRouteImport } from './routes/_authenticated/vendor/service-providers'
@@ -462,12 +461,6 @@ const AuthenticatedVendorProfileRoute =
     path: '/vendor/profile',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedVendorPropertiesRoute =
-  AuthenticatedVendorPropertiesRouteImport.update({
-    id: '/vendor/properties',
-    path: '/vendor/properties',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedVendorReadingsRoute =
   AuthenticatedVendorReadingsRouteImport.update({
     id: '/vendor/readings',
@@ -612,9 +605,9 @@ const AuthenticatedVendorMetersBulkAddRoute =
   } as any)
 const AuthenticatedVendorPropertiesIndexRoute =
   AuthenticatedVendorPropertiesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedVendorPropertiesRoute,
+    id: '/vendor/properties/',
+    path: '/vendor/properties/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendorResidentsIndexRoute =
   AuthenticatedVendorResidentsIndexRouteImport.update({
@@ -774,7 +767,6 @@ export interface FileRoutesByFullPath {
   '/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/vendor/price-management': typeof AuthenticatedVendorPriceManagementRoute
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
-  '/vendor/properties': typeof AuthenticatedVendorPropertiesRouteWithChildren
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
   '/vendor/service-providers': typeof AuthenticatedVendorServiceProvidersRoute
@@ -979,7 +971,6 @@ export interface FileRoutesById {
   '/_authenticated/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/_authenticated/vendor/price-management': typeof AuthenticatedVendorPriceManagementRoute
   '/_authenticated/vendor/profile': typeof AuthenticatedVendorProfileRoute
-  '/_authenticated/vendor/properties': typeof AuthenticatedVendorPropertiesRouteWithChildren
   '/_authenticated/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/_authenticated/vendor/reports': typeof AuthenticatedVendorReportsRoute
   '/_authenticated/vendor/service-providers': typeof AuthenticatedVendorServiceProvidersRoute
@@ -1087,7 +1078,6 @@ export interface FileRouteTypes {
     | '/vendor/pos-shift-report'
     | '/vendor/price-management'
     | '/vendor/profile'
-    | '/vendor/properties'
     | '/vendor/readings'
     | '/vendor/reports'
     | '/vendor/service-providers'
@@ -1291,7 +1281,6 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/pos-shift-report'
     | '/_authenticated/vendor/price-management'
     | '/_authenticated/vendor/profile'
-    | '/_authenticated/vendor/properties'
     | '/_authenticated/vendor/readings'
     | '/_authenticated/vendor/reports'
     | '/_authenticated/vendor/service-providers'
@@ -1792,13 +1781,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/vendor/properties': {
-      id: '/_authenticated/vendor/properties'
-      path: '/vendor/properties'
-      fullPath: '/vendor/properties'
-      preLoaderRoute: typeof AuthenticatedVendorPropertiesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/vendor/readings': {
       id: '/_authenticated/vendor/readings'
       path: '/vendor/readings'
@@ -1969,10 +1951,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/vendor/properties/': {
       id: '/_authenticated/vendor/properties/'
-      path: '/'
+      path: '/vendor/properties'
       fullPath: '/vendor/properties/'
       preLoaderRoute: typeof AuthenticatedVendorPropertiesIndexRouteImport
-      parentRoute: typeof AuthenticatedVendorPropertiesRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/residents/': {
       id: '/_authenticated/vendor/residents/'
@@ -2256,21 +2238,6 @@ const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
 const AuthenticatedVendorsRouteWithChildren =
   AuthenticatedVendorsRoute._addFileChildren(AuthenticatedVendorsRouteChildren)
 
-interface AuthenticatedVendorPropertiesRouteChildren {
-  AuthenticatedVendorPropertiesIndexRoute: typeof AuthenticatedVendorPropertiesIndexRoute
-}
-
-const AuthenticatedVendorPropertiesRouteChildren: AuthenticatedVendorPropertiesRouteChildren =
-  {
-    AuthenticatedVendorPropertiesIndexRoute:
-      AuthenticatedVendorPropertiesIndexRoute,
-  }
-
-const AuthenticatedVendorPropertiesRouteWithChildren =
-  AuthenticatedVendorPropertiesRoute._addFileChildren(
-    AuthenticatedVendorPropertiesRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
@@ -2306,7 +2273,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorPosShiftReportRoute: typeof AuthenticatedVendorPosShiftReportRoute
   AuthenticatedVendorPriceManagementRoute: typeof AuthenticatedVendorPriceManagementRoute
   AuthenticatedVendorProfileRoute: typeof AuthenticatedVendorProfileRoute
-  AuthenticatedVendorPropertiesRoute: typeof AuthenticatedVendorPropertiesRouteWithChildren
   AuthenticatedVendorReadingsRoute: typeof AuthenticatedVendorReadingsRoute
   AuthenticatedVendorReportsRoute: typeof AuthenticatedVendorReportsRoute
   AuthenticatedVendorServiceProvidersRoute: typeof AuthenticatedVendorServiceProvidersRoute
@@ -2326,6 +2292,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorZonesZoneIdRoute: typeof AuthenticatedVendorZonesZoneIdRoute
   AuthenticatedVendorLandlordsIndexRoute: typeof AuthenticatedVendorLandlordsIndexRoute
   AuthenticatedVendorMetersIndexRoute: typeof AuthenticatedVendorMetersIndexRoute
+  AuthenticatedVendorPropertiesIndexRoute: typeof AuthenticatedVendorPropertiesIndexRoute
   AuthenticatedVendorResidentsIndexRoute: typeof AuthenticatedVendorResidentsIndexRoute
   AuthenticatedVendorServiceRequestsIndexRoute: typeof AuthenticatedVendorServiceRequestsIndexRoute
   AuthenticatedVendorTeamsIndexRoute: typeof AuthenticatedVendorTeamsIndexRoute
@@ -2373,8 +2340,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorPriceManagementRoute:
     AuthenticatedVendorPriceManagementRoute,
   AuthenticatedVendorProfileRoute: AuthenticatedVendorProfileRoute,
-  AuthenticatedVendorPropertiesRoute:
-    AuthenticatedVendorPropertiesRouteWithChildren,
   AuthenticatedVendorReadingsRoute: AuthenticatedVendorReadingsRoute,
   AuthenticatedVendorReportsRoute: AuthenticatedVendorReportsRoute,
   AuthenticatedVendorServiceProvidersRoute:
@@ -2400,6 +2365,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorLandlordsIndexRoute:
     AuthenticatedVendorLandlordsIndexRoute,
   AuthenticatedVendorMetersIndexRoute: AuthenticatedVendorMetersIndexRoute,
+  AuthenticatedVendorPropertiesIndexRoute:
+    AuthenticatedVendorPropertiesIndexRoute,
   AuthenticatedVendorResidentsIndexRoute:
     AuthenticatedVendorResidentsIndexRoute,
   AuthenticatedVendorServiceRequestsIndexRoute:
