@@ -40,14 +40,18 @@ export const Route = createFileRoute("/_authenticated/vendor/token-management")(
 
 const ACTIONS: { id: VendorTokenAction; label: string; hint: string }[] = [
   { id: "credit", label: "Issue Credit", hint: "Vend units or value onto the meter" },
-  { id: "key_change", label: "Key Change", hint: "Rotate the meter supply group key" },
+  {
+    id: "set_max_overdraft",
+    label: "Set Max Overdraft",
+    hint: "Set the maximum overdraft limit on the meter",
+  },
   { id: "clear_tamper", label: "Clear Tamper", hint: "Reset a tamper condition" },
   { id: "clear_credit", label: "Clear Credit", hint: "Zero the meter credit balance" },
 ];
 
 const ACTION_LABEL: Record<VendorTokenAction, string> = {
   credit: "Issue Credit",
-  key_change: "Key Change",
+  set_max_overdraft: "Set Max Overdraft",
   clear_tamper: "Clear Tamper",
   clear_credit: "Clear Credit",
 };
@@ -80,6 +84,7 @@ function VendorTokenManagementPage() {
   const [expiryDays, setExpiryDays] = useState("30");
   const [sendSms, setSendSms] = useState(false);
   const [phone, setPhone] = useState("");
+  const [maxOverdraft, setMaxOverdraft] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [token, setToken] = useState<VendorIssuedToken | null>(null);
 
@@ -128,9 +133,19 @@ function VendorTokenManagementPage() {
       ? "Expiry must be between 1 and 365 days"
       : null;
   const needsAmount = action === "credit";
+  const needsOverdraft = action === "set_max_overdraft";
+  const overdraftNumber = Number(maxOverdraft);
+  const overdraftError = needsOverdraft
+    ? maxOverdraft.trim() === ""
+      ? "Max overdraft is required"
+      : !Number.isFinite(overdraftNumber) || overdraftNumber <= 0
+        ? "Enter an overdraft limit greater than zero"
+        : null
+    : null;
   const canGenerate =
     !!meter &&
     (!needsAmount || !amountError) &&
+    !overdraftError &&
     !phoneError &&
     !expiryError &&
     meter.status === "active";
@@ -141,7 +156,11 @@ function VendorTokenManagementPage() {
         data: {
           meter_id: meter!.id,
           action,
-          units: needsAmount ? Number(units.toFixed(2)) : 0,
+          units: needsAmount
+            ? Number(units.toFixed(2))
+            : needsOverdraft
+              ? Number(overdraftNumber.toFixed(2))
+              : 0,
           amount: needsAmount ? Number(value.toFixed(2)) : 0,
           reference: reference.trim() || null,
           customer_phone: sendSms ? phone.trim() : null,
