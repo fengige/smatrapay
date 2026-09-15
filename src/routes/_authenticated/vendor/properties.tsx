@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Search } from "lucide-react";
+import { ArrowUpDown, Download, RefreshCw, Search } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { getVendorDirectory } from "@/lib/vendor-admin.functions";
@@ -34,18 +34,36 @@ export const Route = createFileRoute("/_authenticated/vendor/properties")({
   errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
 });
 
-const PAGE_SIZE = 10;
+const LIMIT_OPTIONS = [10, 25, 50, 100];
+
+type SortKey =
+  | "name"
+  | "property_type"
+  | "zone_name"
+  | "city"
+  | "owner_name"
+  | "unit_count"
+  | "meter_count"
+  | "resident_count"
+  | "created_at"
+  | "status";
 
 function VendorProperties() {
   const access = Route.useLoaderData();
   const fetchDirectory = useServerFn(getVendorDirectory);
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["vendor-directory"],
     queryFn: () => fetchDirectory(),
   });
   const [q, setQ] = useState("");
   const [zone, setZone] = useState("all");
+  const [propertyType, setPropertyType] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [ownerType, setOwnerType] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const properties = data?.properties ?? [];
   const zones = useMemo(
@@ -53,19 +71,62 @@ function VendorProperties() {
     [properties],
   );
 
+  const propertyTypes = useMemo(
+    () => [...new Set(properties.map((p) => p.property_type).filter(Boolean))] as string[],
+    [properties],
+  );
+
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return properties.filter((p) => {
       if (zone !== "all" && p.zone_name !== zone) return false;
+      if (propertyType !== "all" && p.property_type !== propertyType) return false;
+      if (status !== "all" && p.status !== status) return false;
+      if (ownerType !== "all" && p.owner_type !== ownerType) return false;
       if (!needle) return true;
       return [p.name, p.code, p.city, p.owner_name].some((v) =>
         (v ?? "").toLowerCase().includes(needle),
       );
     });
-  }, [properties, q, zone]);
+  }, [properties, q, zone, propertyType, status, ownerType]);
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const current = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const sortedRows = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[sortKey];
+      const bv = (b as Record<string, unknown>)[sortKey];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+  }, [rows, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+  const current = sortedRows.slice((page - 1) * pageSize, page * pageSize);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setPage(1);
+  };
+
+  const SortHeader = ({ label, sortBy }: { label: string; sortBy: SortKey }) => (
+    <th className="px-4 py-2">
+      <button
+        type="button"
+        onClick={() => toggleSort(sortBy)}
+        className="inline-flex items-center gap-1 uppercase hover:text-foreground"
+      >
+        {label}
+        <ArrowUpDown className={`size-3 ${sortKey === sortBy ? "text-primary" : "opacity-40"}`} />
+      </button>
+    </th>
+  );
 
   return (
     <DashboardShell
@@ -118,13 +179,63 @@ function VendorProperties() {
                 </option>
               ))}
             </select>
+            <select
+              value={propertyType}
+              onChange={(e) => {
+                setPropertyType(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Filter by property type"
+              className="rounded-full border border-border bg-card px-4 py-2 text-sm"
+            >
+              <option value="all">All property types</option>
+              {propertyTypes.map((t) => (
+                <option key={t} value={t}>
+                  {titleCase(t)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={ownerType}
+              onChange={(e) => {
+                setOwnerType(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Filter by owner type"
+              className="rounded-full border border-border bg-card px-4 py-2 text-sm"
+            >
+              <option value="all">All owner types</option>
+              <option value="landlord">Landlord</option>
+              <option value="agent">Agent</option>
+              <option value="vendor">Vendor</option>
+            </select>
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Filter by status"
+              className="rounded-full border border-border bg-card px-4 py-2 text-sm"
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+            </select>
+            <button
+              className="btn-outline px-4 py-2 text-sm"
+              aria-label="Refresh properties"
+              onClick={() => void refetch()}
+            >
+              <RefreshCw className={`inline size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            </button>
             <button
               className="btn-outline px-4 py-2 text-sm"
               onClick={() =>
                 downloadCsv(
                   "vendor-properties.csv",
                   ["Property", "Code", "Type", "Zone", "City", "Owner", "Owner type", "Units", "Meters", "Residents", "Status"],
-                  rows.map((p) => [
+                  sortedRows.map((p) => [
                     p.name,
                     p.code ?? "",
                     p.property_type ?? "",
@@ -140,7 +251,7 @@ function VendorProperties() {
                 )
               }
             >
-              Export CSV
+              <Download className="mr-1 inline size-3.5" /> Export CSV
             </button>
           </div>
 
@@ -148,15 +259,15 @@ function VendorProperties() {
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-2">Property</th>
-                  <th className="px-4 py-2">Zone</th>
-                  <th className="px-4 py-2">City</th>
-                  <th className="px-4 py-2">Owner</th>
-                  <th className="px-4 py-2">Units</th>
-                  <th className="px-4 py-2">Meters</th>
-                  <th className="px-4 py-2">Residents</th>
-                  <th className="px-4 py-2">Added</th>
-                  <th className="px-4 py-2">Status</th>
+                  <SortHeader label="Property" sortBy="name" />
+                  <SortHeader label="Zone" sortBy="zone_name" />
+                  <SortHeader label="City" sortBy="city" />
+                  <SortHeader label="Owner" sortBy="owner_name" />
+                  <SortHeader label="Units" sortBy="unit_count" />
+                  <SortHeader label="Meters" sortBy="meter_count" />
+                  <SortHeader label="Residents" sortBy="resident_count" />
+                  <SortHeader label="Added" sortBy="created_at" />
+                  <SortHeader label="Status" sortBy="status" />
                 </tr>
               </thead>
               <tbody>
@@ -191,7 +302,32 @@ function VendorProperties() {
               </tbody>
             </table>
           </div>
-          <Pagination page={page} pageCount={pageCount} onPage={setPage} total={rows.length} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Rows per page
+              <select
+                aria-label="Rows per page"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rounded-lg border border-border bg-card px-2 py-1 text-sm"
+              >
+                {LIMIT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Pagination
+              page={page}
+              pageCount={pageCount}
+              onPage={setPage}
+              total={sortedRows.length}
+            />
+          </div>
         </div>
       )}
     </DashboardShell>

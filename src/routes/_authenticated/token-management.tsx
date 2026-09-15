@@ -114,10 +114,13 @@ function TokenManagementPage() {
     onError: (err: Error) => toast.error(err.message || "Search failed"),
   });
 
+  const [historySource, setHistorySource] = useState<"all" | "admin" | "vendor">("all");
   const history = useQuery({
-    queryKey: ["meter-tokens", meter?.id ?? null],
+    queryKey: ["meter-tokens", meter?.id ?? null, historySource],
     queryFn: async () =>
-      (await runList({ data: { meter_id: meter?.id ?? null } } as never)) as IssuedToken[],
+      (await runList({
+        data: { meter_id: meter?.id ?? null, source: historySource },
+      } as never)) as IssuedToken[],
   });
 
   const amountNumber = Number(amount);
@@ -543,9 +546,25 @@ function TokenManagementPage() {
 
         {/* Token history */}
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="font-semibold">
-            {meter ? `Tokens for ${meter.meter_number}` : "Recently issued tokens"}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">
+              {meter ? `Tokens for ${meter.meter_number}` : "Recently issued tokens"}
+            </h2>
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              {(["all", "admin", "vendor"] as const).map((sv) => (
+                <button
+                  key={sv}
+                  type="button"
+                  onClick={() => setHistorySource(sv)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${
+                    historySource === sv ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {sv === "all" ? "All sources" : `${sv} issued`}
+                </button>
+              ))}
+            </div>
+          </div>
           {history.isLoading ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading tokens…</p>
           ) : !history.data?.length ? (
@@ -560,6 +579,7 @@ function TokenManagementPage() {
                     <th className="py-2 pr-4">Action</th>
                     <th className="py-2 pr-4">Value</th>
                     <th className="py-2 pr-4">Issued</th>
+                    <th className="py-2 pr-4">Source</th>
                     <th className="py-2 pr-4">Expires</th>
                     <th className="py-2 pr-4">Status</th>
                     <th className="py-2" />
@@ -581,6 +601,11 @@ function TokenManagementPage() {
                       <td className="py-2 pr-4 text-xs text-muted-foreground">
                         {new Date(t.created_at).toLocaleString()}
                         {t.issued_by_name ? ` · ${t.issued_by_name}` : ""}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                          {t.issued_by_role === "unknown" ? "system" : t.issued_by_role}
+                        </span>
                       </td>
                       <td className="py-2 pr-4 text-xs text-muted-foreground">
                         {new Date(t.expires_at).toLocaleDateString()}
