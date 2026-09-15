@@ -631,7 +631,10 @@ export const updateVendorResident = createServerFn({ method: "POST" })
     if (data.profile_image !== undefined) patch["profile_image"] = data.profile_image;
     if (data.status) patch["status"] = data.status;
 
-    const { error } = await supabaseAdmin.from("users").update(patch).eq("id", data.id);
+    const { error } = await supabaseAdmin
+      .from("users")
+      .update(patch as never)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
 
     if (data.email) {
