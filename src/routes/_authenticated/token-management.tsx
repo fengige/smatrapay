@@ -574,7 +574,9 @@ function TokenManagementPage() {
                       <td className="py-2 pr-4">
                         {t.action === "credit"
                           ? `${t.units.toFixed(2)} u · KES ${t.amount.toFixed(2)}`
-                          : "—"}
+                          : t.action === "set_max_overdraft"
+                            ? `Max OD ${t.units.toFixed(2)}`
+                            : "—"}
                       </td>
                       <td className="py-2 pr-4 text-xs text-muted-foreground">
                         {new Date(t.created_at).toLocaleString()}
@@ -633,6 +635,9 @@ function TokenManagementPage() {
                       ["Units", units.toFixed(2)],
                       ["Amount", `KES ${value.toFixed(2)}`],
                     ] as [string, string][])
+                  : []),
+                ...(needsOverdraft
+                  ? ([["Max Overdraft", overdraftNumber.toFixed(2)]] as [string, string][])
                   : []),
                 ["Expires in", `${expiryNumber} day(s)`],
                 ["Reference", reference.trim() || "—"],
