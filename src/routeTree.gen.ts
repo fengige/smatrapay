@@ -64,7 +64,6 @@ import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
-import { Route as AuthenticatedVendorLandlordsRouteImport } from './routes/_authenticated/vendor/landlords'
 import { Route as AuthenticatedVendorMeterSuppliersRouteImport } from './routes/_authenticated/vendor/meter-suppliers'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
 import { Route as AuthenticatedVendorPosRouteImport } from './routes/_authenticated/vendor/pos'
@@ -426,12 +425,6 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedVendorLandlordsRoute =
-  AuthenticatedVendorLandlordsRouteImport.update({
-    id: '/vendor/landlords',
-    path: '/vendor/landlords',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedVendorMeterSuppliersRoute =
   AuthenticatedVendorMeterSuppliersRouteImport.update({
     id: '/vendor/meter-suppliers',
@@ -587,9 +580,9 @@ const AuthenticatedUsersIdEditRoute =
   } as any)
 const AuthenticatedVendorLandlordsIndexRoute =
   AuthenticatedVendorLandlordsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedVendorLandlordsRoute,
+    id: '/vendor/landlords/',
+    path: '/vendor/landlords/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendorMetersIndexRoute =
   AuthenticatedVendorMetersIndexRouteImport.update({
@@ -761,7 +754,6 @@ export interface FileRoutesByFullPath {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
-  '/vendor/landlords': typeof AuthenticatedVendorLandlordsRouteWithChildren
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -964,7 +956,6 @@ export interface FileRoutesById {
   '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
-  '/_authenticated/vendor/landlords': typeof AuthenticatedVendorLandlordsRouteWithChildren
   '/_authenticated/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/_authenticated/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1071,7 +1062,6 @@ export interface FileRouteTypes {
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
-    | '/vendor/landlords'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
     | '/vendor/pos'
@@ -1273,7 +1263,6 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/activation'
     | '/_authenticated/vendor/assignments'
     | '/_authenticated/vendor/dashboard'
-    | '/_authenticated/vendor/landlords'
     | '/_authenticated/vendor/meter-suppliers'
     | '/_authenticated/vendor/notifications'
     | '/_authenticated/vendor/pos'
@@ -1737,13 +1726,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/vendor/landlords': {
-      id: '/_authenticated/vendor/landlords'
-      path: '/vendor/landlords'
-      fullPath: '/vendor/landlords'
-      preLoaderRoute: typeof AuthenticatedVendorLandlordsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/vendor/meter-suppliers': {
       id: '/_authenticated/vendor/meter-suppliers'
       path: '/vendor/meter-suppliers'
@@ -1928,10 +1910,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/vendor/landlords/': {
       id: '/_authenticated/vendor/landlords/'
-      path: '/'
+      path: '/vendor/landlords'
       fullPath: '/vendor/landlords/'
       preLoaderRoute: typeof AuthenticatedVendorLandlordsIndexRouteImport
-      parentRoute: typeof AuthenticatedVendorLandlordsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/meters/': {
       id: '/_authenticated/vendor/meters/'
@@ -2236,21 +2218,6 @@ const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
 const AuthenticatedVendorsRouteWithChildren =
   AuthenticatedVendorsRoute._addFileChildren(AuthenticatedVendorsRouteChildren)
 
-interface AuthenticatedVendorLandlordsRouteChildren {
-  AuthenticatedVendorLandlordsIndexRoute: typeof AuthenticatedVendorLandlordsIndexRoute
-}
-
-const AuthenticatedVendorLandlordsRouteChildren: AuthenticatedVendorLandlordsRouteChildren =
-  {
-    AuthenticatedVendorLandlordsIndexRoute:
-      AuthenticatedVendorLandlordsIndexRoute,
-  }
-
-const AuthenticatedVendorLandlordsRouteWithChildren =
-  AuthenticatedVendorLandlordsRoute._addFileChildren(
-    AuthenticatedVendorLandlordsRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
@@ -2280,7 +2247,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
-  AuthenticatedVendorLandlordsRoute: typeof AuthenticatedVendorLandlordsRouteWithChildren
   AuthenticatedVendorMeterSuppliersRoute: typeof AuthenticatedVendorMeterSuppliersRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
   AuthenticatedVendorPosRoute: typeof AuthenticatedVendorPosRoute
@@ -2304,6 +2270,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorServiceRequestsRequestIdRoute: typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   AuthenticatedVendorTeamsTeamIdRoute: typeof AuthenticatedVendorTeamsTeamIdRoute
   AuthenticatedVendorZonesZoneIdRoute: typeof AuthenticatedVendorZonesZoneIdRoute
+  AuthenticatedVendorLandlordsIndexRoute: typeof AuthenticatedVendorLandlordsIndexRoute
   AuthenticatedVendorMetersIndexRoute: typeof AuthenticatedVendorMetersIndexRoute
   AuthenticatedVendorResidentsIndexRoute: typeof AuthenticatedVendorResidentsIndexRoute
   AuthenticatedVendorServiceRequestsIndexRoute: typeof AuthenticatedVendorServiceRequestsIndexRoute
@@ -2343,8 +2310,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
-  AuthenticatedVendorLandlordsRoute:
-    AuthenticatedVendorLandlordsRouteWithChildren,
   AuthenticatedVendorMeterSuppliersRoute:
     AuthenticatedVendorMeterSuppliersRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
@@ -2375,6 +2340,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedVendorServiceRequestsRequestIdRoute,
   AuthenticatedVendorTeamsTeamIdRoute: AuthenticatedVendorTeamsTeamIdRoute,
   AuthenticatedVendorZonesZoneIdRoute: AuthenticatedVendorZonesZoneIdRoute,
+  AuthenticatedVendorLandlordsIndexRoute:
+    AuthenticatedVendorLandlordsIndexRoute,
   AuthenticatedVendorMetersIndexRoute: AuthenticatedVendorMetersIndexRoute,
   AuthenticatedVendorResidentsIndexRoute:
     AuthenticatedVendorResidentsIndexRoute,
