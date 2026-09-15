@@ -278,8 +278,14 @@ export function PropertyFormFields({
           onChange={(e) => onChange({ description: e.target.value })}
         />
       </div>
+      </>
+      )}
 
-      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Address</p>
+      {showAddress && (
+      <>
+      {section === "all" && (
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Address</p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         {(
           [
@@ -308,6 +314,8 @@ export function PropertyFormFields({
           </div>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 }
