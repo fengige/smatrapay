@@ -144,9 +144,19 @@ function TokenManagementPage() {
       ? "Expiry must be between 1 and 365 days"
       : null;
   const needsAmount = action === "credit";
+  const needsOverdraft = action === "set_max_overdraft";
+  const overdraftNumber = Number(maxOverdraft);
+  const overdraftError = needsOverdraft
+    ? maxOverdraft.trim() === ""
+      ? "Max overdraft is required"
+      : !Number.isFinite(overdraftNumber) || overdraftNumber <= 0
+        ? "Enter an overdraft limit greater than zero"
+        : null
+    : null;
   const canGenerate =
     !!meter &&
     (!needsAmount || !amountError) &&
+    !overdraftError &&
     !phoneError &&
     !expiryError &&
     meter.status === "active";
@@ -157,7 +167,11 @@ function TokenManagementPage() {
         data: {
           meter_id: meter!.id,
           action,
-          units: needsAmount ? Number(units.toFixed(2)) : 0,
+          units: needsAmount
+            ? Number(units.toFixed(2))
+            : needsOverdraft
+              ? Number(overdraftNumber.toFixed(2))
+              : 0,
           amount: needsAmount ? Number(value.toFixed(2)) : 0,
           reference: reference.trim() || null,
           customer_phone: sendSms ? phone.trim() : null,
