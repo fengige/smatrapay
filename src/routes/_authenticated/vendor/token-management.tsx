@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/vendor/token-management")(
       {
         name: "description",
         content:
-          "Search your prepaid meters and issue credit, key change or clear tamper tokens for your customers.",
+          "Search your prepaid meters and issue credit, set max overdraft or clear tamper tokens for your customers.",
       },
       { property: "og:title", content: "Token Management · Vendor · SmatraPay" },
       {
@@ -40,14 +40,18 @@ export const Route = createFileRoute("/_authenticated/vendor/token-management")(
 
 const ACTIONS: { id: VendorTokenAction; label: string; hint: string }[] = [
   { id: "credit", label: "Issue Credit", hint: "Vend units or value onto the meter" },
-  { id: "key_change", label: "Key Change", hint: "Rotate the meter supply group key" },
+  {
+    id: "set_max_overdraft",
+    label: "Set Max Overdraft",
+    hint: "Set the maximum overdraft limit on the meter",
+  },
   { id: "clear_tamper", label: "Clear Tamper", hint: "Reset a tamper condition" },
   { id: "clear_credit", label: "Clear Credit", hint: "Zero the meter credit balance" },
 ];
 
 const ACTION_LABEL: Record<VendorTokenAction, string> = {
   credit: "Issue Credit",
-  key_change: "Key Change",
+  set_max_overdraft: "Set Max Overdraft",
   clear_tamper: "Clear Tamper",
   clear_credit: "Clear Credit",
 };
@@ -80,6 +84,7 @@ function VendorTokenManagementPage() {
   const [expiryDays, setExpiryDays] = useState("30");
   const [sendSms, setSendSms] = useState(false);
   const [phone, setPhone] = useState("");
+  const [maxOverdraft, setMaxOverdraft] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [token, setToken] = useState<VendorIssuedToken | null>(null);
 
@@ -128,9 +133,19 @@ function VendorTokenManagementPage() {
       ? "Expiry must be between 1 and 365 days"
       : null;
   const needsAmount = action === "credit";
+  const needsOverdraft = action === "set_max_overdraft";
+  const overdraftNumber = Number(maxOverdraft);
+  const overdraftError = needsOverdraft
+    ? maxOverdraft.trim() === ""
+      ? "Max overdraft is required"
+      : !Number.isFinite(overdraftNumber) || overdraftNumber <= 0
+        ? "Enter an overdraft limit greater than zero"
+        : null
+    : null;
   const canGenerate =
     !!meter &&
     (!needsAmount || !amountError) &&
+    !overdraftError &&
     !phoneError &&
     !expiryError &&
     meter.status === "active";
@@ -141,7 +156,11 @@ function VendorTokenManagementPage() {
         data: {
           meter_id: meter!.id,
           action,
-          units: needsAmount ? Number(units.toFixed(2)) : 0,
+          units: needsAmount
+            ? Number(units.toFixed(2))
+            : needsOverdraft
+              ? Number(overdraftNumber.toFixed(2))
+              : 0,
           amount: needsAmount ? Number(value.toFixed(2)) : 0,
           reference: reference.trim() || null,
           customer_phone: sendSms ? phone.trim() : null,
@@ -350,6 +369,30 @@ function VendorTokenManagementPage() {
                 </>
               )}
 
+              {needsOverdraft && (
+                <div className="space-y-1">
+                  <label htmlFor="token-max-overdraft" className="text-sm font-medium">
+                    Max Overdraft
+                  </label>
+                  <input
+                    id="token-max-overdraft"
+                    inputMode="decimal"
+                    value={maxOverdraft}
+                    onChange={(e) => setMaxOverdraft(e.target.value)}
+                    aria-invalid={!!overdraftError}
+                    placeholder="e.g. 500"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  {overdraftError ? (
+                    <p className="text-xs text-destructive">{overdraftError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      The maximum overdraft limit to set on this meter.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label htmlFor="token-ref" className="text-sm font-medium">
@@ -439,7 +482,9 @@ function VendorTokenManagementPage() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {token.action === "credit"
                     ? `${token.units.toFixed(2)} units · KES ${token.amount.toFixed(2)} · `
-                    : ""}
+                    : token.action === "set_max_overdraft"
+                      ? `Max OD ${token.units.toFixed(2)} · `
+                      : ""}
                   {new Date(token.created_at).toLocaleString()}
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
@@ -495,7 +540,9 @@ function VendorTokenManagementPage() {
                       <td className="py-2 pr-4">
                         {t.action === "credit"
                           ? `${t.units.toFixed(2)} u · KES ${t.amount.toFixed(2)}`
-                          : "—"}
+                          : t.action === "set_max_overdraft"
+                            ? `Max OD ${t.units.toFixed(2)}`
+                            : "—"}
                       </td>
                       <td className="py-2 pr-4 text-xs text-muted-foreground">
                         {new Date(t.created_at).toLocaleString()}
@@ -543,6 +590,9 @@ function VendorTokenManagementPage() {
                       ["Units", units.toFixed(2)],
                       ["Amount", `KES ${value.toFixed(2)}`],
                     ] as [string, string][])
+                  : []),
+                ...(needsOverdraft
+                  ? ([["Max Overdraft", overdraftNumber.toFixed(2)]] as [string, string][])
                   : []),
                 ["Expires in", `${expiryNumber} day(s)`],
                 ["Reference", reference.trim() || "—"],
