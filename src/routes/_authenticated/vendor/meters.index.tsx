@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Search } from "lucide-react";
+import { ArrowUpDown, Download, Plus, RefreshCw, Search } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import {
@@ -14,6 +14,7 @@ import {
   INSTALLATION_STATUSES,
 } from "@/lib/vendor.functions";
 import {
+  downloadCsv,
   EmptyState,
   ErrorBlock,
   LoadingBlock,
@@ -48,19 +49,33 @@ export const Route = createFileRoute("/_authenticated/vendor/meters/")({
   errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
 });
 
-const PAGE_SIZE = 10;
+const LIMIT_OPTIONS = [10, 25, 50, 100];
+
+type SortKey =
+  | "meter_number"
+  | "serial_number"
+  | "type"
+  | "supplier_name"
+  | "zone_name"
+  | "resident_name"
+  | "status"
+  | "installation_status"
+  | "created_at";
 
 function VendorMetersPage() {
   const access = Route.useLoaderData();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data, isLoading, error } = useVendorScope();
+  const { data, isLoading, error, refetch, isFetching } = useVendorScope();
   const [q, setQ] = useState("");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
   const [install, setInstall] = useState("all");
   const [zone, setZone] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<SortKey>("meter_number");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [addOpen, setAddOpen] = useState(false);
 
   const changeStatus = useServerFn(setVendorMeterStatus);
@@ -88,8 +103,82 @@ function VendorMetersPage() {
     });
   }, [meters, q, type, status, install, zone]);
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const current = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const sortedRows = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[sortKey];
+      const bv = (b as Record<string, unknown>)[sortKey];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+  }, [rows, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+  const current = sortedRows.slice((page - 1) * pageSize, page * pageSize);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setPage(1);
+  };
+
+  const SortHeader = ({ label, sortBy }: { label: string; sortBy: SortKey }) => (
+    <th className="px-3 py-2">
+      <button
+        type="button"
+        onClick={() => toggleSort(sortBy)}
+        className="inline-flex items-center gap-1 uppercase hover:text-foreground"
+      >
+        {label}
+        <ArrowUpDown className={`size-3 ${sortKey === sortBy ? "text-primary" : "opacity-40"}`} />
+      </button>
+    </th>
+  );
+
+  const exportCsv = () =>
+    downloadCsv(
+      "vendor-meters.csv",
+      [
+        "Meter",
+        "Serial",
+        "Type",
+        "Supplier",
+        "Zone",
+        "Resident",
+        "Price per unit",
+        "SGC",
+        "KRN",
+        "TI",
+        "EA",
+        "KEN",
+        "Status",
+        "Installation",
+        "Added",
+      ],
+      sortedRows.map((m) => [
+        m.meter_number,
+        m.serial_number,
+        m.type,
+        m.supplier_name ?? "",
+        m.zone_name ?? "",
+        m.resident_name ?? "",
+        m.price_per_unit ?? "",
+        m.sgc ?? "",
+        m.krn ?? "",
+        m.ti ?? "",
+        m.ea ?? "",
+        m.ken ?? "",
+        m.status,
+        installationLabel(m.installation_status),
+        formatDate(m.created_at),
+      ]),
+    );
 
   return (
     <DashboardShell
@@ -107,6 +196,16 @@ function VendorMetersPage() {
           >
             Bulk add
           </button>
+          <button className="btn-outline px-3 py-1.5 text-sm" onClick={exportCsv}>
+            <Download className="mr-1 inline size-3.5" /> Export CSV
+          </button>
+          <button
+            className="btn-outline px-3 py-1.5 text-sm"
+            aria-label="Refresh meters"
+            onClick={() => void refetch()}
+          >
+            <RefreshCw className={`inline size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          </button>
         </>
       }
     >
@@ -118,6 +217,9 @@ function VendorMetersPage() {
         <div className="space-y-4 pb-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Total meters" value={meters.length} />
+            <StatCard label="Electricity" value={meters.filter((m) => m.type === "electricity").length} />
+            <StatCard label="Water" value={meters.filter((m) => m.type === "water").length} />
+            <StatCard label="Gas" value={meters.filter((m) => m.type === "gas").length} />
             <StatCard label="Active" value={meters.filter((m) => m.status === "active").length} />
             <StatCard
               label="Installed"
@@ -209,20 +311,20 @@ function VendorMetersPage() {
                 <table className="w-full text-left text-sm">
                   <thead className="text-xs uppercase text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2">Meter</th>
-                      <th className="px-3 py-2">Serial</th>
-                      <th className="px-3 py-2">Type</th>
-                      <th className="px-3 py-2">Supplier</th>
-                      <th className="px-3 py-2">Zone</th>
-                      <th className="px-3 py-2">Resident</th>
+                      <SortHeader label="Meter" sortBy="meter_number" />
+                      <SortHeader label="Serial" sortBy="serial_number" />
+                      <SortHeader label="Type" sortBy="type" />
+                      <SortHeader label="Supplier" sortBy="supplier_name" />
+                      <SortHeader label="Zone" sortBy="zone_name" />
+                      <SortHeader label="Resident" sortBy="resident_name" />
                       <th className="px-3 py-2">SGC</th>
                       <th className="px-3 py-2">KRN</th>
                       <th className="px-3 py-2">TI</th>
                       <th className="px-3 py-2">EA</th>
                       <th className="px-3 py-2">KEN</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Installation</th>
-                      <th className="px-3 py-2">Added</th>
+                      <SortHeader label="Status" sortBy="status" />
+                      <SortHeader label="Installation" sortBy="installation_status" />
+                      <SortHeader label="Added" sortBy="created_at" />
                       <th className="px-3 py-2">Actions</th>
                     </tr>
                   </thead>
@@ -280,7 +382,32 @@ function VendorMetersPage() {
                   </tbody>
                 </table>
               </div>
-              <Pagination page={page} pageCount={pageCount} onPage={setPage} total={rows.length} />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  Rows per page
+                  <select
+                    aria-label="Rows per page"
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="rounded-lg border border-border bg-card px-2 py-1 text-sm"
+                  >
+                    {LIMIT_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Pagination
+                  page={page}
+                  pageCount={pageCount}
+                  onPage={setPage}
+                  total={sortedRows.length}
+                />
+              </div>
             </>
           )}
         </div>

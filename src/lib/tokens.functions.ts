@@ -194,8 +194,11 @@ export type IssuedToken = {
   revoked_at: string | null;
   revoke_reason: string | null;
   issued_by_name: string | null;
+  issued_by_role: TokenIssuerRole;
   created_at: string;
 };
+
+export type TokenIssuerRole = "admin" | "vendor" | "other" | "unknown";
 
 const tokenAction = z.enum([
   "credit",
@@ -230,9 +233,19 @@ async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
 
   const actorIds = [...new Set(rows.map((r) => r.issued_by).filter(Boolean))] as string[];
   const actorById = new Map<string, string>();
+  const roleById = new Map<string, TokenIssuerRole>();
   if (actorIds.length) {
-    const { data: users } = await supabase.from("users").select("id, name, email").in("id", actorIds);
+    const [{ data: users }, { data: roles }] = await Promise.all([
+      supabase.from("users").select("id, name, email").in("id", actorIds),
+      supabase.from("user_roles").select("user_id, role").in("user_id", actorIds),
+    ]);
     for (const u of (users ?? []) as any[]) actorById.set(u.id, u.name ?? u.email ?? u.id);
+    for (const r of (roles ?? []) as any[]) {
+      const current = roleById.get(r.user_id as string);
+      if (r.role === "admin") roleById.set(r.user_id as string, "admin");
+      else if (r.role === "vendor" && current !== "admin") roleById.set(r.user_id as string, "vendor");
+      else if (!current) roleById.set(r.user_id as string, "other");
+    }
   }
 
   return rows.map((r) => ({
@@ -251,6 +264,7 @@ async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
     revoked_at: r.revoked_at ?? null,
     revoke_reason: r.revoke_reason ?? null,
     issued_by_name: r.issued_by ? (actorById.get(r.issued_by) ?? null) : null,
+    issued_by_role: (r.issued_by ? (roleById.get(r.issued_by) ?? "other") : "unknown") as TokenIssuerRole,
     created_at: r.created_at,
   }));
 }
@@ -319,7 +333,12 @@ export const issueMeterToken = createServerFn({ method: "POST" })
 export const listMeterTokens = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ meter_id: z.string().uuid().optional().nullable() }).parse(d ?? {}),
+    z
+      .object({
+        meter_id: z.string().uuid().optional().nullable(),
+        source: z.enum(["all", "admin", "vendor"]).optional(),
+      })
+      .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<IssuedToken[]> => {
     await assertAdmin(context as never);
@@ -332,7 +351,9 @@ export const listMeterTokens = createServerFn({ method: "POST" })
     if (data.meter_id) query = query.eq("meter_id", data.meter_id);
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return serialize(supabase, (rows ?? []) as any[]);
+    const serialized = await serialize(supabase, (rows ?? []) as any[]);
+    const source = data.source ?? "all";
+    return source === "all" ? serialized : serialized.filter((t) => t.issued_by_role === source);
   });
 
 /** Revoke a previously issued token so it can no longer be used. */

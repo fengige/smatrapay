@@ -40,6 +40,13 @@ const KIND_TONE: Record<string, string> = {
   landlord: "bg-emerald-500/12 text-emerald-600",
 };
 
+const SOURCE_TONE: Record<string, string> = {
+  admin: "bg-primary/10 text-primary",
+  vendor: "bg-violet-500/12 text-violet-600",
+  other: "bg-muted text-muted-foreground",
+  unknown: "bg-muted text-muted-foreground",
+};
+
 const DETAIL_ROUTE = {
   agent: "/agents/$id",
   vendor: "/vendors/$id",
@@ -87,11 +94,12 @@ function TokenLedgerPage() {
   const [holderId, setHolderId] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [includeRevoked, setIncludeRevoked] = useState(false);
+  const [source, setSource] = useState<"all" | "admin" | "vendor">("all");
 
   const query = useQuery({
-    queryKey: ["token-ledger", days, kind, holderId, q, includeRevoked],
+    queryKey: ["token-ledger", days, kind, holderId, q, includeRevoked, source],
     queryFn: () =>
-      fetchLedger({ data: { days, kind, holderId, q, includeRevoked } }),
+      fetchLedger({ data: { days, kind, holderId, q, includeRevoked, source } }),
     refetchInterval: 30000,
     placeholderData: (prev) => prev,
   });
@@ -112,6 +120,8 @@ function TokenLedgerPage() {
       "units",
       "amount",
       "reading",
+      "issued_by",
+      "issued_by_role",
       "holders",
     ];
     const body = rows.map((e) =>
@@ -124,6 +134,8 @@ function TokenLedgerPage() {
         e.units,
         e.amount,
         e.reading,
+        e.issued_by_name ?? "",
+        e.issued_by_role,
         e.holders.map((h) => `${h.kind}:${h.name}`).join(" | "),
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
@@ -185,6 +197,12 @@ function TokenLedgerPage() {
             { label: `Units vended (${days}d)`, value: number(totals?.units ?? 0, 2), icon: Gauge },
             { label: "Amount", value: number(totals?.amount ?? 0, 2), icon: Coins },
             { label: "Meters transacting", value: number(totals?.meters ?? 0), icon: Gauge },
+            { label: "Vendor-issued tokens", value: number(totals?.vendorIssued ?? 0), icon: Activity },
+            {
+              label: "Overdraft tokens",
+              value: number(totals?.overdraftTokens ?? 0),
+              icon: Coins,
+            },
           ].map((card) => (
             <div key={card.label} className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
@@ -276,6 +294,20 @@ function TokenLedgerPage() {
                 </button>
               ))}
             </div>
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              {(["all", "admin", "vendor"] as const).map((sv) => (
+                <button
+                  key={sv}
+                  type="button"
+                  onClick={() => setSource(sv)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${
+                    source === sv ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {sv === "all" ? "All sources" : `${sv} issued`}
+                </button>
+              ))}
+            </div>
             <label className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
               <input
                 type="checkbox"
@@ -345,6 +377,71 @@ function TokenLedgerPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card">
+          <div className="border-b border-border p-4">
+            <p className="text-sm font-semibold text-foreground">Max overdraft limits</p>
+            <p className="text-xs text-muted-foreground">
+              Latest overdraft token per meter, whether set by the admin desk or a vendor account
+            </p>
+          </div>
+          {(data?.overdraftLimits ?? []).length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              No overdraft limits have been set.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+                <caption className="sr-only">Overdraft limits per meter</caption>
+                <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="p-3 text-left">Meter</th>
+                    <th className="p-3 text-right">Limit</th>
+                    <th className="p-3 text-left">Set by</th>
+                    <th className="p-3 text-left">Set on</th>
+                    <th className="p-3 text-left">Holders</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.overdraftLimits ?? []).map((o) => (
+                    <tr key={o.token_id} className="border-t border-border">
+                      <td className="p-3">
+                        <Link
+                          to="/meters/$meterId"
+                          params={{ meterId: o.meter_id }}
+                          className="font-semibold text-foreground hover:underline"
+                        >
+                          {o.meter_number}
+                        </Link>
+                      </td>
+                      <td className="p-3 text-right font-semibold">{number(o.limit, 2)}</td>
+                      <td className="p-3">
+                        <p className="text-foreground">{o.issued_by_name ?? "—"}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${SOURCE_TONE[o.issued_by_role]}`}>
+                          {o.issued_by_role === "unknown" ? "system" : o.issued_by_role}
+                        </span>
+                      </td>
+                      <td className="p-3 whitespace-nowrap text-muted-foreground">
+                        {new Date(o.created_at).toLocaleString()}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-1">
+                          {o.holders.length ? (
+                            o.holders.map((h) => (
+                              <HolderBadge key={`${h.kind}:${h.id}`} kind={h.kind} id={h.id} name={h.name} />
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Unassigned</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border p-4">
             <p className="text-sm font-semibold text-foreground">Transactions</p>
             {holderId && (
@@ -369,6 +466,7 @@ function TokenLedgerPage() {
                   <th className="p-3 text-right">Units</th>
                   <th className="p-3 text-right">Amount</th>
                   <th className="p-3 text-right">Reading</th>
+                  <th className="p-3 text-left">Issued by</th>
                   <th className="p-3 text-left">Holders</th>
                 </tr>
               </thead>
@@ -396,6 +494,12 @@ function TokenLedgerPage() {
                     <td className="p-3 text-right">{number(e.amount, 2)}</td>
                     <td className="p-3 text-right">{number(e.reading, 2)}</td>
                     <td className="p-3">
+                      <p className="text-foreground">{e.issued_by_name ?? "—"}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${SOURCE_TONE[e.issued_by_role]}`}>
+                        {e.issued_by_role === "unknown" ? "system" : e.issued_by_role}
+                      </span>
+                    </td>
+                    <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {e.holders.length ? (
                           e.holders.map((h) => (
@@ -410,7 +514,7 @@ function TokenLedgerPage() {
                 ))}
                 {!query.isLoading && !(data?.entries ?? []).length && (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={9} className="p-8 text-center text-sm text-muted-foreground">
                       No transactions match these filters.
                     </td>
                   </tr>

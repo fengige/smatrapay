@@ -19,3 +19,7 @@
 - [x] Installation status shared across admin + vendor meter pages
 - [x] Property details: owner-specific profile card and Landlord/Agent/Vendor links
 - [x] Vendor POS + POS Shift Report (vendor-scoped counter sales, receipts, SMS re-send)
+
+- [x] Vendor portal: mirror admin Property Management layout
+- [x] Admin Token Management + Token Ledger: show vendor-issued tokens and overdraft limits
+- [x] Vendor portal: mirror admin Meter Management page
