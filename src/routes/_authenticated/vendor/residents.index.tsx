@@ -27,6 +27,7 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
+import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   ResidentFormFields,
   UnitPicker,
