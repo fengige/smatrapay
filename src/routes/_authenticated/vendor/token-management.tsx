@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/vendor/token-management")(
       {
         name: "description",
         content:
-          "Search your prepaid meters and issue credit, key change or clear tamper tokens for your customers.",
+          "Search your prepaid meters and issue credit, set max overdraft or clear tamper tokens for your customers.",
       },
       { property: "og:title", content: "Token Management · Vendor · SmatraPay" },
       {
