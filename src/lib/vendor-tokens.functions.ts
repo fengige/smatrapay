@@ -200,11 +200,13 @@ export const issueVendorMeterToken = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await logVendorAction(supabase, vendorId, context.userId, "VENDOR_TOKEN_REQUESTED", {
-      resource_type: "meter_token",
-      resource_id: (row as any).id,
-      metadata: { meter_id: data.meter_id, action: data.action, amount: data.amount },
-    });
+    await logVendorAction(
+      supabase,
+      vendorId,
+      "VENDOR_TOKEN_REQUESTED",
+      { type: "meter_token", id: (row as any).id },
+      { meter_id: data.meter_id, action: data.action, amount: data.amount },
+    );
 
     const [serialized] = await serialize(supabase, [row]);
     return serialized!;
