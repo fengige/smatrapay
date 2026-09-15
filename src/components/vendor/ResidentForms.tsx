@@ -156,91 +156,110 @@ export function ResidentFormFields({
   form,
   onChange,
   residentId,
+  section = "all",
 }: {
   form: ResidentForm;
   onChange: (next: ResidentForm) => void;
   residentId?: string;
+  /** Limit which fields render, so a wizard can split them across steps. */
+  section?: "all" | "identity" | "contact";
 }) {
   const set = (key: keyof ResidentForm, value: string) =>
     onChange({ ...form, [key]: value } as ResidentForm);
+  const showIdentity = section === "all" || section === "identity";
+  const showContact = section === "all" || section === "contact";
 
   return (
     <div className="space-y-4">
-      <ResidentPhotoPicker
-        value={form.profile_image}
-        onChange={(url) => set("profile_image", url)}
-        name={form.first_name || null}
-      />
+      {showIdentity && (
+        <ResidentPhotoPicker
+          value={form.profile_image}
+          onChange={(url) => set("profile_image", url)}
+          name={form.first_name || null}
+        />
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="First name" required>
-          <input
-            className={inputClass}
-            value={form.first_name}
-            onChange={(e) => set("first_name", e.target.value)}
-          />
-        </Field>
-        <Field label="Middle name">
-          <input
-            className={inputClass}
-            value={form.middle_name}
-            onChange={(e) => set("middle_name", e.target.value)}
-          />
-        </Field>
-        <Field label="Last name" required>
-          <input
-            className={inputClass}
-            value={form.last_name}
-            onChange={(e) => set("last_name", e.target.value)}
-          />
-        </Field>
-        <Field label="Email address" required>
-          <input
-            type="email"
-            className={inputClass}
-            value={form.email}
-            onChange={(e) => set("email", e.target.value)}
-            placeholder="name@example.com"
-          />
-        </Field>
-        <Field label="Phone number">
-          <input
-            className={inputClass}
-            value={form.phone}
-            onChange={(e) => set("phone", e.target.value)}
-            placeholder="+254 700 000 000"
-          />
-        </Field>
-        <Field label="ID / identification number">
-          <input
-            className={inputClass}
-            value={form.id_number}
-            onChange={(e) => set("id_number", e.target.value)}
-          />
-        </Field>
-        <div className="sm:col-span-2">
-          <Field label="Address">
-            <input
-              className={inputClass}
-              value={form.address}
-              onChange={(e) => set("address", e.target.value)}
-              placeholder="Physical or postal address"
-            />
-          </Field>
-        </div>
-        <Field label="Status">
-          <select
-            className={inputClass}
-            value={form.status}
-            onChange={(e) => set("status", e.target.value)}
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Deactivated</option>
-          </select>
-        </Field>
-        {residentId && (
-          <Field label="Resident ID">
-            <input disabled className={`${inputClass} bg-muted/40`} value={`RES-${residentId.slice(0, 8).toUpperCase()}`} />
-          </Field>
+        {showIdentity && (
+          <>
+            <Field label="First name" required>
+              <input
+                className={inputClass}
+                value={form.first_name}
+                onChange={(e) => set("first_name", e.target.value)}
+              />
+            </Field>
+            <Field label="Middle name">
+              <input
+                className={inputClass}
+                value={form.middle_name}
+                onChange={(e) => set("middle_name", e.target.value)}
+              />
+            </Field>
+            <Field label="Last name" required>
+              <input
+                className={inputClass}
+                value={form.last_name}
+                onChange={(e) => set("last_name", e.target.value)}
+              />
+            </Field>
+          </>
+        )}
+        {showContact && (
+          <>
+            <Field label="Email address" required>
+              <input
+                type="email"
+                className={inputClass}
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                placeholder="name@example.com"
+              />
+            </Field>
+            <Field label="Phone number">
+              <input
+                className={inputClass}
+                value={form.phone}
+                onChange={(e) => set("phone", e.target.value)}
+                placeholder="+254 700 000 000"
+              />
+            </Field>
+            <Field label="ID / identification number">
+              <input
+                className={inputClass}
+                value={form.id_number}
+                onChange={(e) => set("id_number", e.target.value)}
+              />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Address">
+                <input
+                  className={inputClass}
+                  value={form.address}
+                  onChange={(e) => set("address", e.target.value)}
+                  placeholder="Physical or postal address"
+                />
+              </Field>
+            </div>
+            <Field label="Status">
+              <select
+                className={inputClass}
+                value={form.status}
+                onChange={(e) => set("status", e.target.value)}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Deactivated</option>
+              </select>
+            </Field>
+            {residentId && (
+              <Field label="Resident ID">
+                <input
+                  disabled
+                  className={`${inputClass} bg-muted/40`}
+                  value={`RES-${residentId.slice(0, 8).toUpperCase()}`}
+                />
+              </Field>
+            )}
+          </>
         )}
       </div>
     </div>

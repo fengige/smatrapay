@@ -28,6 +28,7 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
+import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   ResidentFormFields,
   UnitPicker,
@@ -727,23 +728,65 @@ function VendorLandlordsPage() {
 
       {dialog?.kind === "add" && (
         <VendorModal title="Add Landlord" onClose={closeDialog} wide>
-          <div className="space-y-4">
-            <ResidentFormFields form={form} onChange={setForm} />
-            <UnitPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />
-            <div className="flex justify-end gap-2">
-              <button type="button" className="btn-outline px-4 py-2" onClick={closeDialog}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={createMutation.isPending}
-                onClick={() => createMutation.mutate()}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-              >
-                {createMutation.isPending && <Loader2 className="size-4 animate-spin" />} Create landlord
-              </button>
-            </div>
-          </div>
+          <Wizard
+            submitLabel="Create landlord"
+            pending={createMutation.isPending}
+            onCancel={closeDialog}
+            onSubmit={() => createMutation.mutate()}
+            steps={[
+              {
+                title: "Profile",
+                description: "Photo and full name of the landlord.",
+                validate: () =>
+                  !form.first_name.trim() || !form.last_name.trim()
+                    ? "First and last name are required"
+                    : null,
+                content: <ResidentFormFields section="identity" form={form} onChange={setForm} />,
+              },
+              {
+                title: "Contact",
+                description: "How you reach the landlord, plus ID and status.",
+                validate: () =>
+                  /.+@.+\..+/.test(form.email.trim()) ? null : "A valid email address is required",
+                content: <ResidentFormFields section="contact" form={form} onChange={setForm} />,
+              },
+              {
+                title: "Unit",
+                description: "Optionally assign a unit in your scope now.",
+                content: (
+                  <UnitPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />
+                ),
+              },
+              {
+                title: "Review",
+                description: "Check the details before creating the account.",
+                content: (
+                  <ReviewList
+                    items={[
+                      [
+                        "Full name",
+                        [form.first_name, form.middle_name, form.last_name]
+                          .filter(Boolean)
+                          .join(" "),
+                      ],
+                      ["Email", form.email],
+                      ["Phone", form.phone],
+                      ["ID number", form.id_number],
+                      ["Address", form.address],
+                      ["Status", form.status === "active" ? "Active" : "Deactivated"],
+                      [
+                        "Unit",
+                        (() => {
+                          const u = units.find((x) => x.id === selectedUnit);
+                          return u ? `${u.property_name ?? ""} · ${u.unit_number}` : "Not assigned";
+                        })(),
+                      ],
+                    ]}
+                  />
+                ),
+              },
+            ]}
+          />
         </VendorModal>
       )}
 

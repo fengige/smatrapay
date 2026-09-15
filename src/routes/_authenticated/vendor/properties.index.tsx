@@ -21,6 +21,7 @@ import {
   propertyPayload,
   type PropertyFormState,
 } from "@/components/vendor/PropertyForm";
+import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   downloadCsv,
   EmptyState,
@@ -493,12 +494,85 @@ function VendorProperties() {
         </div>
       </div>
 
-      {(dialog?.mode === "add" || dialog?.mode === "edit") && (
-        <VendorModal
-          wide
-          title={dialog.mode === "add" ? "Add property" : "Edit property"}
-          onClose={() => setDialog(null)}
-        >
+      {dialog?.mode === "add" && (
+        <VendorModal wide title="Add property" onClose={() => setDialog(null)}>
+          <Wizard
+            submitLabel="Create property"
+            pending={save.isPending}
+            onCancel={() => setDialog(null)}
+            onSubmit={() => save.mutate()}
+            steps={[
+              {
+                title: "Property details",
+                description: "Name, type and description of the property.",
+                validate: () => (form.name.trim() ? null : "Property name is required"),
+                content: (
+                  <PropertyFormFields
+                    section="details"
+                    form={form}
+                    onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+                    owners={options.data?.owners ?? []}
+                    zones={options.data?.zones ?? []}
+                  />
+                ),
+              },
+              {
+                title: "Address",
+                description: "Where the property is located.",
+                content: (
+                  <PropertyFormFields
+                    section="address"
+                    form={form}
+                    onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+                    owners={options.data?.owners ?? []}
+                    zones={options.data?.zones ?? []}
+                  />
+                ),
+              },
+              {
+                title: "Review",
+                description: "Check everything before creating the property.",
+                validate: () =>
+                  !form.name.trim()
+                    ? "Property name is required"
+                    : !form.zone_id
+                      ? "Choose a zone you are assigned to"
+                      : null,
+                content: (
+                  <ReviewList
+                    items={[
+                      ["Name", form.name],
+                      ["Reference", form.code],
+                      ["Type", titleCase(form.property_type)],
+                      ["Owner type", titleCase(form.owner_type)],
+                      [
+                        "Owner",
+                        options.data?.owners.find((o) => o.id === form.landlord_id)?.name ?? "",
+                      ],
+                      [
+                        "Zone",
+                        options.data?.zones.find((z) => String(z.zone_id) === form.zone_id)
+                          ?.zone_name ?? "",
+                      ],
+                      ["Units", form.number_of_units],
+                      ["Status", titleCase(form.status)],
+                      [
+                        "Address",
+                        [form.building_number, form.street, form.estate, form.city, form.state, form.country]
+                          .filter(Boolean)
+                          .join(", "),
+                      ],
+                    ]}
+                  />
+                ),
+              },
+            ]}
+          />
+        </VendorModal>
+      )}
+
+      {dialog?.mode === "edit" && (
+        <VendorModal wide title="Edit property" onClose={() => setDialog(null)}>
           <PropertyFormFields
             form={form}
             onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
