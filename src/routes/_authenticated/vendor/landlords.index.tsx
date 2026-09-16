@@ -28,7 +28,6 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
-import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   ResidentFormFields,
   UnitPicker,
@@ -38,7 +37,6 @@ import {
 } from "@/components/vendor/ResidentForms";
 import {
   assignVendorLandlordUnit,
-  createVendorLandlord,
   deleteVendorLandlord,
   listVendorLandlordUnits,
   listVendorLandlords,
@@ -150,7 +148,6 @@ function VendorLandlordsPage() {
 
   const [dialog, setDialog] = useState<
     | null
-    | { kind: "add" }
     | { kind: "edit"; id: string }
     | { kind: "assign"; id: string }
     | { kind: "status"; id: string; next: "active" | "inactive" }
@@ -236,31 +233,6 @@ function VendorLandlordsPage() {
     setSelectedUnit("");
     setReason("");
   };
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      createLandlord({
-        data: {
-          first_name: form.first_name.trim(),
-          middle_name: form.middle_name.trim(),
-          last_name: form.last_name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-          id_number: form.id_number.trim(),
-          address: form.address.trim(),
-          status: form.status,
-          ...(form.profile_image ? { profile_image: form.profile_image } : {}),
-          ...(selectedUnit ? { unit_id: selectedUnit } : {}),
-        },
-      }),
-    onSuccess: async (res) => {
-      toast.success("Landlord created successfully");
-      await invalidate();
-      closeDialog();
-      navigate({ to: "/vendor/landlords/$landlordId", params: { landlordId: res.id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const editMutation = useMutation({
     mutationFn: (id: string) =>
@@ -419,17 +391,12 @@ function VendorLandlordsPage() {
           >
             <Loader2 className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setForm(emptyResidentForm);
-              setSelectedUnit("");
-              setDialog({ kind: "add" });
-            }}
+          <Link
+            to="/vendor/landlords/new"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="size-4" /> Add Landlord
-          </button>
+          </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
