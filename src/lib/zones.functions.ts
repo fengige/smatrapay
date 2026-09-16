@@ -2,12 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** Zones, routes and streets are managed by admins and vendors. */
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
   });
-  if (!isAdmin) throw new Error("Admin access required");
+  if (isAdmin) return;
+  const { data: isVendor } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "vendor",
+  });
+  if (!isVendor) throw new Error("Admin access required");
 }
 
 export type ZoneRow = {
