@@ -24,6 +24,7 @@ import {
   UserCircle,
   Users,
   type LucideIcon,
+  Bot,
 } from "lucide-react";
 import { dashboardForRoles } from "./portals";
 
