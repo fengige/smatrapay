@@ -2216,29 +2216,43 @@ export type Database = {
       zones: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string | null
           status: string
           updated_at: string
+          vendor_id: string | null
           zone_id: number
           zone_name: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           status?: string
           updated_at?: string
+          vendor_id?: string | null
           zone_id?: never
           zone_name: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           status?: string
           updated_at?: string
+          vendor_id?: string | null
           zone_id?: never
           zone_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "zones_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -2260,6 +2274,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      vendor_can_access_zone: {
+        Args: { _vendor: string; _zone: number }
         Returns: boolean
       }
       vendor_zone_ids: {
