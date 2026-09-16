@@ -192,7 +192,7 @@ function TenantApplicationPage() {
             <div className="flex flex-1 items-center justify-center p-6">
               <EmptyState
                 title="No application open"
-                description="Start a new tenant application to chat with the assistant."
+                message="Start a new tenant application to chat with the assistant."
               />
             </div>
           ) : detailQuery.isLoading ? (
