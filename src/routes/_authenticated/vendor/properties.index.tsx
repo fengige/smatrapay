@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import {
-  createVendorProperty,
   deleteVendorProperty,
   listVendorProperties,
   listVendorPropertyOptions,
@@ -21,7 +20,6 @@ import {
   propertyPayload,
   type PropertyFormState,
 } from "@/components/vendor/PropertyForm";
-import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   downloadCsv,
   EmptyState,
@@ -73,7 +71,6 @@ function VendorProperties() {
   const queryClient = useQueryClient();
   const fetchProperties = useServerFn(listVendorProperties);
   const fetchOptions = useServerFn(listVendorPropertyOptions);
-  const createFn = useServerFn(createVendorProperty);
   const updateFn = useServerFn(updateVendorProperty);
   const statusFn = useServerFn(setVendorPropertyStatus);
   const archiveFn = useServerFn(deleteVendorProperty);
@@ -97,7 +94,6 @@ function VendorProperties() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const [dialog, setDialog] = useState<
-    | { mode: "add" }
     | { mode: "edit"; id: string }
     | { mode: "status"; id: string; name: string; next: "active" | "archived" }
     | { mode: "archive"; id: string; name: string }
@@ -150,13 +146,11 @@ function VendorProperties() {
       const payload = propertyPayload(form);
       if (!payload.name) throw new Error("Property name is required");
       if (!payload.zone_id) throw new Error("Choose a zone you are assigned to");
-      if (dialog?.mode === "edit") {
-        return updateFn({ data: { id: dialog.id, ...payload } as never });
-      }
-      return createFn({ data: payload as never });
+      if (dialog?.mode !== "edit") throw new Error("Nothing to do");
+      return updateFn({ data: { id: dialog.id, ...payload } as never });
     },
     onSuccess: () => {
-      toast.success(dialog?.mode === "edit" ? "Property updated" : "Property added");
+      toast.success("Property updated");
       setDialog(null);
       setForm(emptyPropertyForm);
       refresh();
