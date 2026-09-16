@@ -56,6 +56,25 @@ function AddResidentPage() {
 
   const [form, setForm] = useState<ResidentForm>(emptyResidentForm);
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const linkApplication = useServerFn(linkVendorApplicationResident);
+
+  // Details captured by the tenant application assistant, if the vendor came from there.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(PREFILL_KEY);
+    const appId = sessionStorage.getItem(PREFILL_APPLICATION_KEY);
+    sessionStorage.removeItem(PREFILL_KEY);
+    sessionStorage.removeItem(PREFILL_APPLICATION_KEY);
+    if (appId) setApplicationId(appId);
+    if (!raw) return;
+    try {
+      const details = JSON.parse(raw) as Partial<ResidentForm>;
+      setForm((f) => ({ ...f, ...details }));
+      toast.success("Details from the application assistant loaded");
+    } catch {
+      /* ignore malformed prefill */
+    }
+  }, []);
 
   const back = () => void navigate({ to: "/vendor/residents" });
 
