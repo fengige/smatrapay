@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,7 +27,6 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
-import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   ResidentFormFields,
   UnitPicker,
@@ -36,7 +35,6 @@ import {
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
 import {
-  createVendorResident,
   deleteVendorResident,
   listVendorAssignableUnits,
   listVendorResidents,
@@ -116,12 +114,10 @@ export function residentCode(id: string) {
 
 function VendorResidentsPage() {
   const access = Route.useLoaderData();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const fetchResidents = useServerFn(listVendorResidents);
   const fetchUnits = useServerFn(listVendorAssignableUnits);
-  const createResident = useServerFn(createVendorResident);
   const saveResident = useServerFn(updateVendorResident);
   const setStatus = useServerFn(setVendorResidentStatus);
   const archiveResident = useServerFn(deleteVendorResident);
@@ -149,7 +145,6 @@ function VendorResidentsPage() {
 
   const [dialog, setDialog] = useState<
     | null
-    | { kind: "add" }
     | { kind: "edit"; id: string }
     | { kind: "assign"; id: string }
     | { kind: "status"; id: string; next: "active" | "inactive" }
@@ -249,31 +244,6 @@ function VendorResidentsPage() {
     setSelectedUnit("");
     setReason("");
   };
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      createResident({
-        data: {
-          first_name: form.first_name.trim(),
-          middle_name: form.middle_name.trim(),
-          last_name: form.last_name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-          id_number: form.id_number.trim(),
-          address: form.address.trim(),
-          status: form.status,
-          ...(form.profile_image ? { profile_image: form.profile_image } : {}),
-          ...(selectedUnit ? { unit_id: selectedUnit } : {}),
-        },
-      }),
-    onSuccess: async (res) => {
-      toast.success("Resident created successfully");
-      await invalidate();
-      closeDialog();
-      navigate({ to: "/vendor/residents/$residentId", params: { residentId: res.id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const editMutation = useMutation({
     mutationFn: (id: string) =>
@@ -431,17 +401,12 @@ function VendorResidentsPage() {
           >
             <Loader2 className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setForm(emptyResidentForm);
-              setSelectedUnit("");
-              setDialog({ kind: "add" });
-            }}
+          <Link
+            to="/vendor/residents/new"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="size-4" /> Add Resident
-          </button>
+          </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -751,70 +716,6 @@ function VendorResidentsPage() {
           />
         )}
       </div>
-
-      {dialog?.kind === "add" && (
-        <VendorModal title="Add Resident" onClose={closeDialog} wide>
-          <Wizard
-            submitLabel="Create resident"
-            pending={createMutation.isPending}
-            onCancel={closeDialog}
-            onSubmit={() => createMutation.mutate()}
-            steps={[
-              {
-                title: "Profile",
-                description: "Photo and full name of the resident.",
-                validate: () =>
-                  !form.first_name.trim() || !form.last_name.trim()
-                    ? "First and last name are required"
-                    : null,
-                content: <ResidentFormFields section="identity" form={form} onChange={setForm} />,
-              },
-              {
-                title: "Contact",
-                description: "How you reach the resident, plus ID and status.",
-                validate: () =>
-                  /.+@.+\..+/.test(form.email.trim()) ? null : "A valid email address is required",
-                content: <ResidentFormFields section="contact" form={form} onChange={setForm} />,
-              },
-              {
-                title: "Unit",
-                description: "Optionally assign a unit in your scope now.",
-                content: (
-                  <UnitPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />
-                ),
-              },
-              {
-                title: "Review",
-                description: "Check the details before creating the account.",
-                content: (
-                  <ReviewList
-                    items={[
-                      [
-                        "Full name",
-                        [form.first_name, form.middle_name, form.last_name]
-                          .filter(Boolean)
-                          .join(" "),
-                      ],
-                      ["Email", form.email],
-                      ["Phone", form.phone],
-                      ["ID number", form.id_number],
-                      ["Address", form.address],
-                      ["Status", form.status === "active" ? "Active" : "Deactivated"],
-                      [
-                        "Unit",
-                        (() => {
-                          const u = units.find((x) => x.id === selectedUnit);
-                          return u ? `${u.property_name ?? ""} · ${u.unit_number}` : "Not assigned";
-                        })(),
-                      ],
-                    ]}
-                  />
-                ),
-              },
-            ]}
-          />
-        </VendorModal>
-      )}
 
       {dialog?.kind === "edit" && (
         <VendorModal title="Edit Resident" onClose={closeDialog} wide>

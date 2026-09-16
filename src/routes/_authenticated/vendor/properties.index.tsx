@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import {
-  createVendorProperty,
   deleteVendorProperty,
   listVendorProperties,
   listVendorPropertyOptions,
@@ -21,7 +20,6 @@ import {
   propertyPayload,
   type PropertyFormState,
 } from "@/components/vendor/PropertyForm";
-import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   downloadCsv,
   EmptyState,
@@ -73,7 +71,6 @@ function VendorProperties() {
   const queryClient = useQueryClient();
   const fetchProperties = useServerFn(listVendorProperties);
   const fetchOptions = useServerFn(listVendorPropertyOptions);
-  const createFn = useServerFn(createVendorProperty);
   const updateFn = useServerFn(updateVendorProperty);
   const statusFn = useServerFn(setVendorPropertyStatus);
   const archiveFn = useServerFn(deleteVendorProperty);
@@ -97,7 +94,6 @@ function VendorProperties() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const [dialog, setDialog] = useState<
-    | { mode: "add" }
     | { mode: "edit"; id: string }
     | { mode: "status"; id: string; name: string; next: "active" | "archived" }
     | { mode: "archive"; id: string; name: string }
@@ -150,13 +146,11 @@ function VendorProperties() {
       const payload = propertyPayload(form);
       if (!payload.name) throw new Error("Property name is required");
       if (!payload.zone_id) throw new Error("Choose a zone you are assigned to");
-      if (dialog?.mode === "edit") {
-        return updateFn({ data: { id: dialog.id, ...payload } as never });
-      }
-      return createFn({ data: payload as never });
+      if (dialog?.mode !== "edit") throw new Error("Nothing to do");
+      return updateFn({ data: { id: dialog.id, ...payload } as never });
     },
     onSuccess: () => {
-      toast.success(dialog?.mode === "edit" ? "Property updated" : "Property added");
+      toast.success("Property updated");
       setDialog(null);
       setForm(emptyPropertyForm);
       refresh();
@@ -280,15 +274,12 @@ function VendorProperties() {
             >
               <Download className="h-4 w-4" /> Export
             </button>
-            <button
+            <Link
+              to="/vendor/properties/new"
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground"
-              onClick={() => {
-                setForm(emptyPropertyForm);
-                setDialog({ mode: "add" });
-              }}
             >
               <Plus className="h-4 w-4" /> Add property
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -493,83 +484,6 @@ function VendorProperties() {
           </div>
         </div>
       </div>
-
-      {dialog?.mode === "add" && (
-        <VendorModal wide title="Add property" onClose={() => setDialog(null)}>
-          <Wizard
-            submitLabel="Create property"
-            pending={save.isPending}
-            onCancel={() => setDialog(null)}
-            onSubmit={() => save.mutate()}
-            steps={[
-              {
-                title: "Property details",
-                description: "Name, type and description of the property.",
-                validate: () => (form.name.trim() ? null : "Property name is required"),
-                content: (
-                  <PropertyFormFields
-                    section="details"
-                    form={form}
-                    onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-                    owners={options.data?.owners ?? []}
-                    zones={options.data?.zones ?? []}
-                  />
-                ),
-              },
-              {
-                title: "Address",
-                description: "Where the property is located.",
-                content: (
-                  <PropertyFormFields
-                    section="address"
-                    form={form}
-                    onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-                    owners={options.data?.owners ?? []}
-                    zones={options.data?.zones ?? []}
-                  />
-                ),
-              },
-              {
-                title: "Review",
-                description: "Check everything before creating the property.",
-                validate: () =>
-                  !form.name.trim()
-                    ? "Property name is required"
-                    : !form.zone_id
-                      ? "Choose a zone you are assigned to"
-                      : null,
-                content: (
-                  <ReviewList
-                    items={[
-                      ["Name", form.name],
-                      ["Reference", form.code],
-                      ["Type", titleCase(form.property_type)],
-                      ["Owner type", titleCase(form.owner_type)],
-                      [
-                        "Owner",
-                        options.data?.owners.find((o) => o.id === form.landlord_id)?.name ?? "",
-                      ],
-                      [
-                        "Zone",
-                        options.data?.zones.find((z) => String(z.zone_id) === form.zone_id)
-                          ?.zone_name ?? "",
-                      ],
-                      ["Units", form.number_of_units],
-                      ["Status", titleCase(form.status)],
-                      [
-                        "Address",
-                        [form.building_number, form.street, form.estate, form.city, form.state, form.country]
-                          .filter(Boolean)
-                          .join(", "),
-                      ],
-                    ]}
-                  />
-                ),
-              },
-            ]}
-          />
-        </VendorModal>
-      )}
 
       {dialog?.mode === "edit" && (
         <VendorModal wide title="Edit property" onClose={() => setDialog(null)}>
