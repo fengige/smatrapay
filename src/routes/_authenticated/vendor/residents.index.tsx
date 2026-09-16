@@ -21,6 +21,7 @@ import {
   Users as UsersIcon,
   DoorOpen,
 } from "lucide-react";
+import { Bot } from "lucide-react";
 import { toast } from "sonner";
 
 import { checkRoleAccess } from "@/lib/auth.functions";
@@ -401,6 +402,12 @@ function VendorResidentsPage() {
           >
             <Loader2 className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </button>
+          <Link
+            to="/vendor/residents/apply"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
+          >
+            <Bot className="size-4" /> AI Application
+          </Link>
           <Link
             to="/vendor/residents/new"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"

@@ -119,6 +119,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         heading: "MANAGEMENT",
         items: [
           { label: "Resident Management", icon: Users, to: "/vendor/residents" },
+          { label: "Tenant Application AI", icon: Bot, to: "/vendor/residents/apply" },
           { label: "Landlord Management", icon: Building2, to: "/vendor/landlords" },
           { label: "Property Management", icon: Home, to: "/vendor/properties" },
           { label: "Service Provider", icon: Briefcase, to: "/vendor/service-providers" },

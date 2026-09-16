@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ import {
   createVendorResident,
   listVendorAssignableUnits,
 } from "@/lib/vendor-residents.functions";
+import { linkVendorApplicationResident } from "@/lib/vendor-applications.functions";
+import { PREFILL_APPLICATION_KEY, PREFILL_KEY } from "./residents.apply";
 
 export const Route = createFileRoute("/_authenticated/vendor/residents/new")({
   head: () => ({
@@ -96,6 +98,13 @@ function AddResidentPage() {
       }),
     onSuccess: async (res) => {
       toast.success("Resident created successfully");
+      if (applicationId) {
+        try {
+          await linkApplication({ data: { id: applicationId, resident_id: res.id } });
+        } catch {
+          /* linking the application is best-effort */
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: ["vendor-residents"] });
       await queryClient.invalidateQueries({ queryKey: ["vendor-assignable-units"] });
       await queryClient.invalidateQueries({ queryKey: ["vendor-scope"] });
