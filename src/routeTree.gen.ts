@@ -91,13 +91,16 @@ import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
 import { Route as AuthenticatedVendorLandlordsIndexRouteImport } from './routes/_authenticated/vendor/landlords.index'
 import { Route as AuthenticatedVendorLandlordsLandlordIdRouteImport } from './routes/_authenticated/vendor/landlords.$landlordId'
+import { Route as AuthenticatedVendorLandlordsNewRouteImport } from './routes/_authenticated/vendor/landlords.new'
 import { Route as AuthenticatedVendorMetersIndexRouteImport } from './routes/_authenticated/vendor/meters.index'
 import { Route as AuthenticatedVendorMetersMeterIdRouteImport } from './routes/_authenticated/vendor/meters.$meterId'
 import { Route as AuthenticatedVendorMetersBulkAddRouteImport } from './routes/_authenticated/vendor/meters.bulk-add'
 import { Route as AuthenticatedVendorPropertiesIndexRouteImport } from './routes/_authenticated/vendor/properties.index'
 import { Route as AuthenticatedVendorPropertiesPropertyIdRouteImport } from './routes/_authenticated/vendor/properties.$propertyId'
+import { Route as AuthenticatedVendorPropertiesNewRouteImport } from './routes/_authenticated/vendor/properties.new'
 import { Route as AuthenticatedVendorResidentsIndexRouteImport } from './routes/_authenticated/vendor/residents.index'
 import { Route as AuthenticatedVendorResidentsResidentIdRouteImport } from './routes/_authenticated/vendor/residents.$residentId'
+import { Route as AuthenticatedVendorResidentsNewRouteImport } from './routes/_authenticated/vendor/residents.new'
 import { Route as AuthenticatedVendorServiceRequestsIndexRouteImport } from './routes/_authenticated/vendor/service-requests.index'
 import { Route as AuthenticatedVendorServiceRequestsRequestIdRouteImport } from './routes/_authenticated/vendor/service-requests.$requestId'
 import { Route as AuthenticatedVendorTeamsIndexRouteImport } from './routes/_authenticated/vendor/teams.index'
@@ -586,6 +589,12 @@ const AuthenticatedVendorLandlordsLandlordIdRoute =
     path: '/vendor/landlords/$landlordId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorLandlordsNewRoute =
+  AuthenticatedVendorLandlordsNewRouteImport.update({
+    id: '/vendor/landlords/new',
+    path: '/vendor/landlords/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorMetersIndexRoute =
   AuthenticatedVendorMetersIndexRouteImport.update({
     id: '/vendor/meters/',
@@ -616,6 +625,12 @@ const AuthenticatedVendorPropertiesPropertyIdRoute =
     path: '/vendor/properties/$propertyId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorPropertiesNewRoute =
+  AuthenticatedVendorPropertiesNewRouteImport.update({
+    id: '/vendor/properties/new',
+    path: '/vendor/properties/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorResidentsIndexRoute =
   AuthenticatedVendorResidentsIndexRouteImport.update({
     id: '/vendor/residents/',
@@ -626,6 +641,12 @@ const AuthenticatedVendorResidentsResidentIdRoute =
   AuthenticatedVendorResidentsResidentIdRouteImport.update({
     id: '/vendor/residents/$residentId',
     path: '/vendor/residents/$residentId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVendorResidentsNewRoute =
+  AuthenticatedVendorResidentsNewRouteImport.update({
+    id: '/vendor/residents/new',
+    path: '/vendor/residents/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendorServiceRequestsIndexRoute =
@@ -798,10 +819,13 @@ export interface FileRoutesByFullPath {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendor/landlords/$landlordId': typeof AuthenticatedVendorLandlordsLandlordIdRoute
+  '/vendor/landlords/new': typeof AuthenticatedVendorLandlordsNewRoute
   '/vendor/meters/$meterId': typeof AuthenticatedVendorMetersMeterIdRoute
   '/vendor/meters/bulk-add': typeof AuthenticatedVendorMetersBulkAddRoute
   '/vendor/properties/$propertyId': typeof AuthenticatedVendorPropertiesPropertyIdRoute
+  '/vendor/properties/new': typeof AuthenticatedVendorPropertiesNewRoute
   '/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
+  '/vendor/residents/new': typeof AuthenticatedVendorResidentsNewRoute
   '/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
@@ -896,10 +920,13 @@ export interface FileRoutesByTo {
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendor/landlords/$landlordId': typeof AuthenticatedVendorLandlordsLandlordIdRoute
+  '/vendor/landlords/new': typeof AuthenticatedVendorLandlordsNewRoute
   '/vendor/meters/$meterId': typeof AuthenticatedVendorMetersMeterIdRoute
   '/vendor/meters/bulk-add': typeof AuthenticatedVendorMetersBulkAddRoute
   '/vendor/properties/$propertyId': typeof AuthenticatedVendorPropertiesPropertyIdRoute
+  '/vendor/properties/new': typeof AuthenticatedVendorPropertiesNewRoute
   '/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
+  '/vendor/residents/new': typeof AuthenticatedVendorResidentsNewRoute
   '/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
@@ -1004,10 +1031,13 @@ export interface FileRoutesById {
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/_authenticated/vendor/landlords/$landlordId': typeof AuthenticatedVendorLandlordsLandlordIdRoute
+  '/_authenticated/vendor/landlords/new': typeof AuthenticatedVendorLandlordsNewRoute
   '/_authenticated/vendor/meters/$meterId': typeof AuthenticatedVendorMetersMeterIdRoute
   '/_authenticated/vendor/meters/bulk-add': typeof AuthenticatedVendorMetersBulkAddRoute
   '/_authenticated/vendor/properties/$propertyId': typeof AuthenticatedVendorPropertiesPropertyIdRoute
+  '/_authenticated/vendor/properties/new': typeof AuthenticatedVendorPropertiesNewRoute
   '/_authenticated/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
+  '/_authenticated/vendor/residents/new': typeof AuthenticatedVendorResidentsNewRoute
   '/_authenticated/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   '/_authenticated/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/_authenticated/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
@@ -1112,10 +1142,13 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendor/landlords/$landlordId'
+    | '/vendor/landlords/new'
     | '/vendor/meters/$meterId'
     | '/vendor/meters/bulk-add'
     | '/vendor/properties/$propertyId'
+    | '/vendor/properties/new'
     | '/vendor/residents/$residentId'
+    | '/vendor/residents/new'
     | '/vendor/service-requests/$requestId'
     | '/vendor/teams/$teamId'
     | '/vendor/zones/$zoneId'
@@ -1210,10 +1243,13 @@ export interface FileRouteTypes {
     | '/residents/$id/edit'
     | '/users/$id/edit'
     | '/vendor/landlords/$landlordId'
+    | '/vendor/landlords/new'
     | '/vendor/meters/$meterId'
     | '/vendor/meters/bulk-add'
     | '/vendor/properties/$propertyId'
+    | '/vendor/properties/new'
     | '/vendor/residents/$residentId'
+    | '/vendor/residents/new'
     | '/vendor/service-requests/$requestId'
     | '/vendor/teams/$teamId'
     | '/vendor/zones/$zoneId'
@@ -1317,10 +1353,13 @@ export interface FileRouteTypes {
     | '/_authenticated/residents/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/_authenticated/vendor/landlords/$landlordId'
+    | '/_authenticated/vendor/landlords/new'
     | '/_authenticated/vendor/meters/$meterId'
     | '/_authenticated/vendor/meters/bulk-add'
     | '/_authenticated/vendor/properties/$propertyId'
+    | '/_authenticated/vendor/properties/new'
     | '/_authenticated/vendor/residents/$residentId'
+    | '/_authenticated/vendor/residents/new'
     | '/_authenticated/vendor/service-requests/$requestId'
     | '/_authenticated/vendor/teams/$teamId'
     | '/_authenticated/vendor/zones/$zoneId'
@@ -1941,6 +1980,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorLandlordsLandlordIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/landlords/new': {
+      id: '/_authenticated/vendor/landlords/new'
+      path: '/vendor/landlords/new'
+      fullPath: '/vendor/landlords/new'
+      preLoaderRoute: typeof AuthenticatedVendorLandlordsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/meters/': {
       id: '/_authenticated/vendor/meters/'
       path: '/vendor/meters'
@@ -1976,6 +2022,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorPropertiesPropertyIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/properties/new': {
+      id: '/_authenticated/vendor/properties/new'
+      path: '/vendor/properties/new'
+      fullPath: '/vendor/properties/new'
+      preLoaderRoute: typeof AuthenticatedVendorPropertiesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/residents/': {
       id: '/_authenticated/vendor/residents/'
       path: '/vendor/residents'
@@ -1988,6 +2041,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor/residents/$residentId'
       fullPath: '/vendor/residents/$residentId'
       preLoaderRoute: typeof AuthenticatedVendorResidentsResidentIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/residents/new': {
+      id: '/_authenticated/vendor/residents/new'
+      path: '/vendor/residents/new'
+      fullPath: '/vendor/residents/new'
+      preLoaderRoute: typeof AuthenticatedVendorResidentsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/service-requests/': {
@@ -2304,10 +2364,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
   AuthenticatedZonesIndexRoute: typeof AuthenticatedZonesIndexRoute
   AuthenticatedVendorLandlordsLandlordIdRoute: typeof AuthenticatedVendorLandlordsLandlordIdRoute
+  AuthenticatedVendorLandlordsNewRoute: typeof AuthenticatedVendorLandlordsNewRoute
   AuthenticatedVendorMetersMeterIdRoute: typeof AuthenticatedVendorMetersMeterIdRoute
   AuthenticatedVendorMetersBulkAddRoute: typeof AuthenticatedVendorMetersBulkAddRoute
   AuthenticatedVendorPropertiesPropertyIdRoute: typeof AuthenticatedVendorPropertiesPropertyIdRoute
+  AuthenticatedVendorPropertiesNewRoute: typeof AuthenticatedVendorPropertiesNewRoute
   AuthenticatedVendorResidentsResidentIdRoute: typeof AuthenticatedVendorResidentsResidentIdRoute
+  AuthenticatedVendorResidentsNewRoute: typeof AuthenticatedVendorResidentsNewRoute
   AuthenticatedVendorServiceRequestsRequestIdRoute: typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   AuthenticatedVendorTeamsTeamIdRoute: typeof AuthenticatedVendorTeamsTeamIdRoute
   AuthenticatedVendorZonesZoneIdRoute: typeof AuthenticatedVendorZonesZoneIdRoute
@@ -2375,12 +2438,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedZonesIndexRoute: AuthenticatedZonesIndexRoute,
   AuthenticatedVendorLandlordsLandlordIdRoute:
     AuthenticatedVendorLandlordsLandlordIdRoute,
+  AuthenticatedVendorLandlordsNewRoute: AuthenticatedVendorLandlordsNewRoute,
   AuthenticatedVendorMetersMeterIdRoute: AuthenticatedVendorMetersMeterIdRoute,
   AuthenticatedVendorMetersBulkAddRoute: AuthenticatedVendorMetersBulkAddRoute,
   AuthenticatedVendorPropertiesPropertyIdRoute:
     AuthenticatedVendorPropertiesPropertyIdRoute,
+  AuthenticatedVendorPropertiesNewRoute: AuthenticatedVendorPropertiesNewRoute,
   AuthenticatedVendorResidentsResidentIdRoute:
     AuthenticatedVendorResidentsResidentIdRoute,
+  AuthenticatedVendorResidentsNewRoute: AuthenticatedVendorResidentsNewRoute,
   AuthenticatedVendorServiceRequestsRequestIdRoute:
     AuthenticatedVendorServiceRequestsRequestIdRoute,
   AuthenticatedVendorTeamsTeamIdRoute: AuthenticatedVendorTeamsTeamIdRoute,
