@@ -72,15 +72,16 @@ function VendorZonesPage() {
   const exportCsv = () =>
     downloadCsv(
       "vendor-zones.csv",
-      rows.map((z) => ({
-        zone_id: z.zone_id,
-        zone_name: z.zone_name,
-        region: z.region ?? "",
-        city: z.city ?? "",
-        residents: z.resident_count,
-        meters: z.meter_count,
-        status: z.status,
-      })),
+      ["Zone ID", "Zone", "Region", "City", "Residents", "Meters", "Status"],
+      rows.map((z) => [
+        z.zone_id,
+        z.zone_name,
+        z.region ?? "",
+        z.city ?? "",
+        z.resident_count,
+        z.meter_count,
+        z.status,
+      ]),
     );
 
   return (
