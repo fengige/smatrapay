@@ -36,7 +36,7 @@ export const emptyPropertyForm: PropertyFormState = {
   code: "",
   property_type: "building",
   building_category: "residential",
-  subtype: "apartment",
+  subtype: "Apartments",
   description: "",
   owner_type: "landlord",
   landlord_id: "",
