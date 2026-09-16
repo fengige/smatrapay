@@ -121,7 +121,6 @@ function VendorLandlordsPage() {
 
   const fetchLandlords = useServerFn(listVendorLandlords);
   const fetchUnits = useServerFn(listVendorLandlordUnits);
-  const createLandlord = useServerFn(createVendorLandlord);
   const saveLandlord = useServerFn(updateVendorLandlord);
   const setStatus = useServerFn(setVendorLandlordStatus);
   const archiveLandlord = useServerFn(deleteVendorLandlord);
