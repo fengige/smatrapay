@@ -2,18 +2,73 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Zones, routes and streets are managed by admins and vendors. */
-async function assertAdmin(context: { supabase: any; userId: string }) {
+type ZoneAccess = { isAdmin: boolean; vendorId: string | null };
+
+/**
+ * Zones, routes and streets are managed by admins (system-wide) and vendors
+ * (scoped to the zones they own or that hold their properties).
+ */
+async function assertAdmin(context: { supabase: any; userId: string }): Promise<ZoneAccess> {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
   });
-  if (isAdmin) return;
+  if (isAdmin) return { isAdmin: true, vendorId: null };
   const { data: isVendor } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "vendor",
   });
   if (!isVendor) throw new Error("Admin access required");
+  return { isAdmin: false, vendorId: context.userId };
+}
+
+/** A vendor may only mutate zones they own. Never reveal other vendors' zones. */
+async function assertZoneOwned(
+  context: { supabase: any },
+  access: ZoneAccess,
+  zoneId: number,
+) {
+  if (access.isAdmin) return;
+  const { data } = await context.supabase
+    .from("zones")
+    .select("zone_id, vendor_id")
+    .eq("zone_id", zoneId)
+    .maybeSingle();
+  if (!data || (data as any).vendor_id !== access.vendorId) throw new Error("Zone not found");
+}
+
+/** Read/manage access to a zone's routes and streets. */
+async function assertZoneReachable(
+  context: { supabase: any; userId: string },
+  access: ZoneAccess,
+  zoneId: number,
+) {
+  if (access.isAdmin) return;
+  const { data } = await context.supabase.rpc("vendor_can_access_zone", {
+    _vendor: context.userId,
+    _zone: zoneId,
+  });
+  if (!data) throw new Error("Zone not found");
+}
+
+async function zoneIdForRoute(context: { supabase: any }, routeId: number): Promise<number> {
+  const { data } = await context.supabase
+    .from("routes")
+    .select("route_id, zone_id")
+    .eq("route_id", routeId)
+    .maybeSingle();
+  if (!data) throw new Error("Route not found");
+  return (data as any).zone_id as number;
+}
+
+async function zoneIdForStreet(context: { supabase: any }, streetId: number): Promise<number> {
+  const { data } = await context.supabase
+    .from("streets")
+    .select("street_id, route_id")
+    .eq("street_id", streetId)
+    .maybeSingle();
+  if (!data) throw new Error("Street not found");
+  return zoneIdForRoute(context, (data as any).route_id as number);
 }
 
 export type ZoneRow = {
