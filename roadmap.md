@@ -31,4 +31,4 @@
 - [ ] Vendor portal: AI tenant application chat (/vendor/residents/apply) that prefills the Add Resident wizard
 - [x] Vendor portal: mirror admin meters/bulk-add on /vendor/meters/bulk-add
 - [x] Vendor portal: /vendor/properties/new mirrors admin /properties/new wizard
-- [ ] Vendor portal: /vendor/residents/new mirrors admin /residents/new
+- [x] Vendor portal: /vendor/residents/new mirrors admin /residents/new
