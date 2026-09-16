@@ -116,7 +116,6 @@ function StatCard({
 
 function VendorLandlordsPage() {
   const access = Route.useLoaderData();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const fetchLandlords = useServerFn(listVendorLandlords);

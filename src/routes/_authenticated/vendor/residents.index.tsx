@@ -114,7 +114,6 @@ export function residentCode(id: string) {
 
 function VendorResidentsPage() {
   const access = Route.useLoaderData();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const fetchResidents = useServerFn(listVendorResidents);
