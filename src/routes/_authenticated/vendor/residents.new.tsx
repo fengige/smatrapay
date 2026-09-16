@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AtSign, ClipboardCheck, Home, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { checkRoleAccess } from "@/lib/auth.functions";
@@ -117,40 +118,58 @@ function AddResidentPage() {
     <DashboardShell
       access={access}
       title="Add Resident"
-      description="Create a resident account step by step"
+      description="Onboard a new resident account"
     >
-      <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="mx-auto max-w-4xl space-y-6 pb-6">
         <Wizard
+          layout="timeline"
           submitLabel="Create resident"
           pending={createMutation.isPending}
           onCancel={back}
           onSubmit={() => createMutation.mutate()}
           steps={[
             {
-              title: "Profile",
-              description: "Photo and full name of the resident.",
+              title: "Personal Information",
+              description: "Profile photo and full name as it appears across the portal.",
+              icon: UserRound,
               validate: () =>
                 !form.first_name.trim() || !form.last_name.trim()
                   ? "First and last name are required"
                   : null,
-              content: <ResidentFormFields section="identity" form={form} onChange={setForm} />,
+              content: (
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <ResidentFormFields section="identity" form={form} onChange={setForm} />
+                </div>
+              ),
             },
             {
-              title: "Contact",
-              description: "How you reach the resident, plus ID and status.",
+              title: "Contact Details",
+              description: "Email, phone, ID number and account status.",
+              icon: AtSign,
               validate: () =>
                 /.+@.+\..+/.test(form.email.trim()) ? null : "A valid email address is required",
-              content: <ResidentFormFields section="contact" form={form} onChange={setForm} />,
-            },
-            {
-              title: "Unit",
-              description: "Optionally assign a unit in your scope now.",
-              content: <UnitPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />,
-            },
-            {
-              title: "Review",
-              description: "Check the details before creating the account.",
               content: (
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <ResidentFormFields section="contact" form={form} onChange={setForm} />
+                </div>
+              ),
+            },
+            {
+              title: "Residency Details",
+              description: "Optionally assign a unit inside your vendor scope now.",
+              icon: Home,
+              content: (
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <UnitPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />
+                </div>
+              ),
+            },
+            {
+              title: "Review & Submit",
+              description: "Check the details before creating the account.",
+              icon: ClipboardCheck,
+              content: (
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
                 <ReviewList
                   items={[
                     [
@@ -171,6 +190,7 @@ function AddResidentPage() {
                     ],
                   ]}
                 />
+                </div>
               ),
             },
           ]}

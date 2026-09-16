@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Building2, ClipboardCheck, MapPin, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { checkRoleAccess } from "@/lib/auth.functions";
@@ -17,6 +18,7 @@ import {
   propertyPayload,
   type PropertyFormState,
 } from "@/components/vendor/PropertyForm";
+import { STATE_MAP } from "@/lib/countries";
 import { titleCase } from "@/components/vendor/VendorUI";
 
 export const Route = createFileRoute("/_authenticated/vendor/properties/new")({
@@ -53,103 +55,201 @@ function AddPropertyPage() {
     queryKey: ["vendor-property-options"],
     queryFn: () => fetchOptions(),
   });
+  const owners = options.data?.owners ?? [];
+  const zones = options.data?.zones ?? [];
 
   const [form, setForm] = useState<PropertyFormState>(emptyPropertyForm);
-  const onChange = (patch: Partial<PropertyFormState>) =>
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const onChange = (patch: Partial<PropertyFormState>) => {
+    setErrors({});
     setForm((prev) => ({ ...prev, ...patch }));
+  };
 
   const back = () => void navigate({ to: "/vendor/properties" });
+
+  const ownerLabel =
+    form.owner_type === "agent" ? "agent" : form.owner_type === "vendor" ? "vendor" : "landlord";
+
+  /** Same rules as the admin add-property wizard, plus the vendor zone requirement. */
+  const validateDetails = () => {
+    const next: Record<string, string> = {};
+    if (form.name.trim().length < 2) next["name"] = "Property name must be at least 2 characters";
+    if (!form.zone_id) next["zone_id"] = "Select one of your assigned zones";
+    if (form.property_type === "building" && !form.subtype)
+      next["subtype"] =
+        form.building_category === "commercial"
+          ? "Select a commercial type"
+          : "Select a residential type";
+    return next;
+  };
+
+  const validateOwner = () => {
+    const next: Record<string, string> = {};
+    const units = form.number_of_units.trim();
+    if (units) {
+      if (!/^\d+$/.test(units)) next["number_of_units"] = "Number of units must be a whole number";
+      else if (Number(units) > 100000) next["number_of_units"] = "Number of units is too large";
+    }
+    if (Number(units || 0) > 0 && !form.landlord_id)
+      next["landlord_id"] = `A ${ownerLabel} is required when units are greater than 0`;
+    return next;
+  };
+
+  const validateAddress = () => {
+    const next: Record<string, string> = {};
+    if (!form.country.trim()) next["country"] = "Country is required";
+    if (!form.state.trim()) next["state"] = "State / County is required";
+    else {
+      const states = form.country ? STATE_MAP[form.country] : undefined;
+      if (states && !states.includes(form.state))
+        next["state"] = `Select a valid state/county for ${form.country}`;
+    }
+    if (form.postal_code.trim().length > 30) next["postal_code"] = "Postal code is too long";
+    return next;
+  };
+
+  const check = (fn: () => Record<string, string>) => {
+    const next = fn();
+    setErrors(next);
+    const first = Object.values(next)[0];
+    return first ?? null;
+  };
 
   const save = useMutation({
     mutationFn: async () => {
       const payload = propertyPayload(form);
-      if (!payload.name) throw new Error("Property name is required");
-      if (!payload.zone_id) throw new Error("Choose a zone you are assigned to");
       return createFn({ data: payload as never });
     },
     onSuccess: async (res: { id: string }) => {
-      toast.success("Property added");
+      toast.success("Property created", {
+        description: `${form.name.trim()} has been added successfully.`,
+      });
       await queryClient.invalidateQueries({ queryKey: ["vendor-properties"] });
-      navigate({ to: "/vendor/properties/$propertyId", params: { propertyId: res.id } });
+      await navigate({ to: "/vendor/properties/$propertyId", params: { propertyId: res.id } });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message || "Could not create property"),
   });
+
+  const ownerName = owners.find((o) => o.id === form.landlord_id)?.name ?? "";
+  const zoneName = zones.find((z) => String(z.zone_id) === form.zone_id)?.zone_name ?? "";
 
   return (
     <DashboardShell
       access={access}
       title="Add Property"
-      description="Register a property in your assigned zones"
+      description="Create a new property record in your assigned zones"
     >
-      <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="mx-auto max-w-4xl space-y-6 pb-6">
         <Wizard
+          layout="timeline"
           submitLabel="Create property"
           pending={save.isPending}
           onCancel={back}
-          onSubmit={() => save.mutate()}
+          onSubmit={() => {
+            const all = { ...validateDetails(), ...validateOwner(), ...validateAddress() };
+            setErrors(all);
+            const first = Object.values(all)[0];
+            if (first) {
+              toast.error(first);
+              return;
+            }
+            save.mutate();
+          }}
           steps={[
             {
-              title: "Property details",
-              description: "Name, type and description of the property.",
-              validate: () => (form.name.trim() ? null : "Property name is required"),
+              title: "Property Details",
+              description: "Choose the property type and its core details.",
+              icon: Building2,
+              validate: () => check(validateDetails),
               content: (
-                <PropertyFormFields
-                  section="details"
-                  form={form}
-                  onChange={onChange}
-                  owners={options.data?.owners ?? []}
-                  zones={options.data?.zones ?? []}
-                />
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <PropertyFormFields
+                    section="details"
+                    form={form}
+                    onChange={onChange}
+                    owners={owners}
+                    zones={zones}
+                    errors={errors}
+                  />
+                </div>
+              ),
+            },
+            {
+              title: "Owner Details",
+              description: "Link the owner and set how many units the property has.",
+              icon: UserRound,
+              validate: () => check(validateOwner),
+              content: (
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <PropertyFormFields
+                    section="owner"
+                    form={form}
+                    onChange={onChange}
+                    owners={owners}
+                    zones={zones}
+                    errors={errors}
+                  />
+                </div>
               ),
             },
             {
               title: "Address",
               description: "Where the property is located.",
+              icon: MapPin,
+              validate: () => check(validateAddress),
               content: (
-                <PropertyFormFields
-                  section="address"
-                  form={form}
-                  onChange={onChange}
-                  owners={options.data?.owners ?? []}
-                  zones={options.data?.zones ?? []}
-                />
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <PropertyFormFields
+                    section="address"
+                    form={form}
+                    onChange={onChange}
+                    owners={owners}
+                    zones={zones}
+                    errors={errors}
+                  />
+                </div>
               ),
             },
             {
-              title: "Review",
+              title: "Review & Submit",
               description: "Check everything before creating the property.",
-              validate: () =>
-                !form.name.trim()
-                  ? "Property name is required"
-                  : !form.zone_id
-                    ? "Choose a zone you are assigned to"
-                    : null,
+              icon: ClipboardCheck,
               content: (
-                <ReviewList
-                  items={[
-                    ["Name", form.name],
-                    ["Reference", form.code],
-                    ["Type", titleCase(form.property_type)],
-                    ["Owner type", titleCase(form.owner_type)],
-                    [
-                      "Owner",
-                      options.data?.owners.find((o) => o.id === form.landlord_id)?.name ?? "",
-                    ],
-                    [
-                      "Zone",
-                      options.data?.zones.find((z) => String(z.zone_id) === form.zone_id)
-                        ?.zone_name ?? "",
-                    ],
-                    ["Units", form.number_of_units],
-                    ["Status", titleCase(form.status)],
-                    [
-                      "Address",
-                      [form.building_number, form.street, form.estate, form.city, form.state, form.country]
-                        .filter(Boolean)
-                        .join(", "),
-                    ],
-                  ]}
-                />
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+                  <ReviewList
+                    items={[
+                      ["Name", form.name],
+                      ["Reference", form.code],
+                      ["Type", titleCase(form.property_type)],
+                      [
+                        "Category",
+                        form.property_type === "building"
+                          ? `${titleCase(form.building_category)}${form.subtype ? ` · ${form.subtype}` : ""}`
+                          : "—",
+                      ],
+                      ["Zone", zoneName],
+                      ["Owner type", titleCase(form.owner_type)],
+                      ["Owner", ownerName],
+                      ["Units", form.number_of_units],
+                      ["Status", form.status === "active" ? "Active" : "Deactivated"],
+                      ["Description", form.description],
+                      [
+                        "Address",
+                        [
+                          form.building_number,
+                          form.street,
+                          form.estate,
+                          form.city,
+                          form.state,
+                          form.country,
+                          form.postal_code,
+                        ]
+                          .filter(Boolean)
+                          .join(", "),
+                      ],
+                    ]}
+                  />
+                </div>
               ),
             },
           ]}
