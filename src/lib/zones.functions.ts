@@ -411,6 +411,11 @@ export const listStreets = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ route_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
     const { data: rows, error } = await context.supabase
       .from("streets")
       .select("street_id, route_id, street_name, postal_code, created_at")
@@ -432,6 +437,11 @@ export const addStreet = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => streetInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
     const { data: existing } = await context.supabase
       .from("streets")
       .select("street_id")
@@ -450,6 +460,16 @@ export const updateStreet = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
     const { street_id, ...values } = data;
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForStreet(context as never, street_id),
+    );
     const { error } = await context.supabase
       .from("streets")
       .update(values as never)
@@ -463,6 +483,11 @@ export const deleteStreet = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ street_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForStreet(context as never, data.street_id),
+    );
     const { error } = await context.supabase
       .from("streets")
       .delete()
@@ -483,6 +508,11 @@ export const bulkDeleteStreets = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
     const { error } = await context.supabase
       .from("streets")
       .delete()
@@ -513,6 +543,11 @@ export const importStreets = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => streetImportInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
     const { supabase } = context;
 
     const { data: existingRows } = await supabase
@@ -586,6 +621,11 @@ export const setRouteStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
     const { data: existing, error: findError } = await context.supabase
       .from("routes")
       .select("route_id, status")
@@ -665,9 +705,12 @@ export const importZones = createServerFn({ method: "POST" })
         continue;
       }
 
-      const { error } = await supabase
-        .from("zones")
-        .insert({ zone_name: name, description: r.description.trim() || null } as never);
+      const { error } = await supabase.from("zones").insert({
+        zone_name: name,
+        description: r.description.trim() || null,
+        created_by: context.userId,
+        ...(access.isAdmin ? {} : { vendor_id: access.vendorId }),
+      } as never);
       if (error) {
         results.push({
           row: r.row,
@@ -730,7 +773,15 @@ export const listZoneAuditLogs = createServerFn({ method: "GET" })
       .select("id, zone_id, zone_name, action, changes, actor_id, created_at")
       .order("created_at", { ascending: false })
       .limit(200);
-    if (data?.zone_id) query = query.eq("zone_id", data.zone_id);
+    if (data?.zone_id) {
+      await assertZoneReachable(context as never, access, data.zone_id);
+      query = query.eq("zone_id", data.zone_id);
+    } else if (!access.isAdmin) {
+      const { data: ownZones } = await context.supabase.from("zones").select("zone_id");
+      const ids = ((ownZones ?? []) as any[]).map((z) => z.zone_id);
+      if (!ids.length) return { logs: [] as ZoneAuditRow[] };
+      query = query.in("zone_id", ids);
+    }
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
