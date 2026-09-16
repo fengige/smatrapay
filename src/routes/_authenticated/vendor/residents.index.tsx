@@ -246,31 +246,6 @@ function VendorResidentsPage() {
     setReason("");
   };
 
-  const createMutation = useMutation({
-    mutationFn: () =>
-      createResident({
-        data: {
-          first_name: form.first_name.trim(),
-          middle_name: form.middle_name.trim(),
-          last_name: form.last_name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-          id_number: form.id_number.trim(),
-          address: form.address.trim(),
-          status: form.status,
-          ...(form.profile_image ? { profile_image: form.profile_image } : {}),
-          ...(selectedUnit ? { unit_id: selectedUnit } : {}),
-        },
-      }),
-    onSuccess: async (res) => {
-      toast.success("Resident created successfully");
-      await invalidate();
-      closeDialog();
-      navigate({ to: "/vendor/residents/$residentId", params: { residentId: res.id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const editMutation = useMutation({
     mutationFn: (id: string) =>
       saveResident({
