@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ import {
   createVendorResident,
   listVendorAssignableUnits,
 } from "@/lib/vendor-residents.functions";
+import { linkVendorApplicationResident } from "@/lib/vendor-applications.functions";
+import { PREFILL_APPLICATION_KEY, PREFILL_KEY } from "./residents.apply";
 
 export const Route = createFileRoute("/_authenticated/vendor/residents/new")({
   head: () => ({
@@ -56,6 +58,25 @@ function AddResidentPage() {
 
   const [form, setForm] = useState<ResidentForm>(emptyResidentForm);
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const linkApplication = useServerFn(linkVendorApplicationResident);
+
+  // Details captured by the tenant application assistant, if the vendor came from there.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(PREFILL_KEY);
+    const appId = sessionStorage.getItem(PREFILL_APPLICATION_KEY);
+    sessionStorage.removeItem(PREFILL_KEY);
+    sessionStorage.removeItem(PREFILL_APPLICATION_KEY);
+    if (appId) setApplicationId(appId);
+    if (!raw) return;
+    try {
+      const details = JSON.parse(raw) as Partial<ResidentForm>;
+      setForm((f) => ({ ...f, ...details }));
+      toast.success("Details from the application assistant loaded");
+    } catch {
+      /* ignore malformed prefill */
+    }
+  }, []);
 
   const back = () => void navigate({ to: "/vendor/residents" });
 
@@ -77,6 +98,13 @@ function AddResidentPage() {
       }),
     onSuccess: async (res) => {
       toast.success("Resident created successfully");
+      if (applicationId) {
+        try {
+          await linkApplication({ data: { id: applicationId, resident_id: res.id } });
+        } catch {
+          /* linking the application is best-effort */
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: ["vendor-residents"] });
       await queryClient.invalidateQueries({ queryKey: ["vendor-assignable-units"] });
       await queryClient.invalidateQueries({ queryKey: ["vendor-scope"] });

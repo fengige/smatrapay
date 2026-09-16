@@ -100,6 +100,7 @@ import { Route as AuthenticatedVendorPropertiesPropertyIdRouteImport } from './r
 import { Route as AuthenticatedVendorPropertiesNewRouteImport } from './routes/_authenticated/vendor/properties.new'
 import { Route as AuthenticatedVendorResidentsIndexRouteImport } from './routes/_authenticated/vendor/residents.index'
 import { Route as AuthenticatedVendorResidentsResidentIdRouteImport } from './routes/_authenticated/vendor/residents.$residentId'
+import { Route as AuthenticatedVendorResidentsApplyRouteImport } from './routes/_authenticated/vendor/residents.apply'
 import { Route as AuthenticatedVendorResidentsNewRouteImport } from './routes/_authenticated/vendor/residents.new'
 import { Route as AuthenticatedVendorServiceRequestsIndexRouteImport } from './routes/_authenticated/vendor/service-requests.index'
 import { Route as AuthenticatedVendorServiceRequestsRequestIdRouteImport } from './routes/_authenticated/vendor/service-requests.$requestId'
@@ -643,6 +644,12 @@ const AuthenticatedVendorResidentsResidentIdRoute =
     path: '/vendor/residents/$residentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorResidentsApplyRoute =
+  AuthenticatedVendorResidentsApplyRouteImport.update({
+    id: '/vendor/residents/apply',
+    path: '/vendor/residents/apply',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorResidentsNewRoute =
   AuthenticatedVendorResidentsNewRouteImport.update({
     id: '/vendor/residents/new',
@@ -825,6 +832,7 @@ export interface FileRoutesByFullPath {
   '/vendor/properties/$propertyId': typeof AuthenticatedVendorPropertiesPropertyIdRoute
   '/vendor/properties/new': typeof AuthenticatedVendorPropertiesNewRoute
   '/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
+  '/vendor/residents/apply': typeof AuthenticatedVendorResidentsApplyRoute
   '/vendor/residents/new': typeof AuthenticatedVendorResidentsNewRoute
   '/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
@@ -926,6 +934,7 @@ export interface FileRoutesByTo {
   '/vendor/properties/$propertyId': typeof AuthenticatedVendorPropertiesPropertyIdRoute
   '/vendor/properties/new': typeof AuthenticatedVendorPropertiesNewRoute
   '/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
+  '/vendor/residents/apply': typeof AuthenticatedVendorResidentsApplyRoute
   '/vendor/residents/new': typeof AuthenticatedVendorResidentsNewRoute
   '/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
@@ -1037,6 +1046,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/properties/$propertyId': typeof AuthenticatedVendorPropertiesPropertyIdRoute
   '/_authenticated/vendor/properties/new': typeof AuthenticatedVendorPropertiesNewRoute
   '/_authenticated/vendor/residents/$residentId': typeof AuthenticatedVendorResidentsResidentIdRoute
+  '/_authenticated/vendor/residents/apply': typeof AuthenticatedVendorResidentsApplyRoute
   '/_authenticated/vendor/residents/new': typeof AuthenticatedVendorResidentsNewRoute
   '/_authenticated/vendor/service-requests/$requestId': typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   '/_authenticated/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
@@ -1148,6 +1158,7 @@ export interface FileRouteTypes {
     | '/vendor/properties/$propertyId'
     | '/vendor/properties/new'
     | '/vendor/residents/$residentId'
+    | '/vendor/residents/apply'
     | '/vendor/residents/new'
     | '/vendor/service-requests/$requestId'
     | '/vendor/teams/$teamId'
@@ -1249,6 +1260,7 @@ export interface FileRouteTypes {
     | '/vendor/properties/$propertyId'
     | '/vendor/properties/new'
     | '/vendor/residents/$residentId'
+    | '/vendor/residents/apply'
     | '/vendor/residents/new'
     | '/vendor/service-requests/$requestId'
     | '/vendor/teams/$teamId'
@@ -1359,6 +1371,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/properties/$propertyId'
     | '/_authenticated/vendor/properties/new'
     | '/_authenticated/vendor/residents/$residentId'
+    | '/_authenticated/vendor/residents/apply'
     | '/_authenticated/vendor/residents/new'
     | '/_authenticated/vendor/service-requests/$requestId'
     | '/_authenticated/vendor/teams/$teamId'
@@ -2043,6 +2056,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorResidentsResidentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/residents/apply': {
+      id: '/_authenticated/vendor/residents/apply'
+      path: '/vendor/residents/apply'
+      fullPath: '/vendor/residents/apply'
+      preLoaderRoute: typeof AuthenticatedVendorResidentsApplyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/residents/new': {
       id: '/_authenticated/vendor/residents/new'
       path: '/vendor/residents/new'
@@ -2370,6 +2390,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorPropertiesPropertyIdRoute: typeof AuthenticatedVendorPropertiesPropertyIdRoute
   AuthenticatedVendorPropertiesNewRoute: typeof AuthenticatedVendorPropertiesNewRoute
   AuthenticatedVendorResidentsResidentIdRoute: typeof AuthenticatedVendorResidentsResidentIdRoute
+  AuthenticatedVendorResidentsApplyRoute: typeof AuthenticatedVendorResidentsApplyRoute
   AuthenticatedVendorResidentsNewRoute: typeof AuthenticatedVendorResidentsNewRoute
   AuthenticatedVendorServiceRequestsRequestIdRoute: typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   AuthenticatedVendorTeamsTeamIdRoute: typeof AuthenticatedVendorTeamsTeamIdRoute
@@ -2446,6 +2467,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorPropertiesNewRoute: AuthenticatedVendorPropertiesNewRoute,
   AuthenticatedVendorResidentsResidentIdRoute:
     AuthenticatedVendorResidentsResidentIdRoute,
+  AuthenticatedVendorResidentsApplyRoute:
+    AuthenticatedVendorResidentsApplyRoute,
   AuthenticatedVendorResidentsNewRoute: AuthenticatedVendorResidentsNewRoute,
   AuthenticatedVendorServiceRequestsRequestIdRoute:
     AuthenticatedVendorServiceRequestsRequestIdRoute,

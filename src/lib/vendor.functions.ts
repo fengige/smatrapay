@@ -172,6 +172,25 @@ export const listVendorSuppliers = createServerFn({ method: "GET" })
     return { suppliers: (data ?? []) as { id: string; company_name: string; utility_type: string }[] };
   });
 
+/** Meter / serial numbers already registered inside the vendor's scope (RLS-bound). */
+export const listVendorMeterIdentifiers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertVendor } = await import("@/lib/vendor.server");
+    await assertVendor(context as never);
+    const { data, error } = await (context.supabase as any)
+      .from("meters")
+      .select("meter_number, serial_number");
+    if (error) throw new Error(error.message);
+    const meterNumbers: string[] = [];
+    const serials: string[] = [];
+    for (const r of (data ?? []) as any[]) {
+      if (r.meter_number) meterNumbers.push(String(r.meter_number).toLowerCase());
+      if (r.serial_number) serials.push(String(r.serial_number).toLowerCase());
+    }
+    return { meterNumbers, serials };
+  });
+
 export type VendorUnitOption = {
   id: string;
   unit_label: string;
@@ -560,6 +579,8 @@ export const bulkAddVendorMeters = createServerFn({ method: "POST" })
         type: z.enum(["electricity", "water", "gas"]),
         price_per_unit: numOrZero,
         initial_reading: numOrZero,
+        duplicate_mode: z.enum(["reject", "skip", "update"]).default("reject"),
+        confirm_update: z.boolean().optional().default(false),
         rows: z.array(bulkRow).min(1).max(500),
       })
       .parse(d),
@@ -569,6 +590,10 @@ export const bulkAddVendorMeters = createServerFn({ method: "POST" })
     const vendorId = await assertVendor(context as never);
     const supabase = context.supabase as any;
 
+    if (data.duplicate_mode === "update" && !data.confirm_update) {
+      throw new Error("Confirm the update before overwriting existing meters");
+    }
+
     const { data: result, error } = await supabase.rpc("bulk_add_meters", {
       p_payload: {
         supplier_id: data.supplier_id ?? null,
@@ -577,7 +602,7 @@ export const bulkAddVendorMeters = createServerFn({ method: "POST" })
         type: data.type,
         price_per_unit: data.price_per_unit,
         initial_reading: data.initial_reading,
-        duplicate_mode: "reject",
+        duplicate_mode: data.duplicate_mode,
         rows: data.rows,
       },
     });
