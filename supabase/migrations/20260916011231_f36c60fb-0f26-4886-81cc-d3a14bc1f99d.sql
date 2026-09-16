@@ -1,0 +1,3 @@
+CREATE POLICY "Vendors can manage zones" ON public.zones FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'vendor')) WITH CHECK (public.has_role(auth.uid(), 'vendor'));
+CREATE POLICY "Vendors can manage routes" ON public.routes FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'vendor')) WITH CHECK (public.has_role(auth.uid(), 'vendor'));
+CREATE POLICY "Vendors can manage streets" ON public.streets FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'vendor')) WITH CHECK (public.has_role(auth.uid(), 'vendor'));
