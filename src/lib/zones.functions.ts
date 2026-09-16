@@ -130,9 +130,12 @@ export const addZone = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => zoneInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    const payload = access.isAdmin
+      ? { ...data, created_by: context.userId }
+      : { ...data, vendor_id: access.vendorId, created_by: context.userId };
     const { data: inserted, error } = await context.supabase
       .from("zones")
-      .insert(data as never)
+      .insert(payload as never)
       .select("zone_id")
       .single();
     if (error) {
@@ -148,6 +151,7 @@ export const updateZone = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
     const { zone_id, ...values } = data;
+    await assertZoneOwned(context as never, access, zone_id);
     const { error } = await context.supabase
       .from("zones")
       .update(values as never)
@@ -169,6 +173,7 @@ export const getZone = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(context as never, access, data.zone_id);
     const { supabase } = context;
 
     const { data: row, error } = await supabase
@@ -232,6 +237,7 @@ export const setZoneStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneOwned(context as never, access, data.zone_id);
     const { error } = await context.supabase
       .from("zones")
       .update({ status: data.status } as never)
@@ -245,6 +251,7 @@ export const deleteZone = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneOwned(context as never, access, data.zone_id);
     const { error } = await context.supabase
       .from("zones")
       .delete()
@@ -286,6 +293,7 @@ export const listRoutes = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(context as never, access, data.zone_id);
     const { data: rows, error } = await context.supabase
       .from("routes")
       .select("route_id, zone_id, route_code, route_name, status, created_at")
@@ -322,6 +330,7 @@ export const addRoute = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => routeInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(context as never, access, data.zone_id);
     const { error } = await context.supabase.from("routes").insert(data as never);
     if (error) {
       if (error.code === "23505") throw new Error("A route with this code already exists");
@@ -336,6 +345,12 @@ export const updateRoute = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
     const { route_id, ...values } = data;
+    await assertZoneReachable(context as never, access, data.zone_id);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, route_id),
+    );
     const { error } = await context.supabase
       .from("routes")
       .update(values as never)
@@ -352,6 +367,11 @@ export const deleteRoute = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ route_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await assertAdmin(context as never);
+    await assertZoneReachable(
+      context as never,
+      access,
+      await zoneIdForRoute(context as never, data.route_id),
+    );
     const { error } = await context.supabase
       .from("routes")
       .delete()
