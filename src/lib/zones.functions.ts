@@ -42,7 +42,7 @@ const zoneUpdateInput = zoneInput.extend({ zone_id: z.number().int().positive() 
 export const listZones = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { supabase } = context;
 
     const { data: rows, error } = await supabase
@@ -74,7 +74,7 @@ export const addZone = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => zoneInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { data: inserted, error } = await context.supabase
       .from("zones")
       .insert(data as never)
@@ -91,7 +91,7 @@ export const updateZone = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => zoneUpdateInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { zone_id, ...values } = data;
     const { error } = await context.supabase
       .from("zones")
@@ -113,7 +113,7 @@ export const getZone = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { supabase } = context;
 
     const { data: row, error } = await supabase
@@ -176,7 +176,7 @@ export const setZoneStatus = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { error } = await context.supabase
       .from("zones")
       .update({ status: data.status } as never)
@@ -189,7 +189,7 @@ export const deleteZone = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { error } = await context.supabase
       .from("zones")
       .delete()
@@ -230,7 +230,7 @@ export const listRoutes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ zone_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { data: rows, error } = await context.supabase
       .from("routes")
       .select("route_id, zone_id, route_code, route_name, status, created_at")
@@ -266,7 +266,7 @@ export const addRoute = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => routeInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { error } = await context.supabase.from("routes").insert(data as never);
     if (error) {
       if (error.code === "23505") throw new Error("A route with this code already exists");
@@ -279,7 +279,7 @@ export const updateRoute = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => routeUpdateInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { route_id, ...values } = data;
     const { error } = await context.supabase
       .from("routes")
@@ -296,7 +296,7 @@ export const deleteRoute = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ route_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { error } = await context.supabase
       .from("routes")
       .delete()
@@ -335,7 +335,7 @@ export const listStreets = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ route_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { data: rows, error } = await context.supabase
       .from("streets")
       .select("street_id, route_id, street_name, postal_code, created_at")
@@ -356,7 +356,7 @@ export const addStreet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => streetInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { data: existing } = await context.supabase
       .from("streets")
       .select("street_id")
@@ -373,7 +373,7 @@ export const updateStreet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => streetUpdateInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { street_id, ...values } = data;
     const { error } = await context.supabase
       .from("streets")
@@ -387,7 +387,7 @@ export const deleteStreet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ street_id: z.number().int().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { error } = await context.supabase
       .from("streets")
       .delete()
@@ -407,7 +407,7 @@ export const bulkDeleteStreets = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { error } = await context.supabase
       .from("streets")
       .delete()
@@ -437,7 +437,7 @@ export const importStreets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => streetImportInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { supabase } = context;
 
     const { data: existingRows } = await supabase
@@ -510,7 +510,7 @@ export const setRouteStatus = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { data: existing, error: findError } = await context.supabase
       .from("routes")
       .select("route_id, status")
@@ -551,7 +551,7 @@ export const importZones = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => importInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     const { supabase } = context;
 
     const { data: existingRows } = await supabase.from("zones").select("zone_name");
@@ -649,7 +649,7 @@ export const listZoneAuditLogs = createServerFn({ method: "GET" })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const access = await assertAdmin(context as never);
     let query = context.supabase
       .from("zone_audit_logs")
       .select("id, zone_id, zone_name, action, changes, actor_id, created_at")
