@@ -42,11 +42,17 @@ export type VendorPropertyRow = {
   created_at: string;
 };
 
-/** Zone ids the authenticated vendor is allowed to work in. */
+/** Zone ids the authenticated vendor is allowed to work in (owned + assigned). */
 async function vendorZoneIds(supabase: Client, vendorId: string) {
   const { data, error } = await supabase.rpc("vendor_zone_ids", { _vendor: vendorId });
   if (error) throw new Error(error.message);
-  return new Set(((data ?? []) as any[]).map((z) => Number(z.zone_id)));
+  const ids = new Set(((data ?? []) as any[]).map((z) => Number(z.zone_id)));
+  const { data: owned } = await supabase
+    .from("zones")
+    .select("zone_id")
+    .eq("vendor_id", vendorId);
+  for (const z of (owned ?? []) as any[]) ids.add(Number(z.zone_id));
+  return ids;
 }
 
 async function assertPropertyInScope(supabase: Client, propertyId: string) {
