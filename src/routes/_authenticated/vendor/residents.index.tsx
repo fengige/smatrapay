@@ -402,17 +402,12 @@ function VendorResidentsPage() {
           >
             <Loader2 className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setForm(emptyResidentForm);
-              setSelectedUnit("");
-              setDialog({ kind: "add" });
-            }}
+          <Link
+            to="/vendor/residents/new"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="size-4" /> Add Resident
-          </button>
+          </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
