@@ -27,7 +27,6 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
-import { ReviewList, Wizard } from "@/components/vendor/Wizard";
 import {
   ResidentFormFields,
   UnitPicker,
@@ -36,7 +35,6 @@ import {
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
 import {
-  createVendorResident,
   deleteVendorResident,
   listVendorAssignableUnits,
   listVendorResidents,
@@ -121,7 +119,6 @@ function VendorResidentsPage() {
 
   const fetchResidents = useServerFn(listVendorResidents);
   const fetchUnits = useServerFn(listVendorAssignableUnits);
-  const createResident = useServerFn(createVendorResident);
   const saveResident = useServerFn(updateVendorResident);
   const setStatus = useServerFn(setVendorResidentStatus);
   const archiveResident = useServerFn(deleteVendorResident);
@@ -149,7 +146,6 @@ function VendorResidentsPage() {
 
   const [dialog, setDialog] = useState<
     | null
-    | { kind: "add" }
     | { kind: "edit"; id: string }
     | { kind: "assign"; id: string }
     | { kind: "status"; id: string; next: "active" | "inactive" }
