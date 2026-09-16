@@ -28,3 +28,5 @@
 - [ ] Vendor portal: Property Management (add/edit/activate/deactivate/archive, property details with Units, Address, Unit Timeline, Residents, Owner Details, My Photos tabs)
 
 - [x] Vendor portal: standalone Add Landlord / Add Property / Add Resident wizard pages (/vendor/landlords/new, /vendor/properties/new, /vendor/residents/new), linked from the listing pages
+- [ ] Vendor portal: AI tenant application chat (/vendor/residents/apply) that prefills the Add Resident wizard
+- [ ] Vendor portal: mirror admin meters/bulk-add on /vendor/meters/bulk-add
