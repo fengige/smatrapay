@@ -11,6 +11,7 @@ import {
   Pencil,
   PowerOff,
   Search,
+  Shuffle,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ import {
   archiveVendingSoftware,
   getVendingSoftware,
   setVendingSoftwareStatus,
+  listVendingSoftware,
+  reassignMetersVendingSoftware,
   type VendingSoftwareDetail,
   type VendingSoftwareMeterRow,
   type VendingSoftwareAuditRow,
@@ -133,6 +136,8 @@ function VendingSoftwareDetailsPage() {
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [zoneFilter, setZoneFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [target, setTarget] = useState("");
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["vending-software", softwareId],
@@ -143,6 +148,36 @@ function VendingSoftwareDetailsPage() {
   });
 
   const software = data?.software;
+
+  const fetchAllSoftware = useServerFn(listVendingSoftware);
+  const reassign = useServerFn(reassignMetersVendingSoftware);
+
+  const { data: allSoftware } = useQuery({
+    queryKey: ["vending-software"],
+    queryFn: () =>
+      fetchAllSoftware() as Promise<{ software: { id: string; name: string; status: string }[] }>,
+  });
+
+  const targets = (allSoftware?.software ?? []).filter(
+    (s) => s.status === "active" && s.id !== softwareId,
+  );
+
+  const reassignMutation = useMutation({
+    mutationFn: () =>
+      reassign({
+        data: { meterIds: selected, targetSoftwareId: target === "none" ? null : target },
+      } as never) as Promise<{ moved: number; target: string | null }>,
+    onSuccess: async (r) => {
+      setSelected([]);
+      setTarget("");
+      await queryClient.invalidateQueries({ queryKey: ["vending-software"] });
+      await refetch();
+      toast.success(
+        `${r.moved} meter${r.moved === 1 ? "" : "s"} moved to ${r.target ?? "no vending software"}`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const statusMutation = useMutation({
     mutationFn: (status: "active" | "inactive") =>
@@ -190,6 +225,33 @@ function VendingSoftwareDetailsPage() {
         .includes(needle);
     });
   }, [meters, q, typeFilter, supplierFilter, zoneFilter, statusFilter]);
+
+  /** Projected effect of the pending move on this software's usage summary. */
+  const impact = useMemo(() => {
+    const picked = meters.filter((m: VendingSoftwareMeterRow) => selected.includes(m.id));
+    const byType = new Map<string, number>();
+    let active = 0;
+    for (const m of picked) {
+      byType.set(m.type, (byType.get(m.type) ?? 0) + 1);
+      if (m.status === "active") active += 1;
+    }
+    return {
+      count: picked.length,
+      active,
+      byType: [...byType.entries()].map(([label, count]) => ({ label, count })),
+    };
+  }, [meters, selected]);
+
+  const allFilteredSelected =
+    filteredMeters.length > 0 &&
+    filteredMeters.every((m: VendingSoftwareMeterRow) => selected.includes(m.id));
+
+  const toggleAll = () =>
+    setSelected((prev) =>
+      allFilteredSelected
+        ? prev.filter((id) => !filteredMeters.some((m: VendingSoftwareMeterRow) => m.id === id))
+        : [...new Set([...prev, ...filteredMeters.map((m: VendingSoftwareMeterRow) => m.id)])],
+    );
 
   if (isLoading || !software) {
     return (
@@ -390,10 +452,80 @@ function VendingSoftwareDetailsPage() {
                 </select>
               </div>
 
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
+                <Shuffle className="size-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  {selected.length
+                    ? `${selected.length} meter${selected.length === 1 ? "" : "s"} selected`
+                    : "Select meters to move them to another vending software"}
+                </span>
+                <select
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  aria-label="Move selected meters to"
+                  disabled={!selected.length}
+                  className="h-10 rounded-xl border border-border bg-background px-3 text-sm disabled:opacity-60"
+                >
+                  <option value="">Move to…</option>
+                  {targets.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                  <option value="none">No vending software</option>
+                </select>
+                <button
+                  type="button"
+                  disabled={!selected.length || !target || reassignMutation.isPending}
+                  onClick={() => {
+                    const label =
+                      target === "none"
+                        ? "no vending software"
+                        : (targets.find((t) => t.id === target)?.name ?? "");
+                    if (
+                      window.confirm(
+                        `Move ${selected.length} meter(s) from ${software.name} to ${label}? This software's meter count drops to ${software.meter_count - selected.length}.`,
+                      )
+                    )
+                      reassignMutation.mutate();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                >
+                  {reassignMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Move meters
+                </button>
+                {selected.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelected([])}
+                    className="text-sm font-medium text-muted-foreground underline-offset-2 hover:underline"
+                  >
+                    Clear
+                  </button>
+                )}
+                {selected.length > 0 && (
+                  <p className="basis-full text-xs text-muted-foreground">
+                    Usage impact: total {software.usage.total} → {software.usage.total - impact.count},
+                    active {software.usage.activeMeters} → {software.usage.activeMeters - impact.active}
+                    {impact.byType.length
+                      ? ` · ${impact.byType.map((t) => `${t.count} ${t.label}`).join(", ")} leaving`
+                      : ""}
+                  </p>
+                )}
+              </div>
+
               <div className="mt-4 overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
+                      <th className="px-3 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all meters"
+                          checked={allFilteredSelected}
+                          onChange={toggleAll}
+                        />
+                      </th>
                       <th className="px-3 py-3 text-left">Meter no.</th>
                       <th className="px-3 py-3 text-left">Serial</th>
                       <th className="px-3 py-3 text-left">Type</th>
@@ -414,7 +546,7 @@ function VendingSoftwareDetailsPage() {
                   <tbody>
                     {!filteredMeters.length && (
                       <tr>
-                        <td colSpan={15} className="px-3 py-10 text-center text-muted-foreground">
+                        <td colSpan={16} className="px-3 py-10 text-center text-muted-foreground">
                           {meters.length
                             ? "No meters match your filters."
                             : "No meters are currently using this vending software."}
@@ -423,6 +555,20 @@ function VendingSoftwareDetailsPage() {
                     )}
                     {filteredMeters.map((m: VendingSoftwareMeterRow) => (
                       <tr key={m.id} className="border-t border-border/70">
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select meter ${m.meter_number}`}
+                            checked={selected.includes(m.id)}
+                            onChange={() =>
+                              setSelected((prev) =>
+                                prev.includes(m.id)
+                                  ? prev.filter((id) => id !== m.id)
+                                  : [...prev, m.id],
+                              )
+                            }
+                          />
+                        </td>
                         <td className="px-3 py-3 font-medium text-foreground">{m.meter_number}</td>
                         <td className="px-3 py-3">{dash(m.serial_number)}</td>
                         <td className="px-3 py-3 capitalize">{dash(m.type)}</td>
@@ -473,6 +619,13 @@ function VendingSoftwareDetailsPage() {
                     </div>
                   ))}
                 </div>
+                {selected.length > 0 && (
+                  <p className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
+                    Pending move of {impact.count} meter{impact.count === 1 ? "" : "s"}: total would become{" "}
+                    {software.usage.total - impact.count} and active{" "}
+                    {software.usage.activeMeters - impact.active}.
+                  </p>
+                )}
                 <div className="grid gap-4 lg:grid-cols-3">
                   <Bars title="Meters by type" rows={software.usage.byType} />
                   <Bars title="Meters by supplier" rows={software.usage.bySupplier} />

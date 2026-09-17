@@ -328,6 +328,103 @@ export const archiveVendingSoftware = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Moves existing meters from one vending software to another (or clears the
+ * assignment). Only active software may receive new assignments; the meters
+ * themselves are never deleted and every move is recorded in the audit trail.
+ */
+export const reassignMetersVendingSoftware = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        meterIds: z.array(uuid).min(1),
+        targetSoftwareId: uuid.nullable(),
+        reason: optionalText(500),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+
+    let target: { vending_software_id: string; name: string; status: string } | null = null;
+    if (data.targetSoftwareId) {
+      const { data: row } = await supabase
+        .from("vending_software")
+        .select("vending_software_id, name, status")
+        .eq("vending_software_id", data.targetSoftwareId)
+        .maybeSingle();
+      if (!row) throw new Error("Vending software not found");
+      target = row as unknown as { vending_software_id: string; name: string; status: string };
+      if (target!.status !== "active") {
+        throw new Error("Only active vending software can receive meter assignments");
+      }
+    }
+
+    const { data: meters, error: meterError } = await supabase
+      .from("meters")
+      .select("id, meter_number, vending_software_id")
+      .in("id", data.meterIds);
+    if (meterError) throw new Error(meterError.message);
+    if (!meters || meters.length !== data.meterIds.length) {
+      throw new Error("One or more meters could not be found");
+    }
+
+    const { error } = await supabase
+      .from("meters")
+      .update({ vending_software_id: data.targetSoftwareId } as never)
+      .in("id", data.meterIds);
+    if (error) throw new Error(error.message);
+
+    const sourceIds = [
+      ...new Set((meters as any[]).map((m) => m.vending_software_id).filter(Boolean)),
+    ] as string[];
+    const nameById = new Map<string, string>();
+    if (sourceIds.length) {
+      const { data: sources } = await supabase
+        .from("vending_software")
+        .select("vending_software_id, name")
+        .in("vending_software_id", sourceIds);
+      for (const s of (sources ?? []) as any[]) nameById.set(s.vending_software_id, s.name);
+    }
+
+    const numbers = (meters as any[]).map((m) => m.meter_number);
+    const reason =
+      data.reason ??
+      `${numbers.length} meter${numbers.length === 1 ? "" : "s"} reassigned: ${numbers.slice(0, 10).join(", ")}${
+        numbers.length > 10 ? "…" : ""
+      }`;
+
+    for (const sourceId of sourceIds) {
+      if (sourceId === data.targetSoftwareId) continue;
+      await logEvent(supabase, {
+        vending_software_id: sourceId,
+        software_name: nameById.get(sourceId) ?? null,
+        actor_id: userId,
+        action: "meters_reassigned_out",
+        reason,
+        changes: { to: target?.name ?? "Unassigned", meters: numbers },
+      });
+    }
+
+    if (data.targetSoftwareId) {
+      await logEvent(supabase, {
+        vending_software_id: data.targetSoftwareId,
+        software_name: target?.name ?? null,
+        actor_id: userId,
+        action: "meters_reassigned_in",
+        reason,
+        changes: {
+          from: sourceIds.map((s) => nameById.get(s) ?? "Unassigned").join(", ") || "Unassigned",
+          meters: numbers,
+        },
+      });
+    }
+
+    return { ok: true, moved: numbers.length, target: target?.name ?? null };
+  });
+
 /** One vending software record with its meters, usage summary and history. */
 export const getVendingSoftware = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
