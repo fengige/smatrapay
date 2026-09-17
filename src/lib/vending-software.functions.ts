@@ -356,7 +356,7 @@ export const reassignMetersVendingSoftware = createServerFn({ method: "POST" })
         .eq("vending_software_id", data.targetSoftwareId)
         .maybeSingle();
       if (!row) throw new Error("Vending software not found");
-      target = row as never;
+      target = row as unknown as { vending_software_id: string; name: string; status: string };
       if (target!.status !== "active") {
         throw new Error("Only active vending software can receive meter assignments");
       }
