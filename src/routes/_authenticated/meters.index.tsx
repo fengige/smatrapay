@@ -583,20 +583,20 @@ function MetersPage() {
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                     <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                     <td colSpan={11} className="px-3 py-8 text-center text-destructive">
+                     <td colSpan={12} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                     <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Use “Add Meter”, “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
