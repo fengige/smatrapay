@@ -62,6 +62,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
 import { Route as AuthenticatedVendingSoftwareIndexRouteImport } from './routes/_authenticated/vending-software.index'
+import { Route as AuthenticatedVendingSoftwareSoftwareIdRouteImport } from './routes/_authenticated/vending-software.$softwareId'
 import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
@@ -418,6 +419,12 @@ const AuthenticatedVendingSoftwareIndexRoute =
   AuthenticatedVendingSoftwareIndexRouteImport.update({
     id: '/vending-software/',
     path: '/vending-software/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVendingSoftwareSoftwareIdRoute =
+  AuthenticatedVendingSoftwareSoftwareIdRouteImport.update({
+    id: '/vending-software/$softwareId',
+    path: '/vending-software/$softwareId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendorActivationRoute =
@@ -800,6 +807,7 @@ export interface FileRoutesByFullPath {
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/users/new': typeof AuthenticatedUsersNewRoute
+  '/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
@@ -903,6 +911,7 @@ export interface FileRoutesByTo {
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
+  '/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
@@ -1016,6 +1025,7 @@ export interface FileRoutesById {
   '/_authenticated/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
+  '/_authenticated/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
@@ -1129,6 +1139,7 @@ export interface FileRouteTypes {
     | '/units/$unitId'
     | '/users/$id'
     | '/users/new'
+    | '/vending-software/$softwareId'
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
@@ -1232,6 +1243,7 @@ export interface FileRouteTypes {
     | '/service-provider/dashboard'
     | '/units/$unitId'
     | '/users/new'
+    | '/vending-software/$softwareId'
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
@@ -1344,6 +1356,7 @@ export interface FileRouteTypes {
     | '/_authenticated/units/$unitId'
     | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
+    | '/_authenticated/vending-software/$softwareId'
     | '/_authenticated/vendor/activation'
     | '/_authenticated/vendor/assignments'
     | '/_authenticated/vendor/dashboard'
@@ -1801,6 +1814,13 @@ declare module '@tanstack/react-router' {
       path: '/vending-software'
       fullPath: '/vending-software/'
       preLoaderRoute: typeof AuthenticatedVendingSoftwareIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vending-software/$softwareId': {
+      id: '/_authenticated/vending-software/$softwareId'
+      path: '/vending-software/$softwareId'
+      fullPath: '/vending-software/$softwareId'
+      preLoaderRoute: typeof AuthenticatedVendingSoftwareSoftwareIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/activation': {
@@ -2384,6 +2404,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
   AuthenticatedUnitsUnitIdRoute: typeof AuthenticatedUnitsUnitIdRoute
+  AuthenticatedVendingSoftwareSoftwareIdRoute: typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
@@ -2454,6 +2475,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServiceProviderDashboardRoute:
     AuthenticatedServiceProviderDashboardRoute,
   AuthenticatedUnitsUnitIdRoute: AuthenticatedUnitsUnitIdRoute,
+  AuthenticatedVendingSoftwareSoftwareIdRoute:
+    AuthenticatedVendingSoftwareSoftwareIdRoute,
   AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
