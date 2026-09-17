@@ -1057,7 +1057,11 @@ export const getMeter = createServerFn({ method: "GET" })
       }
     }
 
-    const personIds = [m.landlord_id, m.agent_id].filter((v: any): v is string => !!v);
+    const personIds = [m.landlord_id, m.agent_id, m.vendor_id].filter(
+      (v: any): v is string =>
+        typeof v === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v),
+    );
     let people: any[] = [];
     if (personIds.length) {
       const { data: p } = await supabase
@@ -1073,6 +1077,15 @@ export const getMeter = createServerFn({ method: "GET" })
       return p ? { id, name: p.name ?? null, email: p.email ?? null } : { id, name: null, email: null };
     };
 
+    const ownerRole: MeterRow["owner_role"] = m.landlord_id
+      ? "landlord"
+      : m.agent_id
+        ? "agent"
+        : m.vendor_id
+          ? "vendor"
+          : null;
+    const ownerId = m.landlord_id ?? m.agent_id ?? m.vendor_id ?? null;
+
     const meter: MeterDetail = {
       id: m.id,
       vendor_id: m.vendor_id ?? "",
@@ -1082,6 +1095,9 @@ export const getMeter = createServerFn({ method: "GET" })
       landlord_name: person(m.landlord_id ?? null)?.name ?? null,
       agent_id: m.agent_id ?? null,
       agent_name: person(m.agent_id ?? null)?.name ?? null,
+      owner_id: ownerId,
+      owner_name: person(ownerId)?.name ?? null,
+      owner_role: ownerRole,
       unit_id: m.unit_id ?? null,
       unit_label: unit
         ? `${unit.property_name ? `${unit.property_name} · ` : ""}Unit ${unit.unit_number}`
