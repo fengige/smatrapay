@@ -120,6 +120,7 @@ type SortKey =
   | "vendor_id"
   | "owner_name"
   | "unit_label"
+  | "vending_software_name"
   | "price_per_unit"
   | "status";
 
@@ -306,6 +307,7 @@ function MetersPage() {
         "Owner",
         "Owner role",
         "Unit",
+        "Vending software",
         "Initial reading",
         "Price per unit",
         "Status",
@@ -322,6 +324,7 @@ function MetersPage() {
         m.owner_name ?? "Unassigned",
         m.owner_role ? m.owner_role.charAt(0).toUpperCase() + m.owner_role.slice(1) : "—",
         m.unit_label ?? "—",
+        m.vending_software_name ?? "—",
         money(m.initial_reading),
         money(m.price_per_unit),
         m.status,
@@ -567,6 +570,7 @@ function MetersPage() {
                   <SortHeader label="Type" sortBy="type" />
                   <SortHeader label="Owner" sortBy="owner_name" />
                   <SortHeader label="Unit" sortBy="unit_label" />
+                  <SortHeader label="Vending" sortBy="vending_software_name" />
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">Installation</th>
@@ -658,6 +662,9 @@ function MetersPage() {
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                           {m.unit_label ?? "—"}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                          {m.vending_software_name ?? "—"}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-foreground">
                           {money(m.price_per_unit)}
