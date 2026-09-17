@@ -169,8 +169,21 @@ export const listVendorSuppliers = createServerFn({ method: "GET" })
       .eq("status", "Active")
       .order("company_name", { ascending: true });
     if (error) throw new Error(error.message);
-    return { suppliers: (data ?? []) as { id: string; company_name: string; utility_type: string }[] };
+    const { data: software, error: swError } = await (context.supabase as any)
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    if (swError) throw new Error(swError.message);
+    return {
+      suppliers: (data ?? []) as { id: string; company_name: string; utility_type: string }[],
+      vendingSoftware: ((software ?? []) as any[]).map((s) => ({
+        id: s.vending_software_id as string,
+        name: s.name as string,
+      })),
+    };
   });
+
 
 /** Meter / serial numbers already registered inside the vendor's scope (RLS-bound). */
 export const listVendorMeterIdentifiers = createServerFn({ method: "GET" })
