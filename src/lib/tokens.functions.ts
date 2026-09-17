@@ -209,6 +209,9 @@ export type IssuedToken = {
   revoke_reason: string | null;
   issued_by_name: string | null;
   issued_by_role: TokenIssuerRole;
+  vending_software_name: string | null;
+  provider: string | null;
+  provider_reference: string | null;
   created_at: string;
 };
 
