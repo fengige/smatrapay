@@ -21,6 +21,9 @@ import {
   archiveVendingSoftware,
   getVendingSoftware,
   setVendingSoftwareStatus,
+  type VendingSoftwareDetail,
+  type VendingSoftwareMeterRow,
+  type VendingSoftwareAuditRow,
 } from "@/lib/vending-software.functions";
 
 export const Route = createFileRoute("/_authenticated/vending-software/$softwareId")({
@@ -133,7 +136,10 @@ function VendingSoftwareDetailsPage() {
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["vending-software", softwareId],
-    queryFn: () => fetchSoftware({ data: { id: softwareId } } as never),
+    queryFn: () =>
+      fetchSoftware({ data: { id: softwareId } } as never) as Promise<{
+        software: VendingSoftwareDetail;
+      }>,
   });
 
   const software = data?.software;
@@ -162,17 +168,17 @@ function VendingSoftwareDetailsPage() {
   const meters = software?.meters ?? [];
 
   const suppliers = useMemo(
-    () => [...new Set(meters.map((m) => m.supplier_name).filter(Boolean))] as string[],
+    () => [...new Set(meters.map((m: VendingSoftwareMeterRow) => m.supplier_name).filter(Boolean))] as string[],
     [meters],
   );
   const zones = useMemo(
-    () => [...new Set(meters.map((m) => m.zone_name).filter(Boolean))] as string[],
+    () => [...new Set(meters.map((m: VendingSoftwareMeterRow) => m.zone_name).filter(Boolean))] as string[],
     [meters],
   );
 
   const filteredMeters = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return meters.filter((m) => {
+    return meters.filter((m: VendingSoftwareMeterRow) => {
       if (typeFilter !== "all" && m.type !== typeFilter) return false;
       if (supplierFilter !== "all" && m.supplier_name !== supplierFilter) return false;
       if (zoneFilter !== "all" && m.zone_name !== zoneFilter) return false;
@@ -415,7 +421,7 @@ function VendingSoftwareDetailsPage() {
                         </td>
                       </tr>
                     )}
-                    {filteredMeters.map((m) => (
+                    {filteredMeters.map((m: VendingSoftwareMeterRow) => (
                       <tr key={m.id} className="border-t border-border/70">
                         <td className="px-3 py-3 font-medium text-foreground">{m.meter_number}</td>
                         <td className="px-3 py-3">{dash(m.serial_number)}</td>
@@ -497,7 +503,7 @@ function VendingSoftwareDetailsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {software.history.map((h) => (
+                      {software.history.map((h: VendingSoftwareAuditRow) => (
                         <tr key={h.id} className="border-t border-border/70">
                           <td className="px-3 py-3">{fmtDateTime(h.created_at)}</td>
                           <td className="px-3 py-3 font-medium text-foreground">

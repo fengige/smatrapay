@@ -50,7 +50,7 @@ export type VendingSoftwareAuditRow = {
   previous_status: string | null;
   new_status: string | null;
   reason: string | null;
-  changes: Record<string, unknown>;
+  changes: Record<string, string | number | boolean | null>;
   actor_name: string | null;
   meter_number: string | null;
   created_at: string;
@@ -508,7 +508,7 @@ export const getVendingSoftware = createServerFn({ method: "GET" })
       previous_status: l.previous_status ?? null,
       new_status: l.new_status ?? null,
       reason: l.reason ?? null,
-      changes: (l.changes ?? {}) as Record<string, unknown>,
+      changes: (l.changes ?? {}) as Record<string, string | number | boolean | null>,
       actor_name: l.actor_id ? (nameById.get(l.actor_id) ?? null) : null,
       meter_number: l.meter_id
         ? (meterNumberById.get(l.meter_id) ??

@@ -52,8 +52,14 @@ export function VendingSoftwareDialog({ software, onClose, onSaved }: Props) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim().length < 2) return toast.error("Software name is required");
-    if (code.trim().length < 2) return toast.error("Software code is required");
+    if (name.trim().length < 2) {
+      toast.error("Software name is required");
+      return;
+    }
+    if (code.trim().length < 2) {
+      toast.error("Software code is required");
+      return;
+    }
     save.mutate();
   };
 
