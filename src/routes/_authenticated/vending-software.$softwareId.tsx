@@ -11,6 +11,7 @@ import {
   Pencil,
   PowerOff,
   Search,
+  Shuffle,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ import {
   archiveVendingSoftware,
   getVendingSoftware,
   setVendingSoftwareStatus,
+  listVendingSoftware,
+  reassignMetersVendingSoftware,
   type VendingSoftwareDetail,
   type VendingSoftwareMeterRow,
   type VendingSoftwareAuditRow,
@@ -133,6 +136,8 @@ function VendingSoftwareDetailsPage() {
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [zoneFilter, setZoneFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [target, setTarget] = useState("");
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["vending-software", softwareId],
@@ -143,6 +148,36 @@ function VendingSoftwareDetailsPage() {
   });
 
   const software = data?.software;
+
+  const fetchAllSoftware = useServerFn(listVendingSoftware);
+  const reassign = useServerFn(reassignMetersVendingSoftware);
+
+  const { data: allSoftware } = useQuery({
+    queryKey: ["vending-software"],
+    queryFn: () =>
+      fetchAllSoftware() as Promise<{ software: { id: string; name: string; status: string }[] }>,
+  });
+
+  const targets = (allSoftware?.software ?? []).filter(
+    (s) => s.status === "active" && s.id !== softwareId,
+  );
+
+  const reassignMutation = useMutation({
+    mutationFn: () =>
+      reassign({
+        data: { meterIds: selected, targetSoftwareId: target === "none" ? null : target },
+      } as never) as Promise<{ moved: number; target: string | null }>,
+    onSuccess: async (r) => {
+      setSelected([]);
+      setTarget("");
+      await queryClient.invalidateQueries({ queryKey: ["vending-software"] });
+      await refetch();
+      toast.success(
+        `${r.moved} meter${r.moved === 1 ? "" : "s"} moved to ${r.target ?? "no vending software"}`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const statusMutation = useMutation({
     mutationFn: (status: "active" | "inactive") =>
