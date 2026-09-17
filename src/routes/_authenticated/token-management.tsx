@@ -164,12 +164,17 @@ function TokenManagementPage() {
     !expiryError &&
     meter.status === "active";
 
+  // One id per attempt, so a double-click or retry cannot vend twice.
+  const requestIdRef = useRef<string | null>(null);
+
   const issue = useMutation({
     mutationFn: async () =>
       (await runIssue({
         data: {
           meter_id: meter!.id,
           action,
+          vend_by_unit: mode === "units",
+          request_id: (requestIdRef.current ??= crypto.randomUUID()),
           units: needsAmount
             ? Number(units.toFixed(2))
             : needsOverdraft
@@ -183,6 +188,7 @@ function TokenManagementPage() {
         },
       } as never)) as IssuedToken,
     onSuccess: (issued) => {
+      requestIdRef.current = null;
       setToken(issued);
       setConfirming(false);
       toast.success("Token issued");
