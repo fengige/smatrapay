@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -213,12 +213,17 @@ function PosPage() {
   const canSell =
     !!meter && meter.status === "active" && !amountError && !phoneError && !referenceError;
 
+  // One id per attempt, so a double-click or retry cannot vend twice.
+  const requestIdRef = useRef<string | null>(null);
+
   const sell = useMutation({
     mutationFn: async () =>
       (await runIssue({
         data: {
           meter_id: meter!.id,
           action: "credit" as const,
+          vend_by_unit: mode === "units",
+          request_id: (requestIdRef.current ??= crypto.randomUUID()),
           units: Number(units.toFixed(2)),
           amount: Number(value.toFixed(2)),
           reference: `${method.toUpperCase()}${reference.trim() ? ` ${reference.trim()}` : ""}`,
@@ -228,6 +233,7 @@ function PosPage() {
         },
       } as never)) as IssuedToken,
     onSuccess: (issued) => {
+      requestIdRef.current = null;
       setSale(issued);
       setConfirming(false);
       setAmount("");
@@ -516,6 +522,14 @@ function PosPage() {
               {sale.units.toFixed(2)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
               {new Date(sale.created_at).toLocaleString()}
             </p>
+            {(sale.vending_software_name || sale.provider_reference) && (
+              <p className="text-xs text-muted-foreground">
+                {sale.vending_software_name ? `Vending software: ${sale.vending_software_name}` : ""}
+                {sale.provider_reference
+                  ? `${sale.vending_software_name ? " · " : ""}Provider ref ${sale.provider_reference}`
+                  : ""}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <code className="rounded-lg bg-background px-3 py-2 font-mono text-lg tracking-widest">
                 {sale.token}

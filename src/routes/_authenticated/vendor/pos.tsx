@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -204,11 +204,15 @@ function VendorPosPage() {
   const canSell =
     !!meter && meter.status === "active" && !amountError && !phoneError && !referenceError;
 
+  // One id per attempt, so a double-click or retry cannot vend twice.
+  const requestIdRef = useRef<string | null>(null);
+
   const sell = useMutation({
     mutationFn: async () =>
       (await runSell({
         data: {
           meter_id: meter!.id,
+          request_id: (requestIdRef.current ??= crypto.randomUUID()),
           units: Number(units.toFixed(2)),
           amount: Number(value.toFixed(2)),
           method,
@@ -218,6 +222,7 @@ function VendorPosPage() {
         },
       } as never)) as VendorPosToken,
     onSuccess: (issued) => {
+      requestIdRef.current = null;
       setSale(issued);
       setConfirming(false);
       setAmount("");

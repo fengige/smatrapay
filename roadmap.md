@@ -38,3 +38,4 @@
 - [x] Meter details pages (admin + vendor) show Vending software
 
 - [x] Vending Software admin module (list, details with Info/Meters/Usage/Activity tabs, CRUD, audit logging, sidebar entry)
+- [x] Vending-software-driven token generation: meter → assigned vending software → supplier API settings → CALIN POS_Purchase / maintenance calls, idempotency keys, masked integration logs

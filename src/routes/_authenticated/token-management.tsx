@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -164,12 +164,17 @@ function TokenManagementPage() {
     !expiryError &&
     meter.status === "active";
 
+  // One id per attempt, so a double-click or retry cannot vend twice.
+  const requestIdRef = useRef<string | null>(null);
+
   const issue = useMutation({
     mutationFn: async () =>
       (await runIssue({
         data: {
           meter_id: meter!.id,
           action,
+          vend_by_unit: mode === "units",
+          request_id: (requestIdRef.current ??= crypto.randomUUID()),
           units: needsAmount
             ? Number(units.toFixed(2))
             : needsOverdraft
@@ -183,6 +188,7 @@ function TokenManagementPage() {
         },
       } as never)) as IssuedToken,
     onSuccess: (issued) => {
+      requestIdRef.current = null;
       setToken(issued);
       setConfirming(false);
       toast.success("Token issued");
@@ -519,6 +525,16 @@ function TokenManagementPage() {
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
                 </p>
+                {(token.vending_software_name || token.provider_reference) && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {token.vending_software_name
+                      ? `Vending software: ${token.vending_software_name}`
+                      : ""}
+                    {token.provider_reference
+                      ? `${token.vending_software_name ? " · " : ""}Provider ref ${token.provider_reference}`
+                      : ""}
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
