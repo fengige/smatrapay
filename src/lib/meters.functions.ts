@@ -23,6 +23,9 @@ export type MeterRow = {
   landlord_name: string | null;
   agent_id: string | null;
   agent_name: string | null;
+  owner_id: string | null;
+  owner_name: string | null;
+  owner_role: "landlord" | "agent" | "vendor" | null;
   unit_id: string | null;
   unit_label: string | null;
   property_id: string | null;
@@ -148,8 +151,12 @@ export const listMeters = createServerFn({ method: "GET" })
     const referencedIds = [
       ...new Set(
         (rows ?? [])
-          .flatMap((r: any) => [r.landlord_id, r.agent_id])
-          .filter((v: any): v is string => !!v),
+          .flatMap((r: any) => [r.landlord_id, r.agent_id, r.vendor_id])
+          .filter(
+            (v: any): v is string =>
+              typeof v === "string" &&
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v),
+          ),
       ),
     ];
 
@@ -219,34 +226,41 @@ export const listMeters = createServerFn({ method: "GET" })
       return ((p?.name as string) || (p?.email as string) || null) as string | null;
     };
 
-    const meters: MeterRow[] = (rows ?? []).map((r: any) => ({
-      id: r.id,
-      vendor_id: r.vendor_id ?? "",
-      supplier_id: r.supplier_id ?? null,
-      supplier_name: r.supplier_id ? (supplierById.get(r.supplier_id)?.name ?? null) : null,
-      landlord_id: r.landlord_id ?? null,
-      landlord_name: displayName(r.landlord_id ?? null),
-      agent_id: r.agent_id ?? null,
-      agent_name: displayName(r.agent_id ?? null),
-      unit_id: r.unit_id ?? null,
-      unit_label: r.unit_id ? (unitById.get(r.unit_id)?.label ?? null) : null,
-      property_id: r.unit_id ? (unitById.get(r.unit_id)?.property_id ?? null) : null,
-      property_name: r.unit_id ? (unitById.get(r.unit_id)?.property_name ?? null) : null,
-      meter_number: r.meter_number ?? "",
-      serial_number: r.serial_number ?? "",
-      type: (r.type ?? "").toLowerCase(),
-      initial_reading: Number(r.initial_reading ?? 0),
-      price_per_unit: Number(r.price_per_unit ?? 0),
-      status: (r.status ?? "active").toLowerCase(),
-      installation_status: (r as { installation_status?: string }).installation_status ?? null,
-      sgc: r.sgc ?? null,
-      krn: r.krn ?? null,
-      ti: r.ti ?? null,
-      ea: r.ea ?? null,
-      ken: r.ken ?? null,
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-    }));
+    const meters: MeterRow[] = (rows ?? []).map((r: any) => {
+      const ownerRole = r.landlord_id ? "landlord" : r.agent_id ? "agent" : r.vendor_id ? "vendor" : null;
+      const ownerId = r.landlord_id ?? r.agent_id ?? r.vendor_id ?? null;
+      return {
+        id: r.id,
+        vendor_id: r.vendor_id ?? "",
+        supplier_id: r.supplier_id ?? null,
+        supplier_name: r.supplier_id ? (supplierById.get(r.supplier_id)?.name ?? null) : null,
+        landlord_id: r.landlord_id ?? null,
+        landlord_name: displayName(r.landlord_id ?? null),
+        agent_id: r.agent_id ?? null,
+        agent_name: displayName(r.agent_id ?? null),
+        owner_id: ownerId,
+        owner_name: displayName(ownerId),
+        owner_role: ownerRole,
+        unit_id: r.unit_id ?? null,
+        unit_label: r.unit_id ? (unitById.get(r.unit_id)?.label ?? null) : null,
+        property_id: r.unit_id ? (unitById.get(r.unit_id)?.property_id ?? null) : null,
+        property_name: r.unit_id ? (unitById.get(r.unit_id)?.property_name ?? null) : null,
+        meter_number: r.meter_number ?? "",
+        serial_number: r.serial_number ?? "",
+        type: (r.type ?? "").toLowerCase(),
+        initial_reading: Number(r.initial_reading ?? 0),
+        price_per_unit: Number(r.price_per_unit ?? 0),
+        status: (r.status ?? "active").toLowerCase(),
+        installation_status: (r as { installation_status?: string }).installation_status ?? null,
+        sgc: r.sgc ?? null,
+        krn: r.krn ?? null,
+        ti: r.ti ?? null,
+        ea: r.ea ?? null,
+        ken: r.ken ?? null,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+      };
+    });
 
     return {
       meters,
