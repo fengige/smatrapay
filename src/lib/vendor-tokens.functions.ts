@@ -165,6 +165,8 @@ export const issueVendorMeterToken = createServerFn({ method: "POST" })
         customer_phone: z.string().trim().max(30).optional().nullable(),
         sms_requested: z.boolean().default(false),
         expires_in_days: z.number().int().min(1).max(365).default(30),
+        vend_by_unit: z.boolean().optional().default(false),
+        request_id: z.string().trim().max(100).optional().nullable(),
       })
       .parse(d),
   )
@@ -189,24 +191,21 @@ export const issueVendorMeterToken = createServerFn({ method: "POST" })
     if (data.sms_requested && (data.customer_phone ?? "").trim().length < 7)
       throw new Error("Enter a valid phone number for SMS delivery");
 
-    const expires = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
-    const { data: row, error } = await supabase
-      .from("meter_tokens")
-      .insert({
-        meter_id: data.meter_id,
-        action: data.action,
-        token: generateTokenValue(),
-        units: data.units,
-        amount: data.amount,
-        reference: data.reference?.trim() || null,
-        customer_phone: data.customer_phone?.trim() || null,
-        sms_requested: data.sms_requested,
-        expires_at: expires,
-        issued_by: context.userId,
-      } as never)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
+    const { vendMeterToken } = await import("@/lib/vending/vend.server");
+    const { row } = await vendMeterToken(supabase, {
+      meterId: data.meter_id,
+      action: data.action,
+      units: data.units,
+      amount: data.amount,
+      vendByUnit: data.vend_by_unit,
+      reference: data.reference ?? null,
+      customerPhone: data.customer_phone ?? null,
+      smsRequested: data.sms_requested,
+      expiresInDays: data.expires_in_days,
+      actorId: context.userId,
+      requestId: data.request_id ?? null,
+    });
+
 
     await logVendorAction(
       supabase,
