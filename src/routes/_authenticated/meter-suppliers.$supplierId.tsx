@@ -446,6 +446,8 @@ function SupplierDetailsPage() {
             </div>
           )}
 
+          {tab === "api" && <SupplierApiSettingsTab supplierId={supplierId} />}
+
           {tab === "meters" && (
             <div className="mt-5">
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
