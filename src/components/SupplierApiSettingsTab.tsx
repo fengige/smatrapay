@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, EyeOff, Loader2, PlugZap, Save } from "lucide-react";
+import { Eye, EyeOff, Loader2, PlugZap, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  deleteSupplierApiSettings,
   getSupplierApiSettings,
   saveSupplierApiSettings,
   testSupplierApiConnection,
@@ -97,14 +98,18 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
   const load = useServerFn(getSupplierApiSettings);
   const save = useServerFn(saveSupplierApiSettings);
   const testConnection = useServerFn(testSupplierApiConnection);
+  const removeSettings = useServerFn(deleteSupplierApiSettings);
 
-  const queryKey = ["supplier-api-settings", supplierId];
+  const [softwareId, setSoftwareId] = useState<string | null>(null);
+
+  const queryKey = ["supplier-api-settings", supplierId, softwareId ?? "default"];
   const { data, isLoading, isError, error } = useQuery({
     queryKey,
-    queryFn: () => load({ data: { id: supplierId } } as never),
+    queryFn: () => load({ data: { id: supplierId, vending_software_id: softwareId } } as never),
   });
 
   const settings = data?.settings;
+  const softwareOptions = data?.software ?? [];
   const [form, setForm] = useState<FormState>(EMPTY);
   const [password, setPassword] = useState("");
   const [clearPassword, setClearPassword] = useState(false);
@@ -163,6 +168,7 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
       save({
         data: {
           supplier_id: supplierId,
+          vending_software_id: softwareId,
           ...Object.fromEntries(
             (Object.keys(form) as (keyof FormState)[]).map((k) => [k, form[k].trim()]),
           ),
@@ -171,7 +177,7 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
         },
       } as never),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ["supplier-api-settings", supplierId] });
       setPassword("");
       setClearPassword(false);
       setShowPassword(false);
@@ -182,7 +188,8 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
   });
 
   const testMutation = useMutation({
-    mutationFn: () => testConnection({ data: { id: supplierId } } as never),
+    mutationFn: () =>
+      testConnection({ data: { id: supplierId, vending_software_id: softwareId } } as never),
     onSuccess: (result: { status: string; message: string }) => {
       setTestResult(result.message);
       if (result.status === "ok") toast.success(result.message);
@@ -191,9 +198,59 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
     onError: (e: Error) => toast.error(e.message || "Could not test the connection"),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      removeSettings({ data: { id: supplierId, vending_software_id: softwareId! } } as never),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["supplier-api-settings", supplierId] });
+      setTestResult(null);
+      toast.success("Configuration removed — this vending software now uses the default");
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not remove the configuration"),
+  });
+
+  const currentOption = softwareOptions.find((s) => (s.id ?? null) === softwareId);
+
+  const softwareBar = (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-sm font-medium text-foreground">Vending software</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Each vending software can have its own endpoints. Meters use their own software's settings
+        when they exist, otherwise the default below.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(softwareOptions.length
+          ? softwareOptions
+          : [{ id: null, name: "Default (all vending software)", configured: false }]
+        ).map((option) => {
+          const active = (option.id ?? null) === softwareId;
+          return (
+            <button
+              key={option.id ?? "default"}
+              type="button"
+              onClick={() => {
+                setSoftwareId(option.id ?? null);
+                setTestResult(null);
+              }}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-accent/10"
+              }`}
+            >
+              {option.name}
+              {option.configured ? " ·  configured" : ""}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="mt-5 space-y-4">
+        {softwareBar}
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-40 animate-pulse rounded-2xl border border-border bg-card" />
         ))}
@@ -203,8 +260,11 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
 
   if (isError) {
     return (
-      <div className="mt-5 rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm text-destructive">
-        {(error as Error)?.message ?? "Could not load API settings"}
+      <div className="mt-5 space-y-4">
+        {softwareBar}
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm text-destructive">
+          {(error as Error)?.message ?? "Could not load API settings"}
+        </div>
       </div>
     );
   }
@@ -222,6 +282,8 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
         saveMutation.mutate();
       }}
     >
+      {softwareBar}
+
       {SECTIONS.map((section) => (
         <section key={section.title} className="rounded-2xl border border-border bg-card p-5">
           <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
@@ -323,7 +385,23 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
             Test API Connection
           </button>
           {testResult && <p className="text-sm text-muted-foreground">{testResult}</p>}
+          {softwareId && currentOption?.configured && (
+            <button
+              type="button"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Use default instead
+            </button>
+          )}
         </div>
+
 
         <div className="flex gap-2">
           <button

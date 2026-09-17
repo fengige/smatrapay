@@ -34,3 +34,5 @@
 - [x] Vendor portal: /vendor/residents/new mirrors admin /residents/new
 - [x] Meters: Vending Software select in Add Meter modal, /meters/bulk-add, bulk-add dialog
 - [x] /meters page: Vending Software column
+- [x] Supplier API settings per vending software (CALIN/REZICOM/SUNKING) with default fallback
+- [x] Meter details pages (admin + vendor) show Vending software

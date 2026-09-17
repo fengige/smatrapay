@@ -282,9 +282,15 @@ function MeterDetailPage() {
                   <Field label="Email" value={meter.supplier.email ?? "—"} />
                   <Field label="Phone" value={meter.supplier.phone_number ?? "—"} />
                   <Field label="Supplier status" value={meter.supplier.status} />
+                  <Field label="Vending software" value={meter.vending_software_name ?? "—"} />
                 </dl>
               ) : (
-                <p className="mt-3 text-sm text-muted-foreground">No supplier linked.</p>
+                <>
+                  <p className="mt-3 text-sm text-muted-foreground">No supplier linked.</p>
+                  <dl className="mt-4">
+                    <Field label="Vending software" value={meter.vending_software_name ?? "—"} />
+                  </dl>
+                </>
               )}
             </section>
           </div>
