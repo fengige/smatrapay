@@ -319,6 +319,8 @@ const textField = z.string().trim().max(150).optional().default("");
 
 const apiSettingsInput = z.object({
   supplier_id: uuid,
+  /** null = the supplier-wide default configuration. */
+  vending_software_id: z.string().uuid().nullable().optional().default(null),
   API_POS_PURCHASE: urlField,
   API_LOGIN: urlField,
   API_MAINTENANCE_CLEAR_TAMPER: urlField,
