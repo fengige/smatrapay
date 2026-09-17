@@ -118,8 +118,7 @@ type SortKey =
   | "serial_number"
   | "type"
   | "vendor_id"
-  | "landlord_name"
-  | "agent_name"
+  | "owner_name"
   | "unit_label"
   | "price_per_unit"
   | "status";
@@ -173,6 +172,14 @@ function MetersPage() {
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
   const vendors = data?.vendors ?? [];
+  const owners = useMemo(
+    () => [
+      ...landlords.map((owner) => ({ ...owner, role: "Landlord" })),
+      ...agents.map((owner) => ({ ...owner, role: "Agent" })),
+      ...vendors.map((owner) => ({ ...owner, role: "Vendor" })),
+    ].sort((a, b) => a.name.localeCompare(b.name)),
+    [landlords, agents, vendors],
+  );
   const unitOptions = data?.units ?? [];
   const supplierOptions = data?.suppliers ?? [];
 
@@ -180,10 +187,10 @@ function MetersPage() {
     const q = search.trim().toLowerCase();
     return meters.filter((m) => {
       if (type !== "all" && m.type !== type) return false;
-      if (landlordId !== "all" && (m.landlord_id ?? "none") !== landlordId) return false;
+      if (landlordId !== "all" && (m.owner_id ?? "none") !== landlordId) return false;
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (!q) return true;
-      return [m.meter_number, m.serial_number, m.vendor_id, m.landlord_name ?? ""]
+      return [m.meter_number, m.serial_number, m.vendor_id, m.owner_name ?? "", m.owner_role ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(q);
@@ -296,8 +303,8 @@ function MetersPage() {
         "Serial number",
         "Type",
         "Vendor",
-        "Landlord",
-        "Agent",
+        "Owner",
+        "Owner role",
         "Unit",
         "Initial reading",
         "Price per unit",
@@ -313,8 +320,8 @@ function MetersPage() {
         m.serial_number,
         typeMeta(m.type).label,
         m.vendor_id,
-        m.landlord_name ?? "—",
-        m.agent_name ?? "—",
+        m.owner_name ?? "Unassigned",
+        m.owner_role ? m.owner_role.charAt(0).toUpperCase() + m.owner_role.slice(1) : "—",
         m.unit_label ?? "—",
         money(m.initial_reading),
         money(m.price_per_unit),
@@ -468,14 +475,14 @@ function MetersPage() {
             <select
               value={landlordId}
               onChange={(e) => setLandlordId(e.target.value)}
-              aria-label="Filter by landlord"
+              aria-label="Filter by owner"
               className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
             >
-              <option value="all">All landlords</option>
+              <option value="all">All owners</option>
               <option value="none">Unassigned</option>
-              {landlords.map((l: { id: string; name: string }) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
+              {owners.map((owner) => (
+                <option key={`${owner.role}-${owner.id}`} value={owner.id}>
+                  {owner.name} · {owner.role}
                 </option>
               ))}
             </select>
@@ -560,8 +567,7 @@ function MetersPage() {
                   <SortHeader label="Serial" sortBy="serial_number" />
                   <SortHeader label="Type" sortBy="type" />
                   <SortHeader label="Vendor" sortBy="vendor_id" />
-                  <SortHeader label="Landlord" sortBy="landlord_name" />
-                  <SortHeader label="Agent" sortBy="agent_name" />
+                  <SortHeader label="Owner" sortBy="owner_name" />
                   <SortHeader label="Unit" sortBy="unit_label" />
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
@@ -575,20 +581,20 @@ function MetersPage() {
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={13} className="px-3 py-8 text-center text-destructive">
+                     <td colSpan={12} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Use “Add Meter”, “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
@@ -647,11 +653,13 @@ function MetersPage() {
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                           {m.vendor_id || "—"}
                         </td>
-                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
-                          {m.landlord_name ?? "Unassigned"}
-                        </td>
-                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
-                          {m.agent_name ?? "—"}
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          <div className="font-medium text-foreground">{m.owner_name ?? "Unassigned"}</div>
+                          {m.owner_role && (
+                            <span className="mt-0.5 inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-medium capitalize text-secondary-foreground">
+                              {m.owner_role}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                           {m.unit_label ?? "—"}
