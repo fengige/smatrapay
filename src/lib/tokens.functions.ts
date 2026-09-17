@@ -30,6 +30,7 @@ export type TokenMeterMatch = {
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;
+  vending_software_name: string | null;
 };
 
 /**
@@ -69,7 +70,7 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
     let query = supabase
       .from("meters")
       .select(
-        "id, meter_number, serial_number, type, status, price_per_unit, sgc, krn, ti, ea, ken, unit_id, landlord_id",
+        "id, meter_number, serial_number, type, status, price_per_unit, sgc, krn, ti, ea, ken, unit_id, landlord_id, vending_software_id",
       )
       .limit(25);
 
