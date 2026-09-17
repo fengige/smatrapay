@@ -385,7 +385,23 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
             Test API Connection
           </button>
           {testResult && <p className="text-sm text-muted-foreground">{testResult}</p>}
+          {softwareId && currentOption?.configured && (
+            <button
+              type="button"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Use default instead
+            </button>
+          )}
         </div>
+
 
         <div className="flex gap-2">
           <button
