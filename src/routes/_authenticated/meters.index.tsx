@@ -182,6 +182,7 @@ function MetersPage() {
   );
   const unitOptions = data?.units ?? [];
   const supplierOptions = data?.suppliers ?? [];
+  const vendingSoftware = data?.vendingSoftware ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -848,6 +849,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           suppliers={supplierOptions}
+          vendingSoftware={vendingSoftware}
           onClose={() => setShowBulkAdd(false)}
           onSaved={async (count: number) => {
             setShowBulkAdd(false);
@@ -913,6 +915,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           suppliers={supplierOptions}
+          vendingSoftware={vendingSoftware}
           existing={meters}
           onClose={() => {
             setEditing(null);
@@ -932,6 +935,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           suppliers={supplierOptions}
+          vendingSoftware={vendingSoftware}
           existing={meters}
           onClose={() => setCreating(false)}
           onSaved={async () => {
@@ -1004,6 +1008,7 @@ function MeterDialog({
   landlords,
   agents,
   suppliers,
+  vendingSoftware,
   existing,
   onClose,
   onSaved,
@@ -1013,6 +1018,7 @@ function MeterDialog({
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
   suppliers: { id: string; name: string }[];
+  vendingSoftware: { id: string; name: string }[];
   existing: MeterRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
@@ -1031,6 +1037,7 @@ function MeterDialog({
     (meter?.type as "electricity" | "water" | "gas") ?? "",
   );
   const [supplierId, setSupplierId] = useState(meter?.supplier_id ?? "");
+  const [vendingSoftwareId, setVendingSoftwareId] = useState(meter?.vending_software_id ?? "");
   const [ownerType, setOwnerType] = useState<OwnerType>(inferOwnerType);
   const [ownerId, setOwnerId] = useState(
     meter?.landlord_id ?? meter?.agent_id ?? (meter && vendors.some((v) => v.id === meter.vendor_id) ? meter?.vendor_id : "") ?? "",
@@ -1053,12 +1060,12 @@ function MeterDialog({
 
   const initialSnapshot = useMemo(
     () =>
-      JSON.stringify({ meterType, supplierId, ownerType, ownerId, meterNumber, serialNumber, sts }),
+      JSON.stringify({ meterType, supplierId, vendingSoftwareId, ownerType, ownerId, meterNumber, serialNumber, sts }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   const isDirty =
-    JSON.stringify({ meterType, supplierId, ownerType, ownerId, meterNumber, serialNumber, sts }) !==
+    JSON.stringify({ meterType, supplierId, vendingSoftwareId, ownerType, ownerId, meterNumber, serialNumber, sts }) !==
     initialSnapshot;
 
   const attemptClose = (pending: boolean) => {
@@ -1132,6 +1139,7 @@ function MeterDialog({
       const payload = {
         vendor_id: ownerId,
         supplier_id: supplierId || null,
+        vending_software_id: vendingSoftwareId || null,
         landlord_id: ownerType === "landlord" ? ownerId : null,
         agent_id: ownerType === "agent" ? ownerId : null,
         unit_id: meter?.unit_id ?? null,
@@ -1230,6 +1238,24 @@ function MeterDialog({
             {visible("supplier", supplierError) && (
               <p className="mt-1 text-xs text-destructive">{supplierError}</p>
             )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-vending-software">
+              Vending Software <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="meter-vending-software"
+              value={vendingSoftwareId}
+              onChange={(e) => setVendingSoftwareId(e.target.value)}
+              className={field}
+            >
+              <option value="">No vending software</option>
+              {vendingSoftware.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-owner-type">
@@ -2079,6 +2105,7 @@ function BulkAddMetersDialog({
   landlords,
   agents,
   suppliers,
+  vendingSoftware,
   onClose,
   onSaved,
 }: {
@@ -2086,12 +2113,14 @@ function BulkAddMetersDialog({
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
   suppliers: { id: string; name: string }[];
+  vendingSoftware: { id: string; name: string }[];
   onClose: () => void;
   onSaved: (count: number) => void | Promise<void>;
 }) {
   const bulkCreate = useServerFn(bulkAddMeters);
 
   const [supplierId, setSupplierId] = useState("");
+  const [vendingSoftwareId, setVendingSoftwareId] = useState("");
   const [ownerType, setOwnerType] = useState<"vendor" | "landlord" | "agent">("vendor");
   const [ownerId, setOwnerId] = useState("");
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">("electricity");
@@ -2152,6 +2181,7 @@ function BulkAddMetersDialog({
       const res = await bulkCreate({
         data: {
           supplier_id: supplierId || null,
+          vending_software_id: vendingSoftwareId || null,
           owner_type: ownerType,
           owner_id: ownerId,
           type: meterType,
@@ -2210,6 +2240,24 @@ function BulkAddMetersDialog({
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-vending-software">
+              Vending Software <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="bulk-vending-software"
+              value={vendingSoftwareId}
+              onChange={(e) => setVendingSoftwareId(e.target.value)}
+              className={field}
+            >
+              <option value="">No vending software</option>
+              {vendingSoftware.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
                 </option>
               ))}
             </select>
