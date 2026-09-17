@@ -2227,27 +2227,98 @@ export type Database = {
       }
       vending_software: {
         Row: {
+          archived_at: string | null
+          code: string | null
           created_at: string
+          created_by: string | null
+          description: string | null
+          logo_url: string | null
           name: string
           status: string
           updated_at: string
+          updated_by: string | null
           vending_software_id: string
+          version: string | null
         }
         Insert: {
+          archived_at?: string | null
+          code?: string | null
           created_at?: string
+          created_by?: string | null
+          description?: string | null
+          logo_url?: string | null
           name: string
           status?: string
           updated_at?: string
+          updated_by?: string | null
           vending_software_id?: string
+          version?: string | null
         }
         Update: {
+          archived_at?: string | null
+          code?: string | null
           created_at?: string
+          created_by?: string | null
+          description?: string | null
+          logo_url?: string | null
           name?: string
           status?: string
           updated_at?: string
+          updated_by?: string | null
           vending_software_id?: string
+          version?: string | null
         }
         Relationships: []
+      }
+      vending_software_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          meter_id: string | null
+          new_status: string | null
+          previous_status: string | null
+          reason: string | null
+          software_name: string | null
+          vending_software_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          meter_id?: string | null
+          new_status?: string | null
+          previous_status?: string | null
+          reason?: string | null
+          software_name?: string | null
+          vending_software_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          meter_id?: string | null
+          new_status?: string | null
+          previous_status?: string | null
+          reason?: string | null
+          software_name?: string | null
+          vending_software_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vending_software_audit_logs_vending_software_id_fkey"
+            columns: ["vending_software_id"]
+            isOneToOne: false
+            referencedRelation: "vending_software"
+            referencedColumns: ["vending_software_id"]
+          },
+        ]
       }
       vendor_audit_logs: {
         Row: {

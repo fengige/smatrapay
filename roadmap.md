@@ -36,3 +36,5 @@
 - [x] /meters page: Vending Software column
 - [x] Supplier API settings per vending software (CALIN/REZICOM/SUNKING) with default fallback
 - [x] Meter details pages (admin + vendor) show Vending software
+
+- [x] Vending Software admin module (list, details with Info/Meters/Usage/Activity tabs, CRUD, audit logging, sidebar entry)
