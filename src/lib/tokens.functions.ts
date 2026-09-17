@@ -318,6 +318,10 @@ export const issueMeterToken = createServerFn({ method: "POST" })
         customer_phone: z.string().trim().max(30).optional().nullable(),
         sms_requested: z.boolean().default(false),
         expires_in_days: z.number().int().min(1).max(365).default(30),
+        /** True when the customer buys units instead of value. */
+        vend_by_unit: z.boolean().optional().default(false),
+        /** One-time id from the form; replays return the same token. */
+        request_id: z.string().trim().max(100).optional().nullable(),
       })
       .parse(d),
   )
@@ -325,15 +329,6 @@ export const issueMeterToken = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabase } = context;
 
-    const { data: meter, error: meterErr } = await supabase
-      .from("meters")
-      .select("id, status")
-      .eq("id", data.meter_id)
-      .maybeSingle();
-    if (meterErr) throw new Error(meterErr.message);
-    if (!meter) throw new Error("Meter not found");
-    if ((meter as any).status !== "active")
-      throw new Error("This meter is not active — activate it before issuing tokens");
     if (data.action === "credit" && data.amount <= 0)
       throw new Error("Enter an amount greater than zero");
     if (data.action === "set_max_overdraft" && data.units <= 0)
@@ -341,24 +336,22 @@ export const issueMeterToken = createServerFn({ method: "POST" })
     if (data.sms_requested && (data.customer_phone ?? "").trim().length < 7)
       throw new Error("Enter a valid phone number for SMS delivery");
 
-    const expires = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
-    const { data: row, error } = await supabase
-      .from("meter_tokens")
-      .insert({
-        meter_id: data.meter_id,
-        action: data.action,
-        token: generateTokenValue(),
-        units: data.units,
-        amount: data.amount,
-        reference: data.reference?.trim() || null,
-        customer_phone: data.customer_phone?.trim() || null,
-        sms_requested: data.sms_requested,
-        expires_at: expires,
-        issued_by: context.userId,
-      } as never)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
+    // The vending software assigned to the meter decides how the token is
+    // generated; the client never supplies it.
+    const { vendMeterToken } = await import("@/lib/vending/vend.server");
+    const { row } = await vendMeterToken(supabase, {
+      meterId: data.meter_id,
+      action: data.action,
+      units: data.units,
+      amount: data.amount,
+      vendByUnit: data.vend_by_unit,
+      reference: data.reference ?? null,
+      customerPhone: data.customer_phone ?? null,
+      smsRequested: data.sms_requested,
+      expiresInDays: data.expires_in_days,
+      actorId: context.userId,
+      requestId: data.request_id ?? null,
+    });
 
     const [serialized] = await serialize(supabase, [row]);
     return serialized!;
