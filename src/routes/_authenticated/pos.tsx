@@ -522,6 +522,14 @@ function PosPage() {
               {sale.units.toFixed(2)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
               {new Date(sale.created_at).toLocaleString()}
             </p>
+            {(sale.vending_software_name || sale.provider_reference) && (
+              <p className="text-xs text-muted-foreground">
+                {sale.vending_software_name ? `Vending software: ${sale.vending_software_name}` : ""}
+                {sale.provider_reference
+                  ? `${sale.vending_software_name ? " · " : ""}Provider ref ${sale.provider_reference}`
+                  : ""}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <code className="rounded-lg bg-background px-3 py-2 font-mono text-lg tracking-widest">
                 {sale.token}
