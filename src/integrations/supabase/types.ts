@@ -600,6 +600,7 @@ export type Database = {
           id: string
           meter_supplier_id: string
           updated_at: string
+          vending_software_id: string | null
         }
         Insert: {
           api_company_name?: string | null
@@ -614,6 +615,7 @@ export type Database = {
           id?: string
           meter_supplier_id: string
           updated_at?: string
+          vending_software_id?: string | null
         }
         Update: {
           api_company_name?: string | null
@@ -628,14 +630,22 @@ export type Database = {
           id?: string
           meter_supplier_id?: string
           updated_at?: string
+          vending_software_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "meter_supplier_api_settings_meter_supplier_id_fkey"
             columns: ["meter_supplier_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "meter_suppliers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meter_supplier_api_settings_vending_software_id_fkey"
+            columns: ["vending_software_id"]
+            isOneToOne: false
+            referencedRelation: "vending_software"
+            referencedColumns: ["vending_software_id"]
           },
         ]
       }
