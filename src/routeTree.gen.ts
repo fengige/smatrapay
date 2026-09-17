@@ -61,6 +61,7 @@ import { Route as AuthenticatedUnitsUnitIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
 import { Route as AuthenticatedUsersNewRouteImport } from './routes/_authenticated/users.new'
+import { Route as AuthenticatedVendingSoftwareIndexRouteImport } from './routes/_authenticated/vending-software.index'
 import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
@@ -413,6 +414,12 @@ const AuthenticatedUsersNewRoute = AuthenticatedUsersNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthenticatedUsersRoute,
 } as any)
+const AuthenticatedVendingSoftwareIndexRoute =
+  AuthenticatedVendingSoftwareIndexRouteImport.update({
+    id: '/vending-software/',
+    path: '/vending-software/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorActivationRoute =
   AuthenticatedVendorActivationRouteImport.update({
     id: '/vendor/activation',
@@ -818,6 +825,7 @@ export interface FileRoutesByFullPath {
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/vending-software/': typeof AuthenticatedVendingSoftwareIndexRoute
   '/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/zones/': typeof AuthenticatedZonesIndexRoute
   '/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
@@ -920,6 +928,7 @@ export interface FileRoutesByTo {
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/vending-software': typeof AuthenticatedVendingSoftwareIndexRoute
   '/vendors': typeof AuthenticatedVendorsIndexRoute
   '/zones': typeof AuthenticatedZonesIndexRoute
   '/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
@@ -1032,6 +1041,7 @@ export interface FileRoutesById {
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/vending-software/': typeof AuthenticatedVendingSoftwareIndexRoute
   '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/_authenticated/zones/': typeof AuthenticatedZonesIndexRoute
   '/_authenticated/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
@@ -1144,6 +1154,7 @@ export interface FileRouteTypes {
     | '/properties/'
     | '/residents/'
     | '/users/'
+    | '/vending-software/'
     | '/vendors/'
     | '/zones/'
     | '/agents/$id/edit'
@@ -1246,6 +1257,7 @@ export interface FileRouteTypes {
     | '/properties'
     | '/residents'
     | '/users'
+    | '/vending-software'
     | '/vendors'
     | '/zones'
     | '/agents/$id/edit'
@@ -1357,6 +1369,7 @@ export interface FileRouteTypes {
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
     | '/_authenticated/users/'
+    | '/_authenticated/vending-software/'
     | '/_authenticated/vendors/'
     | '/_authenticated/zones/'
     | '/_authenticated/agents/$id/edit'
@@ -1782,6 +1795,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/users/new'
       preLoaderRoute: typeof AuthenticatedUsersNewRouteImport
       parentRoute: typeof AuthenticatedUsersRoute
+    }
+    '/_authenticated/vending-software/': {
+      id: '/_authenticated/vending-software/'
+      path: '/vending-software'
+      fullPath: '/vending-software/'
+      preLoaderRoute: typeof AuthenticatedVendingSoftwareIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/activation': {
       id: '/_authenticated/vendor/activation'
@@ -2382,6 +2402,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
   AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
+  AuthenticatedVendingSoftwareIndexRoute: typeof AuthenticatedVendingSoftwareIndexRoute
   AuthenticatedZonesIndexRoute: typeof AuthenticatedZonesIndexRoute
   AuthenticatedVendorLandlordsLandlordIdRoute: typeof AuthenticatedVendorLandlordsLandlordIdRoute
   AuthenticatedVendorLandlordsNewRoute: typeof AuthenticatedVendorLandlordsNewRoute
@@ -2456,6 +2477,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
   AuthenticatedPaymentMethodsIndexRoute: AuthenticatedPaymentMethodsIndexRoute,
+  AuthenticatedVendingSoftwareIndexRoute:
+    AuthenticatedVendingSoftwareIndexRoute,
   AuthenticatedZonesIndexRoute: AuthenticatedZonesIndexRoute,
   AuthenticatedVendorLandlordsLandlordIdRoute:
     AuthenticatedVendorLandlordsLandlordIdRoute,
