@@ -1075,6 +1075,16 @@ export const getMeter = createServerFn({ method: "GET" })
       if (s) supplier = s as unknown as MeterDetail["supplier"];
     }
 
+    let vendingSoftwareName: string | null = null;
+    if (m.vending_software_id) {
+      const { data: vs } = await supabase
+        .from("vending_software")
+        .select("name")
+        .eq("vending_software_id", m.vending_software_id)
+        .maybeSingle();
+      vendingSoftwareName = (vs?.name as string) ?? null;
+    }
+
     let unit: MeterDetail["unit"] = null;
     if (m.unit_id) {
       const { data: u } = await supabase
@@ -1127,6 +1137,8 @@ export const getMeter = createServerFn({ method: "GET" })
       vendor_id: m.vendor_id ?? "",
       supplier_id: m.supplier_id ?? null,
       supplier_name: supplier ? supplier.company_name : null,
+      vending_software_id: m.vending_software_id ?? null,
+      vending_software_name: vendingSoftwareName,
       landlord_id: m.landlord_id ?? null,
       landlord_name: person(m.landlord_id ?? null)?.name ?? null,
       agent_id: m.agent_id ?? null,
