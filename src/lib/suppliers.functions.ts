@@ -353,24 +353,66 @@ async function assertSupplierExists(supabase: any, id: string) {
   if (!data) throw new Error("Supplier not found");
 }
 
-/** API configuration for one supplier. The password is never returned. */
+const softwareKey = z.string().uuid().nullable().optional().default(null);
+
+function scopeToSoftware(query: any, softwareId: string | null) {
+  return softwareId ? query.eq("vending_software_id", softwareId) : query.is("vending_software_id", null);
+}
+
+async function listVendingSoftware(supabase: any) {
+  const { data, error } = await supabase
+    .from("vending_software")
+    .select("vending_software_id, name, status")
+    .order("name", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { vending_software_id: string; name: string; status: string }[];
+}
+
+export type SupplierApiSoftwareOption = {
+  id: string | null;
+  name: string;
+  configured: boolean;
+};
+
+/**
+ * API configuration for one supplier and one vending software.
+ * Pass `vending_software_id: null` for the supplier-wide default.
+ * The password is never returned.
+ */
 export const getSupplierApiSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: uuid, vending_software_id: softwareKey }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
     await assertSupplierExists(supabase, data.id);
 
-    const { data: row, error } = await supabase
-      .from("meter_supplier_api_settings")
-      .select(
-        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, updated_at",
-      )
-      .eq("meter_supplier_id", data.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!row) return { settings: emptySettings() };
+    const softwareId = data.vending_software_id ?? null;
+
+    const [softwareList, allRows] = await Promise.all([
+      listVendingSoftware(supabase),
+      supabase
+        .from("meter_supplier_api_settings")
+        .select(
+          "vending_software_id, api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, updated_at",
+        )
+        .eq("meter_supplier_id", data.id),
+    ]);
+    if (allRows.error) throw new Error(allRows.error.message);
+    const rows = (allRows.data ?? []) as any[];
+
+    const configuredIds = new Set(rows.map((r) => r.vending_software_id ?? "__default__"));
+    const software: SupplierApiSoftwareOption[] = [
+      { id: null, name: "Default (all vending software)", configured: configuredIds.has("__default__") },
+      ...softwareList.map((s) => ({
+        id: s.vending_software_id,
+        name: s.name,
+        configured: configuredIds.has(s.vending_software_id),
+      })),
+    ];
+
+    const row = rows.find((r) => (r.vending_software_id ?? null) === softwareId);
+    if (!row) return { settings: emptySettings(), software, vending_software_id: softwareId };
 
     const settings: SupplierApiSettings = {
       API_POS_PURCHASE: row.api_pos_purchase ?? "",
@@ -383,10 +425,10 @@ export const getSupplierApiSettings = createServerFn({ method: "GET" })
       has_password: Boolean(row.api_password),
       updated_at: row.updated_at ?? null,
     };
-    return { settings };
+    return { settings, software, vending_software_id: softwareId };
   });
 
-/** Create or update the supplier's API configuration (one row per supplier). */
+/** Create or update one supplier + vending software API configuration. */
 export const saveSupplierApiSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => apiSettingsInput.parse(d))
@@ -395,20 +437,34 @@ export const saveSupplierApiSettings = createServerFn({ method: "POST" })
     const supabase = context.supabase as any;
     await assertSupplierExists(supabase, data.supplier_id);
 
+    const softwareId = data.vending_software_id ?? null;
+    if (softwareId) {
+      const { data: sw, error: swErr } = await supabase
+        .from("vending_software")
+        .select("vending_software_id")
+        .eq("vending_software_id", softwareId)
+        .maybeSingle();
+      if (swErr) throw new Error(swErr.message);
+      if (!sw) throw new Error("Invalid vending software selected");
+    }
+
     const urls = URL_FIELDS.map((k) => (data as any)[k] as string).filter(Boolean);
     if (new Set(urls).size !== urls.length) {
       throw new Error("Each API endpoint must be a different URL");
     }
 
-    const { data: existing, error: readErr } = await supabase
-      .from("meter_supplier_api_settings")
-      .select("id, api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password")
-      .eq("meter_supplier_id", data.supplier_id)
-      .maybeSingle();
+    const { data: existing, error: readErr } = await scopeToSoftware(
+      supabase
+        .from("meter_supplier_api_settings")
+        .select("id, api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password")
+        .eq("meter_supplier_id", data.supplier_id),
+      softwareId,
+    ).maybeSingle();
     if (readErr) throw new Error(readErr.message);
 
     const values: Record<string, unknown> = {
       meter_supplier_id: data.supplier_id,
+      vending_software_id: softwareId,
       api_pos_purchase: data.API_POS_PURCHASE || null,
       api_login: data.API_LOGIN || null,
       api_maintenance_clear_tamper: data.API_MAINTENANCE_CLEAR_TAMPER || null,
@@ -453,7 +509,8 @@ export const saveSupplierApiSettings = createServerFn({ method: "POST" })
         .from("meter_supplier_api_settings")
         .insert(values as never);
       if (error) {
-        if (error.code === "23505") throw new Error("API settings already exist for this supplier");
+        if (error.code === "23505")
+          throw new Error("API settings already exist for this supplier and vending software");
         throw new Error(error.message);
       }
     }
@@ -463,25 +520,122 @@ export const saveSupplierApiSettings = createServerFn({ method: "POST" })
       supplier_id: data.supplier_id,
       actor_id: context.userId,
       action: existing ? "api_settings_updated" : "api_settings_created",
-      changes: { fields: changed },
+      changes: { fields: changed, vending_software_id: softwareId },
     } as never);
 
     return { ok: true, has_password: Boolean(values["api_password"] ?? (data.clear_password ? null : existing?.api_password)) };
   });
 
+/** Remove one vending software's configuration so it falls back to the default. */
+export const deleteSupplierApiSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: uuid, vending_software_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const supabase = context.supabase as any;
+    const { error } = await supabase
+      .from("meter_supplier_api_settings")
+      .delete()
+      .eq("meter_supplier_id", data.id)
+      .eq("vending_software_id", data.vending_software_id);
+    if (error) throw new Error(error.message);
+
+    await supabase.from("meter_supplier_audit_logs").insert({
+      supplier_id: data.id,
+      actor_id: context.userId,
+      action: "api_settings_deleted",
+      changes: { vending_software_id: data.vending_software_id },
+    } as never);
+    return { ok: true };
+  });
+
+/**
+ * Endpoints a meter should use: its supplier's configuration for the meter's
+ * vending software, falling back to the supplier default. Credentials stay server-side.
+ */
+export async function resolveMeterApiEndpoints(
+  supabase: any,
+  supplierId: string,
+  vendingSoftwareId: string | null,
+): Promise<{
+  source: "software" | "default" | "none";
+  api_pos_purchase: string | null;
+  api_login: string | null;
+  api_maintenance_clear_tamper: string | null;
+  api_maintenance_clear_credit: string | null;
+  api_maintenance_set_overdraft_limit: string | null;
+  api_company_name: string | null;
+  api_user_name: string | null;
+  api_password: string | null;
+}> {
+  const { data, error } = await supabase
+    .from("meter_supplier_api_settings")
+    .select(
+      "vending_software_id, api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password",
+    )
+    .eq("meter_supplier_id", supplierId);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as any[];
+  const match =
+    (vendingSoftwareId && rows.find((r) => r.vending_software_id === vendingSoftwareId)) || null;
+  const fallback = rows.find((r) => r.vending_software_id === null) ?? null;
+  const row = match ?? fallback;
+  return {
+    source: match ? "software" : fallback ? "default" : "none",
+    api_pos_purchase: row?.api_pos_purchase ?? null,
+    api_login: row?.api_login ?? null,
+    api_maintenance_clear_tamper: row?.api_maintenance_clear_tamper ?? null,
+    api_maintenance_clear_credit: row?.api_maintenance_clear_credit ?? null,
+    api_maintenance_set_overdraft_limit: row?.api_maintenance_set_overdraft_limit ?? null,
+    api_company_name: row?.api_company_name ?? null,
+    api_user_name: row?.api_user_name ?? null,
+    api_password: row?.api_password ?? null,
+  };
+}
+
+/** Which endpoints a given meter resolves to (no credentials returned). */
+export const getMeterApiEndpoints = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ meter_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const supabase = context.supabase as any;
+    const { data: meter, error } = await supabase
+      .from("meters")
+      .select("id, supplier_id, vending_software_id")
+      .eq("id", data.meter_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!meter) throw new Error("Meter not found");
+    if (!meter.supplier_id) {
+      return { source: "none" as const, endpoints: null };
+    }
+    const resolved = await resolveMeterApiEndpoints(
+      supabase,
+      meter.supplier_id,
+      meter.vending_software_id ?? null,
+    );
+    const { api_password: _pw, source, ...endpoints } = resolved;
+    return { source, endpoints };
+  });
+
 /** Check the configured login endpoint responds with the stored credentials. */
 export const testSupplierApiConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: uuid, vending_software_id: softwareKey }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
 
-    const { data: row, error } = await supabase
-      .from("meter_supplier_api_settings")
-      .select("api_login, api_company_name, api_user_name, api_password")
-      .eq("meter_supplier_id", data.id)
-      .maybeSingle();
+    const { data: row, error } = await scopeToSoftware(
+      supabase
+        .from("meter_supplier_api_settings")
+        .select("api_login, api_company_name, api_user_name, api_password")
+        .eq("meter_supplier_id", data.id),
+      data.vending_software_id ?? null,
+    ).maybeSingle();
     if (error) throw new Error(error.message);
 
     if (!row?.api_login || !row.api_user_name || !row.api_password) {
