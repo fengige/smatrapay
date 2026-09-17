@@ -2205,6 +2205,30 @@ export type Database = {
         }
         Relationships: []
       }
+      vending_software: {
+        Row: {
+          created_at: string
+          name: string
+          status: string
+          updated_at: string
+          vending_software_id: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          status?: string
+          updated_at?: string
+          vending_software_id?: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          vending_software_id?: string
+        }
+        Relationships: []
+      }
       vendor_audit_logs: {
         Row: {
           action: string
