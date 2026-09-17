@@ -98,14 +98,18 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
   const load = useServerFn(getSupplierApiSettings);
   const save = useServerFn(saveSupplierApiSettings);
   const testConnection = useServerFn(testSupplierApiConnection);
+  const removeSettings = useServerFn(deleteSupplierApiSettings);
 
-  const queryKey = ["supplier-api-settings", supplierId];
+  const [softwareId, setSoftwareId] = useState<string | null>(null);
+
+  const queryKey = ["supplier-api-settings", supplierId, softwareId ?? "default"];
   const { data, isLoading, isError, error } = useQuery({
     queryKey,
-    queryFn: () => load({ data: { id: supplierId } } as never),
+    queryFn: () => load({ data: { id: supplierId, vending_software_id: softwareId } } as never),
   });
 
   const settings = data?.settings;
+  const softwareOptions = data?.software ?? [];
   const [form, setForm] = useState<FormState>(EMPTY);
   const [password, setPassword] = useState("");
   const [clearPassword, setClearPassword] = useState(false);
