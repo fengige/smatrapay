@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, EyeOff, Loader2, PlugZap, Save } from "lucide-react";
+import { Eye, EyeOff, Loader2, PlugZap, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  deleteSupplierApiSettings,
   getSupplierApiSettings,
   saveSupplierApiSettings,
   testSupplierApiConnection,
