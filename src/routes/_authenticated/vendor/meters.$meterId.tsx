@@ -147,6 +147,7 @@ function VendorMeterDetail() {
                   ["Serial number", meter.serial_number],
                   ["Type", titleCase(meter.type)],
                   ["Supplier", meter.supplier_name ?? "—"],
+                  ["Vending software", meter.vending_software_name ?? "—"],
                   ["Price per unit", String(meter.price_per_unit)],
                   ["Initial reading", String(meter.initial_reading)],
                   ["SGC", meter.sgc ?? "—"],
