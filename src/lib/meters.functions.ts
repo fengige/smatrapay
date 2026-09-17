@@ -209,6 +209,18 @@ export const listMeters = createServerFn({ method: "GET" })
     }));
     const supplierById = new Map(supplierOptions.map((s) => [s.id, s]));
 
+    // Active vending software options for the meter dialog.
+    const { data: vsRows } = await supabase
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    const vendingSoftwareOptions = (vsRows ?? []).map((v: any) => ({
+      id: v.vending_software_id as string,
+      name: (v.name as string) ?? "",
+    }));
+    const vendingSoftwareById = new Map(vendingSoftwareOptions.map((v) => [v.id, v]));
+
     // Unit options (with property names) for optionally linking a meter to a unit.
     const { data: unitRows } = await supabase
       .from("units")
@@ -237,6 +249,10 @@ export const listMeters = createServerFn({ method: "GET" })
         vendor_id: r.vendor_id ?? "",
         supplier_id: r.supplier_id ?? null,
         supplier_name: r.supplier_id ? (supplierById.get(r.supplier_id)?.name ?? null) : null,
+        vending_software_id: r.vending_software_id ?? null,
+        vending_software_name: r.vending_software_id
+          ? (vendingSoftwareById.get(r.vending_software_id)?.name ?? null)
+          : null,
         landlord_id: r.landlord_id ?? null,
         landlord_name: displayName(r.landlord_id ?? null),
         agent_id: r.agent_id ?? null,
