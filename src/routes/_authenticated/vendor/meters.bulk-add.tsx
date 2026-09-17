@@ -113,6 +113,7 @@ function VendorBulkAddMetersPage() {
 
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas" | "">("");
   const [supplierId, setSupplierId] = useState("");
+  const [vendingSoftwareId, setVendingSoftwareId] = useState("");
   const [price, setPrice] = useState("");
   const [reading, setReading] = useState("");
   const [count, setCount] = useState("1");
@@ -139,7 +140,7 @@ function VendorBulkAddMetersPage() {
   };
 
   const isDirty =
-    Boolean(meterType || supplierId || price || reading) ||
+    Boolean(meterType || supplierId || vendingSoftwareId || price || reading) ||
     rows.some((r) => Object.values(r).some((v) => v.trim()));
 
   const goBack = () => void navigate({ to: "/vendor/meters" });
@@ -302,6 +303,7 @@ function VendorBulkAddMetersPage() {
       bulkCreate({
         data: {
           supplier_id: supplierId || null,
+          vending_software_id: vendingSoftwareId || null,
           type: meterType as "electricity" | "water" | "gas",
           price_per_unit: price.trim() || "0",
           initial_reading: reading.trim() || "0",
@@ -455,6 +457,25 @@ function VendorBulkAddMetersPage() {
                     No active suppliers yet — check Meter Suppliers.
                   </span>
                 )}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium" htmlFor="vending-software">
+                  Vending software
+                </label>
+                <select
+                  id="vending-software"
+                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                  value={vendingSoftwareId}
+                  onChange={(e) => setVendingSoftwareId(e.target.value)}
+                >
+                  <option value="">No vending software</option>
+                  {(supplierData?.vendingSoftware ?? []).map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -783,7 +804,10 @@ function VendorBulkAddMetersPage() {
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {rows.length} meter{rows.length === 1 ? "" : "s"} · {meterType} ·{" "}
-              {suppliers.find((s) => s.id === supplierId)?.company_name ?? "No supplier"} · owner:
+              {suppliers.find((s) => s.id === supplierId)?.company_name ?? "No supplier"} ·{" "}
+              {supplierData?.vendingSoftware.find((v) => v.id === vendingSoftwareId)?.name ??
+                "No vending software"}{" "}
+              · owner:
               your vendor account
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
