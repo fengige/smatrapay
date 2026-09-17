@@ -248,6 +248,19 @@ async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
     (meters ?? []).map((m: any) => [m.id as string, m.meter_number as string]),
   );
 
+  const softwareIds = [
+    ...new Set(rows.map((r) => r.vending_software_id).filter(Boolean)),
+  ] as string[];
+  const softwareById = new Map<string, string>();
+  if (softwareIds.length) {
+    const { data: software } = await supabase
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .in("vending_software_id", softwareIds);
+    for (const s of (software ?? []) as any[])
+      softwareById.set(s.vending_software_id as string, s.name as string);
+  }
+
   const actorIds = [...new Set(rows.map((r) => r.issued_by).filter(Boolean))] as string[];
   const actorById = new Map<string, string>();
   const roleById = new Map<string, TokenIssuerRole>();
@@ -282,6 +295,11 @@ async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
     revoke_reason: r.revoke_reason ?? null,
     issued_by_name: r.issued_by ? (actorById.get(r.issued_by) ?? null) : null,
     issued_by_role: (r.issued_by ? (roleById.get(r.issued_by) ?? "other") : "unknown") as TokenIssuerRole,
+    vending_software_name: r.vending_software_id
+      ? (softwareById.get(r.vending_software_id) ?? null)
+      : null,
+    provider: r.provider ?? null,
+    provider_reference: r.provider_reference ?? null,
     created_at: r.created_at,
   }));
 }
