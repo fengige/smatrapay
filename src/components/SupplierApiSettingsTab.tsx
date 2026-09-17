@@ -168,6 +168,7 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
       save({
         data: {
           supplier_id: supplierId,
+          vending_software_id: softwareId,
           ...Object.fromEntries(
             (Object.keys(form) as (keyof FormState)[]).map((k) => [k, form[k].trim()]),
           ),
@@ -176,7 +177,7 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
         },
       } as never),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ["supplier-api-settings", supplierId] });
       setPassword("");
       setClearPassword(false);
       setShowPassword(false);
@@ -187,7 +188,8 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
   });
 
   const testMutation = useMutation({
-    mutationFn: () => testConnection({ data: { id: supplierId } } as never),
+    mutationFn: () =>
+      testConnection({ data: { id: supplierId, vending_software_id: softwareId } } as never),
     onSuccess: (result: { status: string; message: string }) => {
       setTestResult(result.message);
       if (result.status === "ok") toast.success(result.message);
@@ -196,9 +198,59 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
     onError: (e: Error) => toast.error(e.message || "Could not test the connection"),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      removeSettings({ data: { id: supplierId, vending_software_id: softwareId! } } as never),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["supplier-api-settings", supplierId] });
+      setTestResult(null);
+      toast.success("Configuration removed — this vending software now uses the default");
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not remove the configuration"),
+  });
+
+  const currentOption = softwareOptions.find((s) => (s.id ?? null) === softwareId);
+
+  const softwareBar = (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-sm font-medium text-foreground">Vending software</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Each vending software can have its own endpoints. Meters use their own software's settings
+        when they exist, otherwise the default below.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(softwareOptions.length
+          ? softwareOptions
+          : [{ id: null, name: "Default (all vending software)", configured: false }]
+        ).map((option) => {
+          const active = (option.id ?? null) === softwareId;
+          return (
+            <button
+              key={option.id ?? "default"}
+              type="button"
+              onClick={() => {
+                setSoftwareId(option.id ?? null);
+                setTestResult(null);
+              }}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-accent/10"
+              }`}
+            >
+              {option.name}
+              {option.configured ? " ·  configured" : ""}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="mt-5 space-y-4">
+        {softwareBar}
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-40 animate-pulse rounded-2xl border border-border bg-card" />
         ))}
@@ -208,8 +260,11 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
 
   if (isError) {
     return (
-      <div className="mt-5 rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm text-destructive">
-        {(error as Error)?.message ?? "Could not load API settings"}
+      <div className="mt-5 space-y-4">
+        {softwareBar}
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm text-destructive">
+          {(error as Error)?.message ?? "Could not load API settings"}
+        </div>
       </div>
     );
   }
@@ -227,6 +282,8 @@ export function SupplierApiSettingsTab({ supplierId }: { supplierId: string }) {
         saveMutation.mutate();
       }}
     >
+      {softwareBar}
+
       {SECTIONS.map((section) => (
         <section key={section.title} className="rounded-2xl border border-border bg-card p-5">
           <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
