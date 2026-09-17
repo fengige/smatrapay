@@ -586,6 +586,94 @@ export type Database = {
           },
         ]
       }
+      meter_supplier_api_settings: {
+        Row: {
+          api_company_name: string | null
+          api_login: string | null
+          api_maintenance_clear_credit: string | null
+          api_maintenance_clear_tamper: string | null
+          api_maintenance_set_overdraft_limit: string | null
+          api_password: string | null
+          api_pos_purchase: string | null
+          api_user_name: string | null
+          created_at: string
+          id: string
+          meter_supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_company_name?: string | null
+          api_login?: string | null
+          api_maintenance_clear_credit?: string | null
+          api_maintenance_clear_tamper?: string | null
+          api_maintenance_set_overdraft_limit?: string | null
+          api_password?: string | null
+          api_pos_purchase?: string | null
+          api_user_name?: string | null
+          created_at?: string
+          id?: string
+          meter_supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_company_name?: string | null
+          api_login?: string | null
+          api_maintenance_clear_credit?: string | null
+          api_maintenance_clear_tamper?: string | null
+          api_maintenance_set_overdraft_limit?: string | null
+          api_password?: string | null
+          api_pos_purchase?: string | null
+          api_user_name?: string | null
+          created_at?: string
+          id?: string
+          meter_supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_supplier_api_settings_meter_supplier_id_fkey"
+            columns: ["meter_supplier_id"]
+            isOneToOne: true
+            referencedRelation: "meter_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meter_supplier_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          supplier_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          supplier_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_supplier_audit_logs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "meter_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meter_suppliers: {
         Row: {
           company_name: string

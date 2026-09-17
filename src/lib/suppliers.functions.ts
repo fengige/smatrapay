@@ -278,3 +278,238 @@ export const setSupplierLogo = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ------------------------------------------------------------------ *
+ * Supplier API settings (admin only)
+ * ------------------------------------------------------------------ */
+
+export type SupplierApiSettings = {
+  API_POS_PURCHASE: string;
+  API_LOGIN: string;
+  API_MAINTENANCE_CLEAR_TAMPER: string;
+  API_MAINTENANCE_CLEAR_CREDIT: string;
+  API_MAINTENANCE_SET_OVERDRAFT_LIMIT: string;
+  API_COMPANY_NAME: string;
+  API_USER_NAME: string;
+  /** Never the real value — true when a password is stored. */
+  has_password: boolean;
+  updated_at: string | null;
+};
+
+const URL_FIELDS = [
+  "API_POS_PURCHASE",
+  "API_LOGIN",
+  "API_MAINTENANCE_CLEAR_TAMPER",
+  "API_MAINTENANCE_CLEAR_CREDIT",
+  "API_MAINTENANCE_SET_OVERDRAFT_LIMIT",
+] as const;
+
+const urlField = z
+  .string()
+  .trim()
+  .max(500)
+  .optional()
+  .default("")
+  .refine(
+    (v) => !v || /^https?:\/\/[^\s]+$/i.test(v),
+    "Enter a valid URL starting with http:// or https://",
+  );
+
+const textField = z.string().trim().max(150).optional().default("");
+
+const apiSettingsInput = z.object({
+  supplier_id: uuid,
+  API_POS_PURCHASE: urlField,
+  API_LOGIN: urlField,
+  API_MAINTENANCE_CLEAR_TAMPER: urlField,
+  API_MAINTENANCE_CLEAR_CREDIT: urlField,
+  API_MAINTENANCE_SET_OVERDRAFT_LIMIT: urlField,
+  API_COMPANY_NAME: textField,
+  API_USER_NAME: textField,
+  /** Omit or leave null to keep the stored password unchanged. */
+  API_PASSWORD: z.string().max(200).nullable().optional(),
+  clear_password: z.boolean().optional().default(false),
+});
+
+const emptySettings = (): SupplierApiSettings => ({
+  API_POS_PURCHASE: "",
+  API_LOGIN: "",
+  API_MAINTENANCE_CLEAR_TAMPER: "",
+  API_MAINTENANCE_CLEAR_CREDIT: "",
+  API_MAINTENANCE_SET_OVERDRAFT_LIMIT: "",
+  API_COMPANY_NAME: "",
+  API_USER_NAME: "",
+  has_password: false,
+  updated_at: null,
+});
+
+async function assertSupplierExists(supabase: any, id: string) {
+  const { data, error } = await supabase
+    .from("meter_suppliers")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Supplier not found");
+}
+
+/** API configuration for one supplier. The password is never returned. */
+export const getSupplierApiSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const supabase = context.supabase as any;
+    await assertSupplierExists(supabase, data.id);
+
+    const { data: row, error } = await supabase
+      .from("meter_supplier_api_settings")
+      .select(
+        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, updated_at",
+      )
+      .eq("meter_supplier_id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return { settings: emptySettings() };
+
+    const settings: SupplierApiSettings = {
+      API_POS_PURCHASE: row.api_pos_purchase ?? "",
+      API_LOGIN: row.api_login ?? "",
+      API_MAINTENANCE_CLEAR_TAMPER: row.api_maintenance_clear_tamper ?? "",
+      API_MAINTENANCE_CLEAR_CREDIT: row.api_maintenance_clear_credit ?? "",
+      API_MAINTENANCE_SET_OVERDRAFT_LIMIT: row.api_maintenance_set_overdraft_limit ?? "",
+      API_COMPANY_NAME: row.api_company_name ?? "",
+      API_USER_NAME: row.api_user_name ?? "",
+      has_password: Boolean(row.api_password),
+      updated_at: row.updated_at ?? null,
+    };
+    return { settings };
+  });
+
+/** Create or update the supplier's API configuration (one row per supplier). */
+export const saveSupplierApiSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => apiSettingsInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const supabase = context.supabase as any;
+    await assertSupplierExists(supabase, data.supplier_id);
+
+    const urls = URL_FIELDS.map((k) => (data as any)[k] as string).filter(Boolean);
+    if (new Set(urls).size !== urls.length) {
+      throw new Error("Each API endpoint must be a different URL");
+    }
+
+    const { data: existing, error: readErr } = await supabase
+      .from("meter_supplier_api_settings")
+      .select("id, api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password")
+      .eq("meter_supplier_id", data.supplier_id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+
+    const values: Record<string, unknown> = {
+      meter_supplier_id: data.supplier_id,
+      api_pos_purchase: data.API_POS_PURCHASE || null,
+      api_login: data.API_LOGIN || null,
+      api_maintenance_clear_tamper: data.API_MAINTENANCE_CLEAR_TAMPER || null,
+      api_maintenance_clear_credit: data.API_MAINTENANCE_CLEAR_CREDIT || null,
+      api_maintenance_set_overdraft_limit: data.API_MAINTENANCE_SET_OVERDRAFT_LIMIT || null,
+      api_company_name: data.API_COMPANY_NAME || null,
+      api_user_name: data.API_USER_NAME || null,
+    };
+
+    let passwordChanged = false;
+    if (data.clear_password) {
+      values["api_password"] = null;
+      passwordChanged = Boolean(existing?.api_password);
+    } else if (typeof data.API_PASSWORD === "string" && data.API_PASSWORD.length > 0) {
+      values["api_password"] = data.API_PASSWORD;
+      passwordChanged = true;
+    }
+
+    const changed: string[] = [];
+    const compare: [string, string][] = [
+      ["API_POS_PURCHASE", "api_pos_purchase"],
+      ["API_LOGIN", "api_login"],
+      ["API_MAINTENANCE_CLEAR_TAMPER", "api_maintenance_clear_tamper"],
+      ["API_MAINTENANCE_CLEAR_CREDIT", "api_maintenance_clear_credit"],
+      ["API_MAINTENANCE_SET_OVERDRAFT_LIMIT", "api_maintenance_set_overdraft_limit"],
+      ["API_COMPANY_NAME", "api_company_name"],
+      ["API_USER_NAME", "api_user_name"],
+    ];
+    for (const [label, column] of compare) {
+      if ((existing?.[column] ?? null) !== (values[column] ?? null)) changed.push(label);
+    }
+    if (passwordChanged) changed.push("API_PASSWORD");
+
+    if (existing) {
+      const { error } = await supabase
+        .from("meter_supplier_api_settings")
+        .update(values as never)
+        .eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase
+        .from("meter_supplier_api_settings")
+        .insert(values as never);
+      if (error) {
+        if (error.code === "23505") throw new Error("API settings already exist for this supplier");
+        throw new Error(error.message);
+      }
+    }
+
+    // Audit trail — field names only, never credential values.
+    await supabase.from("meter_supplier_audit_logs").insert({
+      supplier_id: data.supplier_id,
+      actor_id: context.userId,
+      action: existing ? "api_settings_updated" : "api_settings_created",
+      changes: { fields: changed },
+    } as never);
+
+    return { ok: true, has_password: Boolean(values["api_password"] ?? (data.clear_password ? null : existing?.api_password)) };
+  });
+
+/** Check the configured login endpoint responds with the stored credentials. */
+export const testSupplierApiConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const supabase = context.supabase as any;
+
+    const { data: row, error } = await supabase
+      .from("meter_supplier_api_settings")
+      .select("api_login, api_company_name, api_user_name, api_password")
+      .eq("meter_supplier_id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+
+    if (!row?.api_login || !row.api_user_name || !row.api_password) {
+      return { status: "invalid" as const, message: "Invalid Configuration" };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(row.api_login, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company: row.api_company_name ?? "",
+          username: row.api_user_name,
+          password: row.api_password,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.status === 401 || res.status === 403) {
+        return { status: "auth_failed" as const, message: "Authentication Failed" };
+      }
+      if (!res.ok) {
+        return { status: "unreachable" as const, message: `Endpoint Unreachable (${res.status})` };
+      }
+      return { status: "ok" as const, message: "Connection Successful" };
+    } catch {
+      return { status: "unreachable" as const, message: "Endpoint Unreachable" };
+    }
+  });
