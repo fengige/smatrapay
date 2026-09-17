@@ -302,7 +302,6 @@ function MetersPage() {
         "Meter number",
         "Serial number",
         "Type",
-        "Vendor",
         "Owner",
         "Owner role",
         "Unit",
@@ -319,7 +318,6 @@ function MetersPage() {
         m.meter_number,
         m.serial_number,
         typeMeta(m.type).label,
-        m.vendor_id,
         m.owner_name ?? "Unassigned",
         m.owner_role ? m.owner_role.charAt(0).toUpperCase() + m.owner_role.slice(1) : "—",
         m.unit_label ?? "—",
@@ -566,7 +564,6 @@ function MetersPage() {
                   <SortHeader label="Meter no." sortBy="meter_number" />
                   <SortHeader label="Serial" sortBy="serial_number" />
                   <SortHeader label="Type" sortBy="type" />
-                  <SortHeader label="Vendor" sortBy="vendor_id" />
                   <SortHeader label="Owner" sortBy="owner_name" />
                   <SortHeader label="Unit" sortBy="unit_label" />
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
@@ -581,20 +578,20 @@ function MetersPage() {
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                     <td colSpan={12} className="px-3 py-8 text-center text-destructive">
+                     <td colSpan={11} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Use “Add Meter”, “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
@@ -649,9 +646,6 @@ function MetersPage() {
                           >
                             {meta.label}
                           </span>
-                        </td>
-                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
-                          {m.vendor_id || "—"}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
                           <div className="font-medium text-foreground">{m.owner_name ?? "Unassigned"}</div>
