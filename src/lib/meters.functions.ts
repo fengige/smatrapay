@@ -1015,6 +1015,10 @@ export const listBulkMeterOptions = createServerFn({ method: "GET" })
         name: (s.company_name as string) ?? "",
         utility_type: (s.utility_type as string) ?? "",
       })),
+      vendingSoftware: (vsRows ?? []).map((v: any) => ({
+        id: v.vending_software_id as string,
+        name: (v.name as string) ?? "",
+      })),
       vendors,
       landlords,
       agents,
