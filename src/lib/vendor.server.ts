@@ -13,6 +13,8 @@ export type VendorMeter = {
   installation_notes: string | null;
   supplier_id: string | null;
   supplier_name: string | null;
+  vending_software_id: string | null;
+  vending_software_name: string | null;
   unit_id: string | null;
   unit_label: string | null;
   property_id: string | null;
@@ -99,7 +101,7 @@ export async function loadVendorScope(
   const { data: meterRows, error } = await supabase
     .from("meters")
     .select(
-      "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, unit_id, price_per_unit, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
+      "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
     )
     .eq("vendor_id", vendorId)
     .order("created_at", { ascending: false });
@@ -108,18 +110,23 @@ export async function loadVendorScope(
   const meterList = (meterRows ?? []) as any[];
   const unitIds = [...new Set(meterList.map((m) => m.unit_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(meterList.map((m) => m.supplier_id).filter(Boolean))] as string[];
+  const vsIds = [...new Set(meterList.map((m) => m.vending_software_id).filter(Boolean))] as string[];
 
-  const [unitsRes, suppliersRes] = await Promise.all([
+  const [unitsRes, suppliersRes, vsRes] = await Promise.all([
     unitIds.length
       ? supabase.from("units").select("id, unit_number, floor, property_id").in("id", unitIds)
       : Promise.resolve({ data: [] as any[] }),
     supplierIds.length
       ? supabase.from("meter_suppliers").select("id, company_name").in("id", supplierIds)
       : Promise.resolve({ data: [] as any[] }),
+    vsIds.length
+      ? supabase.from("vending_software").select("vending_software_id, name").in("vending_software_id", vsIds)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
 
   const units = (unitsRes.data ?? []) as any[];
   const suppliers = byId((suppliersRes.data ?? []) as any[], "id");
+  const vendingSoftware = byId((vsRes.data ?? []) as any[], "vending_software_id");
   const propertyIds = [...new Set(units.map((u) => u.property_id).filter(Boolean))] as string[];
 
   const [propsRes, assignRes] = await Promise.all([
@@ -186,6 +193,10 @@ export async function loadVendorScope(
       installation_notes: m.installation_notes ?? null,
       supplier_id: m.supplier_id ?? null,
       supplier_name: m.supplier_id ? (suppliers.get(m.supplier_id)?.company_name ?? null) : null,
+      vending_software_id: m.vending_software_id ?? null,
+      vending_software_name: m.vending_software_id
+        ? (vendingSoftware.get(m.vending_software_id)?.name ?? null)
+        : null,
       unit_id: m.unit_id ?? null,
       unit_label: unit ? `Unit ${unit.unit_number}` : null,
       property_id: property?.id ?? null,
