@@ -737,17 +737,24 @@ export type Database = {
           customer_phone: string | null
           expires_at: string
           id: string
+          idempotency_key: string | null
           issued_by: string | null
           meter_id: string
+          provider: string | null
+          provider_metadata: Json | null
+          provider_reference: string | null
+          provider_state: string
           reference: string | null
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
           sms_requested: boolean
           status: Database["public"]["Enums"]["meter_token_status"]
+          supplier_id: string | null
           token: string
           units: number
           updated_at: string
+          vending_software_id: string | null
         }
         Insert: {
           action?: Database["public"]["Enums"]["meter_token_action"]
@@ -756,17 +763,24 @@ export type Database = {
           customer_phone?: string | null
           expires_at?: string
           id?: string
+          idempotency_key?: string | null
           issued_by?: string | null
           meter_id: string
+          provider?: string | null
+          provider_metadata?: Json | null
+          provider_reference?: string | null
+          provider_state?: string
           reference?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           sms_requested?: boolean
           status?: Database["public"]["Enums"]["meter_token_status"]
+          supplier_id?: string | null
           token: string
           units?: number
           updated_at?: string
+          vending_software_id?: string | null
         }
         Update: {
           action?: Database["public"]["Enums"]["meter_token_action"]
@@ -775,17 +789,24 @@ export type Database = {
           customer_phone?: string | null
           expires_at?: string
           id?: string
+          idempotency_key?: string | null
           issued_by?: string | null
           meter_id?: string
+          provider?: string | null
+          provider_metadata?: Json | null
+          provider_reference?: string | null
+          provider_state?: string
           reference?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           sms_requested?: boolean
           status?: Database["public"]["Enums"]["meter_token_status"]
+          supplier_id?: string | null
           token?: string
           units?: number
           updated_at?: string
+          vending_software_id?: string | null
         }
         Relationships: [
           {
@@ -794,6 +815,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meters"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meter_tokens_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "meter_suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meter_tokens_vending_software_id_fkey"
+            columns: ["vending_software_id"]
+            isOneToOne: false
+            referencedRelation: "vending_software"
+            referencedColumns: ["vending_software_id"]
           },
         ]
       }
@@ -2224,6 +2259,110 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      vending_integration_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          duration_ms: number | null
+          endpoint: string | null
+          error_code: string | null
+          error_message: string | null
+          http_status: number | null
+          id: string
+          meter_id: string | null
+          meter_number: string | null
+          operation: string
+          provider_reference: string | null
+          provider_result_code: string | null
+          request_at: string
+          request_payload: Json | null
+          response_at: string | null
+          response_payload: Json | null
+          software_code: string | null
+          success: boolean
+          supplier_id: string | null
+          token_id: string | null
+          vending_software_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          meter_id?: string | null
+          meter_number?: string | null
+          operation: string
+          provider_reference?: string | null
+          provider_result_code?: string | null
+          request_at?: string
+          request_payload?: Json | null
+          response_at?: string | null
+          response_payload?: Json | null
+          software_code?: string | null
+          success?: boolean
+          supplier_id?: string | null
+          token_id?: string | null
+          vending_software_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          meter_id?: string | null
+          meter_number?: string | null
+          operation?: string
+          provider_reference?: string | null
+          provider_result_code?: string | null
+          request_at?: string
+          request_payload?: Json | null
+          response_at?: string | null
+          response_payload?: Json | null
+          software_code?: string | null
+          success?: boolean
+          supplier_id?: string | null
+          token_id?: string | null
+          vending_software_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vending_integration_logs_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vending_integration_logs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "meter_suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vending_integration_logs_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "meter_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vending_integration_logs_vending_software_id_fkey"
+            columns: ["vending_software_id"]
+            isOneToOne: false
+            referencedRelation: "vending_software"
+            referencedColumns: ["vending_software_id"]
+          },
+        ]
       }
       vending_software: {
         Row: {
