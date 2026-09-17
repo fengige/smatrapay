@@ -23,6 +23,7 @@ export type VendorTokenMeterMatch = {
   unit_label: string | null;
   property_name: string | null;
   zone_name: string | null;
+  vending_software_name: string | null;
   customer_id: string | null;
   customer_name: string | null;
   customer_phone: string | null;
@@ -142,6 +143,7 @@ export const searchVendorTokenMeters = createServerFn({ method: "POST" })
           unit_label: m.unit_label,
           property_name: m.property_name,
           zone_name: m.zone_name,
+          vending_software_name: m.vending_software_name ?? null,
           customer_id: resident?.id ?? null,
           customer_name: resident?.name ?? null,
           customer_phone: resident?.phone ?? null,
