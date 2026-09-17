@@ -115,6 +115,7 @@ function BulkAddMetersPage() {
   const existingSerials = useMemo(() => new Set(existingIds?.serials ?? []), [existingIds]);
 
   const suppliers = data?.suppliers ?? [];
+  const vendingSoftware = data?.vendingSoftware ?? [];
   const vendors = data?.vendors ?? [];
   const landlords = data?.landlords ?? [];
   const agents = data?.agents ?? [];
@@ -122,6 +123,7 @@ function BulkAddMetersPage() {
 
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas" | "">("");
   const [supplierId, setSupplierId] = useState(lockedSupplierId ?? "");
+  const [vendingSoftwareId, setVendingSoftwareId] = useState("");
   const lockedSupplierName = lockedSupplierId
     ? (suppliers.find((s) => s.id === lockedSupplierId)?.name ?? "Selected supplier")
     : null;
@@ -343,6 +345,7 @@ function BulkAddMetersPage() {
       const res = await bulkCreate({
         data: {
           supplier_id: supplierId || null,
+          vending_software_id: vendingSoftwareId || null,
           owner_type: ownerType as "vendor" | "landlord" | "agent",
           owner_id: ownerId,
           type: meterType as "electricity" | "water" | "gas",
@@ -512,6 +515,25 @@ function BulkAddMetersPage() {
                   No active suppliers yet — add one in Meter Suppliers.
                 </span>
               )}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="vending-software">
+                Vending Software <span className="text-muted-foreground">(optional)</span>
+              </label>
+              <select
+                id="vending-software"
+                className={field}
+                value={vendingSoftwareId}
+                onChange={(e) => setVendingSoftwareId(e.target.value)}
+              >
+                <option value="">No vending software</option>
+                {vendingSoftware.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

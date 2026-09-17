@@ -120,6 +120,7 @@ type SortKey =
   | "vendor_id"
   | "owner_name"
   | "unit_label"
+  | "vending_software_name"
   | "price_per_unit"
   | "status";
 
@@ -182,6 +183,7 @@ function MetersPage() {
   );
   const unitOptions = data?.units ?? [];
   const supplierOptions = data?.suppliers ?? [];
+  const vendingSoftware = data?.vendingSoftware ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -305,6 +307,7 @@ function MetersPage() {
         "Owner",
         "Owner role",
         "Unit",
+        "Vending software",
         "Initial reading",
         "Price per unit",
         "Status",
@@ -321,6 +324,7 @@ function MetersPage() {
         m.owner_name ?? "Unassigned",
         m.owner_role ? m.owner_role.charAt(0).toUpperCase() + m.owner_role.slice(1) : "—",
         m.unit_label ?? "—",
+        m.vending_software_name ?? "—",
         money(m.initial_reading),
         money(m.price_per_unit),
         m.status,
@@ -566,6 +570,7 @@ function MetersPage() {
                   <SortHeader label="Type" sortBy="type" />
                   <SortHeader label="Owner" sortBy="owner_name" />
                   <SortHeader label="Unit" sortBy="unit_label" />
+                  <SortHeader label="Vending" sortBy="vending_software_name" />
                   <SortHeader label="Price / unit" sortBy="price_per_unit" />
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">STS</th>
                   <th className="px-3 py-2 font-semibold uppercase tracking-wide">Installation</th>
@@ -578,20 +583,20 @@ function MetersPage() {
               <tbody className="text-sm">
                 {isLoading ? (
                   <tr>
-                     <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading meters…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                     <td colSpan={11} className="px-3 py-8 text-center text-destructive">
+                     <td colSpan={12} className="px-3 py-8 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                     <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
+                     <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
                       No meters match your filters. Use “Add Meter”, “Bulk Add Meters” or “Import CSV” to register meters.
                     </td>
                   </tr>
@@ -657,6 +662,9 @@ function MetersPage() {
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                           {m.unit_label ?? "—"}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                          {m.vending_software_name ?? "—"}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-foreground">
                           {money(m.price_per_unit)}
@@ -848,6 +856,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           suppliers={supplierOptions}
+          vendingSoftware={vendingSoftware}
           onClose={() => setShowBulkAdd(false)}
           onSaved={async (count: number) => {
             setShowBulkAdd(false);
@@ -913,6 +922,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           suppliers={supplierOptions}
+          vendingSoftware={vendingSoftware}
           existing={meters}
           onClose={() => {
             setEditing(null);
@@ -932,6 +942,7 @@ function MetersPage() {
           landlords={landlords}
           agents={agents}
           suppliers={supplierOptions}
+          vendingSoftware={vendingSoftware}
           existing={meters}
           onClose={() => setCreating(false)}
           onSaved={async () => {
@@ -1004,6 +1015,7 @@ function MeterDialog({
   landlords,
   agents,
   suppliers,
+  vendingSoftware,
   existing,
   onClose,
   onSaved,
@@ -1013,6 +1025,7 @@ function MeterDialog({
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
   suppliers: { id: string; name: string }[];
+  vendingSoftware: { id: string; name: string }[];
   existing: MeterRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
@@ -1031,6 +1044,7 @@ function MeterDialog({
     (meter?.type as "electricity" | "water" | "gas") ?? "",
   );
   const [supplierId, setSupplierId] = useState(meter?.supplier_id ?? "");
+  const [vendingSoftwareId, setVendingSoftwareId] = useState(meter?.vending_software_id ?? "");
   const [ownerType, setOwnerType] = useState<OwnerType>(inferOwnerType);
   const [ownerId, setOwnerId] = useState(
     meter?.landlord_id ?? meter?.agent_id ?? (meter && vendors.some((v) => v.id === meter.vendor_id) ? meter?.vendor_id : "") ?? "",
@@ -1053,12 +1067,12 @@ function MeterDialog({
 
   const initialSnapshot = useMemo(
     () =>
-      JSON.stringify({ meterType, supplierId, ownerType, ownerId, meterNumber, serialNumber, sts }),
+      JSON.stringify({ meterType, supplierId, vendingSoftwareId, ownerType, ownerId, meterNumber, serialNumber, sts }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   const isDirty =
-    JSON.stringify({ meterType, supplierId, ownerType, ownerId, meterNumber, serialNumber, sts }) !==
+    JSON.stringify({ meterType, supplierId, vendingSoftwareId, ownerType, ownerId, meterNumber, serialNumber, sts }) !==
     initialSnapshot;
 
   const attemptClose = (pending: boolean) => {
@@ -1132,6 +1146,7 @@ function MeterDialog({
       const payload = {
         vendor_id: ownerId,
         supplier_id: supplierId || null,
+        vending_software_id: vendingSoftwareId || null,
         landlord_id: ownerType === "landlord" ? ownerId : null,
         agent_id: ownerType === "agent" ? ownerId : null,
         unit_id: meter?.unit_id ?? null,
@@ -1230,6 +1245,24 @@ function MeterDialog({
             {visible("supplier", supplierError) && (
               <p className="mt-1 text-xs text-destructive">{supplierError}</p>
             )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="meter-vending-software">
+              Vending Software <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="meter-vending-software"
+              value={vendingSoftwareId}
+              onChange={(e) => setVendingSoftwareId(e.target.value)}
+              className={field}
+            >
+              <option value="">No vending software</option>
+              {vendingSoftware.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="meter-owner-type">
@@ -2079,6 +2112,7 @@ function BulkAddMetersDialog({
   landlords,
   agents,
   suppliers,
+  vendingSoftware,
   onClose,
   onSaved,
 }: {
@@ -2086,12 +2120,14 @@ function BulkAddMetersDialog({
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
   suppliers: { id: string; name: string }[];
+  vendingSoftware: { id: string; name: string }[];
   onClose: () => void;
   onSaved: (count: number) => void | Promise<void>;
 }) {
   const bulkCreate = useServerFn(bulkAddMeters);
 
   const [supplierId, setSupplierId] = useState("");
+  const [vendingSoftwareId, setVendingSoftwareId] = useState("");
   const [ownerType, setOwnerType] = useState<"vendor" | "landlord" | "agent">("vendor");
   const [ownerId, setOwnerId] = useState("");
   const [meterType, setMeterType] = useState<"electricity" | "water" | "gas">("electricity");
@@ -2152,6 +2188,7 @@ function BulkAddMetersDialog({
       const res = await bulkCreate({
         data: {
           supplier_id: supplierId || null,
+          vending_software_id: vendingSoftwareId || null,
           owner_type: ownerType,
           owner_id: ownerId,
           type: meterType,
@@ -2210,6 +2247,24 @@ function BulkAddMetersDialog({
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="bulk-vending-software">
+              Vending Software <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <select
+              id="bulk-vending-software"
+              value={vendingSoftwareId}
+              onChange={(e) => setVendingSoftwareId(e.target.value)}
+              className={field}
+            >
+              <option value="">No vending software</option>
+              {vendingSoftware.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
                 </option>
               ))}
             </select>

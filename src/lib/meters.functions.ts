@@ -19,6 +19,8 @@ export type MeterRow = {
   vendor_id: string;
   supplier_id: string | null;
   supplier_name: string | null;
+  vending_software_id: string | null;
+  vending_software_name: string | null;
   landlord_id: string | null;
   landlord_name: string | null;
   agent_id: string | null;
@@ -47,7 +49,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, supplier_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, supplier_id, vending_software_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
@@ -83,6 +85,7 @@ const identifier = (label: string) =>
 const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
   supplier_id: uuid.nullable().optional(),
+  vending_software_id: uuid.nullable().optional(),
   landlord_id: uuid.nullable().optional(),
   agent_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
@@ -206,6 +209,18 @@ export const listMeters = createServerFn({ method: "GET" })
     }));
     const supplierById = new Map(supplierOptions.map((s) => [s.id, s]));
 
+    // Active vending software options for the meter dialog.
+    const { data: vsRows } = await supabase
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    const vendingSoftwareOptions = (vsRows ?? []).map((v: any) => ({
+      id: v.vending_software_id as string,
+      name: (v.name as string) ?? "",
+    }));
+    const vendingSoftwareById = new Map(vendingSoftwareOptions.map((v) => [v.id, v]));
+
     // Unit options (with property names) for optionally linking a meter to a unit.
     const { data: unitRows } = await supabase
       .from("units")
@@ -234,6 +249,10 @@ export const listMeters = createServerFn({ method: "GET" })
         vendor_id: r.vendor_id ?? "",
         supplier_id: r.supplier_id ?? null,
         supplier_name: r.supplier_id ? (supplierById.get(r.supplier_id)?.name ?? null) : null,
+        vending_software_id: r.vending_software_id ?? null,
+        vending_software_name: r.vending_software_id
+          ? (vendingSoftwareById.get(r.vending_software_id)?.name ?? null)
+          : null,
         landlord_id: r.landlord_id ?? null,
         landlord_name: displayName(r.landlord_id ?? null),
         agent_id: r.agent_id ?? null,
@@ -269,6 +288,7 @@ export const listMeters = createServerFn({ method: "GET" })
       vendors: vendorOptions,
       units: unitOptions,
       suppliers: supplierOptions,
+      vendingSoftware: vendingSoftwareOptions,
     };
   });
 
@@ -288,6 +308,7 @@ export const addMeter = createServerFn({ method: "POST" })
       .insert({
         vendor_id: data.vendor_id,
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
@@ -336,6 +357,7 @@ export const updateMeter = createServerFn({ method: "POST" })
       .update({
         vendor_id: data.vendor_id,
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
@@ -866,6 +888,7 @@ const bulkAddRow = z.object({
 
 const bulkAddInput = z.object({
   supplier_id: uuid.nullable().optional(),
+  vending_software_id: uuid.nullable().optional(),
   owner_type: z.enum(["vendor", "landlord", "agent"]),
   owner_id: uuid,
   type: z.enum(["electricity", "water", "gas"]),
@@ -915,6 +938,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
     const { data: result, error } = await (supabase.rpc as any)("bulk_add_meters", {
       p_payload: {
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         owner_type: data.owner_type,
         owner_id: data.owner_id,
         type: data.type,
@@ -935,6 +959,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
 
 export type BulkMeterOptions = {
   suppliers: { id: string; name: string; utility_type: string }[];
+  vendingSoftware: { id: string; name: string }[];
   vendors: { id: string; name: string }[];
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
@@ -977,11 +1002,22 @@ export const listBulkMeterOptions = createServerFn({ method: "GET" })
       .order("company_name", { ascending: true });
     if (sErr) throw new Error(sErr.message);
 
+    const { data: vsRows, error: vsErr } = await supabase
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    if (vsErr) throw new Error(vsErr.message);
+
     return {
       suppliers: (supplierRows ?? []).map((s: any) => ({
         id: s.id as string,
         name: (s.company_name as string) ?? "",
         utility_type: (s.utility_type as string) ?? "",
+      })),
+      vendingSoftware: (vsRows ?? []).map((v: any) => ({
+        id: v.vending_software_id as string,
+        name: (v.name as string) ?? "",
       })),
       vendors,
       landlords,
@@ -1039,6 +1075,16 @@ export const getMeter = createServerFn({ method: "GET" })
       if (s) supplier = s as unknown as MeterDetail["supplier"];
     }
 
+    let vendingSoftwareName: string | null = null;
+    if (m.vending_software_id) {
+      const { data: vs } = await supabase
+        .from("vending_software")
+        .select("name")
+        .eq("vending_software_id", m.vending_software_id)
+        .maybeSingle();
+      vendingSoftwareName = (vs?.name as string) ?? null;
+    }
+
     let unit: MeterDetail["unit"] = null;
     if (m.unit_id) {
       const { data: u } = await supabase
@@ -1091,6 +1137,8 @@ export const getMeter = createServerFn({ method: "GET" })
       vendor_id: m.vendor_id ?? "",
       supplier_id: m.supplier_id ?? null,
       supplier_name: supplier ? supplier.company_name : null,
+      vending_software_id: m.vending_software_id ?? null,
+      vending_software_name: vendingSoftwareName,
       landlord_id: m.landlord_id ?? null,
       landlord_name: person(m.landlord_id ?? null)?.name ?? null,
       agent_id: m.agent_id ?? null,

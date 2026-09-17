@@ -32,3 +32,5 @@
 - [x] Vendor portal: mirror admin meters/bulk-add on /vendor/meters/bulk-add
 - [x] Vendor portal: /vendor/properties/new mirrors admin /properties/new wizard
 - [x] Vendor portal: /vendor/residents/new mirrors admin /residents/new
+- [ ] Meters: Vending Software select in Add Meter modal, /meters/bulk-add, bulk-add dialog
+- [ ] /meters page: Vending Software column
