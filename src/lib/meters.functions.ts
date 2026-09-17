@@ -19,6 +19,8 @@ export type MeterRow = {
   vendor_id: string;
   supplier_id: string | null;
   supplier_name: string | null;
+  vending_software_id: string | null;
+  vending_software_name: string | null;
   landlord_id: string | null;
   landlord_name: string | null;
   agent_id: string | null;
@@ -47,7 +49,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, supplier_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, supplier_id, vending_software_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
@@ -83,6 +85,7 @@ const identifier = (label: string) =>
 const meterInput = z.object({
   vendor_id: z.string().trim().min(1, "Vendor is required").max(255),
   supplier_id: uuid.nullable().optional(),
+  vending_software_id: uuid.nullable().optional(),
   landlord_id: uuid.nullable().optional(),
   agent_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
@@ -288,6 +291,7 @@ export const addMeter = createServerFn({ method: "POST" })
       .insert({
         vendor_id: data.vendor_id,
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
@@ -336,6 +340,7 @@ export const updateMeter = createServerFn({ method: "POST" })
       .update({
         vendor_id: data.vendor_id,
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         landlord_id: data.landlord_id ?? null,
         agent_id: data.agent_id ?? null,
         unit_id: data.unit_id ?? null,
