@@ -288,6 +288,7 @@ export const listMeters = createServerFn({ method: "GET" })
       vendors: vendorOptions,
       units: unitOptions,
       suppliers: supplierOptions,
+      vendingSoftware: vendingSoftwareOptions,
     };
   });
 
@@ -887,6 +888,7 @@ const bulkAddRow = z.object({
 
 const bulkAddInput = z.object({
   supplier_id: uuid.nullable().optional(),
+  vending_software_id: uuid.nullable().optional(),
   owner_type: z.enum(["vendor", "landlord", "agent"]),
   owner_id: uuid,
   type: z.enum(["electricity", "water", "gas"]),
@@ -936,6 +938,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
     const { data: result, error } = await (supabase.rpc as any)("bulk_add_meters", {
       p_payload: {
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         owner_type: data.owner_type,
         owner_id: data.owner_id,
         type: data.type,
@@ -956,6 +959,7 @@ export const bulkAddMeters = createServerFn({ method: "POST" })
 
 export type BulkMeterOptions = {
   suppliers: { id: string; name: string; utility_type: string }[];
+  vendingSoftware: { id: string; name: string }[];
   vendors: { id: string; name: string }[];
   landlords: { id: string; name: string }[];
   agents: { id: string; name: string }[];
