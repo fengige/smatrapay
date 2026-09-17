@@ -139,6 +139,16 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
       for (const l of (landlords ?? []) as any[]) landlordById.set(l.id, l);
     }
 
+    const vsIds = [...new Set(rows.map((m) => m.vending_software_id).filter(Boolean))] as string[];
+    const vsById = new Map<string, string>();
+    if (vsIds.length) {
+      const { data: vs } = await supabase
+        .from("vending_software")
+        .select("vending_software_id, name")
+        .in("vending_software_id", vsIds);
+      for (const v of (vs ?? []) as any[]) vsById.set(v.vending_software_id, v.name);
+    }
+
     return rows.map((m) => {
       const unit = m.unit_id ? unitById.get(m.unit_id) : null;
       const property = unit ? propertyById.get(unit.property_id) : null;
@@ -164,6 +174,9 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
         customer_name: resident?.name ?? null,
         customer_email: resident?.email ?? null,
         customer_phone: resident?.phone ?? null,
+        vending_software_name: m.vending_software_id
+          ? (vsById.get(m.vending_software_id) ?? null)
+          : null,
       } satisfies TokenMeterMatch;
     });
   });
