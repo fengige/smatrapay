@@ -812,6 +812,7 @@ export type Database = {
           type: string
           unit_id: string | null
           updated_at: string
+          vending_software_id: string | null
           vendor_id: string | null
         }
         Insert: {
@@ -838,6 +839,7 @@ export type Database = {
           type: string
           unit_id?: string | null
           updated_at?: string
+          vending_software_id?: string | null
           vendor_id?: string | null
         }
         Update: {
@@ -864,6 +866,7 @@ export type Database = {
           type?: string
           unit_id?: string | null
           updated_at?: string
+          vending_software_id?: string | null
           vendor_id?: string | null
         }
         Relationships: [
@@ -894,6 +897,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meters_vending_software_id_fkey"
+            columns: ["vending_software_id"]
+            isOneToOne: false
+            referencedRelation: "vending_software"
+            referencedColumns: ["vending_software_id"]
           },
         ]
       }

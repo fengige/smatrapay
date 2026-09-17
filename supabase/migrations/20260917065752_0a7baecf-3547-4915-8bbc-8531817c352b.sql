@@ -1,0 +1,1 @@
+ALTER TABLE public.meters ADD COLUMN vending_software_id uuid REFERENCES public.vending_software(vending_software_id);
