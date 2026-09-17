@@ -1002,6 +1002,13 @@ export const listBulkMeterOptions = createServerFn({ method: "GET" })
       .order("company_name", { ascending: true });
     if (sErr) throw new Error(sErr.message);
 
+    const { data: vsRows, error: vsErr } = await supabase
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    if (vsErr) throw new Error(vsErr.message);
+
     return {
       suppliers: (supplierRows ?? []).map((s: any) => ({
         id: s.id as string,
