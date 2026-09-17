@@ -195,6 +195,7 @@ export const sellVendorPosToken = createServerFn({ method: "POST" })
         reference: z.string().trim().max(120).optional().nullable(),
         customer_phone: z.string().trim().max(30).optional().nullable(),
         sms_requested: z.boolean().default(false),
+        request_id: z.string().trim().max(100).optional().nullable(),
       })
       .parse(d),
   )
@@ -219,23 +220,19 @@ export const sellVendorPosToken = createServerFn({ method: "POST" })
 
     const reference = `${data.method.toUpperCase()}${data.reference?.trim() ? ` ${data.reference.trim()}` : ""}`;
 
-    const { data: row, error } = await supabase
-      .from("meter_tokens")
-      .insert({
-        meter_id: data.meter_id,
-        action: "credit",
-        token: generateTokenValue(),
-        units: data.units,
-        amount: data.amount,
-        reference,
-        customer_phone: data.customer_phone?.trim() || null,
-        sms_requested: data.sms_requested,
-        expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-        issued_by: vendorId,
-      })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
+    const { vendMeterToken } = await import("@/lib/vending/vend.server");
+    const { row } = await vendMeterToken(supabase, {
+      meterId: data.meter_id,
+      action: "credit",
+      units: data.units,
+      amount: data.amount,
+      reference,
+      customerPhone: data.customer_phone ?? null,
+      smsRequested: data.sms_requested,
+      expiresInDays: 30,
+      actorId: vendorId,
+      requestId: data.request_id ?? null,
+    });
 
     // Record the counter payment against the resident occupying the meter's unit.
     let residentId: string | null = null;
