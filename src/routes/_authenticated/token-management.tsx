@@ -525,6 +525,16 @@ function TokenManagementPage() {
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
                 </p>
+                {(token.vending_software_name || token.provider_reference) && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {token.vending_software_name
+                      ? `Vending software: ${token.vending_software_name}`
+                      : ""}
+                    {token.provider_reference
+                      ? `${token.vending_software_name ? " · " : ""}Provider ref ${token.provider_reference}`
+                      : ""}
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
