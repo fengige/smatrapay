@@ -169,8 +169,21 @@ export const listVendorSuppliers = createServerFn({ method: "GET" })
       .eq("status", "Active")
       .order("company_name", { ascending: true });
     if (error) throw new Error(error.message);
-    return { suppliers: (data ?? []) as { id: string; company_name: string; utility_type: string }[] };
+    const { data: software, error: swError } = await (context.supabase as any)
+      .from("vending_software")
+      .select("vending_software_id, name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    if (swError) throw new Error(swError.message);
+    return {
+      suppliers: (data ?? []) as { id: string; company_name: string; utility_type: string }[],
+      vendingSoftware: ((software ?? []) as any[]).map((s) => ({
+        id: s.vending_software_id as string,
+        name: s.name as string,
+      })),
+    };
   });
+
 
 /** Meter / serial numbers already registered inside the vendor's scope (RLS-bound). */
 export const listVendorMeterIdentifiers = createServerFn({ method: "GET" })
@@ -300,6 +313,7 @@ const meterInput = z.object({
     .regex(IDENTIFIER_RE, "Serial number may only contain letters, numbers, - _ /"),
   type: z.enum(["electricity", "water", "gas"]),
   supplier_id: uuid.nullable().optional(),
+  vending_software_id: uuid.nullable().optional(),
   unit_id: uuid.nullable().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
   installation_status: z.enum(INSTALLATION_STATUSES).default("not_installed"),
@@ -352,6 +366,7 @@ export const addVendorMeter = createServerFn({ method: "POST" })
       .insert({
         vendor_id: vendorId,
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         unit_id: data.unit_id ?? null,
         meter_number: data.meter_number,
         serial_number: data.serial_number,
@@ -576,6 +591,7 @@ export const bulkAddVendorMeters = createServerFn({ method: "POST" })
     z
       .object({
         supplier_id: uuid.nullable().optional(),
+        vending_software_id: uuid.nullable().optional(),
         type: z.enum(["electricity", "water", "gas"]),
         price_per_unit: numOrZero,
         initial_reading: numOrZero,
@@ -597,6 +613,7 @@ export const bulkAddVendorMeters = createServerFn({ method: "POST" })
     const { data: result, error } = await supabase.rpc("bulk_add_meters", {
       p_payload: {
         supplier_id: data.supplier_id ?? null,
+        vending_software_id: data.vending_software_id ?? null,
         owner_type: "vendor",
         owner_id: vendorId,
         type: data.type,

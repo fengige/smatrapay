@@ -434,6 +434,7 @@ function AddMeterDialog({ onClose }: { onClose: () => void }) {
     serial_number: "",
     type: "electricity",
     supplier_id: "",
+    vending_software_id: "",
     unit_id: "",
     status: "active",
     installation_status: "not_installed",
@@ -455,6 +456,7 @@ function AddMeterDialog({ onClose }: { onClose: () => void }) {
           serial_number: form.serial_number,
           type: form.type as "electricity" | "water" | "gas",
           supplier_id: form.supplier_id || null,
+          vending_software_id: form.vending_software_id || null,
           unit_id: form.unit_id || null,
           status: form.status as "active" | "inactive",
           installation_status: form.installation_status as (typeof INSTALLATION_STATUSES)[number],
@@ -510,6 +512,16 @@ function AddMeterDialog({ onClose }: { onClose: () => void }) {
               {(supplierData?.suppliers ?? []).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.company_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Vending software">
+            <select className="input" value={form.vending_software_id} onChange={set("vending_software_id")}>
+              <option value="">No vending software</option>
+              {(supplierData?.vendingSoftware ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
                 </option>
               ))}
             </select>
