@@ -16,7 +16,7 @@ import type { VendingAction, VendingCallLog, VendingCredentials } from "./types"
 export const NO_SOFTWARE_MESSAGE =
   "This meter does not have vending software assigned. Please assign vending software before generating a token.";
 export const NO_SETTINGS_MESSAGE =
-  "The Meter Supplier API settings have not been configured. Please configure the supplier API settings before generating a token.";
+  "The API settings for this meter's vending software have not been configured. Please configure them under Vending Software → API Settings before generating a token.";
 
 export type VendTokenParams = {
   meterId: string;
@@ -128,15 +128,16 @@ export async function vendMeterToken(
   let providerState = "successful";
 
   if (integration) {
-    // 4. Supplier overrides take priority; otherwise use the software's own settings.
-    if (!meter.supplier_id) throw new Error(NO_SETTINGS_MESSAGE);
-    const { resolveMeterApiEndpoints } = await import("@/lib/suppliers.functions");
-    const resolved = await resolveMeterApiEndpoints(
-      supabaseAdmin,
-      meter.supplier_id,
-      meter.vending_software_id,
-    );
-    if (resolved.source === "none") throw new Error(NO_SETTINGS_MESSAGE);
+    // 4. Use the API settings configured on the meter's vending software.
+    const { data: resolved, error: settingsErr } = await supabaseAdmin
+      .from("vending_software_api_settings")
+      .select(
+        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password",
+      )
+      .eq("vending_software_id", meter.vending_software_id)
+      .maybeSingle();
+    if (settingsErr) throw new Error("Could not load the vending software API settings.");
+    if (!resolved) throw new Error(NO_SETTINGS_MESSAGE);
 
     const credentials: VendingCredentials = {
       api_pos_purchase: resolved.api_pos_purchase,
