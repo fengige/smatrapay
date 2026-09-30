@@ -88,7 +88,13 @@ function friendlyFailure(
     };
   }
   const text = (reason ?? "").toLowerCase();
-  if (text.includes("password") || text.includes("user") || text.includes("login")) {
+  if (
+    text.includes("password") ||
+    text.includes("user") ||
+    text.includes("login") ||
+    text.includes("authoriz") ||
+    text.includes("authentic")
+  ) {
     return {
       error_code: `CALIN_${resultCode ?? "ERR"}`,
       message:
