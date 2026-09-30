@@ -78,7 +78,7 @@ function friendlyFailure(
     return {
       error_code: `HTTP_${httpStatus}`,
       message:
-        "Unable to authenticate with the meter vending service. Please verify the supplier API credentials.",
+        "Unable to authenticate with the meter vending service. Please check the company name, user name and password on the vending software API Settings tab.",
     };
   }
   if (httpStatus !== null && httpStatus >= 500) {
@@ -88,11 +88,17 @@ function friendlyFailure(
     };
   }
   const text = (reason ?? "").toLowerCase();
-  if (text.includes("password") || text.includes("user") || text.includes("login")) {
+  if (
+    text.includes("password") ||
+    text.includes("user") ||
+    text.includes("login") ||
+    text.includes("authoriz") ||
+    text.includes("authentic")
+  ) {
     return {
       error_code: `CALIN_${resultCode ?? "ERR"}`,
       message:
-        "Unable to authenticate with the meter vending service. Please verify the supplier API credentials.",
+        "Unable to authenticate with the meter vending service. Please check the company name, user name and password on the vending software API Settings tab.",
     };
   }
   if (text.includes("meter")) {
