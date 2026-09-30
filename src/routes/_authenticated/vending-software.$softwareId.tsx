@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
+import { VendingSoftwareApiSettingsTab } from "@/components/VendingSoftwareApiSettingsTab";
 import { VendingSoftwareDialog } from "@/components/VendingSoftwareDialog";
 import {
   archiveVendingSoftware,
@@ -73,6 +74,8 @@ const ACTION_LABEL: Record<string, string> = {
   archived: "Vending software archived",
   meter_assigned: "Vending software assigned to meter",
   meter_removed: "Vending software removed from meter",
+  api_settings_created: "API settings configured",
+  api_settings_updated: "API settings updated",
 };
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -115,6 +118,7 @@ function Bars({ title, rows }: { title: string; rows: { label: string; count: nu
 
 const TABS = [
   { key: "info", label: "Software Info" },
+  { key: "api", label: "API Settings" },
   { key: "meters", label: "Meters" },
   { key: "usage", label: "Usage Summary" },
   { key: "history", label: "Activity" },
@@ -389,6 +393,8 @@ function VendingSoftwareDetailsPage() {
               </div>
             </dl>
           )}
+
+          {tab === "api" && <VendingSoftwareApiSettingsTab softwareId={softwareId} />}
 
           {tab === "meters" && (
             <>
