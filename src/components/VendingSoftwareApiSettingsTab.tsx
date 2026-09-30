@@ -224,6 +224,7 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
     <form
       className="space-y-4"
       aria-busy={saveMutation.isPending}
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
         if (!validate()) {
