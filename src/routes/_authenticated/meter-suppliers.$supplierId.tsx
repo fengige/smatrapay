@@ -21,7 +21,6 @@ import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import { SupplierDialog } from "@/components/SupplierDialog";
-import { SupplierApiSettingsTab } from "@/components/SupplierApiSettingsTab";
 import { SearchSelect } from "@/components/SearchSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { extensionForType, validateProfileImage } from "@/lib/image-upload";
@@ -100,7 +99,7 @@ function SupplierDetailsPage() {
   const changeMeterStatus = useServerFn(setMeterStatus);
   const runBulkAction = useServerFn(bulkMeterAction);
 
-  const [tab, setTab] = useState<"info" | "meters" | "api">("info");
+  const [tab, setTab] = useState<"info" | "meters">("info");
   const [editing, setEditing] = useState(false);
   const [showAddMeter, setShowAddMeter] = useState(false);
   const [busyPhoto, setBusyPhoto] = useState(false);
@@ -302,7 +301,6 @@ function SupplierDetailsPage() {
               [
                 ["info", "Supplier Info"],
                 ["meters", `Meters Supplied (${summary.total})`],
-                ["api", "Supplier API Settings"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -446,7 +444,6 @@ function SupplierDetailsPage() {
             </div>
           )}
 
-          {tab === "api" && <SupplierApiSettingsTab supplierId={supplierId} />}
 
           {tab === "meters" && (
             <div className="mt-5">
