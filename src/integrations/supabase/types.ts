@@ -2409,6 +2409,59 @@ export type Database = {
         }
         Relationships: []
       }
+      vending_software_api_settings: {
+        Row: {
+          api_company_name: string | null
+          api_login: string | null
+          api_maintenance_clear_credit: string | null
+          api_maintenance_clear_tamper: string | null
+          api_maintenance_set_overdraft_limit: string | null
+          api_password: string | null
+          api_pos_purchase: string | null
+          api_user_name: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          vending_software_id: string
+        }
+        Insert: {
+          api_company_name?: string | null
+          api_login?: string | null
+          api_maintenance_clear_credit?: string | null
+          api_maintenance_clear_tamper?: string | null
+          api_maintenance_set_overdraft_limit?: string | null
+          api_password?: string | null
+          api_pos_purchase?: string | null
+          api_user_name?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          vending_software_id: string
+        }
+        Update: {
+          api_company_name?: string | null
+          api_login?: string | null
+          api_maintenance_clear_credit?: string | null
+          api_maintenance_clear_tamper?: string | null
+          api_maintenance_set_overdraft_limit?: string | null
+          api_password?: string | null
+          api_pos_purchase?: string | null
+          api_user_name?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          vending_software_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vending_software_api_settings_vending_software_id_fkey"
+            columns: ["vending_software_id"]
+            isOneToOne: true
+            referencedRelation: "vending_software"
+            referencedColumns: ["vending_software_id"]
+          },
+        ]
+      }
       vending_software_audit_logs: {
         Row: {
           action: string
