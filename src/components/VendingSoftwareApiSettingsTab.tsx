@@ -151,7 +151,7 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
     if (!form.API_POS_PURCHASE.trim()) next.API_POS_PURCHASE = "API POS Purchase is required";
     if (!form.API_COMPANY_NAME.trim()) next.API_COMPANY_NAME = "API Company Name is required";
     if (!form.API_USER_NAME.trim()) next.API_USER_NAME = "API User Name is required";
-    if ((!settings?.has_password || clearPassword) && !password) next.API_PASSWORD = "API Password is required";
+    if (!settings?.has_password && !password) next.API_PASSWORD = "API Password is required";
     for (const key of URL_KEYS) {
       const value = form[key].trim();
       if (value && !isUrl(value)) next[key] = "Enter a valid URL starting with http:// or https://";
@@ -287,7 +287,11 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
                     placeholder={settings?.has_password ? "••••••••" : "Enter API password"}
                     onChange={(event) => {
                       setPassword(event.target.value);
-                      setErrors((previous) => ({ ...previous, API_PASSWORD: undefined }));
+                      setErrors((previous) => {
+                        const next = { ...previous };
+                        delete next.API_PASSWORD;
+                        return next;
+                      });
                     }}
                     aria-invalid={Boolean(errors.API_PASSWORD)}
                     className={`h-11 w-full rounded-xl border bg-card px-3 text-sm disabled:opacity-60 ${errors.API_PASSWORD ? "border-destructive" : "border-border"}`}

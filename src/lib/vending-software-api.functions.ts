@@ -133,7 +133,7 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
       : data.API_PASSWORD?.length
         ? data.API_PASSWORD
         : storedPassword;
-    if (!nextPassword) throw new Error("API Password is required");
+    if (!existing && !nextPassword) throw new Error("API Password is required");
 
     const values = {
       vending_software_id: data.vending_software_id,
@@ -171,7 +171,7 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
       },
     });
 
-    return { ok: true, has_password: true };
+    return { ok: true, has_password: Boolean(nextPassword) };
   });
 
 export const testVendingSoftwareApiConnection = createServerFn({ method: "POST" })
