@@ -562,7 +562,7 @@ export async function resolveMeterApiEndpoints(
   supplierId: string,
   vendingSoftwareId: string | null,
 ): Promise<{
-  source: "software" | "default" | "none";
+  source: "supplier_software" | "supplier_default" | "vending_software" | "none";
   api_pos_purchase: string | null;
   api_login: string | null;
   api_maintenance_clear_tamper: string | null;
@@ -584,8 +584,30 @@ export async function resolveMeterApiEndpoints(
     (vendingSoftwareId && rows.find((r) => r.vending_software_id === vendingSoftwareId)) || null;
   const fallback = rows.find((r) => r.vending_software_id === null) ?? null;
   const row = match ?? fallback;
+  if (!row && vendingSoftwareId) {
+    const { data: softwareSettings, error: softwareError } = await supabase
+      .from("vending_software_api_settings")
+      .select(
+        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password",
+      )
+      .eq("vending_software_id", vendingSoftwareId)
+      .maybeSingle();
+    if (softwareError) throw new Error(softwareError.message);
+    return {
+      source: softwareSettings ? "vending_software" : "none",
+      api_pos_purchase: softwareSettings?.api_pos_purchase ?? null,
+      api_login: softwareSettings?.api_login ?? null,
+      api_maintenance_clear_tamper: softwareSettings?.api_maintenance_clear_tamper ?? null,
+      api_maintenance_clear_credit: softwareSettings?.api_maintenance_clear_credit ?? null,
+      api_maintenance_set_overdraft_limit:
+        softwareSettings?.api_maintenance_set_overdraft_limit ?? null,
+      api_company_name: softwareSettings?.api_company_name ?? null,
+      api_user_name: softwareSettings?.api_user_name ?? null,
+      api_password: softwareSettings?.api_password ?? null,
+    };
+  }
   return {
-    source: match ? "software" : fallback ? "default" : "none",
+    source: match ? "supplier_software" : fallback ? "supplier_default" : "none",
     api_pos_purchase: row?.api_pos_purchase ?? null,
     api_login: row?.api_login ?? null,
     api_maintenance_clear_tamper: row?.api_maintenance_clear_tamper ?? null,
