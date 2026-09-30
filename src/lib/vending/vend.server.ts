@@ -6,7 +6,7 @@ import type { VendingAction, VendingCallLog, VendingCredentials } from "./types"
  *
  * Order of operations (never shortcut):
  *   validate meter -> resolve the vending software assigned to the meter
- *   -> resolve the meter supplier's API settings -> call the platform
+ *   -> resolve the supplier override or vending software API settings -> call the platform
  *   -> only then persist a token transaction.
  *
  * The vending software is always read from the meter record; callers cannot
@@ -128,7 +128,7 @@ export async function vendMeterToken(
   let providerState = "successful";
 
   if (integration) {
-    // 4. Supplier API settings drive endpoints and credentials.
+    // 4. Supplier overrides take priority; otherwise use the software's own settings.
     if (!meter.supplier_id) throw new Error(NO_SETTINGS_MESSAGE);
     const { resolveMeterApiEndpoints } = await import("@/lib/suppliers.functions");
     const resolved = await resolveMeterApiEndpoints(
