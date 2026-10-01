@@ -281,6 +281,7 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
             })}
 
             {section.title === "API Account Credentials" && (
+              <>
               <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
                 <label htmlFor="software-api-password" className="text-sm font-medium text-foreground">
                   API Password *
@@ -367,6 +368,7 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
                     : "Separate password required by some providers (e.g. CALIN) to purchase tokens. If empty, the API Password is used."}
                 </p>
               </div>
+              </>
             )}
           </div>
         </section>
