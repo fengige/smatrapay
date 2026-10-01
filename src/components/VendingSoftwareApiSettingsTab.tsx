@@ -12,7 +12,7 @@ import {
   type VendingSoftwareApiSettings,
 } from "@/lib/vending-software-api.functions";
 
-type FormState = Omit<VendingSoftwareApiSettings, "has_password" | "has_vend_password" | "updated_at">;
+type FormState = Omit<VendingSoftwareApiSettings, "has_password" | "has_vend_password" | "has_company_name" | "has_user_name" | "updated_at">;
 type FormKey = keyof FormState;
 
 const EMPTY: FormState = {
@@ -79,20 +79,7 @@ const SECTIONS: {
   {
     title: "API Account Credentials",
     description: "The account this system uses when calling the vending software.",
-    fields: [
-      {
-        key: "API_COMPANY_NAME",
-        label: "API Company Name",
-        helper: "Company identifier issued by the vending software provider.",
-        required: true,
-      },
-      {
-        key: "API_USER_NAME",
-        label: "API User Name",
-        helper: "Username issued by the vending software provider.",
-        required: true,
-      },
-    ],
+    fields: [],
   },
 ];
 
@@ -115,6 +102,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   const [password, setPassword] = useState("");
   const [clearPassword, setClearPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showCompanyName, setShowCompanyName] = useState(false);
+  const [showUserName, setShowUserName] = useState(false);
   const [vendPassword, setVendPassword] = useState("");
   const [clearVend, setClearVend] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<FormKey | "API_PASSWORD", string>>>({});
@@ -135,6 +124,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
       setPassword("");
       setClearPassword(false);
       setShowPassword(false);
+      setShowCompanyName(false);
+      setShowUserName(false);
       setVendPassword("");
       setClearVend(false);
       setErrors({});
@@ -153,8 +144,9 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   function validate() {
     const next: Partial<Record<FormKey | "API_PASSWORD", string>> = {};
     if (!form.API_POS_PURCHASE.trim()) next.API_POS_PURCHASE = "API POS Purchase is required";
-    if (!form.API_COMPANY_NAME.trim()) next.API_COMPANY_NAME = "API Company Name is required";
-    if (!form.API_USER_NAME.trim()) next.API_USER_NAME = "API User Name is required";
+    if (!settings?.has_company_name && !form.API_COMPANY_NAME.trim())
+      next.API_COMPANY_NAME = "API Company Name is required";
+    if (!settings?.has_user_name && !form.API_USER_NAME.trim()) next.API_USER_NAME = "API User Name is required";
     if (!settings?.has_password && !password) next.API_PASSWORD = "API Password is required";
     for (const key of URL_KEYS) {
       const value = form[key].trim();
@@ -177,6 +169,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
         data: {
           vending_software_id: softwareId,
           ...Object.fromEntries((Object.keys(form) as FormKey[]).map((key) => [key, form[key].trim()])),
+          API_COMPANY_NAME: form.API_COMPANY_NAME.trim() || null,
+          API_USER_NAME: form.API_USER_NAME.trim() || null,
           API_PASSWORD: clearPassword ? null : password || null,
           clear_password: clearPassword,
           API_VEND_PASSWORD: clearVend ? null : vendPassword || null,
@@ -188,6 +182,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
       setPassword("");
       setClearPassword(false);
       setShowPassword(false);
+      setShowCompanyName(false);
+      setShowUserName(false);
       setVendPassword("");
       setClearVend(false);
       setTestResult(null);
@@ -282,6 +278,76 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
 
             {section.title === "API Account Credentials" && (
               <>
+              <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
+                <label htmlFor="software-api-company" className="text-sm font-medium text-foreground">
+                  API Company Name *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="software-api-company"
+                    type={showCompanyName ? "text" : "password"}
+                    autoComplete="off"
+                    value={form.API_COMPANY_NAME}
+                    maxLength={150}
+                    placeholder={settings?.has_company_name ? "••••••••" : "Enter API company name"}
+                    onChange={(event) => set("API_COMPANY_NAME", event.target.value)}
+                    aria-invalid={Boolean(errors.API_COMPANY_NAME)}
+                    className={`h-11 w-full rounded-xl border bg-card px-3 text-sm ${errors.API_COMPANY_NAME ? "border-destructive" : "border-border"}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-11 shrink-0 rounded-xl"
+                    onClick={() => setShowCompanyName((visible) => !visible)}
+                    aria-label={showCompanyName ? "Hide company name" : "Show company name"}
+                    title={showCompanyName ? "Hide company name" : "Show company name"}
+                  >
+                    {showCompanyName ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
+                {errors.API_COMPANY_NAME && <p className="text-xs text-destructive">{errors.API_COMPANY_NAME}</p>}
+                <p className="text-xs text-muted-foreground">
+                  {settings?.has_company_name
+                    ? "A company name is configured. Leave blank to keep it unchanged."
+                    : "Company identifier issued by the vending software provider. Enter one before saving."}
+                </p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
+                <label htmlFor="software-api-user" className="text-sm font-medium text-foreground">
+                  API User Name *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="software-api-user"
+                    type={showUserName ? "text" : "password"}
+                    autoComplete="off"
+                    value={form.API_USER_NAME}
+                    maxLength={150}
+                    placeholder={settings?.has_user_name ? "••••••••" : "Enter API user name"}
+                    onChange={(event) => set("API_USER_NAME", event.target.value)}
+                    aria-invalid={Boolean(errors.API_USER_NAME)}
+                    className={`h-11 w-full rounded-xl border bg-card px-3 text-sm ${errors.API_USER_NAME ? "border-destructive" : "border-border"}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-11 shrink-0 rounded-xl"
+                    onClick={() => setShowUserName((visible) => !visible)}
+                    aria-label={showUserName ? "Hide user name" : "Show user name"}
+                    title={showUserName ? "Hide user name" : "Show user name"}
+                  >
+                    {showUserName ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
+                {errors.API_USER_NAME && <p className="text-xs text-destructive">{errors.API_USER_NAME}</p>}
+                <p className="text-xs text-muted-foreground">
+                  {settings?.has_user_name
+                    ? "A user name is configured. Leave blank to keep it unchanged."
+                    : "Username issued by the vending software provider. Enter one before saving."}
+                </p>
+              </div>
               <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
                 <label htmlFor="software-api-password" className="text-sm font-medium text-foreground">
                   API Password *
