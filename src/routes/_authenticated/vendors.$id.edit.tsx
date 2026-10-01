@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/vendors/$id/edit")({
   }),
   component: EditVendorPage,
   errorComponent: ({ error }) => (
-    <div className="p-10 text-sm text-destructive">{error.message}</div>
+    <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>
   ),
   notFoundComponent: () => <div className="p-10 text-sm text-muted-foreground">Vendor not found.</div>,
 });

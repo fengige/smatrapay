@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/vendor/token-management")(
   }),
   loader: () => checkRoleAccess({ data: { role: "vendor" } }),
   component: VendorTokenManagementPage,
-  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
+  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{(error as Error).message}</p>,
 });
 
 const ACTIONS: { id: VendorTokenAction; label: string; hint: string }[] = [

@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/landlords/$id/")({
   }),
   component: LandlordDetailPage,
   errorComponent: ({ error }) => (
-    <div className="p-10 text-sm text-destructive">{error.message}</div>
+    <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>
   ),
   notFoundComponent: () => (
     <div className="p-10 text-sm text-muted-foreground">Landlord not found.</div>

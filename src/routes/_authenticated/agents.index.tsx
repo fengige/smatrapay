@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/agents/")({
   }),
   component: AgentsPage,
   errorComponent: ({ error }) => (
-    <div className="p-10 text-sm text-destructive">{error.message}</div>
+    <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>
   ),
 });
 
