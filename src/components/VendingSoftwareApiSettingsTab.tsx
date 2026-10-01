@@ -12,7 +12,7 @@ import {
   type VendingSoftwareApiSettings,
 } from "@/lib/vending-software-api.functions";
 
-type FormState = Omit<VendingSoftwareApiSettings, "has_password" | "updated_at">;
+type FormState = Omit<VendingSoftwareApiSettings, "has_password" | "has_vend_password" | "updated_at">;
 type FormKey = keyof FormState;
 
 const EMPTY: FormState = {
@@ -115,6 +115,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   const [password, setPassword] = useState("");
   const [clearPassword, setClearPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [vendPassword, setVendPassword] = useState("");
+  const [clearVend, setClearVend] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<FormKey | "API_PASSWORD", string>>>({});
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -133,6 +135,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
       setPassword("");
       setClearPassword(false);
       setShowPassword(false);
+      setVendPassword("");
+      setClearVend(false);
       setErrors({});
       setTestResult(null);
     },
@@ -175,6 +179,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
           ...Object.fromEntries((Object.keys(form) as FormKey[]).map((key) => [key, form[key].trim()])),
           API_PASSWORD: clearPassword ? null : password || null,
           clear_password: clearPassword,
+          API_VEND_PASSWORD: clearVend ? null : vendPassword || null,
+          clear_vend_password: clearVend,
         },
       } as never),
     onSuccess: async () => {
@@ -182,6 +188,8 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
       setPassword("");
       setClearPassword(false);
       setShowPassword(false);
+      setVendPassword("");
+      setClearVend(false);
       setTestResult(null);
       toast.success("API settings saved");
     },
@@ -325,6 +333,38 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
                   {settings?.has_password
                     ? "A password is configured. Leave blank to keep it unchanged."
                     : "No password is configured. Enter one before saving."}
+                </p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
+                <label htmlFor="software-api-vend-password" className="text-sm font-medium text-foreground">
+                  API Vend Password
+                </label>
+                <input
+                  id="software-api-vend-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={vendPassword}
+                  disabled={clearVend}
+                  maxLength={200}
+                  placeholder={settings?.has_vend_password ? "••••••••" : "Same as API Password"}
+                  onChange={(event) => setVendPassword(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm disabled:opacity-60"
+                />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={clearVend}
+                    onChange={(event) => {
+                      setClearVend(event.target.checked);
+                      if (event.target.checked) setVendPassword("");
+                    }}
+                  />
+                  Remove the stored vend password
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {settings?.has_vend_password
+                    ? "A vend password is configured. Leave blank to keep it unchanged."
+                    : "Separate password required by some providers (e.g. CALIN) to purchase tokens. If empty, the API Password is used."}
                 </p>
               </div>
             )}
