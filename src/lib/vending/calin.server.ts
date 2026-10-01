@@ -180,7 +180,7 @@ export const calinVendingService: VendingIntegration = {
       request.action === "credit"
         ? {
             ...auth,
-            password_vend: "",
+            password_vend: credentials.api_vend_password || credentials.api_password || "",
             meter_number: request.meter_number,
             is_vend_by_unit: request.vend_by_unit,
             amount: request.vend_by_unit ? request.units : request.amount,

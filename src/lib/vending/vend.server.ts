@@ -132,7 +132,7 @@ export async function vendMeterToken(
     const { data: resolved, error: settingsErr } = await supabaseAdmin
       .from("vending_software_api_settings")
       .select(
-        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password",
+        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, api_vend_password",
       )
       .eq("vending_software_id", meter.vending_software_id)
       .maybeSingle();
@@ -148,6 +148,7 @@ export async function vendMeterToken(
       api_company_name: resolved.api_company_name,
       api_user_name: resolved.api_user_name,
       api_password: resolved.api_password,
+      api_vend_password: (resolved as any).api_vend_password ?? null,
     };
 
     const missing = integration

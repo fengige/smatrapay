@@ -23,6 +23,8 @@ export type VendingCredentials = {
   api_company_name: string | null;
   api_user_name: string | null;
   api_password: string | null;
+  /** CALIN POS operator vending password; falls back to api_password. */
+  api_vend_password?: string | null;
 };
 
 export type VendingRequest = {
