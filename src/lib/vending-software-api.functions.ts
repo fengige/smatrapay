@@ -28,8 +28,8 @@ const settingsInput = z.object({
   API_MAINTENANCE_CLEAR_TAMPER: urlField,
   API_MAINTENANCE_CLEAR_CREDIT: urlField,
   API_MAINTENANCE_SET_OVERDRAFT_LIMIT: urlField,
-  API_COMPANY_NAME: z.string().trim().min(1, "API Company Name is required").max(150),
-  API_USER_NAME: z.string().trim().min(1, "API User Name is required").max(150),
+  API_COMPANY_NAME: z.string().trim().max(150).optional(),
+  API_USER_NAME: z.string().trim().max(150).optional(),
   API_PASSWORD: z.string().max(200).nullable().optional(),
   clear_password: z.boolean().optional().default(false),
   API_VEND_PASSWORD: z.string().max(200).nullable().optional(),
@@ -44,6 +44,8 @@ export type VendingSoftwareApiSettings = {
   API_MAINTENANCE_SET_OVERDRAFT_LIMIT: string;
   API_COMPANY_NAME: string;
   API_USER_NAME: string;
+  has_company_name: boolean;
+  has_user_name: boolean;
   has_password: boolean;
   has_vend_password: boolean;
   updated_at: string | null;
@@ -57,6 +59,8 @@ const emptySettings = (): VendingSoftwareApiSettings => ({
   API_MAINTENANCE_SET_OVERDRAFT_LIMIT: "",
   API_COMPANY_NAME: "",
   API_USER_NAME: "",
+  has_company_name: false,
+  has_user_name: false,
   has_password: false,
   has_vend_password: false,
   updated_at: null,
@@ -99,8 +103,10 @@ export const getVendingSoftwareApiSettings = createServerFn({ method: "GET" })
         API_MAINTENANCE_CLEAR_TAMPER: row.api_maintenance_clear_tamper ?? "",
         API_MAINTENANCE_CLEAR_CREDIT: row.api_maintenance_clear_credit ?? "",
         API_MAINTENANCE_SET_OVERDRAFT_LIMIT: row.api_maintenance_set_overdraft_limit ?? "",
-        API_COMPANY_NAME: row.api_company_name ?? "",
-        API_USER_NAME: row.api_user_name ?? "",
+        API_COMPANY_NAME: "",
+        API_USER_NAME: "",
+        has_company_name: Boolean(row.api_company_name),
+        has_user_name: Boolean(row.api_user_name),
         has_password: Boolean(row.api_password),
         has_vend_password: Boolean(row.api_vend_password),
         updated_at: row.updated_at ?? null,
@@ -127,7 +133,7 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
 
     const { data: existing, error: readError } = await supabase
       .from("vending_software_api_settings")
-      .select("id, api_password, api_vend_password")
+      .select("id, api_company_name, api_user_name, api_password, api_vend_password")
       .eq("vending_software_id", data.vending_software_id)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
@@ -144,6 +150,8 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
         ? data.API_VEND_PASSWORD
         : (existing?.api_vend_password ?? null);
     if (!existing && !nextPassword) throw new Error("API Password is required");
+    if (!(data.API_COMPANY_NAME || existing?.api_company_name)) throw new Error("API Company Name is required");
+    if (!(data.API_USER_NAME || existing?.api_user_name)) throw new Error("API User Name is required");
 
     const values = {
       vending_software_id: data.vending_software_id,
@@ -152,8 +160,8 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
       api_maintenance_clear_tamper: data.API_MAINTENANCE_CLEAR_TAMPER || null,
       api_maintenance_clear_credit: data.API_MAINTENANCE_CLEAR_CREDIT || null,
       api_maintenance_set_overdraft_limit: data.API_MAINTENANCE_SET_OVERDRAFT_LIMIT || null,
-      api_company_name: data.API_COMPANY_NAME,
-      api_user_name: data.API_USER_NAME,
+      api_company_name: data.API_COMPANY_NAME || existing?.api_company_name || null,
+      api_user_name: data.API_USER_NAME || existing?.api_user_name || null,
       api_password: nextPassword,
       api_vend_password: nextVend,
     };
@@ -175,8 +183,8 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
           "API_MAINTENANCE_CLEAR_TAMPER",
           "API_MAINTENANCE_CLEAR_CREDIT",
           "API_MAINTENANCE_SET_OVERDRAFT_LIMIT",
-          "API_COMPANY_NAME",
-          "API_USER_NAME",
+          ...(data.API_COMPANY_NAME ? ["API_COMPANY_NAME"] : []),
+          ...(data.API_USER_NAME ? ["API_USER_NAME"] : []),
           ...(data.API_PASSWORD || data.clear_password ? ["API_PASSWORD"] : []),
           ...(data.API_VEND_PASSWORD || data.clear_vend_password ? ["API_VEND_PASSWORD"] : []),
         ],
