@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/vendor/meters/$meterId")({
   }),
   loader: () => checkRoleAccess({ data: { role: "vendor" } }),
   component: VendorMeterDetail,
-  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
+  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{(error as Error).message}</p>,
 });
 
 const TABS = ["Meter info", "Resident", "Zone", "Activity", "Activation history", "Readings"] as const;

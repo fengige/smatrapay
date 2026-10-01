@@ -2419,6 +2419,7 @@ export type Database = {
           api_password: string | null
           api_pos_purchase: string | null
           api_user_name: string | null
+          api_vend_password: string | null
           created_at: string
           id: string
           updated_at: string
@@ -2433,6 +2434,7 @@ export type Database = {
           api_password?: string | null
           api_pos_purchase?: string | null
           api_user_name?: string | null
+          api_vend_password?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -2447,6 +2449,7 @@ export type Database = {
           api_password?: string | null
           api_pos_purchase?: string | null
           api_user_name?: string | null
+          api_vend_password?: string | null
           created_at?: string
           id?: string
           updated_at?: string

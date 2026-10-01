@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/vendor/teams/$teamId")({
   }),
   loader: () => checkRoleAccess({ data: { role: "vendor" } }),
   component: TeamDetail,
-  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
+  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{(error as Error).message}</p>,
 });
 
 function TeamDetail() {

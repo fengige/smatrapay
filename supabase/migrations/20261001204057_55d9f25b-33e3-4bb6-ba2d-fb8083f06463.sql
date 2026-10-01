@@ -1,0 +1,1 @@
+ALTER TABLE public.vending_software_api_settings ADD COLUMN IF NOT EXISTS api_vend_password text;

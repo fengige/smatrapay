@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/vending-software/$software
     ],
   }),
   component: VendingSoftwareDetailsPage,
-  errorComponent: ({ error }) => <div className="p-10 text-sm text-destructive">{error.message}</div>,
+  errorComponent: ({ error }) => <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>,
 });
 
 const STATUS_TONE: Record<string, string> = {

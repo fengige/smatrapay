@@ -4,7 +4,7 @@ import { PortalLayout } from "@/components/PortalLayout";
 export const Route = createFileRoute("/_authenticated/configurations")({
   component: ConfigurationsLayout,
   errorComponent: ({ error }) => (
-    <div className="p-10 text-sm text-destructive">{error.message}</div>
+    <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>
   ),
 });
 
