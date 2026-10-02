@@ -1,3 +1,4 @@
+import { VendorSmsConfigPanel } from "@/components/VendorSmsConfigPanel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -107,7 +108,7 @@ function VendorDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "meters" | "invoices" | "payments" | "history" | "notes" | "audit" | "paymethods"
+    "meters" | "invoices" | "payments" | "history" | "notes" | "audit" | "paymethods" | "sms"
   >("meters");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
@@ -432,6 +433,7 @@ function VendorDetailPage() {
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
                     ["paymethods", "Payment Methods"],
+                    ["sms", "SMS Configuration"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
                     ["audit", "Audit Logs"],
@@ -546,6 +548,14 @@ function VendorDetailPage() {
                     />
                   )}
                 </>
+              )}
+
+              {tab === "sms" && (
+                <VendorSmsConfigPanel
+                  vendorId={id}
+                  vendorName={vendor?.name || vendor?.email || "Vendor"}
+                  vendorStatus={vendor?.status || "active"}
+                />
               )}
 
               {tab === "audit" && (
