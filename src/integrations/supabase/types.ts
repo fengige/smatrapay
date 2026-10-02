@@ -1858,42 +1858,60 @@ export type Database = {
       sms_messages: {
         Row: {
           configuration_id: string | null
+          cost: string | null
           created_at: string | null
+          created_by: string | null
           delivered_at: string | null
+          delivery_status: string | null
           error_message: string | null
           id: string
           message: string
+          message_type: number | null
           provider_message_id: string | null
           recipient_phone: string
+          ref_id: string | null
           sender_id: string | null
           sent_at: string | null
           status: string | null
+          vendor_id: string | null
         }
         Insert: {
           configuration_id?: string | null
+          cost?: string | null
           created_at?: string | null
+          created_by?: string | null
           delivered_at?: string | null
+          delivery_status?: string | null
           error_message?: string | null
           id?: string
           message: string
+          message_type?: number | null
           provider_message_id?: string | null
           recipient_phone: string
+          ref_id?: string | null
           sender_id?: string | null
           sent_at?: string | null
           status?: string | null
+          vendor_id?: string | null
         }
         Update: {
           configuration_id?: string | null
+          cost?: string | null
           created_at?: string | null
+          created_by?: string | null
           delivered_at?: string | null
+          delivery_status?: string | null
           error_message?: string | null
           id?: string
           message?: string
+          message_type?: number | null
           provider_message_id?: string | null
           recipient_phone?: string
+          ref_id?: string | null
           sender_id?: string | null
           sent_at?: string | null
           status?: string | null
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -1901,6 +1919,13 @@ export type Database = {
             columns: ["configuration_id"]
             isOneToOne: false
             referencedRelation: "sms_configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2557,8 +2582,11 @@ export type Database = {
           client_id: string | null
           created_at: string
           created_by: string | null
+          default_country_code: string
+          delivery_receipt_callback_url: string | null
           id: string
           is_enabled: boolean
+          message_type: number
           password: string | null
           sender_id: string | null
           sms_configuration_id: string
@@ -2575,8 +2603,11 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string | null
+          default_country_code?: string
+          delivery_receipt_callback_url?: string | null
           id?: string
           is_enabled?: boolean
+          message_type?: number
           password?: string | null
           sender_id?: string | null
           sms_configuration_id: string
@@ -2593,8 +2624,11 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string | null
+          default_country_code?: string
+          delivery_receipt_callback_url?: string | null
           id?: string
           is_enabled?: boolean
+          message_type?: number
           password?: string | null
           sender_id?: string | null
           sms_configuration_id?: string
