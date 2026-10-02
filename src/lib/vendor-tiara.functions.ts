@@ -15,15 +15,32 @@ async function assertAdminAndVendor(ctx: Ctx, vendorId: string) {
   if (!data) throw new Error("Vendor not found");
 }
 
-async function getProvider(ctx: Ctx) {
+type Provider = { id: string; provider_name: string; provider_code: string; is_active: boolean; api_url: string | null };
+
+async function listActiveProviders(ctx: Ctx): Promise<Provider[]> {
   const { data, error } = await ctx.supabase
     .from("sms_configurations")
-    .select("id, provider_name, is_active")
-    .eq("provider_code", TIARA_CODE)
+    .select("id, provider_name, provider_code, is_active, api_url")
+    .eq("is_active", true)
+    .order("created_at");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Provider[];
+}
+
+async function getProvider(ctx: Ctx, providerId?: string): Promise<Provider> {
+  const { data, error } = await ctx.supabase
+    .from("sms_configurations")
+    .select("id, provider_name, provider_code, is_active, api_url")
+    .eq(providerId ? "id" : "provider_code", providerId ?? TIARA_CODE)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("TIARA CONNECT is not set up under Configurations → SMS Configuration");
-  return data as { id: string; provider_name: string; is_active: boolean };
+  if (!data) throw new Error("SMS provider not found under Configurations → SMS Configuration");
+  return data as Provider;
+}
+
+function assertTiara(p: Provider) {
+  if (p.provider_code !== TIARA_CODE)
+    throw new Error(`Sending through ${p.provider_name} isn't supported yet — only TIARA CONNECT can send SMS.`);
 }
 
 async function getRow(ctx: Ctx, vendorId: string, providerId: string) {
@@ -68,8 +85,11 @@ export function normalizePhone(raw: string, cc: string) {
 }
 
 export type TiaraConfig = {
+  providers: { id: string; name: string; code: string }[];
   providerId: string;
   providerName: string;
+  providerCode: string;
+  sendSupported: boolean;
   providerActive: boolean;
   configured: boolean;
   enabled: boolean;
@@ -86,19 +106,33 @@ export type TiaraConfig = {
 
 export const getVendorTiaraConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ vendorId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ vendorId: z.string().uuid(), providerId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data, context }): Promise<TiaraConfig> => {
     const ctx = context as unknown as Ctx;
     await assertAdminAndVendor(ctx, data.vendorId);
-    const p = await getProvider(ctx);
+    const providers = await listActiveProviders(ctx);
+    if (!providers.length) throw new Error("No active SMS providers. Activate one under Configurations → SMS Configuration.");
+    let pid = data.providerId;
+    if (!pid) {
+      const { data: en } = await ctx.supabase
+        .from("vendor_sms_configurations").select("sms_configuration_id")
+        .eq("vendor_id", data.vendorId).eq("is_enabled", true).maybeSingle();
+      pid = providers.find((x) => x.id === en?.sms_configuration_id)?.id
+        ?? providers.find((x) => x.provider_code === TIARA_CODE)?.id ?? providers[0]!.id;
+    }
+    const p = providers.find((x) => x.id === pid);
+    if (!p) throw new Error("This SMS provider is not active");
     const r = await getRow(ctx, data.vendorId, p.id);
     return {
+      providers: providers.map((x) => ({ id: x.id, name: x.provider_name, code: x.provider_code })),
       providerId: p.id,
       providerName: p.provider_name,
+      providerCode: p.provider_code,
+      sendSupported: p.provider_code === TIARA_CODE,
       providerActive: Boolean(p.is_active),
       configured: !!r,
       enabled: Boolean(r?.is_enabled),
-      api_url: r?.api_url || TIARA_DEFAULT_ENDPOINT,
+      api_url: r?.api_url || p.api_url || (p.provider_code === TIARA_CODE ? TIARA_DEFAULT_ENDPOINT : ""),
       has_api_key: Boolean(r?.api_key),
       username: r?.username ?? "",
       has_password: Boolean(r?.password),
@@ -112,6 +146,7 @@ export const getVendorTiaraConfig = createServerFn({ method: "POST" })
 
 const saveInput = z.object({
   vendorId: z.string().uuid(),
+  providerId: z.string().uuid(),
   api_url: z.string().trim().max(500),
   api_key: z.string().trim().max(1000).optional().default(""),
   remove_api_key: z.boolean().optional().default(false),
@@ -133,7 +168,7 @@ export const saveVendorTiaraConfig = createServerFn({ method: "POST" })
     if (!isHttpsUrl(data.api_url)) throw new Error("SMS API Endpoint must be a valid URL");
     if (data.delivery_receipt_callback_url && !data.delivery_receipt_callback_url.startsWith("https://"))
       throw new Error("Delivery receipt callback URL must be a public https:// URL");
-    const p = await getProvider(ctx);
+    const p = await getProvider(ctx, data.providerId);
     const existing = await getRow(ctx, data.vendorId, p.id);
     const patch: Record<string, unknown> = {
       api_url: data.api_url,
@@ -165,7 +200,7 @@ export const saveVendorTiaraConfig = createServerFn({ method: "POST" })
       id = ins.id;
     }
     await audit(ctx, data.vendorId, "VENDOR_SMS_CONFIGURATION_SAVED", id, {
-      provider: "tiara",
+      provider: p.provider_code,
       api_key_changed: Boolean(data.api_key) || data.remove_api_key,
       password_changed: Boolean(data.password) || data.remove_password,
     });
@@ -174,15 +209,15 @@ export const saveVendorTiaraConfig = createServerFn({ method: "POST" })
 
 export const setVendorTiaraEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ vendorId: z.string().uuid(), enabled: z.boolean() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ vendorId: z.string().uuid(), providerId: z.string().uuid(), enabled: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
     await assertAdminAndVendor(ctx, data.vendorId);
-    const p = await getProvider(ctx);
+    const p = await getProvider(ctx, data.providerId);
     const r = await getRow(ctx, data.vendorId, p.id);
     if (!r) throw new Error("Save the SMS configuration before enabling it");
     if (data.enabled) {
-      if (!p.is_active) throw new Error("TIARA CONNECT is inactive globally. Activate it under Configurations → SMS Configuration.");
+      if (!p.is_active) throw new Error("This provider is inactive globally. Activate it under Configurations → SMS Configuration.");
       if (!r.api_key || !r.sender_id || !r.api_url) throw new Error("API Key, Sender ID and endpoint must be saved first");
       const off = await ctx.supabase
         .from("vendor_sms_configurations")
@@ -197,7 +232,7 @@ export const setVendorTiaraEnabled = createServerFn({ method: "POST" })
       .update({ is_enabled: data.enabled, updated_by: ctx.userId })
       .eq("id", r.id);
     if (error) throw new Error(error.message);
-    await audit(ctx, data.vendorId, data.enabled ? "VENDOR_SMS_PROVIDER_ENABLED" : "VENDOR_SMS_PROVIDER_DISABLED", r.id, { provider: "tiara" });
+    await audit(ctx, data.vendorId, data.enabled ? "VENDOR_SMS_PROVIDER_ENABLED" : "VENDOR_SMS_PROVIDER_DISABLED", r.id, { provider: p.provider_code });
     return { ok: true };
   });
 
@@ -236,11 +271,12 @@ export type ConnectionResult = { ok: boolean; kind: "verified" | "auth" | "endpo
 
 export const testVendorTiaraConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ vendorId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ vendorId: z.string().uuid(), providerId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<ConnectionResult> => {
     const ctx = context as unknown as Ctx;
     await assertAdminAndVendor(ctx, data.vendorId);
-    const p = await getProvider(ctx);
+    const p = await getProvider(ctx, data.providerId);
+    if (p.provider_code !== TIARA_CODE) return { ok: false, kind: "provider", message: `Connection testing for ${p.provider_name} isn't supported yet.` };
     const r = await getRow(ctx, data.vendorId, p.id);
     if (!r?.api_url || !isHttpsUrl(r.api_url)) return { ok: false, kind: "endpoint", message: "Save a valid SMS API Endpoint first." };
     if (!r.api_key) return { ok: false, kind: "auth", message: "No API key is saved for this vendor." };
@@ -281,6 +317,7 @@ export const sendVendorTiaraTestSms = createServerFn({ method: "POST" })
     z
       .object({
         vendorId: z.string().uuid(),
+        providerId: z.string().uuid(),
         recipient: z.string().trim().min(6).max(20),
         message: z.string().trim().min(1, "Message is required").max(480),
         idempotencyKey: z.string().uuid(),
@@ -290,7 +327,8 @@ export const sendVendorTiaraTestSms = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<TestSmsResult> => {
     const ctx = context as unknown as Ctx;
     await assertAdminAndVendor(ctx, data.vendorId);
-    const p = await getProvider(ctx);
+    const p = await getProvider(ctx, data.providerId);
+    assertTiara(p);
     const r = await getRow(ctx, data.vendorId, p.id);
     if (!r) throw new Error("Save the SMS configuration first");
     if (!r.is_enabled) throw new Error("SMS service is disabled for this vendor. Enable it to send messages.");
@@ -354,7 +392,7 @@ export const sendVendorTiaraTestSms = createServerFn({ method: "POST" })
         sent_at: submitted ? new Date().toISOString() : null,
       })
       .eq("id", log.id);
-    await audit(ctx, data.vendorId, "VENDOR_SMS_TEST_SENT", log.id, { provider: "tiara", submitted, msg_id: j.msgId ?? null });
+    await audit(ctx, data.vendorId, "VENDOR_SMS_TEST_SENT", log.id, { provider: p.provider_code, submitted, msg_id: j.msgId ?? null });
     return {
       submitted,
       status: j.status ?? null,

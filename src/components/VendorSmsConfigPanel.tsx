@@ -9,7 +9,6 @@ import {
   sendVendorTiaraTestSms,
   setVendorTiaraEnabled,
   testVendorTiaraConnection,
-  TIARA_DEFAULT_ENDPOINT,
   type ConnectionResult,
   type TestSmsResult,
   type TiaraConfig,
@@ -29,7 +28,7 @@ type Form = {
 };
 
 const fromConfig = (c: TiaraConfig): Form => ({
-  api_url: c.api_url || TIARA_DEFAULT_ENDPOINT,
+  api_url: c.api_url,
   api_key: "",
   remove_api_key: false,
   username: c.username,
@@ -53,12 +52,13 @@ export function VendorSmsConfigPanel({
   vendorStatus: string;
 }) {
   const qc = useQueryClient();
-  const queryKey = ["vendor-tiara", vendorId];
+  const [providerId, setProviderId] = useState<string | undefined>(undefined);
+  const queryKey = ["vendor-tiara", vendorId, providerId ?? "default"];
   const get = useServerFn(getVendorTiaraConfig);
   const save = useServerFn(saveVendorTiaraConfig);
   const toggle = useServerFn(setVendorTiaraEnabled);
   const test = useServerFn(testVendorTiaraConnection);
-  const { data: cfg, isLoading, error, refetch } = useQuery({ queryKey, queryFn: () => get({ data: { vendorId } }) });
+  const { data: cfg, isLoading, error, refetch } = useQuery({ queryKey, queryFn: () => get({ data: providerId ? { vendorId, providerId } : { vendorId } }) });
 
   const [form, setForm] = useState<Form | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,24 +78,24 @@ export function VendorSmsConfigPanel({
   }, [cfg]);
 
   const saveM = useMutation({
-    mutationFn: (f: Form) => save({ data: { vendorId, ...f } }),
+    mutationFn: (f: Form) => save({ data: { vendorId, providerId: cfg!.providerId, ...f } }),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey });
+      await qc.invalidateQueries({ queryKey: ["vendor-tiara", vendorId] });
       toast.success("SMS configuration saved");
     },
     onError: (e: Error) => toast.error(e.message),
   });
   const toggleM = useMutation({
-    mutationFn: (enabled: boolean) => toggle({ data: { vendorId, enabled } }),
+    mutationFn: (enabled: boolean) => toggle({ data: { vendorId, providerId: cfg!.providerId, enabled } }),
     onSuccess: async (_r, enabled) => {
       setConfirmOff(false);
-      await qc.invalidateQueries({ queryKey });
+      await qc.invalidateQueries({ queryKey: ["vendor-tiara", vendorId] });
       toast.success(`SMS service ${enabled ? "enabled" : "disabled"} for this vendor`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
   const testM = useMutation({
-    mutationFn: () => test({ data: { vendorId } }),
+    mutationFn: () => test({ data: { vendorId, providerId: cfg!.providerId } }),
     onSuccess: (r) => {
       setConn(r);
       (r.ok ? toast.success : toast.error)(r.ok ? "Connection check passed" : "Connection failed");
@@ -158,9 +158,9 @@ export function VendorSmsConfigPanel({
             No SMS configuration saved for this vendor yet.
           </p>
         )}
-        {!c.providerActive && (
-          <p className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            TIARA CONNECT is inactive under Configurations → SMS Configuration. It can't be enabled until it's activated there.
+        {!c.sendSupported && (
+          <p className="mt-3 rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+            Settings for {c.providerName} can be saved, but sending and connection tests currently work only with TIARA CONNECT.
           </p>
         )}
       </section>
@@ -176,8 +176,21 @@ export function VendorSmsConfigPanel({
           <section className="space-y-4 rounded-2xl border border-border bg-card p-5">
             <h3 className="text-sm font-semibold text-foreground">Provider</h3>
             <Field label="SMS Provider" id="sms-provider">
-              <select id="sms-provider" className={inputCls} value={c.providerId} disabled>
-                <option value={c.providerId}>TIARA CONNECT</option>
+              <select
+                id="sms-provider"
+                className={inputCls}
+                value={c.providerId}
+                disabled={busy}
+                onChange={(e) => {
+                  if (dirty && !confirm("Discard unsaved changes?")) return;
+                  setConn(null);
+                  setConfirmOff(false);
+                  setProviderId(e.target.value);
+                }}
+              >
+                {c.providers.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
             </Field>
             <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
@@ -219,12 +232,12 @@ export function VendorSmsConfigPanel({
               </div>
             )}
             <div>
-              <p className="text-sm font-medium text-foreground">Provider Website</p>
-              <a href="https://tiaraconnect.io/" target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-sm text-primary underline">
+              {c.sendSupported && <p className="text-sm font-medium text-foreground">Provider Website</p>}
+              {c.sendSupported && <a href="https://tiaraconnect.io/" target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-sm text-primary underline">
                 https://tiaraconnect.io/ <ExternalLink className="size-3" />
-              </a>
+              </a>}
             </div>
-            <Field label="SMS API Endpoint" id="sms-endpoint" error={errors["api_url"]} help="TIARA CONNECT endpoint used to submit SMS messages.">
+            <Field label="SMS API Endpoint" id="sms-endpoint" error={errors["api_url"]} help={`${c.providerName} endpoint used to submit SMS messages.`}>
               <input id="sms-endpoint" className={inputCls} value={form.api_url} maxLength={500} onChange={(e) => set("api_url", e.target.value)} />
             </Field>
             <Field label="Message Type" id="sms-type">
@@ -237,7 +250,7 @@ export function VendorSmsConfigPanel({
 
           <section className="space-y-4 rounded-2xl border border-border bg-card p-5">
             <h3 className="text-sm font-semibold text-foreground">Credentials & sending</h3>
-            <Field label="API Key" id="sms-key" error={errors["api_key"]} help="Enter the Bearer API key provided by TIARA CONNECT.">
+            <Field label="API Key" id="sms-key" error={errors["api_key"]} help={`Enter the API key provided by ${c.providerName}.`}>
               {c.has_api_key && !replacingKey && !form.remove_api_key ? (
                 <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm">
                   <span className="flex items-center gap-2 text-muted-foreground"><ShieldCheck className="size-4 text-primary" /> •••••••• stored securely</span>
@@ -267,10 +280,10 @@ export function VendorSmsConfigPanel({
                 </label>
               )}
             </Field>
-            <Field label="Username" id="sms-user" help="Account username provided by TIARA CONNECT, if required.">
+            <Field label="Username" id="sms-user" help={`Account username provided by ${c.providerName}, if required.`}>
               <input id="sms-user" className={inputCls} value={form.username} maxLength={200} autoComplete="off" onChange={(e) => set("username", e.target.value)} />
             </Field>
-            <Field label="Password" id="sms-pw" help="Account password provided by TIARA CONNECT, if required. Never shown once saved.">
+            <Field label="Password" id="sms-pw" help={`Account password provided by ${c.providerName}, if required. Never shown once saved.`}>
               <div className="relative">
                 <input
                   id="sms-pw"
@@ -329,7 +342,7 @@ export function VendorSmsConfigPanel({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={busy || dirty || !c.configured}
+              disabled={busy || dirty || !c.configured || !c.sendSupported}
               title={dirty ? "Save your changes first" : undefined}
               onClick={() => testM.mutate()}
               className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground disabled:opacity-60"
@@ -339,7 +352,7 @@ export function VendorSmsConfigPanel({
             </button>
             <button
               type="button"
-              disabled={busy || dirty || !c.enabled}
+              disabled={busy || dirty || !c.enabled || !c.sendSupported}
               title={!c.enabled ? "Enable the SMS service first" : dirty ? "Save your changes first" : undefined}
               onClick={() => setTestOpen(true)}
               className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground disabled:opacity-60"
@@ -372,7 +385,7 @@ export function VendorSmsConfigPanel({
         </div>
       </form>
 
-      {testOpen && <TestSmsDialog vendorId={vendorId} senderId={c.sender_id} countryCode={c.default_country_code} onClose={() => setTestOpen(false)} />}
+      {testOpen && <TestSmsDialog vendorId={vendorId} providerId={c.providerId} senderId={c.sender_id} countryCode={c.default_country_code} onClose={() => setTestOpen(false)} />}
     </div>
   );
 }
@@ -388,7 +401,7 @@ function Field({ label, id, error, help, children }: { label: string; id: string
   );
 }
 
-function TestSmsDialog({ vendorId, senderId, countryCode, onClose }: { vendorId: string; senderId: string; countryCode: string; onClose: () => void }) {
+function TestSmsDialog({ vendorId, providerId, senderId, countryCode, onClose }: { vendorId: string; providerId: string; senderId: string; countryCode: string; onClose: () => void }) {
   const send = useServerFn(sendVendorTiaraTestSms);
   const [recipient, setRecipient] = useState("");
   const [message, setMessage] = useState("This is a test SMS from SmatraPay.");
@@ -396,7 +409,7 @@ function TestSmsDialog({ vendorId, senderId, countryCode, onClose }: { vendorId:
   const [key] = useState(() => crypto.randomUUID());
   const [result, setResult] = useState<TestSmsResult | null>(null);
   const m = useMutation({
-    mutationFn: () => send({ data: { vendorId, recipient, message, idempotencyKey: key } }),
+    mutationFn: () => send({ data: { vendorId, providerId, recipient, message, idempotencyKey: key } }),
     onSuccess: (r) => {
       setResult(r);
       (r.submitted ? toast.success : toast.error)(r.submitted ? "Test SMS submitted" : "Test SMS failed");
@@ -414,7 +427,7 @@ function TestSmsDialog({ vendorId, senderId, countryCode, onClose }: { vendorId:
         {result ? (
           <div className="space-y-2 text-sm">
             <p className={result.submitted ? "font-semibold text-foreground" : "font-semibold text-destructive"}>
-              {result.submitted ? "Submitted to TIARA CONNECT (not yet confirmed delivered)" : "Not accepted by the provider"}
+              {result.submitted ? "Submitted to the provider (not yet confirmed delivered)" : "Not accepted by the provider"}
             </p>
             <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-xs">
               <dt className="text-muted-foreground">Recipient</dt><dd>{result.recipient}</dd>
