@@ -312,9 +312,10 @@ export const calinVendingService: VendingIntegration = {
         provider_result_code: resultCode === null ? null : String(resultCode),
         error_code: failure.error_code,
         error_message: reason ?? failure.message,
-        response_payload: parsed
-          ? { result_code: resultCode, reason }
-          : { body: raw.slice(0, 500) },
+        response_payload:
+          parsed && (resultCode !== null || reason)
+            ? { result_code: resultCode, reason }
+            : { body: raw.slice(0, 500) },
       }),
     };
   },
