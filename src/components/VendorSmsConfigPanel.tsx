@@ -147,7 +147,7 @@ function ProviderCard({
       const hasStored = f.secret && provider.stored_secrets[f.key] && !remove.includes(f.key);
       if (!v && !hasStored) errs[f.key] = `${f.label} is required`;
     }
-    if (values.api_url && !/^https?:\/\/.+/i.test(values.api_url)) errs.api_url = "Enter a valid http(s) URL";
+    if (values["api_url"] && !/^https?:\/\/.+/i.test(values["api_url"])) errs["api_url"] = "Enter a valid http(s) URL";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }

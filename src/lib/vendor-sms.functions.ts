@@ -139,15 +139,15 @@ export const saveVendorSmsProvider = createServerFn({ method: "POST" })
         else if (data.removeSecrets.includes(k)) patch[k] = null;
       } else patch[k] = val || null;
     }
-    if (patch.api_url) {
+    if (patch["api_url"]) {
       try {
-        const u = new URL(patch.api_url);
+        const u = new URL(patch["api_url"]);
         if (!/^https?:$/.test(u.protocol)) throw new Error();
       } catch {
         throw new Error("API URL must be a valid http(s) URL");
       }
     }
-    if (patch.sender_id && patch.sender_id.length > 11 && !/^\+?\d+$/.test(patch.sender_id)) {
+    if (patch["sender_id"] && patch["sender_id"].length > 11 && !/^\+?\d+$/.test(patch["sender_id"])) {
       throw new Error("Sender ID must be 11 characters or fewer");
     }
 
