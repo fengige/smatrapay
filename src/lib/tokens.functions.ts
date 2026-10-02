@@ -25,6 +25,9 @@ export type TokenMeterMatch = {
   unit_label: string | null;
   property_name: string | null;
   owner_name: string | null;
+  owner_type: "vendor" | "landlord" | "agent" | null;
+  owner_id: string | null;
+  supplier_name: string | null;
   owner_email: string | null;
   owner_phone: string | null;
   customer_name: string | null;
@@ -41,7 +44,7 @@ export type TokenMeterMatch = {
 export const searchTokenMeters = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ q: z.string().trim().min(2, "Enter at least 2 characters") }).parse(d),
+    z.object({ q: z.string().trim().min(2, "Enter at least 2 characters"), owner_type: z.enum(["all", "vendor", "landlord", "agent"]).optional().default("all") }).parse(d),
   )
   .handler(async ({ data, context }): Promise<TokenMeterMatch[]> => {
     await assertAdmin(context as never);
@@ -53,7 +56,7 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
       .from("users")
       .select("id, name, email, phone")
       .or(`name.ilike.%${data.q}%,phone.ilike.%${data.q}%,email.ilike.%${data.q}%`)
-      .limit(25);
+      .limit(50);
 
     const personIds = (people ?? []).map((p: any) => p.id as string);
     let unitIdsFromPeople: string[] = [];
@@ -70,13 +73,21 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
     let query = supabase
       .from("meters")
       .select(
-        "id, meter_number, serial_number, type, status, price_per_unit, sgc, krn, ti, ea, ken, unit_id, landlord_id, vending_software_id",
+        "id, meter_number, serial_number, type, status, price_per_unit, sgc, krn, ti, ea, ken, unit_id, landlord_id, agent_id, vendor_id, supplier_id, vending_software_id",
       )
       .limit(25);
 
     const filters = [`meter_number.ilike.%${data.q}%`, `serial_number.ilike.%${data.q}%`];
     if (unitIdsFromPeople.length) filters.push(`unit_id.in.(${unitIdsFromPeople.join(",")})`);
+    // Owner-name search: meters whose landlord, agent or vendor matches.
+    if (personIds.length) {
+      const ids = personIds.join(",");
+      filters.push(`landlord_id.in.(${ids})`, `agent_id.in.(${ids})`, `vendor_id.in.(${ids})`);
+    }
     query = query.or(filters.join(","));
+    if (data.owner_type === "landlord") query = query.not("landlord_id", "is", null);
+    else if (data.owner_type === "agent") query = query.is("landlord_id", null).not("agent_id", "is", null);
+    else if (data.owner_type === "vendor") query = query.is("landlord_id", null).is("agent_id", null).not("vendor_id", "is", null);
 
     const { data: meters, error } = await query;
     if (error) throw new Error(error.message);
@@ -129,7 +140,15 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
       }
     }
 
-    const landlordIds = [...new Set(rows.map((m) => m.landlord_id).filter(Boolean))] as string[];
+    const { resolveMeterOwner } = await import("@/lib/sms-receipt.server");
+    const ownerOf = new Map(rows.map((m) => [m.id, resolveMeterOwner(m)]));
+    const landlordIds = [...new Set([...ownerOf.values()].map((o) => o?.id).filter(Boolean))] as string[];
+    const supplierIds = [...new Set(rows.map((m) => m.supplier_id).filter(Boolean))] as string[];
+    const supplierById = new Map<string, string>();
+    if (supplierIds.length) {
+      const { data: sup } = await supabase.from("meter_suppliers").select("id, company_name").in("id", supplierIds);
+      for (const x of (sup ?? []) as any[]) supplierById.set(x.id, x.company_name);
+    }
     const landlordById = new Map<string, any>();
     if (landlordIds.length) {
       const { data: landlords } = await supabase
@@ -153,7 +172,8 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
       const unit = m.unit_id ? unitById.get(m.unit_id) : null;
       const property = unit ? propertyById.get(unit.property_id) : null;
       const resident = m.unit_id ? residentByUnit.get(m.unit_id) : null;
-      const owner = m.landlord_id ? landlordById.get(m.landlord_id) : null;
+      const o = ownerOf.get(m.id);
+      const owner = o ? landlordById.get(o.id) : null;
       return {
         id: m.id,
         meter_number: m.meter_number,
@@ -168,7 +188,10 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
         ken: m.ken,
         unit_label: unit ? `Unit ${unit.unit_number}` : null,
         property_name: property?.name ?? null,
-        owner_name: owner?.name ?? null,
+        owner_name: o ? (owner?.name ?? owner?.email ?? null) : null,
+        owner_type: o?.type ?? null,
+        owner_id: o?.id ?? null,
+        supplier_name: m.supplier_id ? (supplierById.get(m.supplier_id) ?? null) : null,
         owner_email: owner?.email ?? null,
         owner_phone: owner?.phone ?? null,
         customer_name: resident?.name ?? null,
@@ -213,6 +236,8 @@ export type IssuedToken = {
   provider: string | null;
   provider_reference: string | null;
   created_at: string;
+  /** Present when a receipt SMS was attempted in this request. */
+  sms?: import("@/lib/sms-receipt.server").ReceiptSmsResult;
 };
 
 export type TokenIssuerRole = "admin" | "vendor" | "other" | "unknown";
@@ -354,6 +379,17 @@ export const issueMeterToken = createServerFn({ method: "POST" })
     });
 
     const [serialized] = await serialize(supabase, [row]);
+    if (data.sms_requested && data.customer_phone && serialized) {
+      // SMS failures never undo the completed token transaction.
+      const { sendTokenReceiptSms } = await import("@/lib/sms-receipt.server");
+      try {
+        serialized.sms = await sendTokenReceiptSms(supabase, {
+          tokenId: serialized.id, phone: data.customer_phone, actorId: context.userId,
+        });
+      } catch (e) {
+        serialized.sms = { status: "failed", message: (e as Error).message, provider: null, provider_message_id: null, owner_type: null, owner_name: null };
+      }
+    }
     return serialized!;
   });
 
@@ -489,16 +525,11 @@ async function resendOne(
     return await fail("This token has expired — issue a new token instead");
   if (phone.length < 7) return await fail("No valid phone number on file for this sale");
 
-  const { data: row, error } = await supabase
-    .from("meter_tokens")
-    .update({ customer_phone: phone, sms_requested: true } as never)
-    .eq("id", id)
-    .select("*")
-    .single();
-  if (error) return await fail(error.message);
-
-  await logSmsAttempt(supabase, { token_id: id, phone, status: "queued", actor_id: actorId });
-  return { id, status: "queued", phone, error: null, row };
+  const { sendTokenReceiptSms } = await import("@/lib/sms-receipt.server");
+  const sms = await sendTokenReceiptSms(supabase, { tokenId: id, phone, actorId });
+  if (sms.status === "failed") return { id, status: "failed", phone, error: sms.message, row: null };
+  const { data: row } = await supabase.from("meter_tokens").select("*").eq("id", id).single();
+  return { id, status: "sent", phone, error: null, row };
 }
 
 /** Re-send the receipt for an existing token via SMS without recreating the sale. */
