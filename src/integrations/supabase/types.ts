@@ -2548,6 +2548,78 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_sms_configurations: {
+        Row: {
+          account_id: string | null
+          api_key: string | null
+          api_secret: string | null
+          api_url: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_enabled: boolean
+          password: string | null
+          sender_id: string | null
+          sms_configuration_id: string
+          updated_at: string
+          updated_by: string | null
+          username: string | null
+          vendor_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          api_key?: string | null
+          api_secret?: string | null
+          api_url?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          password?: string | null
+          sender_id?: string | null
+          sms_configuration_id: string
+          updated_at?: string
+          updated_by?: string | null
+          username?: string | null
+          vendor_id: string
+        }
+        Update: {
+          account_id?: string | null
+          api_key?: string | null
+          api_secret?: string | null
+          api_url?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          password?: string | null
+          sender_id?: string | null
+          sms_configuration_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          username?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_sms_configurations_sms_configuration_id_fkey"
+            columns: ["sms_configuration_id"]
+            isOneToOne: false
+            referencedRelation: "sms_configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_sms_configurations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_tenant_applications: {
         Row: {
           created_at: string
