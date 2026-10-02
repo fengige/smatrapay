@@ -205,6 +205,8 @@ export const setVendorSmsProviderEnabled = createServerFn({ method: "POST" })
         .maybeSingle(),
     ]);
     if (!provider) throw new Error("SMS provider not found");
+    if (data.enabled && !provider.is_active)
+      throw new Error("This SMS provider is inactive. Activate it under Configurations → SMS Configuration first.");
 
     if (!data.enabled) {
       if (!row) return { ok: true };
