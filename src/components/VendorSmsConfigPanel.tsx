@@ -157,7 +157,7 @@ export function VendorSmsConfigPanel({
         </div>
         {!c.configured && (
           <p className="mt-3 rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-            No SMS configuration saved for this vendor yet.
+            No SMS configuration saved for this {ownerLabel} yet.
           </p>
         )}
         {!c.sendSupported && (
