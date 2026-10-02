@@ -46,10 +46,12 @@ export function VendorSmsConfigPanel({
   vendorId,
   vendorName,
   vendorStatus,
+  ownerLabel = "vendor",
 }: {
   vendorId: string;
   vendorName: string;
   vendorStatus: string;
+  ownerLabel?: string;
 }) {
   const qc = useQueryClient();
   const [providerId, setProviderId] = useState<string | undefined>(undefined);
@@ -90,7 +92,7 @@ export function VendorSmsConfigPanel({
     onSuccess: async (_r, enabled) => {
       setConfirmOff(false);
       await qc.invalidateQueries({ queryKey: ["vendor-tiara", vendorId] });
-      toast.success(`SMS service ${enabled ? "enabled" : "disabled"} for this vendor`);
+      toast.success(`SMS service ${enabled ? "enabled" : "disabled"} for this ${ownerLabel}`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -146,7 +148,7 @@ export function VendorSmsConfigPanel({
             <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
               <MessageSquare className="size-4 text-primary" /> SMS Provider Configuration
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Configure SMS messaging services for this vendor.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Configure SMS messaging services for this {ownerLabel}.</p>
           </div>
           <div className="text-right text-sm">
             <p className="font-semibold text-foreground">{vendorName}</p>

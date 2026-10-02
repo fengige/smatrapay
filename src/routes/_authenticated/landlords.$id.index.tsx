@@ -1,3 +1,4 @@
+import { VendorSmsConfigPanel } from "@/components/VendorSmsConfigPanel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -110,7 +111,7 @@ function LandlordDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit" | "paymethods"
+    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit" | "paymethods" | "sms"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
@@ -454,6 +455,7 @@ function LandlordDetailPage() {
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
                     ["paymethods", "Payment Methods"],
+                    ["sms", "SMS Configuration"],
                     ["meters", "Meters"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
@@ -719,6 +721,15 @@ function LandlordDetailPage() {
                 </Section>
               )}
 
+
+              {tab === "sms" && (
+                <VendorSmsConfigPanel
+                  vendorId={id}
+                  vendorName={landlord?.name || landlord?.email || "Landlord"}
+                  vendorStatus={landlord?.status || "active"}
+                  ownerLabel="landlord"
+                />
+              )}
 
               {tab === "paymethods" && (
                 <>
