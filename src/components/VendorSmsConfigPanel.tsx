@@ -343,7 +343,7 @@ export function VendorSmsConfigPanel({
   );
 }
 
-function Field({ label, id, error, help, children }: { label: string; id: string; error?: string; help?: string; children: React.ReactNode }) {
+function Field({ label, id, error, help, children }: { label: string; id: string; error?: string | undefined; help?: string | undefined; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <label htmlFor={id} className="text-sm font-medium text-foreground">{label}</label>
