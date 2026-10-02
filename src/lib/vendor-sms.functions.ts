@@ -60,7 +60,11 @@ export const listVendorSmsProviders = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdminAndVendor(context as never, data.vendorId);
     const [g, v] = await Promise.all([
-      context.supabase.from("sms_configurations").select("*").order("created_at"),
+      context.supabase
+        .from("sms_configurations")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at"),
       context.supabase
         .from("vendor_sms_configurations")
         .select("*")
