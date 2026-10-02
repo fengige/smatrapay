@@ -19,6 +19,9 @@ type Form = {
   api_url: string;
   api_key: string;
   remove_api_key: boolean;
+  username: string;
+  password: string;
+  remove_password: boolean;
   sender_id: string;
   message_type: 1 | 2;
   default_country_code: string;
@@ -29,6 +32,9 @@ const fromConfig = (c: TiaraConfig): Form => ({
   api_url: c.api_url || TIARA_DEFAULT_ENDPOINT,
   api_key: "",
   remove_api_key: false,
+  username: c.username,
+  password: "",
+  remove_password: false,
   sender_id: c.sender_id,
   message_type: c.message_type,
   default_country_code: c.default_country_code,
@@ -57,6 +63,7 @@ export function VendorSmsConfigPanel({
   const [form, setForm] = useState<Form | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [revealKey, setRevealKey] = useState(false);
+  const [revealPw, setRevealPw] = useState(false);
   const [replacingKey, setReplacingKey] = useState(false);
   const [confirmOff, setConfirmOff] = useState(false);
   const [conn, setConn] = useState<ConnectionResult | null>(null);
@@ -257,6 +264,33 @@ export function VendorSmsConfigPanel({
                 <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   <input type="checkbox" checked={form.remove_api_key} onChange={(e) => set("remove_api_key", e.target.checked)} />
                   Remove Stored API Key
+                </label>
+              )}
+            </Field>
+            <Field label="Username" id="sms-user" help="Account username provided by TIARA CONNECT, if required.">
+              <input id="sms-user" className={inputCls} value={form.username} maxLength={200} autoComplete="off" onChange={(e) => set("username", e.target.value)} />
+            </Field>
+            <Field label="Password" id="sms-pw" help="Account password provided by TIARA CONNECT, if required. Never shown once saved.">
+              <div className="relative">
+                <input
+                  id="sms-pw"
+                  type={revealPw ? "text" : "password"}
+                  autoComplete="new-password"
+                  className={`${inputCls} pr-10`}
+                  value={form.password}
+                  maxLength={500}
+                  disabled={form.remove_password}
+                  placeholder={c.has_password && !form.remove_password ? "•••••••• (stored — leave blank to keep)" : ""}
+                  onChange={(e) => set("password", e.target.value)}
+                />
+                <button type="button" aria-label={revealPw ? "Hide password" : "Show password"} onClick={() => setRevealPw((r) => !r)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {revealPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              {c.has_password && (
+                <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={form.remove_password} onChange={(e) => set("remove_password", e.target.checked)} />
+                  Remove Stored Password
                 </label>
               )}
             </Field>

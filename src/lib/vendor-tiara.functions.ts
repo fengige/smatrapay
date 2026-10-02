@@ -75,6 +75,8 @@ export type TiaraConfig = {
   enabled: boolean;
   api_url: string;
   has_api_key: boolean;
+  username: string;
+  has_password: boolean;
   sender_id: string;
   message_type: 1 | 2;
   default_country_code: string;
@@ -98,6 +100,8 @@ export const getVendorTiaraConfig = createServerFn({ method: "POST" })
       enabled: Boolean(r?.is_enabled),
       api_url: r?.api_url || TIARA_DEFAULT_ENDPOINT,
       has_api_key: Boolean(r?.api_key),
+      username: r?.username ?? "",
+      has_password: Boolean(r?.password),
       sender_id: r?.sender_id ?? "",
       message_type: r?.message_type === 2 ? 2 : 1,
       default_country_code: r?.default_country_code ?? "254",
@@ -111,6 +115,9 @@ const saveInput = z.object({
   api_url: z.string().trim().max(500),
   api_key: z.string().trim().max(1000).optional().default(""),
   remove_api_key: z.boolean().optional().default(false),
+  username: z.string().trim().max(200).optional().default(""),
+  password: z.string().max(500).optional().default(""),
+  remove_password: z.boolean().optional().default(false),
   sender_id: z.string().trim().min(1, "Sender ID is required").max(11, "Sender ID must be 11 characters or fewer"),
   message_type: z.union([z.literal(1), z.literal(2)]),
   default_country_code: z.string().trim().regex(/^\d{1,4}$/, "Country code must be 1–4 digits"),
@@ -131,6 +138,7 @@ export const saveVendorTiaraConfig = createServerFn({ method: "POST" })
     const patch: Record<string, unknown> = {
       api_url: data.api_url,
       sender_id: data.sender_id,
+      username: data.username || null,
       message_type: data.message_type,
       default_country_code: data.default_country_code,
       delivery_receipt_callback_url: data.delivery_receipt_callback_url || null,
@@ -138,6 +146,8 @@ export const saveVendorTiaraConfig = createServerFn({ method: "POST" })
     };
     if (data.api_key) patch["api_key"] = data.api_key;
     else if (data.remove_api_key) patch["api_key"] = null;
+    if (data.password) patch["password"] = data.password;
+    else if (data.remove_password) patch["password"] = null;
     if (patch["api_key"] === null && existing?.is_enabled) patch["is_enabled"] = false;
 
     let id: string;
@@ -157,6 +167,7 @@ export const saveVendorTiaraConfig = createServerFn({ method: "POST" })
     await audit(ctx, data.vendorId, "VENDOR_SMS_CONFIGURATION_SAVED", id, {
       provider: "tiara",
       api_key_changed: Boolean(data.api_key) || data.remove_api_key,
+      password_changed: Boolean(data.password) || data.remove_password,
     });
     return { id };
   });
