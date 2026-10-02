@@ -153,11 +153,9 @@ export const saveVendorSmsProvider = createServerFn({ method: "POST" })
 
     let id: string;
     if (existing) {
-      const merged = { ...existing, ...patch };
-      // Removing a required credential from an enabled provider disables it.
       const { error } = await supabase
         .from("vendor_sms_configurations")
-        .update({ ...patch, updated_by: userId, is_enabled: existing.is_enabled && !!merged })
+        .update({ ...patch, updated_by: userId })
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
       id = existing.id;
