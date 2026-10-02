@@ -23,11 +23,16 @@ async function assertAdminAndVendor(context: { supabase: any; userId: string }, 
     _role: "admin",
   });
   if (!isAdmin) throw new Error("Admin access required");
-  const { data: isVendor } = await context.supabase.rpc("has_role", {
-    _user_id: vendorId,
-    _role: "vendor",
-  });
-  if (!isVendor) throw new Error("Vendor not found");
+  // has_role() is subject to RLS on user_roles for other users, so verify the
+  // vendor through the users table (admin-readable) joined to their vendor role.
+  const { data: vendorRow, error: vendorErr } = await context.supabase
+    .from("users")
+    .select("id, user_roles!inner(role)")
+    .eq("id", vendorId)
+    .eq("user_roles.role", "vendor")
+    .maybeSingle();
+  if (vendorErr) throw new Error(vendorErr.message);
+  if (!vendorRow) throw new Error("Vendor not found");
 }
 
 async function audit(ctx: any, vendorId: string, action: string, resourceId: string, metadata: any) {
