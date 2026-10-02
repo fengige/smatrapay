@@ -69,6 +69,7 @@ function smsBadgeClass(status: SmsDeliveryStatus) {
 function PosPage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [ownerType, setOwnerType] = useState<"all" | "vendor" | "landlord" | "agent">("all");
   const [results, setResults] = useState<TokenMeterMatch[] | null>(null);
   const [meter, setMeter] = useState<TokenMeterMatch | null>(null);
 
@@ -100,7 +101,7 @@ function PosPage() {
         data: { id: smsTarget!.id, customer_phone: smsPhone.trim() || null },
       } as never),
     onSuccess: () => {
-      toast.success(`Receipt queued for SMS delivery to ${smsPhone.trim()}`);
+      toast.success(`Receipt submitted to the SMS provider for ${smsPhone.trim()} (delivery not yet confirmed)`);
       setSmsTarget(null);
       setSmsPhone("");
       void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
@@ -110,7 +111,7 @@ function PosPage() {
   });
 
   const search = useMutation({
-    mutationFn: async () => runSearch({ data: { q: query.trim() } } as never),
+    mutationFn: async () => runSearch({ data: { q: query.trim(), owner_type: ownerType } } as never),
     onSuccess: (rows: unknown) => {
       const list = rows as TokenMeterMatch[];
       setResults(list);
@@ -239,8 +240,10 @@ function PosPage() {
       setAmount("");
       setReference("");
       toast.success("Sale complete — token vended");
-      if (issued.sms_requested)
-        toast.info(`Token queued for SMS delivery to ${issued.customer_phone}`);
+      if (issued.sms) {
+        if (issued.sms.status === "sent") toast.success(issued.sms.message);
+        else toast.error(`SMS receipt not sent: ${issued.sms.message}`, { duration: 10000 });
+      }
       void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
     },
     onError: (err: Error) => toast.error(err.message || "Sale failed"),
@@ -263,7 +266,7 @@ function PosPage() {
               <h2 className="font-semibold">Customer / Meter Lookup</h2>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Search by meter number, serial number, or customer name / phone.
+              Search by meter number, serial number, owner name, or customer name / phone.
             </p>
 
             <form
@@ -274,12 +277,23 @@ function PosPage() {
                 else toast.error("Enter at least 2 characters");
               }}
             >
+              <select
+                value={ownerType}
+                onChange={(e) => setOwnerType(e.target.value as typeof ownerType)}
+                aria-label="Owner type"
+                className="rounded-lg border border-border bg-background px-2 py-2 text-sm"
+              >
+                <option value="all">All Owners</option>
+                <option value="vendor">Vendor</option>
+                <option value="landlord">Landlord</option>
+                <option value="agent">Agent</option>
+              </select>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g. 04512345678 or 0712 345 678"
                 aria-label="Meter search"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
               <button
                 type="submit"
@@ -308,10 +322,17 @@ function PosPage() {
                           : "border-border hover:bg-accent/10"
                       }`}
                     >
-                      <span className="font-medium">{r.meter_number}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">{r.meter_number}</span>
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                          {r.owner_type ?? "Unassigned"}
+                        </span>
+                        <span className="truncate text-xs text-muted-foreground">{r.owner_name ?? ""}</span>
+                        <span className="ml-auto text-[10px] capitalize text-muted-foreground">{r.status}</span>
+                      </span>
                       <span className="block text-xs text-muted-foreground">
                         {r.customer_name ?? "Unassigned"} · {r.property_name ?? "No property"}{" "}
-                        {r.unit_label ?? ""} · {r.vending_software_name ?? "No vending software"}
+                        {r.unit_label ?? ""} · {r.type} · {r.supplier_name ?? "No supplier"} · {r.vending_software_name ?? "No vending software"}
                       </span>
                     </button>
                   </li>
@@ -350,6 +371,9 @@ function PosPage() {
                   ["Unit", meter.unit_label ?? "—"],
                   ["Customer", meter.customer_name ?? "Unassigned"],
                   ["Customer phone", meter.customer_phone ?? "—"],
+                  ["Owner type", meter.owner_type ?? "Unassigned"],
+                  ["Owner", meter.owner_name ?? "Unassigned"],
+                  ["Supplier", meter.supplier_name ?? "—"],
                 ].map(([label, val]) => (
                   <div key={label} className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">{label}</dt>

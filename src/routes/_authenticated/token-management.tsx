@@ -82,6 +82,7 @@ function StatusBadge({ status }: { status: IssuedToken["status"] }) {
 function TokenManagementPage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [ownerType, setOwnerType] = useState<"all" | "vendor" | "landlord" | "agent">("all");
   const [results, setResults] = useState<TokenMeterMatch[] | null>(null);
   const [meter, setMeter] = useState<TokenMeterMatch | null>(null);
 
@@ -104,7 +105,7 @@ function TokenManagementPage() {
   const runList = useServerFn(listMeterTokens);
 
   const search = useMutation({
-    mutationFn: async () => runSearch({ data: { q: query.trim() } } as never),
+    mutationFn: async () => runSearch({ data: { q: query.trim(), owner_type: ownerType } } as never),
     onSuccess: (rows: any) => {
       const list = rows as TokenMeterMatch[];
       setResults(list);
@@ -192,8 +193,10 @@ function TokenManagementPage() {
       setToken(issued);
       setConfirming(false);
       toast.success("Token issued");
-      if (issued.sms_requested)
-        toast.info(`Token queued for SMS delivery to ${issued.customer_phone}`);
+      if (issued.sms) {
+        if (issued.sms.status === "sent") toast.success(issued.sms.message);
+        else toast.error(`SMS receipt not sent: ${issued.sms.message}`, { duration: 10000 });
+      }
       void queryClient.invalidateQueries({ queryKey: ["meter-tokens"] });
     },
     onError: (err: Error) => toast.error(err.message || "Could not issue token"),
@@ -229,7 +232,7 @@ function TokenManagementPage() {
               <h2 className="font-semibold">Meter Search</h2>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Search by meter number, serial number, or customer name / phone.
+              Search by meter number, serial number, owner name, or customer name / phone.
             </p>
 
             <form
@@ -240,12 +243,23 @@ function TokenManagementPage() {
                 else toast.error("Enter at least 2 characters");
               }}
             >
+              <select
+                value={ownerType}
+                onChange={(e) => setOwnerType(e.target.value as typeof ownerType)}
+                aria-label="Owner type"
+                className="rounded-lg border border-border bg-background px-2 py-2 text-sm"
+              >
+                <option value="all">All Owners</option>
+                <option value="vendor">Vendor</option>
+                <option value="landlord">Landlord</option>
+                <option value="agent">Agent</option>
+              </select>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g. 04512345678 or 0712 345 678"
                 aria-label="Meter search"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
               <button
                 type="submit"
@@ -274,10 +288,17 @@ function TokenManagementPage() {
                           : "border-border hover:bg-accent/10"
                       }`}
                     >
-                      <span className="font-medium">{r.meter_number}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">{r.meter_number}</span>
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                          {r.owner_type ?? "Unassigned"}
+                        </span>
+                        <span className="truncate text-xs text-muted-foreground">{r.owner_name ?? ""}</span>
+                        <span className="ml-auto text-[10px] capitalize text-muted-foreground">{r.status}</span>
+                      </span>
                       <span className="block text-xs text-muted-foreground">
                         {r.customer_name ?? "Unassigned"} · {r.property_name ?? "No property"}{" "}
-                        {r.unit_label ?? ""} · {r.vending_software_name ?? "No vending software"}
+                        {r.unit_label ?? ""} · {r.type} · {r.supplier_name ?? "No supplier"} · {r.vending_software_name ?? "No vending software"}
                       </span>
                     </button>
                   </li>
@@ -316,7 +337,9 @@ function TokenManagementPage() {
                   ["Unit", meter.unit_label ?? "—"],
                   ["Customer", meter.customer_name ?? "Unassigned"],
                   ["Customer phone", meter.customer_phone ?? "—"],
-                  ["Landlord", meter.owner_name ?? "—"],
+                  ["Owner type", meter.owner_type ?? "Unassigned"],
+                  ["Owner", meter.owner_name ?? "Unassigned"],
+                  ["Supplier", meter.supplier_name ?? "—"],
                   [
                     "STS",
                     `SGC ${meter.sgc ?? "—"} · KRN ${meter.krn ?? "—"} · TI ${meter.ti ?? "—"}`,
