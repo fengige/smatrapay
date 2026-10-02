@@ -9,7 +9,6 @@ import {
   sendVendorTiaraTestSms,
   setVendorTiaraEnabled,
   testVendorTiaraConnection,
-  TIARA_DEFAULT_ENDPOINT,
   type ConnectionResult,
   type TestSmsResult,
   type TiaraConfig,
@@ -29,7 +28,7 @@ type Form = {
 };
 
 const fromConfig = (c: TiaraConfig): Form => ({
-  api_url: c.api_url || TIARA_DEFAULT_ENDPOINT,
+  api_url: c.api_url,
   api_key: "",
   remove_api_key: false,
   username: c.username,
