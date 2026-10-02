@@ -23,11 +23,16 @@ async function assertAdminAndVendor(context: { supabase: any; userId: string }, 
     _role: "admin",
   });
   if (!isAdmin) throw new Error("Admin access required");
-  const { data: isVendor } = await context.supabase.rpc("has_role", {
-    _user_id: vendorId,
-    _role: "vendor",
-  });
-  if (!isVendor) throw new Error("Vendor not found");
+  // has_role() is subject to RLS on user_roles for other users, so verify the
+  // vendor exists through the users table (admin-readable). Admin access is
+  // already enforced above.
+  const { data: vendorRow, error: vendorErr } = await context.supabase
+    .from("users")
+    .select("id")
+    .eq("id", vendorId)
+    .maybeSingle();
+  if (vendorErr) throw new Error(vendorErr.message);
+  if (!vendorRow) throw new Error("Vendor not found");
 }
 
 async function audit(ctx: any, vendorId: string, action: string, resourceId: string, metadata: any) {
@@ -60,7 +65,11 @@ export const listVendorSmsProviders = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdminAndVendor(context as never, data.vendorId);
     const [g, v] = await Promise.all([
-      context.supabase.from("sms_configurations").select("*").order("created_at"),
+      context.supabase
+        .from("sms_configurations")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at"),
       context.supabase
         .from("vendor_sms_configurations")
         .select("*")
@@ -201,6 +210,8 @@ export const setVendorSmsProviderEnabled = createServerFn({ method: "POST" })
         .maybeSingle(),
     ]);
     if (!provider) throw new Error("SMS provider not found");
+    if (data.enabled && !provider.is_active)
+      throw new Error("This SMS provider is inactive. Activate it under Configurations → SMS Configuration first.");
 
     if (!data.enabled) {
       if (!row) return { ok: true };

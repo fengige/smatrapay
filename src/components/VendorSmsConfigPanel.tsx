@@ -78,7 +78,7 @@ export function VendorSmsConfigPanel({
         </div>
       ) : providers.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          No SMS providers are configured. Add providers under Configurations → SMS Configuration.
+          No active SMS providers. Activate providers under Configurations → SMS Configuration.
         </div>
       ) : (
         <div className="grid items-start gap-4 md:grid-cols-2">
