@@ -111,7 +111,7 @@ function LandlordDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit" | "paymethods"
+    "property" | "units" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit" | "paymethods" | "sms"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<"all" | "created" | "updated">("all");
