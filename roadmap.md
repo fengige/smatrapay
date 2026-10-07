@@ -46,3 +46,4 @@
 - [ ] Dashboard: tokens generated per vending software and per meter, with breakdown of failed attempts
 - [x] Retry queue: automatic scheduled retries every few minutes (done — pg_cron drain job every 5 min, verified 200)
 - [x] /ncba-payments: display the NCBA Endpoint URL (done — verified with copy button)
+- [ ] Live Sidian C2B test through token and SMS (blocked: Sidian username/password not saved)
