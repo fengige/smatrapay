@@ -63,7 +63,7 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
   const db = supabaseAdmin as any;
 
   // 1. Idempotency on TransID (unique column).
-  const { data: existing } = await db.from("ncba_notifications").select("*").eq("trans_id", p.TransID).maybeSingle();
+  const { data: existing } = await db.from("ncba_notifications").select("*").eq("bank", "NCBA").eq("trans_id", p.TransID).maybeSingle();
   if (existing?.status === "completed") return ack("0", "Duplicate notification — already processed");
   if (existing?.status === "processing" && Date.now() - new Date(existing.updated_at).getTime() < 120_000)
     return ack("1", "Notification is being processed — retry later", 409);
@@ -142,9 +142,9 @@ export async function vendNcbaNotification(
   const { data: meter } = await db
     .from("meters")
     .select("id, meter_number, status")
-    .eq("meter_number", n.narrative)
+    .eq("meter_number", n.meter_number ?? n.narrative)
     .maybeSingle();
-  if (!meter) return fail("failed", "METER_NOT_FOUND", `Meter ${n.narrative} was not found.`, { next_retry_at: null });
+  if (!meter) return fail("failed", "METER_NOT_FOUND", `Meter ${n.meter_number ?? n.narrative} was not found.`, { next_retry_at: null });
 
   const { vendMeterToken } = await import("@/lib/vending/vend.server");
   let tokenRow: any;
@@ -160,7 +160,8 @@ export async function vendNcbaNotification(
       smsRequested: !!n.mobile,
       expiresInDays: 30,
       actorId: opts.actorId ?? null,
-      requestId: `ncba:${n.trans_id}`,
+      // Bank-scoped one-time key: a retried or duplicate payment never vends twice.
+      requestId: `${n.bank === "NCBA" || !n.bank ? "ncba" : String(n.bank).toLowerCase()}:${n.trans_id}`,
     });
     tokenRow = row;
   } catch (e) {

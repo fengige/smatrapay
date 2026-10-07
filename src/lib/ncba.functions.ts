@@ -10,6 +10,8 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 export type NcbaPaymentRow = {
   id: string;
   trans_id: string;
+  bank: string | null;
+  meter_number: string | null;
   trans_time: string | null;
   trans_amount: number;
   narrative: string | null;

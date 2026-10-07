@@ -1086,6 +1086,8 @@ export type Database = {
         Row: {
           attempts: number
           auto_retry_count: number
+          bank: string
+          bank_reference: string | null
           bill_ref_number: string | null
           business_short_code: string | null
           created_at: string
@@ -1100,6 +1102,7 @@ export type Database = {
           narrative: string | null
           next_retry_at: string | null
           payer_name: string | null
+          payment_status: string | null
           processed_at: string | null
           sms_status: string | null
           status: string
@@ -1113,6 +1116,8 @@ export type Database = {
         Insert: {
           attempts?: number
           auto_retry_count?: number
+          bank?: string
+          bank_reference?: string | null
           bill_ref_number?: string | null
           business_short_code?: string | null
           created_at?: string
@@ -1127,6 +1132,7 @@ export type Database = {
           narrative?: string | null
           next_retry_at?: string | null
           payer_name?: string | null
+          payment_status?: string | null
           processed_at?: string | null
           sms_status?: string | null
           status?: string
@@ -1140,6 +1146,8 @@ export type Database = {
         Update: {
           attempts?: number
           auto_retry_count?: number
+          bank?: string
+          bank_reference?: string | null
           bill_ref_number?: string | null
           business_short_code?: string | null
           created_at?: string
@@ -1154,6 +1162,7 @@ export type Database = {
           narrative?: string | null
           next_retry_at?: string | null
           payer_name?: string | null
+          payment_status?: string | null
           processed_at?: string | null
           sms_status?: string | null
           status?: string
