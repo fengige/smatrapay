@@ -109,6 +109,7 @@ function NcbaPaymentsPage() {
         </div>
       }
     >
+      <NcbaEndpointCard />
       <div className="mb-4 flex gap-2">
         {([["problems", "Needs attention"], ["completed", "Completed"], ["all", "All"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => setFilter(k)}
