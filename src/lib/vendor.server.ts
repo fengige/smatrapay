@@ -24,6 +24,8 @@ export type VendorMeter = {
   resident_id: string | null;
   resident_name: string | null;
   price_per_unit: number;
+  commission_percentage: number | null;
+  vat_on_commission_percentage: number | null;
   initial_reading: number;
   sgc: number | null;
   krn: number | null;
@@ -101,7 +103,7 @@ export async function loadVendorScope(
   const { data: meterRows, error } = await supabase
     .from("meters")
     .select(
-      "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
+      "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, commission_percentage, vat_on_commission_percentage, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
     )
     .eq("vendor_id", vendorId)
     .order("created_at", { ascending: false });
@@ -206,6 +208,8 @@ export async function loadVendorScope(
       resident_id: resident?.id ?? null,
       resident_name: resident?.name ?? resident?.email ?? null,
       price_per_unit: Number(m.price_per_unit ?? 0),
+      commission_percentage: m.commission_percentage == null ? null : Number(m.commission_percentage),
+      vat_on_commission_percentage: m.vat_on_commission_percentage == null ? null : Number(m.vat_on_commission_percentage),
       initial_reading: Number(m.initial_reading ?? 0),
       sgc: m.sgc ?? null,
       krn: m.krn ?? null,
