@@ -112,7 +112,7 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   const [showTaasPassword, setShowTaasPassword] = useState(false);
   const [clearTaas, setClearTaas] = useState(false);
   const isIcon = Boolean(settings?.is_icon);
-  const [errors, setErrors] = useState<Partial<Record<FormKey | "API_PASSWORD" | "API_TAAS_ID" | "API_TAAS_PASSWORD", string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<FormKey | "API_PASSWORD" | "API_TAAS_ID" | "API_TAAS_PASSWORD", string | undefined>>>({});
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const reset = useMemo(
@@ -153,7 +153,7 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   };
 
   function validate() {
-    const next: Partial<Record<FormKey | "API_PASSWORD" | "API_TAAS_ID" | "API_TAAS_PASSWORD", string>> = {};
+    const next: Partial<Record<FormKey | "API_PASSWORD" | "API_TAAS_ID" | "API_TAAS_PASSWORD", string | undefined>> = {};
     if (!form.API_POS_PURCHASE.trim()) next.API_POS_PURCHASE = "API POS Purchase is required";
     if (isIcon) {
       if (!settings?.has_taas_id && !taasId.trim()) next.API_TAAS_ID = "API TaaS ID is required";
