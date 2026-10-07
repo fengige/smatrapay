@@ -2443,6 +2443,8 @@ export type Database = {
           api_maintenance_set_overdraft_limit: string | null
           api_password: string | null
           api_pos_purchase: string | null
+          api_taas_id: string | null
+          api_taas_password: string | null
           api_user_name: string | null
           api_vend_password: string | null
           created_at: string
@@ -2458,6 +2460,8 @@ export type Database = {
           api_maintenance_set_overdraft_limit?: string | null
           api_password?: string | null
           api_pos_purchase?: string | null
+          api_taas_id?: string | null
+          api_taas_password?: string | null
           api_user_name?: string | null
           api_vend_password?: string | null
           created_at?: string
@@ -2473,6 +2477,8 @@ export type Database = {
           api_maintenance_set_overdraft_limit?: string | null
           api_password?: string | null
           api_pos_purchase?: string | null
+          api_taas_id?: string | null
+          api_taas_password?: string | null
           api_user_name?: string | null
           api_vend_password?: string | null
           created_at?: string
