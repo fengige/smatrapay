@@ -44,4 +44,5 @@
 - [x] Hide Commission & VAT on Commission section on Price Management
 - [ ] Show Commission and VAT under Rate in meter search results on /vendor/pos and /vendor/token-management
 - [ ] Dashboard: tokens generated per vending software and per meter, with breakdown of failed attempts
-- [ ] Retry queue: automatic scheduled retries every few minutes (currently only opportunistic/admin-triggered)
+- [x] Retry queue: automatic scheduled retries every few minutes (done — pg_cron drain job every 5 min, verified 200)
+- [x] /ncba-payments: display the NCBA Endpoint URL (done — verified with copy button)
