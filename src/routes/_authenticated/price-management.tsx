@@ -20,6 +20,8 @@ import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
   bulkSetMeterPrice,
+  bulkSetMeterCommission,
+  getCommissionSettings,
   listPriceAuditLogs,
   listPriceChangeRequests,
   reviewPriceChangeRequests,
@@ -78,6 +80,11 @@ function PriceManagementPage() {
   const [mode, setMode] = useState<PriceMode>("set");
   const [value, setValue] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [commValue, setCommValue] = useState("");
+  const [vatValue, setVatValue] = useState("");
+  const applyCommission = useServerFn(bulkSetMeterCommission);
+  const fetchDefaults = useServerFn(getCommissionSettings);
+  const { data: defaults } = useQuery({ queryKey: ["commission-settings"], queryFn: () => fetchDefaults() });
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["meters"],
@@ -200,6 +207,37 @@ function PriceManagementPage() {
     },
     onError: (e: Error) => toast.error(e.message || "Could not update prices"),
   });
+
+  const pctError = (v: string) => {
+    if (!v.trim()) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "Enter a number";
+    if (n < 0) return "Cannot be negative";
+    if (n > 100) return "Cannot be more than 100%";
+    return null;
+  };
+  const commErr = pctError(commValue);
+  const vatErr = pctError(vatValue);
+  const commReady = !!selectedRows.length && (commValue.trim() || vatValue.trim()) && !commErr && !vatErr;
+  const commissionMutation = useMutation({
+    mutationFn: () =>
+      applyCommission({
+        data: {
+          ids: selectedRows.map((m) => m.id),
+          ...(commValue.trim() ? { commission_percentage: Number(commValue) } : {}),
+          ...(vatValue.trim() ? { vat_on_commission_percentage: Number(vatValue) } : {}),
+        },
+      }),
+    onSuccess: async (res) => {
+      await queryClient.invalidateQueries({ queryKey: ["meters"] });
+      setCommValue("");
+      setVatValue("");
+      toast.success(`Commission & VAT updated on ${res.updated} meter${res.updated === 1 ? "" : "s"}`);
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not update Commission & VAT"),
+  });
+  const pct = (own: number | null, def: number | undefined) =>
+    own !== null ? `${own.toFixed(2)}%` : def !== undefined ? `${def.toFixed(2)}% (default)` : "—";
 
   const exportCsv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -576,6 +614,45 @@ function PriceManagementPage() {
         </div>
       </div>
 
+      <div className="mt-4 grid gap-3 rounded-2xl border border-border bg-card p-4 md:grid-cols-[auto_auto_1fr_auto] md:items-start">
+        {([
+          ["meter-commission", "Commission (%)", commValue, setCommValue, commErr],
+          ["meter-vat", "VAT on Commission (%)", vatValue, setVatValue, vatErr],
+        ] as const).map(([id, label, v, setV, err]) => (
+          <div key={id}>
+            <label htmlFor={id} className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</label>
+            <input
+              id={id}
+              type="number"
+              inputMode="decimal"
+              min="0"
+              max="100"
+              step="0.01"
+              value={v}
+              onChange={(e) => setV(e.target.value)}
+              placeholder="e.g. 5.00"
+              aria-invalid={Boolean(err)}
+              className={`h-11 w-40 rounded-xl border bg-background px-3 text-sm ${err ? "border-destructive" : "border-border"}`}
+            />
+            {err && <p className="mt-1 text-xs text-destructive">{err}</p>}
+          </div>
+        ))}
+        <p className="text-sm text-muted-foreground md:pt-6">
+          {selectedRows.length === 0
+            ? "Select meters below to configure their Commission and VAT."
+            : `${selectedRows.length} meter(s) selected — leave a box empty to keep its current value.`}
+        </p>
+        <button
+          type="button"
+          disabled={!commReady || commissionMutation.isPending}
+          onClick={() => commissionMutation.mutate()}
+          className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 md:mt-5"
+        >
+          {commissionMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <BadgeDollarSign className="size-4" />}
+          Apply Commission &amp; VAT to {selectedRows.length || 0}
+        </button>
+      </div>
+
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[46rem] text-sm">
@@ -595,19 +672,21 @@ function PriceManagementPage() {
                 <th className="px-4 py-3">Unit</th>
                 <th className="px-4 py-3 text-right">Price / unit</th>
                 <th className="px-4 py-3 text-right">New price</th>
+                <th className="px-4 py-3 text-right">Commission</th>
+                <th className="px-4 py-3 text-right">VAT on Comm.</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                     <Loader2 className="mx-auto size-5 animate-spin" />
                   </td>
                 </tr>
               )}
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                     No meters match these filters.
                   </td>
                 </tr>
@@ -653,6 +732,8 @@ function PriceManagementPage() {
                         </span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-right">{pct(m.commission_percentage, defaults?.commission_percentage)}</td>
+                    <td className="px-4 py-3 text-right">{pct(m.vat_on_commission_percentage, defaults?.vat_on_commission_percentage)}</td>
                   </tr>
                 );
               })}

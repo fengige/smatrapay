@@ -37,6 +37,9 @@ export type MeterRow = {
   type: MeterType | string;
   initial_reading: number;
   price_per_unit: number;
+  /** Per-meter override; null means the default rate applies. */
+  commission_percentage: number | null;
+  vat_on_commission_percentage: number | null;
   status: string;
   installation_status: string | null;
   sgc: number | null;
@@ -49,7 +52,7 @@ export type MeterRow = {
 };
 
 const METER_COLUMNS =
-  "id, vendor_id, supplier_id, vending_software_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
+  "id, vendor_id, supplier_id, vending_software_id, landlord_id, agent_id, unit_id, meter_number, serial_number, type, initial_reading, price_per_unit, commission_percentage, vat_on_commission_percentage, status, installation_status, sgc, krn, ti, ea, ken, created_at, updated_at";
 
 const intOrNull = z
   .union([z.number().int(), z.string().trim()])
@@ -269,6 +272,8 @@ export const listMeters = createServerFn({ method: "GET" })
         type: (r.type ?? "").toLowerCase(),
         initial_reading: Number(r.initial_reading ?? 0),
         price_per_unit: Number(r.price_per_unit ?? 0),
+        commission_percentage: (r as any).commission_percentage == null ? null : Number((r as any).commission_percentage),
+        vat_on_commission_percentage: (r as any).vat_on_commission_percentage == null ? null : Number((r as any).vat_on_commission_percentage),
         status: (r.status ?? "active").toLowerCase(),
         installation_status: (r as { installation_status?: string }).installation_status ?? null,
         sgc: r.sgc ?? null,

@@ -396,3 +396,45 @@ export const saveCommissionSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Effective rates for a meter: its own values, else the default rates. */
+export function effectiveCommissionRates(
+  meter: { commission_percentage: number | null; vat_on_commission_percentage: number | null },
+  defaults: { commission_percentage: number; vat_on_commission_percentage: number },
+) {
+  return {
+    commission_percentage: meter.commission_percentage ?? defaults.commission_percentage,
+    vat_on_commission_percentage: meter.vat_on_commission_percentage ?? defaults.vat_on_commission_percentage,
+  };
+}
+
+export const meterCommissionInput = z
+  .object({
+    ids: z.array(uuid).min(1, "Select at least one meter").max(1000),
+    commission_percentage: percentField.nullable().optional(),
+    vat_on_commission_percentage: percentField.nullable().optional(),
+  })
+  .refine((d) => d.commission_percentage !== undefined || d.vat_on_commission_percentage !== undefined, {
+    message: "Enter a Commission or VAT value",
+  });
+
+/** Set Commission (%) and/or VAT on Commission (%) on the selected meters. */
+export const bulkSetMeterCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => meterCommissionInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const patch: Record<string, number | null> = {};
+    if (data.commission_percentage !== undefined)
+      patch.commission_percentage = data.commission_percentage === null ? null : round2(data.commission_percentage);
+    if (data.vat_on_commission_percentage !== undefined)
+      patch.vat_on_commission_percentage =
+        data.vat_on_commission_percentage === null ? null : round2(data.vat_on_commission_percentage);
+    const { data: rows, error } = await (context.supabase as any)
+      .from("meters")
+      .update(patch)
+      .in("id", data.ids)
+      .select("id");
+    if (error) throw new Error(error.message);
+    return { updated: (rows ?? []).length };
+  });
