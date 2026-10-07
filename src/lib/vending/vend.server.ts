@@ -80,7 +80,7 @@ export async function vendMeterToken(
   // 1. Validate the meter (through the caller's RLS-scoped client).
   const { data: meter, error: meterErr } = await supabase
     .from("meters")
-    .select("id, meter_number, status, supplier_id, vending_software_id, price_per_unit")
+    .select("id, meter_number, status, supplier_id, vending_software_id, price_per_unit, commission_percentage, vat_on_commission_percentage")
     .eq("id", p.meterId)
     .maybeSingle();
   if (meterErr) throw new Error(meterErr.message);
@@ -117,11 +117,37 @@ export async function vendMeterToken(
     .maybeSingle();
   if (!software) throw new Error(NO_SOFTWARE_MESSAGE);
 
+  // 3b. Commission + VAT on commission are deducted from the payment before
+  // the token is generated. Rates: the meter's own values, else the defaults.
+  let breakdown: import("@/lib/commission").CommissionBreakdown | null = null;
+  let tokenAmount = p.amount;
+  let tokenUnits = p.units;
+  if (p.action === "credit") {
+    const { deductCommission, grossUpForUnits } = await import("@/lib/commission");
+    const { data: defaults } = await supabaseAdmin
+      .from("pricing_settings")
+      .select("commission_percentage, vat_on_commission_percentage")
+      .maybeSingle();
+    const m = meter as any;
+    const cPct = Number(m.commission_percentage ?? (defaults as any)?.commission_percentage ?? 0);
+    const vPct = Number(m.vat_on_commission_percentage ?? (defaults as any)?.vat_on_commission_percentage ?? 0);
+    const price = Number(m.price_per_unit ?? 0);
+    if (p.vendByUnit) {
+      breakdown = grossUpForUnits(Math.round(p.units * price * 100) / 100, cPct, vPct);
+    } else {
+      breakdown = deductCommission(p.amount, cPct, vPct);
+      if (breakdown.net_amount <= 0)
+        throw new Error("The amount is too small to cover the commission and VAT. Enter a larger amount.");
+      tokenAmount = breakdown.net_amount;
+      tokenUnits = price > 0 ? Math.round((tokenAmount / price) * 10000) / 10000 : p.units;
+    }
+  }
+
   const integration = getVendingIntegration((software as any).code ?? (software as any).name);
 
   let token = localToken();
-  let units = p.units;
-  let amount = p.amount;
+  let units = tokenUnits;
+  let netAmount = tokenAmount;
   let provider: string | null = null;
   let providerReference: string | null = null;
   let metadata: Record<string, unknown> | null = null;
@@ -172,8 +198,8 @@ export async function vendMeterToken(
       {
         action: p.action,
         meter_number: meter.meter_number,
-        amount: p.amount,
-        units: p.units,
+        amount: tokenAmount,
+        units: tokenUnits,
         vend_by_unit: !!p.vendByUnit,
         price_per_unit: Number((meter as any).price_per_unit ?? 0),
       },
@@ -188,7 +214,7 @@ export async function vendMeterToken(
     if (outcome.ok === true) {
       token = outcome.token;
       if (outcome.units !== null) units = outcome.units;
-      if (outcome.amount !== null) amount = outcome.amount;
+      if (outcome.amount !== null) netAmount = outcome.amount;
       provider = integration.code;
       providerReference = outcome.provider_reference;
       metadata = outcome.metadata;
@@ -204,7 +230,13 @@ export async function vendMeterToken(
     action: p.action,
     token,
     units,
-    amount,
+    // amount = what the customer paid; net_amount = the value put on the token.
+    amount: breakdown ? breakdown.gross_amount : netAmount,
+    net_amount: breakdown ? netAmount : null,
+    commission_percentage: breakdown?.commission_percentage ?? null,
+    commission_amount: breakdown?.commission_amount ?? null,
+    vat_on_commission_percentage: breakdown?.vat_on_commission_percentage ?? null,
+    vat_on_commission_amount: breakdown?.vat_on_commission_amount ?? null,
     reference: p.reference?.trim() || null,
     customer_phone: p.customerPhone?.trim() || null,
     sms_requested: !!p.smsRequested,
