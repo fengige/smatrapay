@@ -177,37 +177,33 @@ export const sendVendorApplicationMessage = createServerFn({ method: "POST" })
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI assistant is not configured");
 
-    const { streamText, Output, NoObjectGeneratedError } = await import("ai");
-    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-    const provider = createLovableResponsesProvider(apiKey);
-
     let reply = "";
     let details = application.details;
     let ready = false;
 
-    try {
-      const result = streamText({
-        model: provider.responses("openai/gpt-6-astra"),
-        system: SYSTEM_PROMPT,
-        output: Output.object({ schema: replySchema }),
+    // Plain fetch to the AI gateway (the SDK pulls in Node-only code that crashes the live site).
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, "Lovable-API-Key": apiKey },
+      body: JSON.stringify({
+        model: "openai/gpt-6-astra",
+        response_format: { type: "json_object" },
         messages: [
           {
-            role: "user" as const,
-            content: `Details collected so far (JSON): ${JSON.stringify(application.details)}`,
+            role: "system",
+            content: `${SYSTEM_PROMPT}\n\nRespond ONLY with a JSON object of shape {"reply": string, "ready": boolean, "details": {"first_name","middle_name","last_name","email","phone","id_number","address"} (strings or null)}.`,
           },
+          { role: "user", content: `Details collected so far (JSON): ${JSON.stringify(application.details)}` },
           ...history.map((m) => ({ role: m.role, content: m.content })),
         ],
-        providerOptions: {
-          openai: {
-            store: false,
-            forceReasoning: true,
-            reasoningEffort: "low",
-            reasoningSummary: "auto",
-            include: ["reasoning.encrypted_content"],
-          },
-        },
-      });
-      const output = await result.output;
+      }),
+    });
+    if (res.status === 429) throw new Error("The assistant is busy right now. Try again shortly.");
+    if (res.status === 402) throw new Error("AI credits are exhausted. Add credits to continue using the assistant.");
+    if (!res.ok) throw new Error("The assistant is unavailable right now.");
+    try {
+      const body: any = await res.json();
+      const output = replySchema.parse(JSON.parse(body?.choices?.[0]?.message?.content ?? ""));
       reply = output.reply;
       ready = output.ready;
       details = {
@@ -219,15 +215,8 @@ export const sendVendorApplicationMessage = createServerFn({ method: "POST" })
         id_number: output.details.id_number ?? "",
         address: output.details.address ?? "",
       };
-    } catch (e: any) {
-      if (NoObjectGeneratedError.isInstance(e)) {
-        throw new Error("The assistant could not read that reply. Please rephrase and try again.");
-      }
-      const status = e?.statusCode ?? e?.status;
-      if (status === 429) throw new Error("The assistant is busy right now. Try again shortly.");
-      if (status === 402)
-        throw new Error("AI credits are exhausted. Add credits to continue using the assistant.");
-      throw new Error(e?.message ?? "The assistant is unavailable right now.");
+    } catch {
+      throw new Error("The assistant could not read that reply. Please rephrase and try again.");
     }
 
     const messages: ApplicationMessage[] = [
