@@ -1162,6 +1162,8 @@ export const getMeter = createServerFn({ method: "GET" })
       type: (m.type ?? "").toLowerCase(),
       initial_reading: Number(m.initial_reading ?? 0),
       price_per_unit: Number(m.price_per_unit ?? 0),
+      commission_percentage: (m as any).commission_percentage == null ? null : Number((m as any).commission_percentage),
+      vat_on_commission_percentage: (m as any).vat_on_commission_percentage == null ? null : Number((m as any).vat_on_commission_percentage),
       status: (m.status ?? "active").toLowerCase(),
       installation_status: (m as { installation_status?: string }).installation_status ?? null,
       sgc: m.sgc ?? null,
