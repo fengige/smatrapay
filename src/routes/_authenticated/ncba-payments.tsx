@@ -32,32 +32,6 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 const kes = (n: number) => `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** The published endpoint NCBA should deliver Pay Bill notifications to. */
-const NCBA_ENDPOINT_URL = "https://apps.smatrapay.com/api/public/ncba/notification";
-
-function NcbaEndpointCard() {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
-      <div className="min-w-0">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">NCBA Endpoint URL</div>
-        <div className="mt-1 break-all font-mono text-sm">{NCBA_ENDPOINT_URL}</div>
-      </div>
-      <button
-        type="button"
-        onClick={() => {
-          void navigator.clipboard.writeText(NCBA_ENDPOINT_URL);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }}
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent/10"
-      >
-        {copied ? "Copied" : "Copy URL"}
-      </button>
-    </div>
-  );
-}
-
 function NcbaPaymentsPage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"problems" | "all" | "completed">("problems");
@@ -109,7 +83,6 @@ function NcbaPaymentsPage() {
         </div>
       }
     >
-      <NcbaEndpointCard />
       <div className="mb-4 flex gap-2">
         {([["problems", "Needs attention"], ["completed", "Completed"], ["all", "All"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => setFilter(k)}
