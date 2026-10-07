@@ -426,9 +426,9 @@ export const bulkSetMeterCommission = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const patch: Record<string, number | null> = {};
     if (data.commission_percentage !== undefined)
-      patch.commission_percentage = data.commission_percentage === null ? null : round2(data.commission_percentage);
+      patch["commission_percentage"] = data.commission_percentage === null ? null : round2(data.commission_percentage);
     if (data.vat_on_commission_percentage !== undefined)
-      patch.vat_on_commission_percentage =
+      patch["vat_on_commission_percentage"] =
         data.vat_on_commission_percentage === null ? null : round2(data.vat_on_commission_percentage);
     const { data: rows, error } = await (context.supabase as any)
       .from("meters")
