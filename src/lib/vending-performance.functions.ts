@@ -131,7 +131,7 @@ export const getVendingPerformance = createServerFn({ method: "POST" })
     const toGroups = (b: Bucket): VendingFailureGroup[] =>
       [...b.failureMap.entries()]
         .map(([key, count]) => {
-          const [operation, error_code] = key.split("||");
+          const [operation = "unknown", error_code = "unknown"] = key.split("||");
           return { operation, error_code, count };
         })
         .sort((a, z) => z.count - a.count);
@@ -220,7 +220,7 @@ export const getVendingPerformance = createServerFn({ method: "POST" })
       }
     const failure_breakdown: VendingFailureGroup[] = [...totalFailureMap.entries()]
       .map(([key, count]) => {
-        const [operation, error_code] = key.split("||");
+        const [operation = "unknown", error_code = "unknown"] = key.split("||");
         return { operation, error_code, count };
       })
       .sort((a, z) => z.count - a.count);
