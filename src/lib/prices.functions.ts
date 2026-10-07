@@ -308,3 +308,91 @@ export const reviewPriceChangeRequests = createServerFn({ method: "POST" })
 
     return { applied, rejected: data.decision === "rejected" ? list.length : 0 };
   });
+
+/* ---------- Commission & VAT on Commission ---------- */
+
+export const percentField = z
+  .number({ message: "Enter a number" })
+  .finite("Enter a number")
+  .min(0, "Percentage cannot be negative")
+  .max(100, "Percentage cannot be more than 100%");
+
+export const commissionInput = z.object({
+  commission_percentage: percentField,
+  vat_on_commission_percentage: percentField,
+});
+
+export type CommissionSettings = {
+  commission_percentage: number;
+  vat_on_commission_percentage: number;
+  updated_at: string | null;
+  updated_by_name: string | null;
+  history: {
+    id: string;
+    field: "commission_percentage" | "vat_on_commission_percentage";
+    previous_value: number | null;
+    new_value: number | null;
+    changed_by_name: string | null;
+    created_at: string;
+  }[];
+};
+
+/** Commission split for downstream calculations: commission and the VAT charged on it. */
+export function computeCommission(amount: number, commissionPct: number, vatPct: number) {
+  const commission = round2((amount * commissionPct) / 100);
+  const vat = round2((commission * vatPct) / 100);
+  return { commission, vat_on_commission: vat, total: round2(commission + vat) };
+}
+
+export const getCommissionSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CommissionSettings> => {
+    await assertAdmin(context as never);
+    const supabase = context.supabase as any;
+    const { data: row, error } = await supabase
+      .from("pricing_settings")
+      .select("commission_percentage, vat_on_commission_percentage, updated_at, updated_by")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const { data: hist } = await supabase
+      .from("pricing_settings_history")
+      .select("id, field, previous_value, new_value, changed_by, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const ids = [...new Set([row?.updated_by, ...(hist ?? []).map((h: any) => h.changed_by)].filter(Boolean))];
+    const names = new Map<string, string>();
+    if (ids.length) {
+      const { data: users } = await supabase.from("users").select("id, name, email").in("id", ids);
+      for (const u of users ?? []) names.set(u.id, u.name || u.email);
+    }
+    return {
+      commission_percentage: Number(row?.commission_percentage ?? 0),
+      vat_on_commission_percentage: Number(row?.vat_on_commission_percentage ?? 0),
+      updated_at: row?.updated_at ?? null,
+      updated_by_name: row?.updated_by ? (names.get(row.updated_by) ?? null) : null,
+      history: (hist ?? []).map((h: any) => ({
+        id: h.id,
+        field: h.field,
+        previous_value: h.previous_value === null ? null : Number(h.previous_value),
+        new_value: h.new_value === null ? null : Number(h.new_value),
+        changed_by_name: h.changed_by ? (names.get(h.changed_by) ?? null) : null,
+        created_at: h.created_at,
+      })),
+    };
+  });
+
+export const saveCommissionSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => commissionInput.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { error } = await (context.supabase as any)
+      .from("pricing_settings")
+      .upsert({
+        id: true,
+        commission_percentage: round2(data.commission_percentage),
+        vat_on_commission_percentage: round2(data.vat_on_commission_percentage),
+      });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
