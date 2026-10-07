@@ -209,7 +209,7 @@ export async function vendMeterToken(
 
     if (outcome.ok === false) {
       // A rejected or unconfirmed call never becomes a successful token.
-      throw new Error(outcome.message);
+      throw Object.assign(new Error(outcome.message), { vendState: outcome.state, vendCode: outcome.error_code });
     }
     if (outcome.ok === true) {
       token = outcome.token;
