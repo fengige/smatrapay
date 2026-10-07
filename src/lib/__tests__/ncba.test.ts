@@ -24,3 +24,13 @@ describe("NCBA notification", () => {
     expect([b.commission_amount, b.vat_on_commission_amount, b.net_amount]).toEqual([250, 40, 4710]);
   });
 });
+
+import { nextQueueState } from "../ncba.server";
+describe("NCBA retry queue", () => {
+  const now = Date.parse("2026-10-07T10:00:00Z");
+  it("first vending rejection retries in 1 minute", () => {
+    expect(nextQueueState("failed", 0, now)).toEqual({ status: "retry_pending", next_retry_at: "2026-10-07T10:01:00.000Z" });
+  });
+  it("a timeout is never auto-retried", () => expect(nextQueueState("review", 0, now).status).toBe("needs_review"));
+  it("after 5 automatic retries it stops and waits for an admin", () => expect(nextQueueState("failed", 5, now).status).toBe("failed"));
+});

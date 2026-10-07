@@ -97,19 +97,55 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
     await db.from("ncba_notifications").update({ status: "failed", error_code: code, error_message: message, ...extra }).eq("id", rowId);
   };
 
-  // 2. Meter = Narrative.
+  const result = await vendNcbaNotification(rowId);
+  // Drain a few due queue items on each notification (bounded, no extra traffic needed).
+  try { await processDueNcbaRetries(3); } catch { /* queue work never affects this payment */ }
+  // A recorded payment is always acknowledged; failures stay queued for retry.
+  if (result.status === "completed") return ack("0", "Success");
+  return ack("0", "Payment recorded — token generation pending");
+}
+
+/** Back-off between automatic retries; after the last one an admin must retry. */
+export const RETRY_DELAYS_MIN = [1, 5, 15, 60, 240];
+
+/** Only clear rejections are auto-retried; a timeout may have vended, so it needs review. */
+export function nextQueueState(vendState: string | undefined, autoRetries: number, now = Date.now()) {
+  if (vendState === "review") return { status: "needs_review", next_retry_at: null };
+  const delay = RETRY_DELAYS_MIN[autoRetries];
+  if (delay === undefined) return { status: "failed", next_retry_at: null };
+  return { status: "retry_pending", next_retry_at: new Date(now + delay * 60_000).toISOString() };
+}
+
+/**
+ * Vend the token for a stored notification. Safe to call repeatedly:
+ * the TransID-based idempotency key means a completed vend is never repeated.
+ */
+export async function vendNcbaNotification(
+  rowId: string,
+  opts: { manual?: boolean; actorId?: string | null } = {},
+): Promise<{ status: string; message: string | null }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as any;
+  const { data: n } = await db.from("ncba_notifications").select("*").eq("id", rowId).maybeSingle();
+  if (!n) return { status: "missing", message: "Notification not found" };
+  if (n.status === "completed") return { status: "completed", message: null };
+
+  await db
+    .from("ncba_notifications")
+    .update({ status: "processing", ...(opts.manual ? { last_retry_by: opts.actorId ?? null, attempts: (n.attempts ?? 0) + 1 } : {}) })
+    .eq("id", rowId);
+  const fail = async (status: string, code: string, message: string, extra: Record<string, unknown> = {}) => {
+    await db.from("ncba_notifications").update({ status, error_code: code, error_message: message, ...extra }).eq("id", rowId);
+    return { status, message };
+  };
+
   const { data: meter } = await db
     .from("meters")
     .select("id, meter_number, status")
-    .eq("meter_number", p.Narrative)
+    .eq("meter_number", n.narrative)
     .maybeSingle();
-  if (!meter) {
-    await fail("METER_NOT_FOUND", `Meter ${p.Narrative} was not found.`);
-    // Payment is recorded; acknowledge so NCBA doesn't retry an unfixable request.
-    return ack("0", "Payment recorded — meter not found");
-  }
+  if (!meter) return fail("failed", "METER_NOT_FOUND", `Meter ${n.narrative} was not found.`, { next_retry_at: null });
 
-  // 3. Shared token flow: commission + VAT deduction, units, vending software, persistence.
   const { vendMeterToken } = await import("@/lib/vending/vend.server");
   let tokenRow: any;
   try {
@@ -117,34 +153,44 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
       meterId: meter.id,
       action: "credit",
       units: 0,
-      amount,
+      amount: Number(n.trans_amount),
       vendByUnit: false,
-      reference: p.TransID,
-      customerPhone: p.Mobile || null,
-      smsRequested: !!p.Mobile,
+      reference: n.trans_id,
+      customerPhone: n.mobile || null,
+      smsRequested: !!n.mobile,
       expiresInDays: 30,
-      actorId: null,
-      requestId: `ncba:${p.TransID}`,
+      actorId: opts.actorId ?? null,
+      requestId: `ncba:${n.trans_id}`,
     });
     tokenRow = row;
   } catch (e) {
-    const message = (e as Error).message || "Token generation failed";
-    await fail("TOKEN_GENERATION_FAILED", message, { meter_id: meter.id });
-    // Money was received; keep it for admin retry. Acknowledge to stop blind retries.
-    return ack("0", "Payment recorded — token generation pending");
+    const err = e as Error & { vendState?: string; vendCode?: string };
+    const message = err.message || "Token generation failed";
+    // Configuration problems (inactive meter, no software, no settings) aren't vending-API failures.
+    const isApiFailure = !!err.vendState;
+    const autoRetries = (n.auto_retry_count ?? 0) + (opts.manual ? 0 : n.status === "retry_pending" ? 1 : 0);
+    const q = isApiFailure ? nextQueueState(err.vendState, autoRetries) : { status: "failed", next_retry_at: null };
+    return fail(q.status, err.vendCode ?? "TOKEN_GENERATION_FAILED", message, {
+      meter_id: meter.id,
+      next_retry_at: q.next_retry_at,
+      auto_retry_count: autoRetries,
+    });
   }
 
-  // 4. Mark completed before SMS so an SMS problem can never undo the sale.
+  // Completed before SMS so an SMS problem can never undo the sale.
   await db
     .from("ncba_notifications")
-    .update({ status: "completed", meter_id: meter.id, token_id: tokenRow.id, processed_at: new Date().toISOString() })
+    .update({
+      status: "completed", meter_id: meter.id, token_id: tokenRow.id, processed_at: new Date().toISOString(),
+      error_code: null, error_message: null, next_retry_at: null,
+    })
     .eq("id", rowId);
 
   let smsStatus = "Skipped - No Mobile Number";
-  if (p.Mobile) {
+  if (n.mobile) {
     const { sendTokenReceiptSms } = await import("@/lib/sms-receipt.server");
     try {
-      const sms = await sendTokenReceiptSms(db, { tokenId: tokenRow.id, phone: p.Mobile, actorId: null });
+      const sms = await sendTokenReceiptSms(db, { tokenId: tokenRow.id, phone: n.mobile, actorId: opts.actorId ?? null });
       smsStatus =
         sms.status === "sent"
           ? "Submitted"
@@ -156,6 +202,20 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
     }
   }
   await db.from("ncba_notifications").update({ sms_status: smsStatus }).eq("id", rowId);
+  return { status: "completed", message: null };
+}
 
-  return ack("0", "Success");
+/** Process queued retries that are due. Bounded so one call never runs long. */
+export async function processDueNcbaRetries(limit = 5) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: due } = await (supabaseAdmin as any)
+    .from("ncba_notifications")
+    .select("id")
+    .eq("status", "retry_pending")
+    .lte("next_retry_at", new Date().toISOString())
+    .order("next_retry_at")
+    .limit(limit);
+  const results: { id: string; status: string }[] = [];
+  for (const r of due ?? []) results.push({ id: r.id, ...(await vendNcbaNotification(r.id)) });
+  return results;
 }

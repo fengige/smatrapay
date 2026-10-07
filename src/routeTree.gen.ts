@@ -19,6 +19,7 @@ import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedMeterDashboardRouteImport } from './routes/_authenticated/meter-dashboard'
+import { Route as AuthenticatedNcbaPaymentsRouteImport } from './routes/_authenticated/ncba-payments'
 import { Route as AuthenticatedPaymentHistoryRouteImport } from './routes/_authenticated/payment-history'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
 import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authenticated/pos-shift-report'
@@ -171,6 +172,12 @@ const AuthenticatedMeterDashboardRoute =
   AuthenticatedMeterDashboardRouteImport.update({
     id: '/meter-dashboard',
     path: '/meter-dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNcbaPaymentsRoute =
+  AuthenticatedNcbaPaymentsRouteImport.update({
+    id: '/ncba-payments',
+    path: '/ncba-payments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPaymentHistoryRoute =
@@ -781,6 +788,7 @@ export interface FileRoutesByFullPath {
   '/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/ncba-payments': typeof AuthenticatedNcbaPaymentsRoute
   '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -891,6 +899,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/ncba-payments': typeof AuthenticatedNcbaPaymentsRoute
   '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -1001,6 +1010,7 @@ export interface FileRoutesById {
   '/_authenticated/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/_authenticated/ncba-payments': typeof AuthenticatedNcbaPaymentsRoute
   '/_authenticated/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -1116,6 +1126,7 @@ export interface FileRouteTypes {
     | '/configurations'
     | '/landlords'
     | '/meter-dashboard'
+    | '/ncba-payments'
     | '/payment-history'
     | '/pos'
     | '/pos-shift-report'
@@ -1226,6 +1237,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/meter-dashboard'
+    | '/ncba-payments'
     | '/payment-history'
     | '/pos'
     | '/pos-shift-report'
@@ -1335,6 +1347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations'
     | '/_authenticated/landlords'
     | '/_authenticated/meter-dashboard'
+    | '/_authenticated/ncba-payments'
     | '/_authenticated/payment-history'
     | '/_authenticated/pos'
     | '/_authenticated/pos-shift-report'
@@ -1527,6 +1540,13 @@ declare module '@tanstack/react-router' {
       path: '/meter-dashboard'
       fullPath: '/meter-dashboard'
       preLoaderRoute: typeof AuthenticatedMeterDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ncba-payments': {
+      id: '/_authenticated/ncba-payments'
+      path: '/ncba-payments'
+      fullPath: '/ncba-payments'
+      preLoaderRoute: typeof AuthenticatedNcbaPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/payment-history': {
@@ -2404,6 +2424,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedMeterDashboardRoute: typeof AuthenticatedMeterDashboardRoute
+  AuthenticatedNcbaPaymentsRoute: typeof AuthenticatedNcbaPaymentsRoute
   AuthenticatedPaymentHistoryRoute: typeof AuthenticatedPaymentHistoryRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedPosShiftReportRoute: typeof AuthenticatedPosShiftReportRoute
@@ -2473,6 +2494,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedConfigurationsRouteWithChildren,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedMeterDashboardRoute: AuthenticatedMeterDashboardRoute,
+  AuthenticatedNcbaPaymentsRoute: AuthenticatedNcbaPaymentsRoute,
   AuthenticatedPaymentHistoryRoute: AuthenticatedPaymentHistoryRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedPosShiftReportRoute: AuthenticatedPosShiftReportRoute,

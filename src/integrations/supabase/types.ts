@@ -1067,6 +1067,7 @@ export type Database = {
       ncba_notifications: {
         Row: {
           attempts: number
+          auto_retry_count: number
           bill_ref_number: string | null
           business_short_code: string | null
           created_at: string
@@ -1074,10 +1075,12 @@ export type Database = {
           error_message: string | null
           ft_ref: string | null
           id: string
+          last_retry_by: string | null
           meter_id: string | null
           meter_number: string | null
           mobile: string | null
           narrative: string | null
+          next_retry_at: string | null
           payer_name: string | null
           processed_at: string | null
           sms_status: string | null
@@ -1091,6 +1094,7 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          auto_retry_count?: number
           bill_ref_number?: string | null
           business_short_code?: string | null
           created_at?: string
@@ -1098,10 +1102,12 @@ export type Database = {
           error_message?: string | null
           ft_ref?: string | null
           id?: string
+          last_retry_by?: string | null
           meter_id?: string | null
           meter_number?: string | null
           mobile?: string | null
           narrative?: string | null
+          next_retry_at?: string | null
           payer_name?: string | null
           processed_at?: string | null
           sms_status?: string | null
@@ -1115,6 +1121,7 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          auto_retry_count?: number
           bill_ref_number?: string | null
           business_short_code?: string | null
           created_at?: string
@@ -1122,10 +1129,12 @@ export type Database = {
           error_message?: string | null
           ft_ref?: string | null
           id?: string
+          last_retry_by?: string | null
           meter_id?: string | null
           meter_number?: string | null
           mobile?: string | null
           narrative?: string | null
+          next_retry_at?: string | null
           payer_name?: string | null
           processed_at?: string | null
           sms_status?: string | null
