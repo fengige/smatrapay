@@ -60,7 +60,7 @@ async function writeLog(
     vending_software_id: string | null;
     software_code: string | null;
     supplier_id: string | null;
-    actor_id: string;
+    actor_id: string | null;
   },
   log: VendingCallLog,
 ) {
