@@ -113,6 +113,7 @@ import { Route as AuthenticatedVendorZonesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedVendorZonesZoneIdRouteImport } from './routes/_authenticated/vendor/zones.$zoneId'
 import { Route as AuthenticatedVendorsIdIndexRouteImport } from './routes/_authenticated/vendors.$id.index'
 import { Route as AuthenticatedVendorsIdEditRouteImport } from './routes/_authenticated/vendors.$id.edit'
+import { Route as ApiPublicHooksNcbaRetryDrainRouteImport } from './routes/api/public/hooks/ncba-retry-drain'
 import { Route as ApiPublicMpesaB2cResultRouteImport } from './routes/api/public/mpesa/b2c-result'
 import { Route as ApiPublicMpesaB2cTimeoutRouteImport } from './routes/api/public/mpesa/b2c-timeout'
 import { Route as ApiPublicMpesaC2bConfirmationRouteImport } from './routes/api/public/mpesa/c2b-confirmation'
@@ -726,6 +727,12 @@ const AuthenticatedVendorsIdEditRoute =
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedVendorsRoute,
   } as any)
+const ApiPublicHooksNcbaRetryDrainRoute =
+  ApiPublicHooksNcbaRetryDrainRouteImport.update({
+    id: '/api/public/hooks/ncba-retry-drain',
+    path: '/api/public/hooks/ncba-retry-drain',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMpesaB2cResultRoute = ApiPublicMpesaB2cResultRouteImport.update({
   id: '/api/public/mpesa/b2c-result',
   path: '/api/public/mpesa/b2c-result',
@@ -869,6 +876,7 @@ export interface FileRoutesByFullPath {
   '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/hooks/ncba-retry-drain': typeof ApiPublicHooksNcbaRetryDrainRoute
   '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
   '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
@@ -975,6 +983,7 @@ export interface FileRoutesByTo {
   '/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
   '/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/hooks/ncba-retry-drain': typeof ApiPublicHooksNcbaRetryDrainRoute
   '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
   '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
@@ -1091,6 +1100,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/teams/$teamId': typeof AuthenticatedVendorTeamsTeamIdRoute
   '/_authenticated/vendor/zones/$zoneId': typeof AuthenticatedVendorZonesZoneIdRoute
   '/_authenticated/vendors/$id/edit': typeof AuthenticatedVendorsIdEditRoute
+  '/api/public/hooks/ncba-retry-drain': typeof ApiPublicHooksNcbaRetryDrainRoute
   '/api/public/mpesa/b2c-result': typeof ApiPublicMpesaB2cResultRoute
   '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
@@ -1207,6 +1217,7 @@ export interface FileRouteTypes {
     | '/vendor/teams/$teamId'
     | '/vendor/zones/$zoneId'
     | '/vendors/$id/edit'
+    | '/api/public/hooks/ncba-retry-drain'
     | '/api/public/mpesa/b2c-result'
     | '/api/public/mpesa/b2c-timeout'
     | '/api/public/mpesa/c2b-confirmation'
@@ -1313,6 +1324,7 @@ export interface FileRouteTypes {
     | '/vendor/teams/$teamId'
     | '/vendor/zones/$zoneId'
     | '/vendors/$id/edit'
+    | '/api/public/hooks/ncba-retry-drain'
     | '/api/public/mpesa/b2c-result'
     | '/api/public/mpesa/b2c-timeout'
     | '/api/public/mpesa/c2b-confirmation'
@@ -1428,6 +1440,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/teams/$teamId'
     | '/_authenticated/vendor/zones/$zoneId'
     | '/_authenticated/vendors/$id/edit'
+    | '/api/public/hooks/ncba-retry-drain'
     | '/api/public/mpesa/b2c-result'
     | '/api/public/mpesa/b2c-timeout'
     | '/api/public/mpesa/c2b-confirmation'
@@ -1459,6 +1472,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicHooksNcbaRetryDrainRoute: typeof ApiPublicHooksNcbaRetryDrainRoute
   ApiPublicMpesaB2cResultRoute: typeof ApiPublicMpesaB2cResultRoute
   ApiPublicMpesaB2cTimeoutRoute: typeof ApiPublicMpesaB2cTimeoutRoute
   ApiPublicMpesaC2bConfirmationRoute: typeof ApiPublicMpesaC2bConfirmationRoute
@@ -2200,6 +2214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorsIdEditRouteImport
       parentRoute: typeof AuthenticatedVendorsRoute
     }
+    '/api/public/hooks/ncba-retry-drain': {
+      id: '/api/public/hooks/ncba-retry-drain'
+      path: '/api/public/hooks/ncba-retry-drain'
+      fullPath: '/api/public/hooks/ncba-retry-drain'
+      preLoaderRoute: typeof ApiPublicHooksNcbaRetryDrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mpesa/b2c-result': {
       id: '/api/public/mpesa/b2c-result'
       path: '/api/public/mpesa/b2c-result'
@@ -2586,6 +2607,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiPublicHooksNcbaRetryDrainRoute: ApiPublicHooksNcbaRetryDrainRoute,
   ApiPublicMpesaB2cResultRoute: ApiPublicMpesaB2cResultRoute,
   ApiPublicMpesaB2cTimeoutRoute: ApiPublicMpesaB2cTimeoutRoute,
   ApiPublicMpesaC2bConfirmationRoute: ApiPublicMpesaC2bConfirmationRoute,
