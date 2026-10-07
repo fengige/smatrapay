@@ -1,3 +1,4 @@
+import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -236,7 +237,7 @@ export type IssuedToken = {
   provider: string | null;
   provider_reference: string | null;
   /** Commission/VAT deducted from the payment; null on older or non-credit tokens. */
-  commission: { net_amount: number; commission_percentage: number; commission_amount: number; vat_on_commission_percentage: number; vat_on_commission_amount: number } | null;
+  commission: CommissionInfo | null;
   created_at: string;
   /** Present when a receipt SMS was attempted in this request. */
   sms?: import("@/lib/sms-receipt.server").ReceiptSmsResult;
@@ -327,16 +328,7 @@ async function serialize(supabase: any, rows: any[]): Promise<IssuedToken[]> {
       : null,
     provider: r.provider ?? null,
     provider_reference: r.provider_reference ?? null,
-    commission:
-      r.net_amount == null
-        ? null
-        : {
-            net_amount: Number(r.net_amount),
-            commission_percentage: Number(r.commission_percentage ?? 0),
-            commission_amount: Number(r.commission_amount ?? 0),
-            vat_on_commission_percentage: Number(r.vat_on_commission_percentage ?? 0),
-            vat_on_commission_amount: Number(r.vat_on_commission_amount ?? 0),
-          },
+    commission: commissionFromRow(r),
     created_at: r.created_at,
   }));
 }

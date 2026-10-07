@@ -33,3 +33,23 @@ export function grossUpForUnits(net: number, commissionPct: number, vatPct: numb
   const drift = r2(b.net_amount - net);
   return { ...b, commission_amount: r2(b.commission_amount + drift), net_amount: r2(net) };
 }
+
+/** Breakdown stored on a token sale; null for older sales and non-credit actions. */
+export type CommissionInfo = {
+  net_amount: number;
+  commission_percentage: number;
+  commission_amount: number;
+  vat_on_commission_percentage: number;
+  vat_on_commission_amount: number;
+};
+
+export function commissionFromRow(r: any): CommissionInfo | null {
+  if (r?.net_amount == null) return null;
+  return {
+    net_amount: Number(r.net_amount),
+    commission_percentage: Number(r.commission_percentage ?? 0),
+    commission_amount: Number(r.commission_amount ?? 0),
+    vat_on_commission_percentage: Number(r.vat_on_commission_percentage ?? 0),
+    vat_on_commission_amount: Number(r.vat_on_commission_amount ?? 0),
+  };
+}

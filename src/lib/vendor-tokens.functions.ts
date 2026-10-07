@@ -1,3 +1,4 @@
+import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -37,6 +38,8 @@ export type VendorIssuedToken = {
   token: string;
   units: number;
   amount: number;
+  /** Commission/VAT deducted from the payment before vending. */
+  commission: CommissionInfo | null;
   reference: string | null;
   customer_phone: string | null;
   sms_requested: boolean;
@@ -93,6 +96,7 @@ async function serialize(supabase: any, rows: any[]): Promise<VendorIssuedToken[
     token: r.token,
     units: Number(r.units ?? 0),
     amount: Number(r.amount ?? 0),
+    commission: commissionFromRow(r),
     reference: r.reference ?? null,
     customer_phone: r.customer_phone ?? null,
     sms_requested: !!r.sms_requested,
