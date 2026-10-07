@@ -106,6 +106,24 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       installation_attachments: {
         Row: {
           assignment_id: string | null
