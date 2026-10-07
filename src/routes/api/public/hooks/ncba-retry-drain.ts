@@ -4,13 +4,14 @@ import { createFileRoute } from "@tanstack/react-router";
  * Cron entry point for the NCBA retry queue.
  *
  * Security: the caller must present a bearer token that matches the value
- * stored server-side in `app_settings` under the key `cron_retry_token`.
+ * stored server-side in `cron_settings` under the key `ncba_retry_drain_token`.
  * That value is generated in the database and never leaves it — it is not in
  * the browser bundle, not in this file, and not readable through the public
- * API. The pg_cron job reads it from the database at execution time.
- * The handler is idempotent and bounded: it only vends payments that are
- * already queued for retry and due, each capped by the queue's own attempt
- * limits (5 attempts with backoff; timeouts need admin review).
+ * API (the table has no access rules for app users). The pg_cron job reads it
+ * from the database at execution time. The handler is idempotent and bounded:
+ * it only vends payments that are already queued for retry and due, each
+ * capped by the queue's own attempt limits (5 attempts with backoff; timeouts
+ * need admin review).
  */
 
 function safeEqual(a: string, b: string): boolean {
@@ -23,9 +24,9 @@ function safeEqual(a: string, b: string): boolean {
 async function expectedToken(): Promise<string | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await (supabaseAdmin as any)
-    .from("app_settings")
+    .from("cron_settings")
     .select("value")
-    .eq("key", "cron_retry_token")
+    .eq("key", "ncba_retry_drain_token")
     .maybeSingle();
   return (data?.value as string) ?? null;
 }
