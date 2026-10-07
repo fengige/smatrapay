@@ -835,6 +835,7 @@ export type Database = {
       meters: {
         Row: {
           agent_id: string | null
+          commission_percentage: number | null
           created_at: string
           ea: number | null
           id: string
@@ -857,11 +858,13 @@ export type Database = {
           type: string
           unit_id: string | null
           updated_at: string
+          vat_on_commission_percentage: number | null
           vending_software_id: string | null
           vendor_id: string | null
         }
         Insert: {
           agent_id?: string | null
+          commission_percentage?: number | null
           created_at?: string
           ea?: number | null
           id?: string
@@ -884,11 +887,13 @@ export type Database = {
           type: string
           unit_id?: string | null
           updated_at?: string
+          vat_on_commission_percentage?: number | null
           vending_software_id?: string | null
           vendor_id?: string | null
         }
         Update: {
           agent_id?: string | null
+          commission_percentage?: number | null
           created_at?: string
           ea?: number | null
           id?: string
@@ -911,6 +916,7 @@ export type Database = {
           type?: string
           unit_id?: string | null
           updated_at?: string
+          vat_on_commission_percentage?: number | null
           vending_software_id?: string | null
           vendor_id?: string | null
         }
