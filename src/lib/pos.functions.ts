@@ -1,3 +1,4 @@
+import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -9,6 +10,8 @@ export type PosSale = {
   token: string;
   units: number;
   amount: number;
+  /** Commission/VAT deducted from the payment before vending. */
+  commission: CommissionInfo | null;
   reference: string | null;
   method: string;
   status: "issued" | "revoked" | "expired";
@@ -84,6 +87,7 @@ export const listPosSales = createServerFn({ method: "POST" })
       token: r.token,
       units: Number(r.units ?? 0),
       amount: Number(r.amount ?? 0),
+    commission: commissionFromRow(r),
       reference: r.reference ?? null,
       method: methodFrom(r.reference ?? null),
       status:

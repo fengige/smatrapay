@@ -1,3 +1,4 @@
+import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -367,6 +368,8 @@ function PosPage() {
                   ["Utility", meter.type],
                   ["Vending software", meter.vending_software_name ?? "—"],
                   ["Rate", `${meter.price_per_unit.toFixed(2)} / unit`],
+                  ["Commission", `${meter.commission_percentage.toFixed(2)}%${meter.commission_is_default ? " (default)" : ""}`],
+                  ["VAT on commission", `${meter.vat_on_commission_percentage.toFixed(2)}%${meter.commission_is_default ? " (default)" : ""}`],
                   ["Property", meter.property_name ?? "—"],
                   ["Unit", meter.unit_label ?? "—"],
                   ["Customer", meter.customer_name ?? "Unassigned"],
@@ -546,11 +549,7 @@ function PosPage() {
               {sale.units.toFixed(2)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
               {new Date(sale.created_at).toLocaleString()}
             </p>
-            {sale.commission && (
-              <p className="text-xs text-muted-foreground">
-                Paid {money(sale.amount)} − Commission {sale.commission.commission_percentage.toFixed(2)}% ({money(sale.commission.commission_amount)}) − VAT on commission {sale.commission.vat_on_commission_percentage.toFixed(2)}% ({money(sale.commission.vat_on_commission_amount)}) = Token value {money(sale.commission.net_amount)}
-              </p>
-            )}
+            <CommissionBreakdown paid={sale.amount} commission={sale.commission} />
             {(sale.vending_software_name || sale.provider_reference) && (
               <p className="text-xs text-muted-foreground">
                 {sale.vending_software_name ? `Vending software: ${sale.vending_software_name}` : ""}
@@ -821,6 +820,13 @@ function PosPage() {
                 ["Date", new Date(reprint.created_at).toLocaleString()],
                 ["Units", reprint.units.toFixed(2)],
                 ["Amount", money(reprint.amount)],
+                ...(reprint.commission
+                  ? ([
+                      [`Commission (${reprint.commission.commission_percentage.toFixed(2)}%)`, money(reprint.commission.commission_amount)],
+                      [`VAT on commission (${reprint.commission.vat_on_commission_percentage.toFixed(2)}%)`, money(reprint.commission.vat_on_commission_amount)],
+                      ["Net amount", money(reprint.commission.net_amount)],
+                    ] as [string, string][])
+                  : []),
                 ["Reference", reprint.reference ?? "—"],
                 ["Status", reprint.status],
               ].map(([k, v]) => (

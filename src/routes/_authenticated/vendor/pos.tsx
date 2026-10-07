@@ -1,3 +1,4 @@
+import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -507,6 +508,7 @@ function VendorPosPage() {
               {sale.units.toFixed(2)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
               {new Date(sale.created_at).toLocaleString()}
             </p>
+            <CommissionBreakdown paid={sale.amount} commission={sale.commission} />
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <code className="rounded-lg bg-background px-3 py-2 font-mono text-lg tracking-widest">
                 {sale.token}
@@ -772,6 +774,13 @@ function VendorPosPage() {
                 ["Date", new Date(reprint.created_at).toLocaleString()],
                 ["Units", reprint.units.toFixed(2)],
                 ["Amount", money(reprint.amount)],
+                ...(reprint.commission
+                  ? ([
+                      [`Commission (${reprint.commission.commission_percentage.toFixed(2)}%)`, money(reprint.commission.commission_amount)],
+                      [`VAT on commission (${reprint.commission.vat_on_commission_percentage.toFixed(2)}%)`, money(reprint.commission.vat_on_commission_amount)],
+                      ["Net amount", money(reprint.commission.net_amount)],
+                    ] as [string, string][])
+                  : []),
                 ["Reference", reprint.reference ?? "—"],
                 ["Status", reprint.status],
               ].map(([k, v]) => (
