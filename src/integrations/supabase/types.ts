@@ -733,6 +733,8 @@ export type Database = {
         Row: {
           action: Database["public"]["Enums"]["meter_token_action"]
           amount: number
+          commission_amount: number | null
+          commission_percentage: number | null
           created_at: string
           customer_phone: string | null
           expires_at: string
@@ -740,6 +742,7 @@ export type Database = {
           idempotency_key: string | null
           issued_by: string | null
           meter_id: string
+          net_amount: number | null
           provider: string | null
           provider_metadata: Json | null
           provider_reference: string | null
@@ -754,11 +757,15 @@ export type Database = {
           token: string
           units: number
           updated_at: string
+          vat_on_commission_amount: number | null
+          vat_on_commission_percentage: number | null
           vending_software_id: string | null
         }
         Insert: {
           action?: Database["public"]["Enums"]["meter_token_action"]
           amount?: number
+          commission_amount?: number | null
+          commission_percentage?: number | null
           created_at?: string
           customer_phone?: string | null
           expires_at?: string
@@ -766,6 +773,7 @@ export type Database = {
           idempotency_key?: string | null
           issued_by?: string | null
           meter_id: string
+          net_amount?: number | null
           provider?: string | null
           provider_metadata?: Json | null
           provider_reference?: string | null
@@ -780,11 +788,15 @@ export type Database = {
           token: string
           units?: number
           updated_at?: string
+          vat_on_commission_amount?: number | null
+          vat_on_commission_percentage?: number | null
           vending_software_id?: string | null
         }
         Update: {
           action?: Database["public"]["Enums"]["meter_token_action"]
           amount?: number
+          commission_amount?: number | null
+          commission_percentage?: number | null
           created_at?: string
           customer_phone?: string | null
           expires_at?: string
@@ -792,6 +804,7 @@ export type Database = {
           idempotency_key?: string | null
           issued_by?: string | null
           meter_id?: string
+          net_amount?: number | null
           provider?: string | null
           provider_metadata?: Json | null
           provider_reference?: string | null
@@ -806,6 +819,8 @@ export type Database = {
           token?: string
           units?: number
           updated_at?: string
+          vat_on_commission_amount?: number | null
+          vat_on_commission_percentage?: number | null
           vending_software_id?: string | null
         }
         Relationships: [
