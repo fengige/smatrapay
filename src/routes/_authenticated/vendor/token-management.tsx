@@ -1,3 +1,4 @@
+import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -496,6 +497,7 @@ function VendorTokenManagementPage() {
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
                 </p>
+                <CommissionBreakdown paid={token.amount} commission={token.commission} />
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"

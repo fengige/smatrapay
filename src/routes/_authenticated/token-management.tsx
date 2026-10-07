@@ -1,3 +1,4 @@
+import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -548,11 +549,7 @@ function TokenManagementPage() {
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
                   {new Date(token.expires_at).toLocaleString()}
                 </p>
-                {token.commission && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Paid KES {token.amount.toFixed(2)} − Commission {token.commission.commission_percentage.toFixed(2)}% (KES {token.commission.commission_amount.toFixed(2)}) − VAT on commission {token.commission.vat_on_commission_percentage.toFixed(2)}% (KES {token.commission.vat_on_commission_amount.toFixed(2)}) = Token value KES {token.commission.net_amount.toFixed(2)}
-                  </p>
-                )}
+                <CommissionBreakdown paid={token.amount} commission={token.commission} />
                 {(token.vending_software_name || token.provider_reference) && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     {token.vending_software_name
