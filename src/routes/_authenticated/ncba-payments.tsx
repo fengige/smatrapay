@@ -68,8 +68,8 @@ function NcbaPaymentsPage() {
   return (
     <PortalLayout
       roles={["admin"]}
-      title="NCBA Payments"
-      description="Payments received from NCBA Pay Bill, why a token failed, and retries"
+      title="Bank Payments"
+      description="Payments received from NCBA and Sidian Bank, why a token failed, and retries"
       actions={
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => dueMutation.mutate()} disabled={dueMutation.isPending}
@@ -98,7 +98,7 @@ function NcbaPaymentsPage() {
             <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Received</th>
-                <th className="px-4 py-3">NCBA TransID</th>
+                <th className="px-4 py-3">Bank / TransID</th>
                 <th className="px-4 py-3">Meter</th>
                 <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">Status</th>
@@ -124,7 +124,7 @@ function NcbaPaymentsPage() {
                 return (
                   <tr key={r.id} className="border-t border-border align-top">
                     <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{r.trans_id}</td>
+                    <td className="px-4 py-3 font-mono text-xs"><span className="mr-1 font-sans font-semibold">{r.bank ?? "NCBA"}</span>{r.trans_id}</td>
                     <td className="px-4 py-3">{r.narrative ?? "—"}</td>
                     <td className="px-4 py-3 text-right">{kes(r.trans_amount)}</td>
                     <td className="px-4 py-3">
@@ -169,7 +169,7 @@ function NcbaPaymentsPage() {
           <div role="dialog" aria-modal="true" aria-label="Confirm retry" className="w-full max-w-md rounded-2xl border border-border bg-card p-5">
             <h2 className="text-base font-bold">Retry token generation?</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {kes(confirm.trans_amount)} for meter {confirm.narrative} (NCBA {confirm.trans_id}). This sends a real token request to the meter's vending software.
+              {kes(confirm.trans_amount)} for meter {confirm.meter_number ?? confirm.narrative} ({confirm.bank ?? "NCBA"} {confirm.trans_id}). This sends a real token request to the meter's vending software.
             </p>
             {confirm.status === "needs_review" && (
               <p className="mt-2 text-sm font-medium text-destructive">
