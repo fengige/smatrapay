@@ -1407,6 +1407,57 @@ export type Database = {
           },
         ]
       }
+      pricing_settings: {
+        Row: {
+          commission_percentage: number
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+          vat_on_commission_percentage: number
+        }
+        Insert: {
+          commission_percentage?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          vat_on_commission_percentage?: number
+        }
+        Update: {
+          commission_percentage?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          vat_on_commission_percentage?: number
+        }
+        Relationships: []
+      }
+      pricing_settings_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          field: string
+          id: string
+          new_value: number | null
+          previous_value: number | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          field: string
+          id?: string
+          new_value?: number | null
+          previous_value?: number | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          field?: string
+          id?: string
+          new_value?: number | null
+          previous_value?: number | null
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address_line1: string | null
