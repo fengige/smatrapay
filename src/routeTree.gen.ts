@@ -30,6 +30,7 @@ import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_aut
 import { Route as AuthenticatedTokenLedgerRouteImport } from './routes/_authenticated/token-ledger'
 import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedVendingDashboardRouteImport } from './routes/_authenticated/vending-dashboard'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
@@ -237,6 +238,12 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVendingDashboardRoute =
+  AuthenticatedVendingDashboardRouteImport.update({
+    id: '/vending-dashboard',
+    path: '/vending-dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
@@ -806,6 +813,7 @@ export interface FileRoutesByFullPath {
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
+  '/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -915,6 +923,7 @@ export interface FileRoutesByTo {
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
+  '/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -1030,6 +1039,7 @@ export interface FileRoutesById {
   '/_authenticated/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
+  '/_authenticated/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -1147,6 +1157,7 @@ export interface FileRouteTypes {
     | '/token-ledger'
     | '/token-management'
     | '/users'
+    | '/vending-dashboard'
     | '/vendors'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -1256,6 +1267,7 @@ export interface FileRouteTypes {
     | '/service-providers'
     | '/token-ledger'
     | '/token-management'
+    | '/vending-dashboard'
     | '/admin/dashboard'
     | '/admin/settings'
     | '/agent/dashboard'
@@ -1370,6 +1382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/token-ledger'
     | '/_authenticated/token-management'
     | '/_authenticated/users'
+    | '/_authenticated/vending-dashboard'
     | '/_authenticated/vendors'
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/settings'
@@ -1631,6 +1644,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vending-dashboard': {
+      id: '/_authenticated/vending-dashboard'
+      path: '/vending-dashboard'
+      fullPath: '/vending-dashboard'
+      preLoaderRoute: typeof AuthenticatedVendingDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendors': {
@@ -2456,6 +2476,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTokenLedgerRoute: typeof AuthenticatedTokenLedgerRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
+  AuthenticatedVendingDashboardRoute: typeof AuthenticatedVendingDashboardRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
@@ -2526,6 +2547,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTokenLedgerRoute: AuthenticatedTokenLedgerRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
+  AuthenticatedVendingDashboardRoute: AuthenticatedVendingDashboardRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,

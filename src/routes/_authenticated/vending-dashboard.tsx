@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
@@ -52,7 +52,6 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function VendingDashboardPage() {
-  const qc = useQueryClient();
   const [period, setPeriod] = useState<VendingPeriod>("30d");
   const perf = useServerFn(getVendingPerformance);
 
@@ -60,8 +59,6 @@ function VendingDashboardPage() {
     queryKey: ["vending-performance", period],
     queryFn: () => perf({ data: { period } }),
   });
-  // Refetch when a retry completes elsewhere changes the numbers.
-  useMutation({ mutationFn: async () => undefined, mutationKey: ["vending-noop"] });
 
   const s: VendingPerformanceSummary | undefined = data;
   const successRate =
