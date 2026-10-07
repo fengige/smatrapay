@@ -34,7 +34,16 @@ const settingsInput = z.object({
   clear_password: z.boolean().optional().default(false),
   API_VEND_PASSWORD: z.string().max(200).nullable().optional(),
   clear_vend_password: z.boolean().optional().default(false),
+  API_TAAS_ID: z.string().trim().max(150).nullable().optional(),
+  API_TAAS_PASSWORD: z.string().max(200).nullable().optional(),
+  clear_taas_password: z.boolean().optional().default(false),
 });
+
+/** Icon-Token platforms authenticate with a TaaS ID/password instead of company/user. */
+function isIconSoftware(s: { name?: string | null; code?: string | null }) {
+  const v = `${s.code ?? ""} ${s.name ?? ""}`.toUpperCase();
+  return /\bICON(-TOKEN|TOKEN)?\b/.test(v);
+}
 
 export type VendingSoftwareApiSettings = {
   API_POS_PURCHASE: string;
@@ -48,6 +57,9 @@ export type VendingSoftwareApiSettings = {
   has_user_name: boolean;
   has_password: boolean;
   has_vend_password: boolean;
+  is_icon: boolean;
+  has_taas_id: boolean;
+  has_taas_password: boolean;
   updated_at: string | null;
 };
 
@@ -63,18 +75,21 @@ const emptySettings = (): VendingSoftwareApiSettings => ({
   has_user_name: false,
   has_password: false,
   has_vend_password: false,
+  is_icon: false,
+  has_taas_id: false,
+  has_taas_password: false,
   updated_at: null,
 });
 
 async function assertSoftwareExists(supabase: any, id: string) {
   const { data, error } = await supabase
     .from("vending_software")
-    .select("vending_software_id, name")
+    .select("vending_software_id, name, code")
     .eq("vending_software_id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Vending software not found");
-  return data as { vending_software_id: string; name: string };
+  return data as { vending_software_id: string; name: string; code: string | null };
 }
 
 export const getVendingSoftwareApiSettings = createServerFn({ method: "GET" })
@@ -83,17 +98,18 @@ export const getVendingSoftwareApiSettings = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
-    await assertSoftwareExists(supabase, data.id);
+    const sw = await assertSoftwareExists(supabase, data.id);
+    const isIcon = isIconSoftware(sw);
 
     const { data: row, error } = await supabase
       .from("vending_software_api_settings")
       .select(
-        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, api_vend_password, updated_at",
+        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, api_vend_password, api_taas_id, api_taas_password, updated_at",
       )
       .eq("vending_software_id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row) return { settings: emptySettings(), configured: false };
+    if (!row) return { settings: { ...emptySettings(), is_icon: isIcon }, configured: false };
 
     return {
       configured: true,
@@ -109,6 +125,9 @@ export const getVendingSoftwareApiSettings = createServerFn({ method: "GET" })
         has_user_name: Boolean(row.api_user_name),
         has_password: Boolean(row.api_password),
         has_vend_password: Boolean(row.api_vend_password),
+        is_icon: isIcon,
+        has_taas_id: Boolean(row.api_taas_id),
+        has_taas_password: Boolean(row.api_taas_password),
         updated_at: row.updated_at ?? null,
       } satisfies VendingSoftwareApiSettings,
     };
@@ -121,6 +140,7 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
     const software = await assertSoftwareExists(supabase, data.vending_software_id);
+    const isIcon = isIconSoftware(software);
 
     const urls = [
       data.API_POS_PURCHASE,
@@ -133,7 +153,7 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
 
     const { data: existing, error: readError } = await supabase
       .from("vending_software_api_settings")
-      .select("id, api_company_name, api_user_name, api_password, api_vend_password")
+      .select("id, api_company_name, api_user_name, api_password, api_vend_password, api_taas_id, api_taas_password")
       .eq("vending_software_id", data.vending_software_id)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
@@ -149,9 +169,20 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
       : data.API_VEND_PASSWORD?.length
         ? data.API_VEND_PASSWORD
         : (existing?.api_vend_password ?? null);
-    if (!existing && !nextPassword) throw new Error("API Password is required");
-    if (!(data.API_COMPANY_NAME || existing?.api_company_name)) throw new Error("API Company Name is required");
-    if (!(data.API_USER_NAME || existing?.api_user_name)) throw new Error("API User Name is required");
+    const nextTaasId = data.API_TAAS_ID?.trim() || existing?.api_taas_id || null;
+    const nextTaasPassword = data.clear_taas_password
+      ? null
+      : data.API_TAAS_PASSWORD?.length
+        ? data.API_TAAS_PASSWORD
+        : (existing?.api_taas_password ?? null);
+    if (isIcon) {
+      if (!nextTaasId) throw new Error("API TaaS ID is required");
+      if (!nextTaasPassword) throw new Error("API TaaS Password is required");
+    } else {
+      if (!existing && !nextPassword) throw new Error("API Password is required");
+      if (!(data.API_COMPANY_NAME || existing?.api_company_name)) throw new Error("API Company Name is required");
+      if (!(data.API_USER_NAME || existing?.api_user_name)) throw new Error("API User Name is required");
+    }
 
     const values = {
       vending_software_id: data.vending_software_id,
@@ -164,6 +195,8 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
       api_user_name: data.API_USER_NAME || existing?.api_user_name || null,
       api_password: nextPassword,
       api_vend_password: nextVend,
+      api_taas_id: nextTaasId,
+      api_taas_password: nextTaasPassword,
     };
 
     const result = existing
@@ -187,6 +220,8 @@ export const saveVendingSoftwareApiSettings = createServerFn({ method: "POST" })
           ...(data.API_USER_NAME ? ["API_USER_NAME"] : []),
           ...(data.API_PASSWORD || data.clear_password ? ["API_PASSWORD"] : []),
           ...(data.API_VEND_PASSWORD || data.clear_vend_password ? ["API_VEND_PASSWORD"] : []),
+          ...(data.API_TAAS_ID ? ["API_TAAS_ID"] : []),
+          ...(data.API_TAAS_PASSWORD || data.clear_taas_password ? ["API_TAAS_PASSWORD"] : []),
         ],
       },
     });
@@ -200,14 +235,39 @@ export const testVendingSoftwareApiConnection = createServerFn({ method: "POST" 
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
-    await assertSoftwareExists(supabase, data.id);
+    const sw = await assertSoftwareExists(supabase, data.id);
 
     const { data: row, error } = await supabase
       .from("vending_software_api_settings")
-      .select("api_login, api_company_name, api_user_name, api_password")
+      .select("api_login, api_company_name, api_user_name, api_password, api_pos_purchase, api_taas_id, api_taas_password")
       .eq("vending_software_id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
+    if (isIconSoftware(sw)) {
+      if (!row?.api_pos_purchase || !row.api_taas_id || !row.api_taas_password)
+        return { status: "invalid" as const, message: "Save the API POS Purchase endpoint, TaaS ID and TaaS Password before testing." };
+      // Non-billing probe: an unregistered DRN is always rejected, but Icon checks
+      // the TaaS credentials first, so AUTH FAILED vs Rejected tells us which is wrong.
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12_000);
+        const res = await fetch(row.api_pos_purchase, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ drn: "00000000000", units: "0.1", unitsAmount: "10", taasid: row.api_taas_id, taaspasswd: row.api_taas_password }),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        const body: any = await res.json().catch(() => null);
+        const code = body?.ResultCode != null ? String(body.ResultCode) : null;
+        if (code === "IT00010" || /AUTH/i.test(String(body?.ResultDesc ?? "")))
+          return { status: "auth_failed" as const, message: "Authentication failed. Check the TaaS ID and TaaS Password." };
+        if (res.ok && code) return { status: "ok" as const, message: "Connection successful — Icon-Token accepted the TaaS credentials (no token was generated)." };
+        return { status: "unreachable" as const, message: "Icon-Token returned an unexpected response to the connection test." };
+      } catch {
+        return { status: "unreachable" as const, message: "Unable to contact Icon-Token." };
+      }
+    }
     if (!row?.api_login || !row.api_company_name || !row.api_user_name || !row.api_password) {
       return {
         status: "invalid" as const,
