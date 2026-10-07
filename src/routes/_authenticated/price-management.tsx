@@ -15,7 +15,6 @@ import {
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
-import { CommissionSettingsCard } from "@/components/CommissionSettingsCard";
 import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
@@ -331,7 +330,6 @@ function PriceManagementPage() {
         </div>
       }
     >
-      <CommissionSettingsCard />
       <section className="mb-4 rounded-2xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

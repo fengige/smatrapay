@@ -40,4 +40,5 @@
 - [x] Vending Software admin module (list, details with Info/Meters/Usage/Activity tabs, CRUD, audit logging, sidebar entry)
 - [x] Vending-software-driven token generation: meter → assigned vending software → supplier API settings → CALIN POS_Purchase / maintenance calls, idempotency keys, masked integration logs
 - [x] Vending Software details: independent admin-only API Settings tab with secure per-software credentials and connection testing
-- [ ] Show Commission and VAT under Rate in meter search results on /pos and /token-management
+- [x] Show Commission and VAT under Rate in meter search results on /pos and /token-management
+- [x] Hide Commission & VAT on Commission section on Price Management
