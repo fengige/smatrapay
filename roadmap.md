@@ -45,4 +45,4 @@
 - [ ] Show Commission and VAT under Rate in meter search results on /vendor/pos and /vendor/token-management
 - [ ] Dashboard: tokens generated per vending software and per meter, with breakdown of failed attempts
 - [x] Retry queue: automatic scheduled retries every few minutes (done — pg_cron drain job every 5 min, verified 200)
-- [ ] /ncba-payments: display the NCBA Endpoint URL
+- [x] /ncba-payments: display the NCBA Endpoint URL (done — verified with copy button)
