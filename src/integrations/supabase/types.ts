@@ -1064,6 +1064,96 @@ export type Database = {
           },
         ]
       }
+      ncba_notifications: {
+        Row: {
+          attempts: number
+          bill_ref_number: string | null
+          business_short_code: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          ft_ref: string | null
+          id: string
+          meter_id: string | null
+          meter_number: string | null
+          mobile: string | null
+          narrative: string | null
+          payer_name: string | null
+          processed_at: string | null
+          sms_status: string | null
+          status: string
+          token_id: string | null
+          trans_amount: number | null
+          trans_id: string
+          trans_time: string | null
+          trans_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          bill_ref_number?: string | null
+          business_short_code?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          ft_ref?: string | null
+          id?: string
+          meter_id?: string | null
+          meter_number?: string | null
+          mobile?: string | null
+          narrative?: string | null
+          payer_name?: string | null
+          processed_at?: string | null
+          sms_status?: string | null
+          status?: string
+          token_id?: string | null
+          trans_amount?: number | null
+          trans_id: string
+          trans_time?: string | null
+          trans_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          bill_ref_number?: string | null
+          business_short_code?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          ft_ref?: string | null
+          id?: string
+          meter_id?: string | null
+          meter_number?: string | null
+          mobile?: string | null
+          narrative?: string | null
+          payer_name?: string | null
+          processed_at?: string | null
+          sms_status?: string | null
+          status?: string
+          token_id?: string | null
+          trans_amount?: number | null
+          trans_id?: string
+          trans_time?: string | null
+          trans_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ncba_notifications_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ncba_notifications_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "meter_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

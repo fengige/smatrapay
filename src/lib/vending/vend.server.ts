@@ -29,7 +29,7 @@ export type VendTokenParams = {
   customerPhone?: string | null;
   smsRequested?: boolean;
   expiresInDays: number;
-  actorId: string;
+  actorId: string | null;
   /** One-time key from the caller; replays return the existing token. */
   requestId?: string | null;
   /** Extra columns merged into the meter_tokens insert. */
@@ -60,7 +60,7 @@ async function writeLog(
     vending_software_id: string | null;
     software_code: string | null;
     supplier_id: string | null;
-    actor_id: string;
+    actor_id: string | null;
   },
   log: VendingCallLog,
 ) {
