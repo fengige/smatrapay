@@ -121,6 +121,7 @@ import { Route as ApiPublicMpesaC2bConfirmationRouteImport } from './routes/api/
 import { Route as ApiPublicMpesaC2bValidationRouteImport } from './routes/api/public/mpesa/c2b-validation'
 import { Route as ApiPublicMpesaStkCallbackRouteImport } from './routes/api/public/mpesa/stk-callback'
 import { Route as ApiPublicNcbaNotificationRouteImport } from './routes/api/public/ncba/notification'
+import { Route as ApiPublicSidianNotificationRouteImport } from './routes/api/public/sidian/notification'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -775,6 +776,12 @@ const ApiPublicNcbaNotificationRoute =
     path: '/api/public/ncba/notification',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSidianNotificationRoute =
+  ApiPublicSidianNotificationRouteImport.update({
+    id: '/api/public/sidian/notification',
+    path: '/api/public/sidian/notification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -891,6 +898,7 @@ export interface FileRoutesByFullPath {
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/api/public/ncba/notification': typeof ApiPublicNcbaNotificationRoute
+  '/api/public/sidian/notification': typeof ApiPublicSidianNotificationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -999,6 +1007,7 @@ export interface FileRoutesByTo {
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/api/public/ncba/notification': typeof ApiPublicNcbaNotificationRoute
+  '/api/public/sidian/notification': typeof ApiPublicSidianNotificationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -1117,6 +1126,7 @@ export interface FileRoutesById {
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/api/public/ncba/notification': typeof ApiPublicNcbaNotificationRoute
+  '/api/public/sidian/notification': typeof ApiPublicSidianNotificationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -1235,6 +1245,7 @@ export interface FileRouteTypes {
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
     | '/api/public/ncba/notification'
+    | '/api/public/sidian/notification'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -1343,6 +1354,7 @@ export interface FileRouteTypes {
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
     | '/api/public/ncba/notification'
+    | '/api/public/sidian/notification'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -1460,6 +1472,7 @@ export interface FileRouteTypes {
     | '/api/public/mpesa/c2b-validation'
     | '/api/public/mpesa/stk-callback'
     | '/api/public/ncba/notification'
+    | '/api/public/sidian/notification'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -1492,6 +1505,7 @@ export interface RootRouteChildren {
   ApiPublicMpesaC2bValidationRoute: typeof ApiPublicMpesaC2bValidationRoute
   ApiPublicMpesaStkCallbackRoute: typeof ApiPublicMpesaStkCallbackRoute
   ApiPublicNcbaNotificationRoute: typeof ApiPublicNcbaNotificationRoute
+  ApiPublicSidianNotificationRoute: typeof ApiPublicSidianNotificationRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -2283,6 +2297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNcbaNotificationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sidian/notification': {
+      id: '/api/public/sidian/notification'
+      path: '/api/public/sidian/notification'
+      fullPath: '/api/public/sidian/notification'
+      preLoaderRoute: typeof ApiPublicSidianNotificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -2636,6 +2657,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMpesaC2bValidationRoute: ApiPublicMpesaC2bValidationRoute,
   ApiPublicMpesaStkCallbackRoute: ApiPublicMpesaStkCallbackRoute,
   ApiPublicNcbaNotificationRoute: ApiPublicNcbaNotificationRoute,
+  ApiPublicSidianNotificationRoute: ApiPublicSidianNotificationRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
