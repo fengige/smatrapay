@@ -18,6 +18,10 @@ export type TokenMeterMatch = {
   type: string;
   status: string;
   price_per_unit: number;
+  /** Effective rates: the meter's own, else the Price Management defaults. */
+  commission_percentage: number;
+  vat_on_commission_percentage: number;
+  commission_is_default: boolean;
   sgc: number | null;
   krn: number | null;
   ti: number | null;
@@ -71,10 +75,17 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
         .map((a: any) => a.unit_id as string);
     }
 
+    const { data: pricingDefaults } = await (supabase as any)
+      .from("pricing_settings")
+      .select("commission_percentage, vat_on_commission_percentage")
+      .maybeSingle();
+    const defComm = Number(pricingDefaults?.commission_percentage ?? 0);
+    const defVat = Number(pricingDefaults?.vat_on_commission_percentage ?? 0);
+
     let query = supabase
       .from("meters")
       .select(
-        "id, meter_number, serial_number, type, status, price_per_unit, sgc, krn, ti, ea, ken, unit_id, landlord_id, agent_id, vendor_id, supplier_id, vending_software_id",
+        "id, meter_number, serial_number, type, status, price_per_unit, commission_percentage, vat_on_commission_percentage, sgc, krn, ti, ea, ken, unit_id, landlord_id, agent_id, vendor_id, supplier_id, vending_software_id",
       )
       .limit(25);
 
@@ -182,6 +193,9 @@ export const searchTokenMeters = createServerFn({ method: "POST" })
         type: m.type,
         status: m.status,
         price_per_unit: Number(m.price_per_unit ?? 0),
+        commission_percentage: m.commission_percentage == null ? defComm : Number(m.commission_percentage),
+        vat_on_commission_percentage: m.vat_on_commission_percentage == null ? defVat : Number(m.vat_on_commission_percentage),
+        commission_is_default: m.commission_percentage == null && m.vat_on_commission_percentage == null,
         sgc: m.sgc,
         krn: m.krn,
         ti: m.ti,
