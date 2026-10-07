@@ -98,6 +98,8 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
   };
 
   const result = await vendNcbaNotification(rowId);
+  // Drain a few due queue items on each notification (bounded, no extra traffic needed).
+  try { await processDueNcbaRetries(3); } catch { /* queue work never affects this payment */ }
   // A recorded payment is always acknowledged; failures stay queued for retry.
   if (result.status === "completed") return ack("0", "Success");
   return ack("0", "Payment recorded — token generation pending");
