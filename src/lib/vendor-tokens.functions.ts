@@ -16,6 +16,9 @@ export type VendorTokenMeterMatch = {
   type: string;
   status: string;
   price_per_unit: number;
+  commission_percentage: number;
+  vat_on_commission_percentage: number;
+  commission_is_default: boolean;
   sgc: number | null;
   krn: number | null;
   ti: number | null;
@@ -121,6 +124,12 @@ export const searchVendorTokenMeters = createServerFn({ method: "POST" })
     const scope = await loadVendorScope(context.supabase as never, vendorId);
     const q = data.q.trim().toLowerCase();
     const residentById = new Map(scope.residents.map((r) => [r.id, r]));
+    const { data: pricingDefaults } = await (context.supabase as any)
+      .from("pricing_settings")
+      .select("commission_percentage, vat_on_commission_percentage")
+      .maybeSingle();
+    const defComm = Number(pricingDefaults?.commission_percentage ?? 0);
+    const defVat = Number(pricingDefaults?.vat_on_commission_percentage ?? 0);
 
     return scope.meters
       .filter((m) => {
@@ -139,6 +148,9 @@ export const searchVendorTokenMeters = createServerFn({ method: "POST" })
           type: m.type,
           status: m.status,
           price_per_unit: Number(m.price_per_unit ?? 0),
+          commission_percentage: m.commission_percentage == null ? defComm : Number(m.commission_percentage),
+          vat_on_commission_percentage: m.vat_on_commission_percentage == null ? defVat : Number(m.vat_on_commission_percentage),
+          commission_is_default: m.commission_percentage == null && m.vat_on_commission_percentage == null,
           sgc: m.sgc,
           krn: m.krn,
           ti: m.ti,
