@@ -546,6 +546,11 @@ function PosPage() {
               {sale.units.toFixed(2)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
               {new Date(sale.created_at).toLocaleString()}
             </p>
+            {sale.commission && (
+              <p className="text-xs text-muted-foreground">
+                Paid {money(sale.amount)} − Commission {sale.commission.commission_percentage.toFixed(2)}% ({money(sale.commission.commission_amount)}) − VAT on commission {sale.commission.vat_on_commission_percentage.toFixed(2)}% ({money(sale.commission.vat_on_commission_amount)}) = Token value {money(sale.commission.net_amount)}
+              </p>
+            )}
             {(sale.vending_software_name || sale.provider_reference) && (
               <p className="text-xs text-muted-foreground">
                 {sale.vending_software_name ? `Vending software: ${sale.vending_software_name}` : ""}

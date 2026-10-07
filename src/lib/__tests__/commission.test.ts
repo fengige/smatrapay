@@ -26,3 +26,19 @@ describe("per-meter commission", () => {
     expect(meterCommissionInput.safeParse({ ids: ["6aa6a012-4f08-41b6-b1f4-df0a2dc11ae9"], commission_percentage: 150 }).success).toBe(false);
   });
 });
+
+import { deductCommission, grossUpForUnits } from "../commission";
+describe("commission deducted before token generation", () => {
+  it("KES 1000 at 5% + 16% VAT tokenizes KES 942", () => {
+    const b = deductCommission(1000, 5, 16);
+    expect([b.commission_amount, b.vat_on_commission_amount, b.net_amount]).toEqual([50, 8, 942]);
+  });
+  it("0% commission leaves the payment untouched", () => {
+    expect(deductCommission(150, 0, 16).net_amount).toBe(150);
+  });
+  it("buying units grosses up the payment so the token value is exact", () => {
+    const b = grossUpForUnits(942, 5, 16);
+    expect(b.net_amount).toBe(942);
+    expect(b.gross_amount).toBe(1000);
+  });
+});
