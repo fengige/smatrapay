@@ -12,7 +12,7 @@ import {
   type VendingSoftwareApiSettings,
 } from "@/lib/vending-software-api.functions";
 
-type FormState = Omit<VendingSoftwareApiSettings, "has_password" | "has_vend_password" | "has_company_name" | "has_user_name" | "updated_at">;
+type FormState = Omit<VendingSoftwareApiSettings, "has_password" | "has_vend_password" | "has_company_name" | "has_user_name" | "updated_at" | "is_icon" | "has_taas_id" | "has_taas_password">;
 type FormKey = keyof FormState;
 
 const EMPTY: FormState = {
@@ -106,7 +106,13 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   const [showUserName, setShowUserName] = useState(false);
   const [vendPassword, setVendPassword] = useState("");
   const [clearVend, setClearVend] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<FormKey | "API_PASSWORD", string>>>({});
+  const [taasId, setTaasId] = useState("");
+  const [showTaasId, setShowTaasId] = useState(false);
+  const [taasPassword, setTaasPassword] = useState("");
+  const [showTaasPassword, setShowTaasPassword] = useState(false);
+  const [clearTaas, setClearTaas] = useState(false);
+  const isIcon = Boolean(settings?.is_icon);
+  const [errors, setErrors] = useState<Partial<Record<FormKey | "API_PASSWORD" | "API_TAAS_ID" | "API_TAAS_PASSWORD", string | undefined>>>({});
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const reset = useMemo(
@@ -128,6 +134,11 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
       setShowUserName(false);
       setVendPassword("");
       setClearVend(false);
+      setTaasId("");
+      setShowTaasId(false);
+      setTaasPassword("");
+      setShowTaasPassword(false);
+      setClearTaas(false);
       setErrors({});
       setTestResult(null);
     },
@@ -142,12 +153,17 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
   };
 
   function validate() {
-    const next: Partial<Record<FormKey | "API_PASSWORD", string>> = {};
+    const next: Partial<Record<FormKey | "API_PASSWORD" | "API_TAAS_ID" | "API_TAAS_PASSWORD", string | undefined>> = {};
     if (!form.API_POS_PURCHASE.trim()) next.API_POS_PURCHASE = "API POS Purchase is required";
-    if (!settings?.has_company_name && !form.API_COMPANY_NAME.trim())
-      next.API_COMPANY_NAME = "API Company Name is required";
-    if (!settings?.has_user_name && !form.API_USER_NAME.trim()) next.API_USER_NAME = "API User Name is required";
-    if (!settings?.has_password && !password) next.API_PASSWORD = "API Password is required";
+    if (isIcon) {
+      if (!settings?.has_taas_id && !taasId.trim()) next.API_TAAS_ID = "API TaaS ID is required";
+      if ((clearTaas || !settings?.has_taas_password) && !taasPassword) next.API_TAAS_PASSWORD = "API TaaS Password is required";
+    } else {
+      if (!settings?.has_company_name && !form.API_COMPANY_NAME.trim())
+        next.API_COMPANY_NAME = "API Company Name is required";
+      if (!settings?.has_user_name && !form.API_USER_NAME.trim()) next.API_USER_NAME = "API User Name is required";
+      if (!settings?.has_password && !password) next.API_PASSWORD = "API Password is required";
+    }
     for (const key of URL_KEYS) {
       const value = form[key].trim();
       if (value && !isUrl(value)) next[key] = "Enter a valid URL starting with http:// or https://";
@@ -175,6 +191,9 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
           clear_password: clearPassword,
           API_VEND_PASSWORD: clearVend ? null : vendPassword || null,
           clear_vend_password: clearVend,
+          API_TAAS_ID: taasId.trim() || null,
+          API_TAAS_PASSWORD: clearTaas ? null : taasPassword || null,
+          clear_taas_password: clearTaas,
         },
       } as never),
     onSuccess: async () => {
@@ -186,6 +205,11 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
       setShowUserName(false);
       setVendPassword("");
       setClearVend(false);
+      setTaasId("");
+      setTaasPassword("");
+      setClearTaas(false);
+      setShowTaasId(false);
+      setShowTaasPassword(false);
       setTestResult(null);
       toast.success("API settings saved");
     },
@@ -276,7 +300,62 @@ export function VendingSoftwareApiSettingsTab({ softwareId }: { softwareId: stri
               );
             })}
 
-            {section.title === "API Account Credentials" && (
+            {section.title === "API Account Credentials" && isIcon && (
+              <>
+              <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
+                <label htmlFor="software-api-taas-id" className="text-sm font-medium text-foreground">API TaaS ID *</label>
+                <div className="flex gap-2">
+                  <input
+                    id="software-api-taas-id"
+                    type={showTaasId ? "text" : "password"}
+                    autoComplete="off"
+                    value={taasId}
+                    maxLength={150}
+                    placeholder={settings?.has_taas_id ? "••••••••" : "Enter TaaS ID"}
+                    onChange={(e) => { setTaasId(e.target.value); setErrors((p) => ({ ...p, API_TAAS_ID: undefined })); }}
+                    aria-invalid={Boolean(errors.API_TAAS_ID)}
+                    className={`h-11 w-full rounded-xl border bg-card px-3 text-sm ${errors.API_TAAS_ID ? "border-destructive" : "border-border"}`}
+                  />
+                  <Button type="button" variant="outline" size="icon" className="size-11 shrink-0 rounded-xl" onClick={() => setShowTaasId((v) => !v)} aria-label={showTaasId ? "Hide TaaS ID" : "Show TaaS ID"}>
+                    {showTaasId ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
+                {errors.API_TAAS_ID && <p className="text-xs text-destructive">{errors.API_TAAS_ID}</p>}
+                <p className="text-xs text-muted-foreground">
+                  {settings?.has_taas_id ? "A TaaS ID is configured. Leave blank to keep it unchanged." : "TaaS account ID issued by Icon-Token (sent as taasid)."}
+                </p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
+                <label htmlFor="software-api-taas-password" className="text-sm font-medium text-foreground">API TaaS Password *</label>
+                <div className="flex gap-2">
+                  <input
+                    id="software-api-taas-password"
+                    type={showTaasPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={taasPassword}
+                    disabled={clearTaas}
+                    maxLength={200}
+                    placeholder={settings?.has_taas_password ? "••••••••" : "Enter TaaS password"}
+                    onChange={(e) => { setTaasPassword(e.target.value); setErrors((p) => ({ ...p, API_TAAS_PASSWORD: undefined })); }}
+                    aria-invalid={Boolean(errors.API_TAAS_PASSWORD)}
+                    className={`h-11 w-full rounded-xl border bg-card px-3 text-sm disabled:opacity-60 ${errors.API_TAAS_PASSWORD ? "border-destructive" : "border-border"}`}
+                  />
+                  <Button type="button" variant="outline" size="icon" className="size-11 shrink-0 rounded-xl" onClick={() => setShowTaasPassword((v) => !v)} aria-label={showTaasPassword ? "Hide TaaS password" : "Show TaaS password"}>
+                    {showTaasPassword ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
+                {errors.API_TAAS_PASSWORD && <p className="text-xs text-destructive">{errors.API_TAAS_PASSWORD}</p>}
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={clearTaas} onChange={(e) => { setClearTaas(e.target.checked); if (e.target.checked) setTaasPassword(""); }} />
+                  Remove the stored TaaS password
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {settings?.has_taas_password ? "A TaaS password is configured. Leave blank to keep it unchanged." : "Password for the TaaS account (sent as taaspasswd)."}
+                </p>
+              </div>
+              </>
+            )}
+            {section.title === "API Account Credentials" && !isIcon && (
               <>
               <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
                 <label htmlFor="software-api-company" className="text-sm font-medium text-foreground">

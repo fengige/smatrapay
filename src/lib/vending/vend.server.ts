@@ -80,7 +80,7 @@ export async function vendMeterToken(
   // 1. Validate the meter (through the caller's RLS-scoped client).
   const { data: meter, error: meterErr } = await supabase
     .from("meters")
-    .select("id, meter_number, status, supplier_id, vending_software_id")
+    .select("id, meter_number, status, supplier_id, vending_software_id, price_per_unit")
     .eq("id", p.meterId)
     .maybeSingle();
   if (meterErr) throw new Error(meterErr.message);
@@ -132,7 +132,7 @@ export async function vendMeterToken(
     const { data: resolved, error: settingsErr } = await supabaseAdmin
       .from("vending_software_api_settings")
       .select(
-        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, api_vend_password",
+        "api_pos_purchase, api_login, api_maintenance_clear_tamper, api_maintenance_clear_credit, api_maintenance_set_overdraft_limit, api_company_name, api_user_name, api_password, api_vend_password, api_taas_id, api_taas_password",
       )
       .eq("vending_software_id", meter.vending_software_id)
       .maybeSingle();
@@ -149,6 +149,8 @@ export async function vendMeterToken(
       api_user_name: resolved.api_user_name,
       api_password: resolved.api_password,
       api_vend_password: (resolved as any).api_vend_password ?? null,
+      api_taas_id: (resolved as any).api_taas_id ?? null,
+      api_taas_password: (resolved as any).api_taas_password ?? null,
     };
 
     const missing = integration
@@ -173,6 +175,7 @@ export async function vendMeterToken(
         amount: p.amount,
         units: p.units,
         vend_by_unit: !!p.vendByUnit,
+        price_per_unit: Number((meter as any).price_per_unit ?? 0),
       },
       credentials,
     );

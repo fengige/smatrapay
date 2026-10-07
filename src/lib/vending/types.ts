@@ -25,6 +25,9 @@ export type VendingCredentials = {
   api_password: string | null;
   /** CALIN POS operator vending password; falls back to api_password. */
   api_vend_password?: string | null;
+  /** Icon-Token TaaS credentials. */
+  api_taas_id?: string | null;
+  api_taas_password?: string | null;
 };
 
 export type VendingRequest = {
@@ -35,6 +38,8 @@ export type VendingRequest = {
   /** Units requested when the sale is by units rather than by value. */
   units: number;
   vend_by_unit: boolean;
+  /** Meter unit price from SmatraPay Price Management (server-read). */
+  price_per_unit?: number | null;
 };
 
 export type VendingSuccess = {
