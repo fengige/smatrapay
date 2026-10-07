@@ -42,3 +42,6 @@
 - [x] Vending Software details: independent admin-only API Settings tab with secure per-software credentials and connection testing
 - [x] Show Commission and VAT under Rate in meter search results on /pos and /token-management
 - [x] Hide Commission & VAT on Commission section on Price Management
+- [ ] Show Commission and VAT under Rate in meter search results on /vendor/pos and /vendor/token-management
+- [ ] Dashboard: tokens generated per vending software and per meter, with breakdown of failed attempts
+- [ ] Retry queue: automatic scheduled retries every few minutes (currently only opportunistic/admin-triggered)

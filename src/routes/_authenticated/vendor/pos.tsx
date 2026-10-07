@@ -335,6 +335,8 @@ function VendorPosPage() {
                   ["Utility", meter.type],
                   ["Vending software", meter.vending_software_name ?? "—"],
                   ["Rate", `${meter.price_per_unit.toFixed(2)} / unit`],
+                  ["Commission", `${meter.commission_percentage.toFixed(2)}%${meter.commission_is_default ? " (default)" : ""}`],
+                  ["VAT on commission", `${meter.vat_on_commission_percentage.toFixed(2)}%${meter.commission_is_default ? " (default)" : ""}`],
                   ["Zone", meter.zone_name ?? "—"],
                   ["Property", meter.property_name ?? "—"],
                   ["Unit", meter.unit_label ?? "—"],
