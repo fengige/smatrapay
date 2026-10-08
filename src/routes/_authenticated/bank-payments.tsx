@@ -133,7 +133,7 @@ function BankPaymentsRoutePage() {
           const v = c.value(r);
           return v == null ? null : typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) };
         }));
-        await writeXlsxFile([header, ...body] as never, { fileName: name });
+        await writeXlsxFile([header, ...body] as never).toFile(name);
       } else {
         const { jsPDF } = await import("jspdf");
         const { default: autoTable } = await import("jspdf-autotable");
