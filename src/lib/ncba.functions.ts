@@ -35,7 +35,7 @@ export const listNcbaPayments = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<NcbaPaymentRow[]> => {
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
-    let q = supabase.from("ncba_notifications").select("*").order("created_at", { ascending: false }).limit(200);
+    let q = supabase.from("bank_notifications").select("*").order("created_at", { ascending: false }).limit(200);
     if (data.status === "problems") q = q.in("status", ["failed", "retry_pending", "needs_review", "processing"]);
     if (data.status === "completed") q = q.eq("status", "completed");
     const { data: rows, error } = await q;
@@ -61,7 +61,7 @@ export const retryNcbaPayment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const { data: row } = await (context.supabase as any).from("ncba_notifications").select("status").eq("id", data.id).maybeSingle();
+    const { data: row } = await (context.supabase as any).from("bank_notifications").select("status").eq("id", data.id).maybeSingle();
     if (!row) throw new Error("Payment not found");
     if (row.status === "completed") return { status: "completed", message: "Already completed — no new token generated." };
     if (row.status === "processing") throw new Error("This payment is being processed right now. Try again in a minute.");
