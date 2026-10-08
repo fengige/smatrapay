@@ -96,7 +96,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
     onError: (e: Error) => toast.error(e.message || "Retry failed"),
   });
   const resendM = useMutation({
-    mutationFn: (id: string) => resend({ data: { id } }),
+    mutationFn: async (id: string): Promise<unknown> => (vendor ? vendorResend({ data: { id } }) : adminResend({ data: { id } })),
     onSuccess: () => { toast.success("Token SMS submitted"); void qc.invalidateQueries({ queryKey: ["transaction-records"] }); },
     onError: (e: Error) => toast.error(e.message || "Could not resend SMS"),
   });
