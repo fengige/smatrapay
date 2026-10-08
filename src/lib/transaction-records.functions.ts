@@ -163,9 +163,21 @@ async function runExport(supabase: any, data: z.output<typeof schema>, meterIds:
 async function vendorMeterIds(context: any): Promise<string[]> {
   const { assertVendor } = await import("@/lib/vendor.server");
   const vendorId = await assertVendor(context as never);
-  const { data, error } = await context.supabase.from("meters").select("id").eq("vendor_id", vendorId).limit(5000);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((m: any) => m.id as string);
+  // The vendor's own RLS-scoped meter list defines what they may see.
+  const ids: string[] = [];
+  for (let s = 0; s < 20000; s += 1000) {
+    const { data, error } = await context.supabase.from("meters").select("id").eq("vendor_id", vendorId).order("id").range(s, s + 999);
+    if (error) throw new Error(error.message);
+    ids.push(...(data ?? []).map((m: any) => m.id as string));
+    if (!data || data.length < 1000) break;
+  }
+  return ids;
+}
+
+/** Reads the view privileged (so bank and owner columns resolve) but always filtered to the vendor's meters. */
+async function adminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as any;
 }
 
 export const listTransactionRecords = createServerFn({ method: "POST" })
@@ -188,9 +200,9 @@ export const exportTransactionRecords = createServerFn({ method: "POST" })
 export const listVendorTransactions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(listInput)
-  .handler(async ({ data, context }) => runList((context as any).supabase, data, await vendorMeterIds(context)));
+  .handler(async ({ data, context }) => { const ids = await vendorMeterIds(context); return runList(await adminClient(), data, ids); });
 
 export const exportVendorTransactions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => schema.parse(d))
-  .handler(async ({ data, context }) => runExport((context as any).supabase, data, await vendorMeterIds(context)));
+  .handler(async ({ data, context }) => { const ids = await vendorMeterIds(context); return runExport(await adminClient(), data, ids); });
