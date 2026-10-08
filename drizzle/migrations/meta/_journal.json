@@ -50,6 +50,13 @@
       "when": 1791495818617,
       "tag": "0006_service_provider_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791496623921,
+      "tag": "0007_service_catalog",
+      "breakpoints": true
     }
   ]
 }

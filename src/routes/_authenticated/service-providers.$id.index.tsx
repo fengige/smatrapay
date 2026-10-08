@@ -1,3 +1,4 @@
+import { CatalogPicker } from "@/components/service-providers/CatalogPicker";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -577,6 +578,12 @@ function ServicesTab({ providerId, services }: { providerId: string; services: a
           </DialogHeader>
           {editing && (
             <div className="space-y-4">
+              <Field label="Service Catalog">
+                <CatalogPicker
+                  value={editing.service_name}
+                  onPick={(v) => setEditing({ ...editing, ...v })}
+                />
+              </Field>
               <Field label="Service Name" required error={errors["service_name"]}>
                 <input
                   className={inputClass}

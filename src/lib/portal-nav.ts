@@ -76,6 +76,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Property Management", icon: Home, to: "/properties" },
           { label: "Vendor Management", icon: Store, to: "/vendors" },
           { label: "Service Provider", icon: Briefcase, to: "/service-providers" },
+          { label: "Jobs", icon: Wrench, to: "/jobs" },
           { label: "User Management", to: "/users", icon: UserCircle },
         ],
       },
@@ -146,6 +147,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Token & Payments", icon: CreditCard, to: "/vendor/tokens" },
           { label: "Meter Readings", icon: ClipboardList, to: "/vendor/readings" },
           { label: "Maintenance / Service", icon: Wrench, to: "/vendor/service-requests" },
+          { label: "Jobs", icon: ClipboardList, to: "/vendor/jobs" },
           { label: "Installation Teams", icon: HardHat, to: "/vendor/teams" },
         ],
       },
@@ -161,6 +163,11 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         items: [{ label: "My Profile", icon: UserCircle, to: "/vendor/profile" }],
       },
     );
+  } else if (roles.includes("service_provider")) {
+    groups.push({
+      heading: "WORK",
+      items: [{ label: "My Jobs", icon: Wrench, to: "/service-provider/jobs" }],
+    });
   } else {
     groups.push({
       heading: "Account",

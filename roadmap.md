@@ -54,3 +54,8 @@
 - [x] Staff login: hide the Agent portal from the "Select Portal" list
 - [x] Admin sidebar: hide the Agent Management menu entry
 - [x] Service Providers module: list actions, Add page with services, details tabs, logo/photo, suspend/soft delete
+- [x] Vendor Jobs page (/vendor/jobs): assign service requests to service providers
+- [x] Admin Jobs page (/jobs): search, filter, assign; provider names link to Service Provider details
+- [x] Service provider "My Jobs" page (/service-provider/jobs)
+- [x] Shared service catalog; providers pick services from it
+- [ ] Signed-in check as a service provider (blocked: no service provider account exists in the database yet)

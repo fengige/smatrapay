@@ -54,6 +54,14 @@ async function memberIdsByUser(sb: any, userIds: string[]) {
   return map;
 }
 
+/** Links a service entry to the shared catalog by name (case/space-insensitive). */
+async function catalogIdsFor(sb: any, names: string[]) {
+  const { data } = await sb.from("service_catalog").select("id, name");
+  const map = new Map<string, string>();
+  for (const c of data ?? []) map.set(serviceKey(c.name), c.id);
+  return names.map((n) => map.get(serviceKey(n)) ?? null);
+}
+
 const clean = (v: string | undefined | null) => (v && v.trim() ? v.trim() : null);
 
 export const listServiceProviders = createServerFn({ method: "GET" })
@@ -225,10 +233,12 @@ export const createServiceProvider = createServerFn({ method: "POST" })
         created_by: context.userId,
       });
       if (pErr) throw pErr;
+      const catIds = await catalogIdsFor(sb, data.services.map((s) => s.service_name));
       const { error: sErr } = await sb
         .from("service_provider_services")
         .insert(
-          data.services.map((s) => ({
+          data.services.map((s, i) => ({
+            catalog_id: catIds[i],
             provider_id: id,
             service_name: s.service_name,
             description: s.description,
@@ -475,6 +485,7 @@ export const addProviderService = createServerFn({ method: "POST" })
       provider_id: data.provider_id,
       service_name: data.service_name,
       description: data.description,
+      catalog_id: (await catalogIdsFor(sb, [data.service_name]))[0],
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -502,6 +513,7 @@ export const updateProviderService = createServerFn({ method: "POST" })
       .update({
         service_name: data.service_name,
         description: data.description,
+        catalog_id: (await catalogIdsFor(sb, [data.service_name]))[0],
         ...(data.status ? { status: data.status } : {}),
       })
       .eq("id", data.id);
