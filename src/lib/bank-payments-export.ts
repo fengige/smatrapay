@@ -2,11 +2,13 @@ import type { BankPaymentExportRow } from "@/lib/ncba.functions";
 
 /** Columns exported for bank payments. Never includes the vend token, credentials or secrets. */
 export const EXPORT_COLUMNS: { header: string; value: (r: BankPaymentExportRow) => string | number | null }[] = [
-  { header: "Received", value: (r) => new Date(r.created_at).toLocaleString() },
   { header: "Bank", value: (r) => r.bank },
   { header: "TransID", value: (r) => r.trans_id },
   { header: "Meter", value: (r) => r.meter_number },
+  { header: "Owner", value: (r) => r.owner_name },
+  { header: "Owner Type", value: (r) => r.owner_type },
   { header: "Amount (KES)", value: (r) => r.trans_amount },
+  { header: "Received", value: (r) => new Date(r.created_at).toLocaleString() },
   { header: "Transaction Time", value: (r) => r.trans_time },
   { header: "Mobile", value: (r) => r.mobile },
   { header: "Customer Name", value: (r) => r.payer_name },

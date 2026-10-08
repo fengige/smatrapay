@@ -36,8 +36,8 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 const kes = (n: number) => `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type Adv = { bank: string; transId: string; meter: string; mobile: string; name: string; rowStatus: string; minAmount: string; maxAmount: string; from: string; to: string };
-const EMPTY: Adv = { bank: "", transId: "", meter: "", mobile: "", name: "", rowStatus: "", minAmount: "", maxAmount: "", from: "", to: "" };
+type Adv = { bank: string; transId: string; meter: string; mobile: string; name: string; rowStatus: string; minAmount: string; maxAmount: string; from: string; to: string; ownerName: string; ownerType: string };
+const EMPTY: Adv = { bank: "", transId: "", meter: "", mobile: "", name: "", rowStatus: "", minAmount: "", maxAmount: "", from: "", to: "", ownerName: "", ownerType: "" };
 const PAGE_SIZE = 50;
 
 function toNum(s: string): number | null {
@@ -74,6 +74,7 @@ function BankPaymentsRoutePage() {
     status: filter, q, sortDir,
     bank: adv.bank, transId: adv.transId, meter: adv.meter, mobile: adv.mobile, name: adv.name, rowStatus: adv.rowStatus,
     minAmount: toNum(adv.minAmount), maxAmount: toNum(adv.maxAmount), from: adv.from, to: adv.to,
+    ownerName: adv.ownerName, ownerType: (adv.ownerType || "all") as "all",
   };
   const activeCount = (Object.keys(EMPTY) as (keyof Adv)[]).filter((k) => adv[k].trim() !== "").length;
 
@@ -239,6 +240,12 @@ function BankPaymentsRoutePage() {
             {field("From Date", <input className={input} type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} />)}
             {field("To Date", <input className={input} type="date" value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} />)}
             {field("Mobile / Phone", <input className={input} value={draft.mobile} onChange={(e) => setDraft({ ...draft, mobile: e.target.value })} />)}
+            {field("Owner Name", <input className={input} value={draft.ownerName} onChange={(e) => setDraft({ ...draft, ownerName: e.target.value })} />)}
+            {field("Owner Type", (
+              <select className={input} value={draft.ownerType} onChange={(e) => setDraft({ ...draft, ownerType: e.target.value })}>
+                <option value="">All</option><option value="vendor">Vendor</option><option value="landlord">Landlord</option><option value="agent">Agent</option>
+              </select>
+            ))}
             {field("Customer Name", <input className={input} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />)}
           </div>
           <div className="mt-4 flex justify-end gap-2">
@@ -253,16 +260,17 @@ function BankPaymentsRoutePage() {
           <table className="w-full min-w-[60rem] text-sm">
             <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-4 py-3">Bank</th>
+                <th className="px-4 py-3">TransID</th>
+                <th className="px-4 py-3">Meter</th>
+                <th className="px-4 py-3">Owner</th>
+                <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">
                   <button type="button" onClick={() => { setSortDir((d) => (d === "desc" ? "asc" : "desc")); setPage(1); }}
                     className="inline-flex items-center gap-1 uppercase">
                     Received {sortDir === "desc" ? <ArrowDown className="size-3" /> : <ArrowUp className="size-3" />}
                   </button>
                 </th>
-                <th className="px-4 py-3">Bank</th>
-                <th className="px-4 py-3">TransID</th>
-                <th className="px-4 py-3">Meter</th>
-                <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Reason</th>
                 <th className="px-4 py-3">Attempts</th>
@@ -271,13 +279,13 @@ function BankPaymentsRoutePage() {
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={9} className="px-4 py-10 text-center"><Loader2 className="mx-auto size-5 animate-spin" /></td></tr>
+                <tr><td colSpan={10} className="px-4 py-10 text-center"><Loader2 className="mx-auto size-5 animate-spin" /></td></tr>
               )}
               {isError && (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-destructive">Could not load bank payments.</td></tr>
+                <tr><td colSpan={10} className="px-4 py-10 text-center text-destructive">Could not load bank payments.</td></tr>
               )}
               {!isLoading && !isError && rows.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
                   {q || activeCount ? "No payments match your search." : filter === "problems" ? "No bank payments need attention." : "No bank payments yet."}
                 </td></tr>
               )}
@@ -285,11 +293,14 @@ function BankPaymentsRoutePage() {
                 const st = STATUS[r.status] ?? { label: r.status, cls: "bg-secondary" };
                 return (
                   <tr key={r.id} className="border-t border-border align-top">
-                    <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
                     <td className="px-4 py-3 font-semibold">{r.bank || "—"}</td>
                     <td className="px-4 py-3 font-mono text-xs">{r.trans_id || "—"}</td>
                     <td className="px-4 py-3">{r.meter_number || "—"}</td>
+                    <td className="px-4 py-3">
+                      {r.owner_type ? (<><span className="block font-medium">{r.owner_name || "—"}</span><span className="block text-xs text-muted-foreground">{r.owner_type}</span></>) : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right">{kes(r.trans_amount)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${st.cls}`}>{st.label}</span>
                       {r.status === "retry_pending" && r.next_retry_at && (
