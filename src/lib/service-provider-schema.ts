@@ -106,7 +106,7 @@ export const editServiceProviderSchema = z.object({
   ...providerDetailsFields,
 });
 
-export function fullName(p: { first_name?: string | null; middle_name?: string | null; last_name?: string | null }) {
+export function fullName(p: { first_name?: string | null | undefined; middle_name?: string | null | undefined; last_name?: string | null | undefined }) {
   return [p.first_name, p.middle_name, p.last_name]
     .map((v) => (v ?? "").trim())
     .filter(Boolean)

@@ -260,7 +260,10 @@ function ImageSlot({
   const pick = async (file?: File) => {
     if (!file) return;
     const check = await validateProfileImage(file);
-    if (!check.ok) return toast.error(check.error);
+    if (!check.ok) {
+      toast.error(check.error);
+      return;
+    }
     setBusy(true);
     try {
       const path = `${providerId}/${kind}-${Date.now()}.${extensionForType(file.type)}`;
