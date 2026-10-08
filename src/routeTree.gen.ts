@@ -26,7 +26,6 @@ import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authe
 import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_authenticated/price-management'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
-import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_authenticated/service-providers'
 import { Route as AuthenticatedTokenLedgerRouteImport } from './routes/_authenticated/token-ledger'
 import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
 import { Route as AuthenticatedTransactionRecordsRouteImport } from './routes/_authenticated/transaction-records'
@@ -60,6 +59,7 @@ import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_au
 import { Route as AuthenticatedResidentsIndexRouteImport } from './routes/_authenticated/residents.index'
 import { Route as AuthenticatedResidentsNewRouteImport } from './routes/_authenticated/residents.new'
 import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
+import { Route as AuthenticatedServiceProvidersIndexRouteImport } from './routes/_authenticated/service-providers.index'
 import { Route as AuthenticatedUnitsUnitIdRouteImport } from './routes/_authenticated/units.$unitId'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
@@ -218,12 +218,6 @@ const AuthenticatedResidentsRoute = AuthenticatedResidentsRouteImport.update({
   path: '/residents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedServiceProvidersRoute =
-  AuthenticatedServiceProvidersRouteImport.update({
-    id: '/service-providers',
-    path: '/service-providers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedTokenLedgerRoute =
   AuthenticatedTokenLedgerRouteImport.update({
     id: '/token-ledger',
@@ -417,6 +411,12 @@ const AuthenticatedServiceProviderDashboardRoute =
   AuthenticatedServiceProviderDashboardRouteImport.update({
     id: '/service-provider/dashboard',
     path: '/service-provider/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedServiceProvidersIndexRoute =
+  AuthenticatedServiceProvidersIndexRouteImport.update({
+    id: '/service-providers/',
+    path: '/service-providers/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUnitsUnitIdRoute =
@@ -830,7 +830,6 @@ export interface FileRoutesByFullPath {
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
-  '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -885,6 +884,7 @@ export interface FileRoutesByFullPath {
   '/payment-methods/': typeof AuthenticatedPaymentMethodsIndexRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
+  '/service-providers/': typeof AuthenticatedServiceProvidersIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/vending-software/': typeof AuthenticatedVendingSoftwareIndexRoute
   '/vendors/': typeof AuthenticatedVendorsIndexRoute
@@ -944,7 +944,6 @@ export interface FileRoutesByTo {
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
-  '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -996,6 +995,7 @@ export interface FileRoutesByTo {
   '/payment-methods': typeof AuthenticatedPaymentMethodsIndexRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
+  '/service-providers': typeof AuthenticatedServiceProvidersIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/vending-software': typeof AuthenticatedVendingSoftwareIndexRoute
   '/vendors': typeof AuthenticatedVendorsIndexRoute
@@ -1062,7 +1062,6 @@ export interface FileRoutesById {
   '/_authenticated/price-management': typeof AuthenticatedPriceManagementRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
-  '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/_authenticated/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
   '/_authenticated/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -1117,6 +1116,7 @@ export interface FileRoutesById {
   '/_authenticated/payment-methods/': typeof AuthenticatedPaymentMethodsIndexRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
+  '/_authenticated/service-providers/': typeof AuthenticatedServiceProvidersIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/vending-software/': typeof AuthenticatedVendingSoftwareIndexRoute
   '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
@@ -1183,7 +1183,6 @@ export interface FileRouteTypes {
     | '/price-management'
     | '/properties'
     | '/residents'
-    | '/service-providers'
     | '/token-ledger'
     | '/token-management'
     | '/transaction-records'
@@ -1238,6 +1237,7 @@ export interface FileRouteTypes {
     | '/payment-methods/'
     | '/properties/'
     | '/residents/'
+    | '/service-providers/'
     | '/users/'
     | '/vending-software/'
     | '/vendors/'
@@ -1297,7 +1297,6 @@ export interface FileRouteTypes {
     | '/pos'
     | '/pos-shift-report'
     | '/price-management'
-    | '/service-providers'
     | '/token-ledger'
     | '/token-management'
     | '/transaction-records'
@@ -1349,6 +1348,7 @@ export interface FileRouteTypes {
     | '/payment-methods'
     | '/properties'
     | '/residents'
+    | '/service-providers'
     | '/users'
     | '/vending-software'
     | '/vendors'
@@ -1414,7 +1414,6 @@ export interface FileRouteTypes {
     | '/_authenticated/price-management'
     | '/_authenticated/properties'
     | '/_authenticated/residents'
-    | '/_authenticated/service-providers'
     | '/_authenticated/token-ledger'
     | '/_authenticated/token-management'
     | '/_authenticated/transaction-records'
@@ -1469,6 +1468,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payment-methods/'
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
+    | '/_authenticated/service-providers/'
     | '/_authenticated/users/'
     | '/_authenticated/vending-software/'
     | '/_authenticated/vendors/'
@@ -1656,13 +1656,6 @@ declare module '@tanstack/react-router' {
       path: '/residents'
       fullPath: '/residents'
       preLoaderRoute: typeof AuthenticatedResidentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/service-providers': {
-      id: '/_authenticated/service-providers'
-      path: '/service-providers'
-      fullPath: '/service-providers'
-      preLoaderRoute: typeof AuthenticatedServiceProvidersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/token-ledger': {
@@ -1894,6 +1887,13 @@ declare module '@tanstack/react-router' {
       path: '/service-provider/dashboard'
       fullPath: '/service-provider/dashboard'
       preLoaderRoute: typeof AuthenticatedServiceProviderDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/service-providers/': {
+      id: '/_authenticated/service-providers/'
+      path: '/service-providers'
+      fullPath: '/service-providers/'
+      preLoaderRoute: typeof AuthenticatedServiceProvidersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/units/$unitId': {
@@ -2533,7 +2533,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPriceManagementRoute: typeof AuthenticatedPriceManagementRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
-  AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
   AuthenticatedTokenLedgerRoute: typeof AuthenticatedTokenLedgerRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
   AuthenticatedTransactionRecordsRoute: typeof AuthenticatedTransactionRecordsRoute
@@ -2570,6 +2569,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
   AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
+  AuthenticatedServiceProvidersIndexRoute: typeof AuthenticatedServiceProvidersIndexRoute
   AuthenticatedVendingSoftwareIndexRoute: typeof AuthenticatedVendingSoftwareIndexRoute
   AuthenticatedZonesIndexRoute: typeof AuthenticatedZonesIndexRoute
   AuthenticatedVendorLandlordsLandlordIdRoute: typeof AuthenticatedVendorLandlordsLandlordIdRoute
@@ -2606,7 +2606,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPriceManagementRoute: AuthenticatedPriceManagementRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
-  AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
   AuthenticatedTokenLedgerRoute: AuthenticatedTokenLedgerRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
   AuthenticatedTransactionRecordsRoute: AuthenticatedTransactionRecordsRoute,
@@ -2651,6 +2650,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
   AuthenticatedPaymentMethodsIndexRoute: AuthenticatedPaymentMethodsIndexRoute,
+  AuthenticatedServiceProvidersIndexRoute:
+    AuthenticatedServiceProvidersIndexRoute,
   AuthenticatedVendingSoftwareIndexRoute:
     AuthenticatedVendingSoftwareIndexRoute,
   AuthenticatedZonesIndexRoute: AuthenticatedZonesIndexRoute,
