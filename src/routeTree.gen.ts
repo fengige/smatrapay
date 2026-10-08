@@ -29,6 +29,7 @@ import { Route as AuthenticatedResidentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_authenticated/service-providers'
 import { Route as AuthenticatedTokenLedgerRouteImport } from './routes/_authenticated/token-ledger'
 import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
+import { Route as AuthenticatedTransactionRecordsRouteImport } from './routes/_authenticated/transaction-records'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedVendingDashboardRouteImport } from './routes/_authenticated/vending-dashboard'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -232,6 +233,12 @@ const AuthenticatedTokenManagementRoute =
   AuthenticatedTokenManagementRouteImport.update({
     id: '/token-management',
     path: '/token-management',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTransactionRecordsRoute =
+  AuthenticatedTransactionRecordsRouteImport.update({
+    id: '/transaction-records',
+    path: '/transaction-records',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
@@ -819,6 +826,7 @@ export interface FileRoutesByFullPath {
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
+  '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
@@ -931,6 +939,7 @@ export interface FileRoutesByTo {
   '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
+  '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
   '/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -1047,6 +1056,7 @@ export interface FileRoutesById {
   '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/_authenticated/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
+  '/_authenticated/transaction-records': typeof AuthenticatedTransactionRecordsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_authenticated/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
@@ -1166,6 +1176,7 @@ export interface FileRouteTypes {
     | '/service-providers'
     | '/token-ledger'
     | '/token-management'
+    | '/transaction-records'
     | '/users'
     | '/vending-dashboard'
     | '/vendors'
@@ -1278,6 +1289,7 @@ export interface FileRouteTypes {
     | '/service-providers'
     | '/token-ledger'
     | '/token-management'
+    | '/transaction-records'
     | '/vending-dashboard'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -1393,6 +1405,7 @@ export interface FileRouteTypes {
     | '/_authenticated/service-providers'
     | '/_authenticated/token-ledger'
     | '/_authenticated/token-management'
+    | '/_authenticated/transaction-records'
     | '/_authenticated/users'
     | '/_authenticated/vending-dashboard'
     | '/_authenticated/vendors'
@@ -1651,6 +1664,13 @@ declare module '@tanstack/react-router' {
       path: '/token-management'
       fullPath: '/token-management'
       preLoaderRoute: typeof AuthenticatedTokenManagementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/transaction-records': {
+      id: '/_authenticated/transaction-records'
+      path: '/transaction-records'
+      fullPath: '/transaction-records'
+      preLoaderRoute: typeof AuthenticatedTransactionRecordsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users': {
@@ -2496,6 +2516,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
   AuthenticatedTokenLedgerRoute: typeof AuthenticatedTokenLedgerRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
+  AuthenticatedTransactionRecordsRoute: typeof AuthenticatedTransactionRecordsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedVendingDashboardRoute: typeof AuthenticatedVendingDashboardRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
@@ -2567,6 +2588,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
   AuthenticatedTokenLedgerRoute: AuthenticatedTokenLedgerRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
+  AuthenticatedTransactionRecordsRoute: AuthenticatedTransactionRecordsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedVendingDashboardRoute: AuthenticatedVendingDashboardRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
