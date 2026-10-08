@@ -3113,7 +3113,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      transaction_records: {
+        Row: {
+          action: string | null
+          amount_paid: number | null
+          bank: string | null
+          bank_notification_id: string | null
+          commission_amount: number | null
+          error_message: string | null
+          meter_id: string | null
+          meter_number: string | null
+          mobile: string | null
+          owner_id: string | null
+          owner_name: string | null
+          owner_type: string | null
+          payment_status: string | null
+          provider_reference: string | null
+          record_id: string | null
+          sms_at: string | null
+          sms_status: string | null
+          tariff: number | null
+          token: string | null
+          token_id: string | null
+          token_status: string | null
+          tokenizable_amount: number | null
+          trans_id: string | null
+          txn_at: string | null
+          units: number | null
+          vat_on_commission_amount: number | null
+          vending_software: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_meter_assignment: {
