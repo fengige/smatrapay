@@ -367,6 +367,7 @@ function AdminDashboard() {
               <h2 className="text-sm font-bold text-foreground">Recent Vendors</h2>
               <Link
                  to="/vendors"
+                search={{ page: 1, limit: 10, status: "all", q: "" }}
                 className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
               >
                 View All <ChevronRight className="size-3" />
