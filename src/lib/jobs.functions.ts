@@ -69,14 +69,16 @@ async function runList(scope: Scope, data: ListInput) {
   let memberFilter: string[] | null = null;
   if (scope.kind === "provider") {
     const { data: m } = await sb.from("installation_team_members").select("id").eq("user_id", scope.userId);
-    memberFilter = (m ?? []).map((r: any) => r.id);
-    if (!memberFilter.length) return { rows: [] as JobRow[], total: 0 };
+    const own: string[] = (m ?? []).map((r: any) => r.id);
+    memberFilter = own;
+    if (!own.length) return { rows: [] as JobRow[], total: 0 };
   }
   if (data.provider) {
     const { data: m } = await sb.from("installation_team_members").select("id").eq("user_id", data.provider);
     const ids = (m ?? []).map((r: any) => r.id);
-    memberFilter = memberFilter ? memberFilter.filter((i) => ids.includes(i)) : ids;
-    if (!memberFilter.length) return { rows: [] as JobRow[], total: 0 };
+    const next: string[] = memberFilter ? memberFilter.filter((i) => ids.includes(i)) : ids;
+    memberFilter = next;
+    if (!next.length) return { rows: [] as JobRow[], total: 0 };
   }
 
   let q = sb
