@@ -47,7 +47,8 @@ export const listNcbaPayments = createServerFn({ method: "POST" })
       for (const x of t ?? []) tokens.set(x.id, x.token);
     }
     return (rows ?? []).map((r: any) => ({
-      id: r.id, trans_id: r.trans_id, trans_time: r.trans_time, trans_amount: Number(r.trans_amount ?? 0),
+      id: r.id, bank: r.bank ?? null, trans_id: r.trans_id, meter_number: r.meter_number ?? null,
+      trans_time: r.trans_time, trans_amount: Number(r.trans_amount ?? 0),
       narrative: r.narrative, bill_ref_number: r.bill_ref_number, mobile: r.mobile, status: r.status,
       error_code: r.error_code, error_message: r.error_message, sms_status: r.sms_status,
       attempts: r.attempts ?? 0, auto_retry_count: r.auto_retry_count ?? 0, next_retry_at: r.next_retry_at,
