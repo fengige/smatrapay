@@ -1,6 +1,7 @@
 import { AtSign, Phone, Plus, Trash2 } from "lucide-react";
 
 import { COUNTRY_OPTIONS, STATE_MAP } from "@/lib/countries";
+import { CatalogPicker } from "@/components/service-providers/CatalogPicker";
 import { Field, inputClass } from "@/components/service-providers/ProviderUI";
 
 export type ProviderFormValues = {
@@ -286,6 +287,15 @@ export function ProviderForm({
                 className="grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1fr_2fr_auto]"
               >
                 <Field label="Service Name" required error={errors[`services.${i}.service_name`]}>
+                  <CatalogPicker
+                    value={s.service_name}
+                    onPick={(v) =>
+                      set(
+                        "services",
+                        values.services.map((x, idx) => (idx === i ? v : x)),
+                      )
+                    }
+                  />
                   <input
                     className={inputClass}
                     placeholder="e.g. Plumbing"
