@@ -1988,6 +1988,36 @@ export type Database = {
           },
         ]
       }
+      service_catalog: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_provider_profiles: {
         Row: {
           business_name: string | null
@@ -2052,6 +2082,7 @@ export type Database = {
       }
       service_provider_services: {
         Row: {
+          catalog_id: string | null
           created_at: string
           description: string
           id: string
@@ -2061,6 +2092,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          catalog_id?: string | null
           created_at?: string
           description: string
           id?: string
@@ -2070,6 +2102,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          catalog_id?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -2079,6 +2112,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "service_provider_services_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_provider_services_provider_id_fkey"
             columns: ["provider_id"]
