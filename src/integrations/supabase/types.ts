@@ -1988,6 +1988,106 @@ export type Database = {
           },
         ]
       }
+      service_provider_profiles: {
+        Row: {
+          business_name: string | null
+          city: string | null
+          country: string | null
+          county: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          first_name: string
+          last_name: string
+          logo_url: string | null
+          middle_name: string | null
+          postal_address: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name?: string | null
+          city?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          first_name: string
+          last_name: string
+          logo_url?: string | null
+          middle_name?: string | null
+          postal_address?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string | null
+          city?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          first_name?: string
+          last_name?: string
+          logo_url?: string | null
+          middle_name?: string | null
+          postal_address?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_provider_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_provider_services: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          provider_id: string
+          service_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          provider_id: string
+          service_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          provider_id?: string
+          service_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_provider_services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_provider_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       service_request_events: {
         Row: {
           actor_id: string | null
