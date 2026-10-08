@@ -1232,6 +1232,47 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_account_sidian_settings: {
+        Row: {
+          account_id: string
+          business_shortcode: string
+          created_at: string
+          endpoint: string
+          owner_id: string
+          password: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          account_id: string
+          business_shortcode: string
+          created_at?: string
+          endpoint: string
+          owner_id: string
+          password: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          account_id?: string
+          business_shortcode?: string
+          created_at?: string
+          endpoint?: string
+          owner_id?: string
+          password?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_account_sidian_settings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "payment_method_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_method_accounts: {
         Row: {
           account_name: string | null
