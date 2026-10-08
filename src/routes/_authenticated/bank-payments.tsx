@@ -98,7 +98,8 @@ function BankPaymentsRoutePage() {
             <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Received</th>
-                <th className="px-4 py-3">Bank / TransID</th>
+                <th className="px-4 py-3">Bank</th>
+                <th className="px-4 py-3">TransID</th>
                 <th className="px-4 py-3">Meter</th>
                 <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">Status</th>
