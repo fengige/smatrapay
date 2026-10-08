@@ -63,7 +63,7 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
   const db = supabaseAdmin as any;
 
   // 1. Idempotency on TransID (unique column).
-  const { data: existing } = await db.from("ncba_notifications").select("*").eq("bank", "NCBA").eq("trans_id", p.TransID).maybeSingle();
+  const { data: existing } = await db.from("bank_notifications").select("*").eq("bank", "NCBA").eq("trans_id", p.TransID).maybeSingle();
   if (existing?.status === "completed") return ack("0", "Duplicate notification — already processed");
   if (existing?.status === "processing" && Date.now() - new Date(existing.updated_at).getTime() < 120_000)
     return ack("1", "Notification is being processed — retry later", 409);
@@ -86,15 +86,15 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
     error_message: null,
   };
   const saved = existing
-    ? await db.from("ncba_notifications").update(record).eq("id", existing.id).select("id").single()
-    : await db.from("ncba_notifications").insert(record).select("id").single();
+    ? await db.from("bank_notifications").update(record).eq("id", existing.id).select("id").single()
+    : await db.from("bank_notifications").insert(record).select("id").single();
   if (saved.error) {
     if (/duplicate|unique/i.test(saved.error.message)) return ack("1", "Notification is being processed — retry later", 409);
     return ack("1", "Could not record the notification — retry later", 500);
   }
   const rowId = saved.data.id as string;
   const fail = async (code: string, message: string, extra: Record<string, unknown> = {}) => {
-    await db.from("ncba_notifications").update({ status: "failed", error_code: code, error_message: message, ...extra }).eq("id", rowId);
+    await db.from("bank_notifications").update({ status: "failed", error_code: code, error_message: message, ...extra }).eq("id", rowId);
   };
 
   const result = await vendNcbaNotification(rowId);
@@ -126,16 +126,16 @@ export async function vendNcbaNotification(
 ): Promise<{ status: string; message: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
-  const { data: n } = await db.from("ncba_notifications").select("*").eq("id", rowId).maybeSingle();
+  const { data: n } = await db.from("bank_notifications").select("*").eq("id", rowId).maybeSingle();
   if (!n) return { status: "missing", message: "Notification not found" };
   if (n.status === "completed") return { status: "completed", message: null };
 
   await db
-    .from("ncba_notifications")
+    .from("bank_notifications")
     .update({ status: "processing", ...(opts.manual ? { last_retry_by: opts.actorId ?? null, attempts: (n.attempts ?? 0) + 1 } : {}) })
     .eq("id", rowId);
   const fail = async (status: string, code: string, message: string, extra: Record<string, unknown> = {}) => {
-    await db.from("ncba_notifications").update({ status, error_code: code, error_message: message, ...extra }).eq("id", rowId);
+    await db.from("bank_notifications").update({ status, error_code: code, error_message: message, ...extra }).eq("id", rowId);
     return { status, message };
   };
 
@@ -180,7 +180,7 @@ export async function vendNcbaNotification(
 
   // Completed before SMS so an SMS problem can never undo the sale.
   await db
-    .from("ncba_notifications")
+    .from("bank_notifications")
     .update({
       status: "completed", meter_id: meter.id, token_id: tokenRow.id, processed_at: new Date().toISOString(),
       error_code: null, error_message: null, next_retry_at: null,
@@ -202,7 +202,7 @@ export async function vendNcbaNotification(
       smsStatus = `Failed - ${((e as Error).message || "SMS error").slice(0, 200)}`;
     }
   }
-  await db.from("ncba_notifications").update({ sms_status: smsStatus }).eq("id", rowId);
+  await db.from("bank_notifications").update({ sms_status: smsStatus }).eq("id", rowId);
   return { status: "completed", message: null };
 }
 
@@ -210,7 +210,7 @@ export async function vendNcbaNotification(
 export async function processDueNcbaRetries(limit = 5) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: due } = await (supabaseAdmin as any)
-    .from("ncba_notifications")
+    .from("bank_notifications")
     .select("id")
     .eq("status", "retry_pending")
     .lte("next_retry_at", new Date().toISOString())

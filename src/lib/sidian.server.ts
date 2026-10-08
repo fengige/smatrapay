@@ -78,7 +78,7 @@ export async function processSidianNotification(p: SidianPayload) {
   const confirmed = isSidianPaymentConfirmed(r.status);
 
   const { data: existing } = await db
-    .from("ncba_notifications").select("*").eq("bank", SIDIAN_BANK).eq("trans_id", r.TrasactionID).maybeSingle();
+    .from("bank_notifications").select("*").eq("bank", SIDIAN_BANK).eq("trans_id", r.TrasactionID).maybeSingle();
   if (existing?.status === "completed") return ack("0", "Duplicate notification — already processed");
   if (existing?.status === "rejected") return ack("0", "Duplicate notification — already recorded");
   if (existing?.status === "processing" && Date.now() - new Date(existing.updated_at).getTime() < 120_000)
@@ -105,8 +105,8 @@ export async function processSidianNotification(p: SidianPayload) {
     error_message: confirmed ? null : `Sidian reported status ${r.status}; no token issued.`,
   };
   const saved = existing
-    ? await db.from("ncba_notifications").update(record).eq("id", existing.id).select("id").single()
-    : await db.from("ncba_notifications").insert(record).select("id").single();
+    ? await db.from("bank_notifications").update(record).eq("id", existing.id).select("id").single()
+    : await db.from("bank_notifications").insert(record).select("id").single();
   if (saved.error) {
     if (/duplicate|unique/i.test(saved.error.message)) return ack("1", "Notification is being processed — retry later", 409);
     return ack("1", "Could not record the notification — retry later", 500);
