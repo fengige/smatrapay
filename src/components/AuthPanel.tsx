@@ -26,10 +26,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { getMyAccess } from "@/lib/auth.functions";
 import {
-  PORTALS,
   RESIDENT_DASHBOARD,
   dashboardForRoles,
   portalById,
+  visiblePortals,
   type DashboardPath,
   type PortalId,
 } from "@/lib/portals";
@@ -565,7 +565,7 @@ function StaffAuth() {
           Select Portal <span className="text-destructive">*</span>
         </p>
         <div className="grid gap-2">
-          {PORTALS.map((p) => {
+          {visiblePortals().map((p) => {
             const Icon = PORTAL_ICONS[p.id];
             return (
               <button

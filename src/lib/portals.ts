@@ -37,6 +37,17 @@ export const PORTALS = [
 ] as const;
 
 export type PortalId = (typeof PORTALS)[number]["id"];
+
+/**
+ * Portals that stay fully supported (role, dashboard, navigation) but are not
+ * offered for selection on the staff sign-in screen.
+ */
+export const HIDDEN_PORTAL_IDS: PortalId[] = ["agent"];
+
+/** Portals offered on the staff sign-in screen. */
+export function visiblePortals() {
+  return PORTALS.filter((portal) => !HIDDEN_PORTAL_IDS.includes(portal.id));
+}
 export type AppRole =
   | "admin"
   | "landlord"
