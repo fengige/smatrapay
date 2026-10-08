@@ -70,6 +70,8 @@ const bankSearchSchema = z.object({
   from: z.string().max(10).default(""), // YYYY-MM-DD, inclusive
   to: z.string().max(10).default(""),
   sortDir: z.enum(["asc", "desc"]).default("desc"),
+  ownerName: z.string().max(100).default(""),
+  ownerType: z.enum(["all", "vendor", "landlord", "agent"]).default("all"),
 });
 export type BankSearch = z.input<typeof bankSearchSchema>;
 
@@ -98,6 +100,52 @@ function applyBankFilters(q: any, f: z.output<typeof bankSearchSchema>) {
   return q;
 }
 
+type OwnerType = "vendor" | "landlord" | "agent";
+/** Same precedence as resolveMeterOwner: landlord → agent → vendor. */
+function ownerOfMeter(m: any): { id: string; type: OwnerType } | null {
+  if (m.landlord_id) return { id: m.landlord_id, type: "landlord" };
+  if (m.agent_id) return { id: m.agent_id, type: "agent" };
+  if (m.vendor_id && /^[0-9a-f-]{36}$/i.test(m.vendor_id)) return { id: m.vendor_id, type: "vendor" };
+  return null;
+}
+
+/** Meter numbers whose owner matches the owner filters, or null when no owner filter is set. */
+async function ownerMeterNumbers(supabase: any, f: z.output<typeof bankSearchSchema>): Promise<string[] | null> {
+  const name = clean(f.ownerName);
+  if (!name && f.ownerType === "all") return null;
+  let ids: string[] | null = null;
+  if (name) {
+    const { data: us } = await supabase.from("users").select("id").ilike("name", `%${name}%`).limit(1000);
+    ids = (us ?? []).map((u: any) => u.id);
+    if (!ids!.length) return [];
+  }
+  let mq = supabase.from("meters").select("meter_number, landlord_id, agent_id, vendor_id");
+  if (f.ownerType === "landlord") mq = mq.not("landlord_id", "is", null);
+  else if (f.ownerType === "agent") mq = mq.is("landlord_id", null).not("agent_id", "is", null);
+  else if (f.ownerType === "vendor") mq = mq.is("landlord_id", null).is("agent_id", null).not("vendor_id", "is", null);
+  if (ids) mq = mq.or(`landlord_id.in.(${ids.join(",")}),agent_id.in.(${ids.join(",")}),vendor_id.in.(${ids.join(",")})`);
+  const out: string[] = [];
+  for (let start = 0; start < 20000; start += 1000) {
+    const { data: ms, error } = await mq.range(start, start + 999);
+    if (error) throw new Error(error.message);
+    for (const m of ms ?? []) {
+      const o = ownerOfMeter(m);
+      if (!o || (f.ownerType !== "all" && o.type !== f.ownerType) || (ids && !ids.includes(o.id))) continue;
+      if (m.meter_number) out.push(m.meter_number);
+    }
+    if (!ms || ms.length < 1000) break;
+  }
+  return out;
+}
+
+async function filtered(supabase: any, select: string, f: z.output<typeof bankSearchSchema>, opts?: any) {
+  const nums = await ownerMeterNumbers(supabase, f);
+  let q = supabase.from("bank_notifications").select(select, opts);
+  q = applyBankFilters(q, f);
+  if (nums) q = q.in("meter_number", nums.length ? nums : ["__none__"]);
+  return q;
+}
+
 export type BankPaymentExportRow = NcbaPaymentRow & {
   payer_name: string | null;
   business_short_code: string | null;
@@ -110,6 +158,8 @@ export type BankPaymentExportRow = NcbaPaymentRow & {
   vat_on_commission_percentage: number | null;
   vat_on_commission_amount: number | null;
   net_amount: number | null;
+  owner_name: string | null;
+  owner_type: "Vendor" | "Landlord" | "Agent" | null;
 };
 
 async function mapRows(supabase: any, rows: any[]): Promise<BankPaymentExportRow[]> {
@@ -121,6 +171,20 @@ async function mapRows(supabase: any, rows: any[]): Promise<BankPaymentExportRow
       .in("id", tokenIds.slice(i, i + 200));
     for (const x of t ?? []) tokens.set(x.id, x);
   }
+  // Batched owner lookup: meter_number → meter → owner (landlord → agent → vendor) → user name.
+  const nums = [...new Set(rows.map((r) => r.meter_number).filter(Boolean))] as string[];
+  const ownerByNum = new Map<string, { id: string; type: OwnerType }>();
+  for (let i = 0; i < nums.length; i += 200) {
+    const { data: ms } = await supabase.from("meters").select("meter_number, landlord_id, agent_id, vendor_id").in("meter_number", nums.slice(i, i + 200));
+    for (const m of ms ?? []) { const o = ownerOfMeter(m); if (o) ownerByNum.set(m.meter_number, o); }
+  }
+  const uids = [...new Set([...ownerByNum.values()].map((o) => o.id))];
+  const nameById = new Map<string, string>();
+  for (let i = 0; i < uids.length; i += 200) {
+    const { data: us } = await supabase.from("users").select("id, name").in("id", uids.slice(i, i + 200));
+    for (const u of us ?? []) nameById.set(u.id, u.name);
+  }
+  const typeLabel = { vendor: "Vendor", landlord: "Landlord", agent: "Agent" } as const;
   const n = (v: any) => (v == null ? null : Number(v));
   return rows.map((r) => {
     const t = r.token_id ? tokens.get(r.token_id) : null;
@@ -137,6 +201,8 @@ async function mapRows(supabase: any, rows: any[]): Promise<BankPaymentExportRow
       commission_percentage: n(t?.commission_percentage), commission_amount: n(t?.commission_amount),
       vat_on_commission_percentage: n(t?.vat_on_commission_percentage), vat_on_commission_amount: n(t?.vat_on_commission_amount),
       net_amount: n(t?.net_amount),
+      owner_name: (() => { const o = r.meter_number ? ownerByNum.get(r.meter_number) : null; return o ? (nameById.get(o.id) ?? null) : null; })(),
+      owner_type: (() => { const o = r.meter_number ? ownerByNum.get(r.meter_number) : null; return o ? typeLabel[o.type] : null; })(),
     };
   });
 }
@@ -152,8 +218,8 @@ export const searchBankPayments = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
     const start = (data.page - 1) * data.pageSize;
-    let q = supabase.from("bank_notifications").select(COLS, { count: "exact" });
-    q = applyBankFilters(q, data).order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
+    let q = await filtered(supabase, COLS, data, { count: "exact" });
+    q = q.order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
     const { data: banks } = await supabase.from("bank_notifications").select("bank").limit(1000);
@@ -170,8 +236,8 @@ export const exportBankPayments = createServerFn({ method: "POST" })
     const supabase = context.supabase as any;
     const all: any[] = [];
     for (let start = 0; start < 50000; start += 1000) {
-      let q = supabase.from("bank_notifications").select(COLS);
-      q = applyBankFilters(q, data).order("created_at", { ascending: data.sortDir === "asc" }).order("id").range(start, start + 999);
+      let q = await filtered(supabase, COLS, data);
+      q = q.order("created_at", { ascending: data.sortDir === "asc" }).order("id").range(start, start + 999);
       const { data: rows, error } = await q;
       if (error) throw new Error(error.message);
       all.push(...(rows ?? []));
