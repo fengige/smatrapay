@@ -8,18 +8,18 @@ import { toast } from "sonner";
 import { PortalLayout } from "@/components/PortalLayout";
 import { listNcbaPayments, retryNcbaPayment, runDueNcbaRetries, type NcbaPaymentRow } from "@/lib/ncba.functions";
 
-export const Route = createFileRoute("/_authenticated/ncba-payments")({
+export const Route = createFileRoute("/_authenticated/bank-payments")({
   head: () => ({
     meta: [
-      { title: "NCBA Payments | SmatraPay Admin" },
+      { title: "Bank Payments | SmatraPay Admin" },
       { name: "description", content: "NCBA Pay Bill payments, failed token generation reasons and retries." },
-      { property: "og:title", content: "NCBA Payments | SmatraPay Admin" },
+      { property: "og:title", content: "Bank Payments | SmatraPay Admin" },
       { property: "og:description", content: "Review failed NCBA payments and retry token generation." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: NcbaPaymentsPage,
+  component: BankPaymentsRoutePage,
 });
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -32,7 +32,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 const kes = (n: number) => `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function NcbaPaymentsPage() {
+function BankPaymentsRoutePage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"problems" | "all" | "completed">("problems");
   const list = useServerFn(listNcbaPayments);
@@ -41,7 +41,7 @@ function NcbaPaymentsPage() {
   const [confirm, setConfirm] = useState<NcbaPaymentRow | null>(null);
 
   const { data = [], isLoading, isFetching, refetch, isError } = useQuery({
-    queryKey: ["ncba-payments", filter],
+    queryKey: ["bank-payments", filter],
     queryFn: () => list({ data: { status: filter } }),
   });
 
@@ -51,7 +51,7 @@ function NcbaPaymentsPage() {
       setConfirm(null);
       if (r.status === "completed") toast.success(r.message ?? "Token generated");
       else toast.error(r.message ?? "Retry failed");
-      void qc.invalidateQueries({ queryKey: ["ncba-payments"] });
+      void qc.invalidateQueries({ queryKey: ["bank-payments"] });
     },
     onError: (e: Error) => toast.error(e.message || "Retry failed"),
   });
@@ -60,7 +60,7 @@ function NcbaPaymentsPage() {
     mutationFn: () => runDue(),
     onSuccess: (r) => {
       toast.success(r.processed ? `Ran ${r.processed} queued retr${r.processed === 1 ? "y" : "ies"} · ${r.completed} completed` : "No queued retries are due");
-      void qc.invalidateQueries({ queryKey: ["ncba-payments"] });
+      void qc.invalidateQueries({ queryKey: ["bank-payments"] });
     },
     onError: (e: Error) => toast.error(e.message || "Could not run queued retries"),
   });
