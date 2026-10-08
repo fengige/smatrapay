@@ -29,6 +29,13 @@
       "when": 1791444222153,
       "tag": "0003_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791475440855,
+      "tag": "0004_bank_notifications",
+      "breakpoints": true
     }
   ]
 }
