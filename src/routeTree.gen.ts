@@ -26,7 +26,6 @@ import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authe
 import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_authenticated/price-management'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
-import { Route as AuthenticatedServiceProvidersRouteImport } from './routes/_authenticated/service-providers'
 import { Route as AuthenticatedTokenLedgerRouteImport } from './routes/_authenticated/token-ledger'
 import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
 import { Route as AuthenticatedTransactionRecordsRouteImport } from './routes/_authenticated/transaction-records'
@@ -60,6 +59,8 @@ import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_au
 import { Route as AuthenticatedResidentsIndexRouteImport } from './routes/_authenticated/residents.index'
 import { Route as AuthenticatedResidentsNewRouteImport } from './routes/_authenticated/residents.new'
 import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
+import { Route as AuthenticatedServiceProvidersIndexRouteImport } from './routes/_authenticated/service-providers.index'
+import { Route as AuthenticatedServiceProvidersNewRouteImport } from './routes/_authenticated/service-providers.new'
 import { Route as AuthenticatedUnitsUnitIdRouteImport } from './routes/_authenticated/units.$unitId'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedUsersIdRouteImport } from './routes/_authenticated/users.$id'
@@ -93,6 +94,8 @@ import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedPropertiesIdEditRouteImport } from './routes/_authenticated/properties.$id.edit'
 import { Route as AuthenticatedResidentsIdIndexRouteImport } from './routes/_authenticated/residents.$id.index'
 import { Route as AuthenticatedResidentsIdEditRouteImport } from './routes/_authenticated/residents.$id.edit'
+import { Route as AuthenticatedServiceProvidersIdIndexRouteImport } from './routes/_authenticated/service-providers.$id.index'
+import { Route as AuthenticatedServiceProvidersIdEditRouteImport } from './routes/_authenticated/service-providers.$id.edit'
 import { Route as AuthenticatedUsersIdIndexRouteImport } from './routes/_authenticated/users.$id.index'
 import { Route as AuthenticatedUsersIdEditRouteImport } from './routes/_authenticated/users.$id.edit'
 import { Route as AuthenticatedVendorLandlordsIndexRouteImport } from './routes/_authenticated/vendor/landlords.index'
@@ -218,12 +221,6 @@ const AuthenticatedResidentsRoute = AuthenticatedResidentsRouteImport.update({
   path: '/residents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedServiceProvidersRoute =
-  AuthenticatedServiceProvidersRouteImport.update({
-    id: '/service-providers',
-    path: '/service-providers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedTokenLedgerRoute =
   AuthenticatedTokenLedgerRouteImport.update({
     id: '/token-ledger',
@@ -419,6 +416,18 @@ const AuthenticatedServiceProviderDashboardRoute =
     path: '/service-provider/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedServiceProvidersIndexRoute =
+  AuthenticatedServiceProvidersIndexRouteImport.update({
+    id: '/service-providers/',
+    path: '/service-providers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedServiceProvidersNewRoute =
+  AuthenticatedServiceProvidersNewRouteImport.update({
+    id: '/service-providers/new',
+    path: '/service-providers/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUnitsUnitIdRoute =
   AuthenticatedUnitsUnitIdRouteImport.update({
     id: '/units/$unitId',
@@ -610,6 +619,18 @@ const AuthenticatedResidentsIdEditRoute =
     id: '/$id/edit',
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedResidentsRoute,
+  } as any)
+const AuthenticatedServiceProvidersIdIndexRoute =
+  AuthenticatedServiceProvidersIdIndexRouteImport.update({
+    id: '/service-providers/$id/',
+    path: '/service-providers/$id/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedServiceProvidersIdEditRoute =
+  AuthenticatedServiceProvidersIdEditRouteImport.update({
+    id: '/service-providers/$id/edit',
+    path: '/service-providers/$id/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUsersIdIndexRoute =
   AuthenticatedUsersIdIndexRouteImport.update({
@@ -830,7 +851,6 @@ export interface FileRoutesByFullPath {
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
-  '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -856,6 +876,7 @@ export interface FileRoutesByFullPath {
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/service-providers/new': typeof AuthenticatedServiceProvidersNewRoute
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/users/new': typeof AuthenticatedUsersNewRoute
@@ -885,6 +906,7 @@ export interface FileRoutesByFullPath {
   '/payment-methods/': typeof AuthenticatedPaymentMethodsIndexRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/residents/': typeof AuthenticatedResidentsIndexRoute
+  '/service-providers/': typeof AuthenticatedServiceProvidersIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/vending-software/': typeof AuthenticatedVendingSoftwareIndexRoute
   '/vendors/': typeof AuthenticatedVendorsIndexRoute
@@ -893,6 +915,7 @@ export interface FileRoutesByFullPath {
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
+  '/service-providers/$id/edit': typeof AuthenticatedServiceProvidersIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendor/landlords/$landlordId': typeof AuthenticatedVendorLandlordsLandlordIdRoute
   '/vendor/landlords/new': typeof AuthenticatedVendorLandlordsNewRoute
@@ -922,6 +945,7 @@ export interface FileRoutesByFullPath {
   '/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
   '/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
+  '/service-providers/$id/': typeof AuthenticatedServiceProvidersIdIndexRoute
   '/users/$id/': typeof AuthenticatedUsersIdIndexRoute
   '/vendor/landlords/': typeof AuthenticatedVendorLandlordsIndexRoute
   '/vendor/meters/': typeof AuthenticatedVendorMetersIndexRoute
@@ -944,7 +968,6 @@ export interface FileRoutesByTo {
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
-  '/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -968,6 +991,7 @@ export interface FileRoutesByTo {
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/service-providers/new': typeof AuthenticatedServiceProvidersNewRoute
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
   '/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
@@ -996,6 +1020,7 @@ export interface FileRoutesByTo {
   '/payment-methods': typeof AuthenticatedPaymentMethodsIndexRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/residents': typeof AuthenticatedResidentsIndexRoute
+  '/service-providers': typeof AuthenticatedServiceProvidersIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/vending-software': typeof AuthenticatedVendingSoftwareIndexRoute
   '/vendors': typeof AuthenticatedVendorsIndexRoute
@@ -1004,6 +1029,7 @@ export interface FileRoutesByTo {
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
+  '/service-providers/$id/edit': typeof AuthenticatedServiceProvidersIdEditRoute
   '/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/vendor/landlords/$landlordId': typeof AuthenticatedVendorLandlordsLandlordIdRoute
   '/vendor/landlords/new': typeof AuthenticatedVendorLandlordsNewRoute
@@ -1033,6 +1059,7 @@ export interface FileRoutesByTo {
   '/landlords/$id': typeof AuthenticatedLandlordsIdIndexRoute
   '/properties/$id': typeof AuthenticatedPropertiesIdIndexRoute
   '/residents/$id': typeof AuthenticatedResidentsIdIndexRoute
+  '/service-providers/$id': typeof AuthenticatedServiceProvidersIdIndexRoute
   '/users/$id': typeof AuthenticatedUsersIdIndexRoute
   '/vendor/landlords': typeof AuthenticatedVendorLandlordsIndexRoute
   '/vendor/meters': typeof AuthenticatedVendorMetersIndexRoute
@@ -1062,7 +1089,6 @@ export interface FileRoutesById {
   '/_authenticated/price-management': typeof AuthenticatedPriceManagementRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
-  '/_authenticated/service-providers': typeof AuthenticatedServiceProvidersRoute
   '/_authenticated/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
   '/_authenticated/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -1088,6 +1114,7 @@ export interface FileRoutesById {
   '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/_authenticated/residents/new': typeof AuthenticatedResidentsNewRoute
   '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/_authenticated/service-providers/new': typeof AuthenticatedServiceProvidersNewRoute
   '/_authenticated/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
   '/_authenticated/users/new': typeof AuthenticatedUsersNewRoute
@@ -1117,6 +1144,7 @@ export interface FileRoutesById {
   '/_authenticated/payment-methods/': typeof AuthenticatedPaymentMethodsIndexRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/residents/': typeof AuthenticatedResidentsIndexRoute
+  '/_authenticated/service-providers/': typeof AuthenticatedServiceProvidersIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/vending-software/': typeof AuthenticatedVendingSoftwareIndexRoute
   '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
@@ -1125,6 +1153,7 @@ export interface FileRoutesById {
   '/_authenticated/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/_authenticated/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
+  '/_authenticated/service-providers/$id/edit': typeof AuthenticatedServiceProvidersIdEditRoute
   '/_authenticated/users/$id/edit': typeof AuthenticatedUsersIdEditRoute
   '/_authenticated/vendor/landlords/$landlordId': typeof AuthenticatedVendorLandlordsLandlordIdRoute
   '/_authenticated/vendor/landlords/new': typeof AuthenticatedVendorLandlordsNewRoute
@@ -1154,6 +1183,7 @@ export interface FileRoutesById {
   '/_authenticated/landlords/$id/': typeof AuthenticatedLandlordsIdIndexRoute
   '/_authenticated/properties/$id/': typeof AuthenticatedPropertiesIdIndexRoute
   '/_authenticated/residents/$id/': typeof AuthenticatedResidentsIdIndexRoute
+  '/_authenticated/service-providers/$id/': typeof AuthenticatedServiceProvidersIdIndexRoute
   '/_authenticated/users/$id/': typeof AuthenticatedUsersIdIndexRoute
   '/_authenticated/vendor/landlords/': typeof AuthenticatedVendorLandlordsIndexRoute
   '/_authenticated/vendor/meters/': typeof AuthenticatedVendorMetersIndexRoute
@@ -1183,7 +1213,6 @@ export interface FileRouteTypes {
     | '/price-management'
     | '/properties'
     | '/residents'
-    | '/service-providers'
     | '/token-ledger'
     | '/token-management'
     | '/transaction-records'
@@ -1209,6 +1238,7 @@ export interface FileRouteTypes {
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
+    | '/service-providers/new'
     | '/units/$unitId'
     | '/users/$id'
     | '/users/new'
@@ -1238,6 +1268,7 @@ export interface FileRouteTypes {
     | '/payment-methods/'
     | '/properties/'
     | '/residents/'
+    | '/service-providers/'
     | '/users/'
     | '/vending-software/'
     | '/vendors/'
@@ -1246,6 +1277,7 @@ export interface FileRouteTypes {
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
+    | '/service-providers/$id/edit'
     | '/users/$id/edit'
     | '/vendor/landlords/$landlordId'
     | '/vendor/landlords/new'
@@ -1275,6 +1307,7 @@ export interface FileRouteTypes {
     | '/landlords/$id/'
     | '/properties/$id/'
     | '/residents/$id/'
+    | '/service-providers/$id/'
     | '/users/$id/'
     | '/vendor/landlords/'
     | '/vendor/meters/'
@@ -1297,7 +1330,6 @@ export interface FileRouteTypes {
     | '/pos'
     | '/pos-shift-report'
     | '/price-management'
-    | '/service-providers'
     | '/token-ledger'
     | '/token-management'
     | '/transaction-records'
@@ -1321,6 +1353,7 @@ export interface FileRouteTypes {
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
+    | '/service-providers/new'
     | '/units/$unitId'
     | '/users/new'
     | '/vending-software/$softwareId'
@@ -1349,6 +1382,7 @@ export interface FileRouteTypes {
     | '/payment-methods'
     | '/properties'
     | '/residents'
+    | '/service-providers'
     | '/users'
     | '/vending-software'
     | '/vendors'
@@ -1357,6 +1391,7 @@ export interface FileRouteTypes {
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
+    | '/service-providers/$id/edit'
     | '/users/$id/edit'
     | '/vendor/landlords/$landlordId'
     | '/vendor/landlords/new'
@@ -1386,6 +1421,7 @@ export interface FileRouteTypes {
     | '/landlords/$id'
     | '/properties/$id'
     | '/residents/$id'
+    | '/service-providers/$id'
     | '/users/$id'
     | '/vendor/landlords'
     | '/vendor/meters'
@@ -1414,7 +1450,6 @@ export interface FileRouteTypes {
     | '/_authenticated/price-management'
     | '/_authenticated/properties'
     | '/_authenticated/residents'
-    | '/_authenticated/service-providers'
     | '/_authenticated/token-ledger'
     | '/_authenticated/token-management'
     | '/_authenticated/transaction-records'
@@ -1440,6 +1475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resident/dashboard'
     | '/_authenticated/residents/new'
     | '/_authenticated/service-provider/dashboard'
+    | '/_authenticated/service-providers/new'
     | '/_authenticated/units/$unitId'
     | '/_authenticated/users/$id'
     | '/_authenticated/users/new'
@@ -1469,6 +1505,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payment-methods/'
     | '/_authenticated/properties/'
     | '/_authenticated/residents/'
+    | '/_authenticated/service-providers/'
     | '/_authenticated/users/'
     | '/_authenticated/vending-software/'
     | '/_authenticated/vendors/'
@@ -1477,6 +1514,7 @@ export interface FileRouteTypes {
     | '/_authenticated/landlords/$id/edit'
     | '/_authenticated/properties/$id/edit'
     | '/_authenticated/residents/$id/edit'
+    | '/_authenticated/service-providers/$id/edit'
     | '/_authenticated/users/$id/edit'
     | '/_authenticated/vendor/landlords/$landlordId'
     | '/_authenticated/vendor/landlords/new'
@@ -1506,6 +1544,7 @@ export interface FileRouteTypes {
     | '/_authenticated/landlords/$id/'
     | '/_authenticated/properties/$id/'
     | '/_authenticated/residents/$id/'
+    | '/_authenticated/service-providers/$id/'
     | '/_authenticated/users/$id/'
     | '/_authenticated/vendor/landlords/'
     | '/_authenticated/vendor/meters/'
@@ -1656,13 +1695,6 @@ declare module '@tanstack/react-router' {
       path: '/residents'
       fullPath: '/residents'
       preLoaderRoute: typeof AuthenticatedResidentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/service-providers': {
-      id: '/_authenticated/service-providers'
-      path: '/service-providers'
-      fullPath: '/service-providers'
-      preLoaderRoute: typeof AuthenticatedServiceProvidersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/token-ledger': {
@@ -1896,6 +1928,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServiceProviderDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/service-providers/': {
+      id: '/_authenticated/service-providers/'
+      path: '/service-providers'
+      fullPath: '/service-providers/'
+      preLoaderRoute: typeof AuthenticatedServiceProvidersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/service-providers/new': {
+      id: '/_authenticated/service-providers/new'
+      path: '/service-providers/new'
+      fullPath: '/service-providers/new'
+      preLoaderRoute: typeof AuthenticatedServiceProvidersNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/units/$unitId': {
       id: '/_authenticated/units/$unitId'
       path: '/units/$unitId'
@@ -2126,6 +2172,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/residents/$id/edit'
       preLoaderRoute: typeof AuthenticatedResidentsIdEditRouteImport
       parentRoute: typeof AuthenticatedResidentsRoute
+    }
+    '/_authenticated/service-providers/$id/': {
+      id: '/_authenticated/service-providers/$id/'
+      path: '/service-providers/$id'
+      fullPath: '/service-providers/$id/'
+      preLoaderRoute: typeof AuthenticatedServiceProvidersIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/service-providers/$id/edit': {
+      id: '/_authenticated/service-providers/$id/edit'
+      path: '/service-providers/$id/edit'
+      fullPath: '/service-providers/$id/edit'
+      preLoaderRoute: typeof AuthenticatedServiceProvidersIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users/$id/': {
       id: '/_authenticated/users/$id/'
@@ -2533,7 +2593,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPriceManagementRoute: typeof AuthenticatedPriceManagementRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
-  AuthenticatedServiceProvidersRoute: typeof AuthenticatedServiceProvidersRoute
   AuthenticatedTokenLedgerRoute: typeof AuthenticatedTokenLedgerRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
   AuthenticatedTransactionRecordsRoute: typeof AuthenticatedTransactionRecordsRoute
@@ -2549,6 +2608,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetersBulkAddRoute: typeof AuthenticatedMetersBulkAddRoute
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
+  AuthenticatedServiceProvidersNewRoute: typeof AuthenticatedServiceProvidersNewRoute
   AuthenticatedUnitsUnitIdRoute: typeof AuthenticatedUnitsUnitIdRoute
   AuthenticatedVendingSoftwareSoftwareIdRoute: typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
@@ -2570,8 +2630,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
   AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
+  AuthenticatedServiceProvidersIndexRoute: typeof AuthenticatedServiceProvidersIndexRoute
   AuthenticatedVendingSoftwareIndexRoute: typeof AuthenticatedVendingSoftwareIndexRoute
   AuthenticatedZonesIndexRoute: typeof AuthenticatedZonesIndexRoute
+  AuthenticatedServiceProvidersIdEditRoute: typeof AuthenticatedServiceProvidersIdEditRoute
   AuthenticatedVendorLandlordsLandlordIdRoute: typeof AuthenticatedVendorLandlordsLandlordIdRoute
   AuthenticatedVendorLandlordsNewRoute: typeof AuthenticatedVendorLandlordsNewRoute
   AuthenticatedVendorMetersMeterIdRoute: typeof AuthenticatedVendorMetersMeterIdRoute
@@ -2584,6 +2646,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorServiceRequestsRequestIdRoute: typeof AuthenticatedVendorServiceRequestsRequestIdRoute
   AuthenticatedVendorTeamsTeamIdRoute: typeof AuthenticatedVendorTeamsTeamIdRoute
   AuthenticatedVendorZonesZoneIdRoute: typeof AuthenticatedVendorZonesZoneIdRoute
+  AuthenticatedServiceProvidersIdIndexRoute: typeof AuthenticatedServiceProvidersIdIndexRoute
   AuthenticatedVendorLandlordsIndexRoute: typeof AuthenticatedVendorLandlordsIndexRoute
   AuthenticatedVendorMetersIndexRoute: typeof AuthenticatedVendorMetersIndexRoute
   AuthenticatedVendorPropertiesIndexRoute: typeof AuthenticatedVendorPropertiesIndexRoute
@@ -2606,7 +2669,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPriceManagementRoute: AuthenticatedPriceManagementRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
-  AuthenticatedServiceProvidersRoute: AuthenticatedServiceProvidersRoute,
   AuthenticatedTokenLedgerRoute: AuthenticatedTokenLedgerRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,
   AuthenticatedTransactionRecordsRoute: AuthenticatedTransactionRecordsRoute,
@@ -2624,6 +2686,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResidentDashboardRoute: AuthenticatedResidentDashboardRoute,
   AuthenticatedServiceProviderDashboardRoute:
     AuthenticatedServiceProviderDashboardRoute,
+  AuthenticatedServiceProvidersNewRoute: AuthenticatedServiceProvidersNewRoute,
   AuthenticatedUnitsUnitIdRoute: AuthenticatedUnitsUnitIdRoute,
   AuthenticatedVendingSoftwareSoftwareIdRoute:
     AuthenticatedVendingSoftwareSoftwareIdRoute,
@@ -2651,9 +2714,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
   AuthenticatedPaymentMethodsIndexRoute: AuthenticatedPaymentMethodsIndexRoute,
+  AuthenticatedServiceProvidersIndexRoute:
+    AuthenticatedServiceProvidersIndexRoute,
   AuthenticatedVendingSoftwareIndexRoute:
     AuthenticatedVendingSoftwareIndexRoute,
   AuthenticatedZonesIndexRoute: AuthenticatedZonesIndexRoute,
+  AuthenticatedServiceProvidersIdEditRoute:
+    AuthenticatedServiceProvidersIdEditRoute,
   AuthenticatedVendorLandlordsLandlordIdRoute:
     AuthenticatedVendorLandlordsLandlordIdRoute,
   AuthenticatedVendorLandlordsNewRoute: AuthenticatedVendorLandlordsNewRoute,
@@ -2671,6 +2738,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedVendorServiceRequestsRequestIdRoute,
   AuthenticatedVendorTeamsTeamIdRoute: AuthenticatedVendorTeamsTeamIdRoute,
   AuthenticatedVendorZonesZoneIdRoute: AuthenticatedVendorZonesZoneIdRoute,
+  AuthenticatedServiceProvidersIdIndexRoute:
+    AuthenticatedServiceProvidersIdIndexRoute,
   AuthenticatedVendorLandlordsIndexRoute:
     AuthenticatedVendorLandlordsIndexRoute,
   AuthenticatedVendorMetersIndexRoute: AuthenticatedVendorMetersIndexRoute,
