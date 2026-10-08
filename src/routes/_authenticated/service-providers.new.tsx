@@ -19,9 +19,16 @@ export const Route = createFileRoute("/_authenticated/service-providers/new")({
   head: () => ({
     meta: [
       { title: "Add Service Provider · SmatraPay" },
-      { name: "description", content: "Create a service provider account with login, contact details and services offered." },
+      {
+        name: "description",
+        content:
+          "Create a service provider account with login, contact details and services offered.",
+      },
       { property: "og:title", content: "Add Service Provider · SmatraPay" },
-      { property: "og:description", content: "Onboard a new service provider and the services they offer." },
+      {
+        property: "og:description",
+        content: "Onboard a new service provider and the services they offer.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -64,7 +71,11 @@ function NewServiceProviderPage() {
   };
 
   return (
-    <PortalLayout roles={["admin"]} title="Service Provider Management" description="Add a new service provider">
+    <PortalLayout
+      roles={["admin"]}
+      title="Service Provider Management"
+      description="Add a new service provider"
+    >
       <form onSubmit={onSubmit} className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">
@@ -77,8 +88,12 @@ function NewServiceProviderPage() {
               <ArrowLeft className="size-4" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Add Service Provider</h1>
-              <p className="text-sm text-muted-foreground">Create their login and list the services they offer</p>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Add Service Provider
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Create their login and list the services they offer
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">

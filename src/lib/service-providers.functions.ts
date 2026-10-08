@@ -27,7 +27,12 @@ async function admin() {
 /** Ensures the id is a non-deleted service provider. */
 async function assertProvider(sb: any, id: string) {
   const [{ data: role }, { data: profile }] = await Promise.all([
-    sb.from("user_roles").select("user_id").eq("user_id", id).eq("role", "service_provider").maybeSingle(),
+    sb
+      .from("user_roles")
+      .select("user_id")
+      .eq("user_id", id)
+      .eq("role", "service_provider")
+      .maybeSingle(),
     sb.from("service_provider_profiles").select("deleted_at").eq("user_id", id).maybeSingle(),
   ]);
   if (!role || profile?.deleted_at) throw new Error("Service provider not found");
@@ -37,7 +42,10 @@ async function assertProvider(sb: any, id: string) {
 async function memberIdsByUser(sb: any, userIds: string[]) {
   const map = new Map<string, string[]>();
   if (!userIds.length) return map;
-  const { data } = await sb.from("installation_team_members").select("id, user_id").in("user_id", userIds);
+  const { data } = await sb
+    .from("installation_team_members")
+    .select("id, user_id")
+    .in("user_id", userIds);
   for (const m of data ?? []) {
     const list = map.get(m.user_id) ?? [];
     list.push(m.id);
@@ -73,7 +81,9 @@ export const listServiceProviders = createServerFn({ method: "GET" })
     ]);
     if (rErr) throw new Error(rErr.message);
     const deletedSet = new Set((deleted ?? []).map((d: any) => d.user_id));
-    let ids: string[] = (roles ?? []).map((r: any) => r.user_id).filter((id: string) => !deletedSet.has(id));
+    let ids: string[] = (roles ?? [])
+      .map((r: any) => r.user_id)
+      .filter((id: string) => !deletedSet.has(id));
 
     if (data.service) {
       const { data: svc } = await sb
@@ -94,11 +104,17 @@ export const listServiceProviders = createServerFn({ method: "GET" })
       const { count: n } = await c;
       return n ?? 0;
     };
-    const [total, active, suspended] = await Promise.all([count(), count("active"), count("suspended")]);
+    const [total, active, suspended] = await Promise.all([
+      count(),
+      count("active"),
+      count("suspended"),
+    ]);
 
     let q = sb
       .from("users")
-      .select("id, name, email, phone, username, profile_image, status, created_at", { count: "exact" })
+      .select("id, name, email, phone, username, profile_image, status, created_at", {
+        count: "exact",
+      })
       .in("id", ids);
     if (data.status) q = q.eq("status", data.status);
     if (term) q = q.or(`name.ilike.${term},email.ilike.${term},phone.ilike.${term}`);
@@ -111,10 +127,16 @@ export const listServiceProviders = createServerFn({ method: "GET" })
     const pageIds = (users ?? []).map((u: any) => u.id);
     const [{ data: profiles }, { data: services }, members] = await Promise.all([
       pageIds.length
-        ? sb.from("service_provider_profiles").select("user_id, logo_url, business_name").in("user_id", pageIds)
+        ? sb
+            .from("service_provider_profiles")
+            .select("user_id, logo_url, business_name")
+            .in("user_id", pageIds)
         : { data: [] },
       pageIds.length
-        ? sb.from("service_provider_services").select("provider_id, service_name").in("provider_id", pageIds)
+        ? sb
+            .from("service_provider_services")
+            .select("provider_id, service_name")
+            .in("provider_id", pageIds)
         : { data: [] },
       memberIdsByUser(sb, pageIds),
     ]);
@@ -123,7 +145,8 @@ export const listServiceProviders = createServerFn({ method: "GET" })
       ? await sb.from("service_requests").select("technician_id").in("technician_id", allMembers)
       : { data: [] };
     const jobsByMember = new Map<string, number>();
-    for (const j of jobs ?? []) jobsByMember.set(j.technician_id, (jobsByMember.get(j.technician_id) ?? 0) + 1);
+    for (const j of jobs ?? [])
+      jobsByMember.set(j.technician_id, (jobsByMember.get(j.technician_id) ?? 0) + 1);
 
     const profileById = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
     return {
@@ -133,7 +156,9 @@ export const listServiceProviders = createServerFn({ method: "GET" })
           ...u,
           logo_url: p?.logo_url ?? null,
           business_name: p?.business_name ?? null,
-          services: (services ?? []).filter((s: any) => s.provider_id === u.id).map((s: any) => s.service_name as string),
+          services: (services ?? [])
+            .filter((s: any) => s.provider_id === u.id)
+            .map((s: any) => s.service_name as string),
           total_jobs: (members.get(u.id) ?? []).reduce((n, m) => n + (jobsByMember.get(m) ?? 0), 0),
         };
       }),
@@ -183,7 +208,9 @@ export const createServiceProvider = createServerFn({ method: "POST" })
       });
       if (uErr) throw uErr;
       await sb.from("user_roles").delete().eq("user_id", id);
-      const { error: roleErr } = await sb.from("user_roles").insert({ user_id: id, role: "service_provider" });
+      const { error: roleErr } = await sb
+        .from("user_roles")
+        .insert({ user_id: id, role: "service_provider" });
       if (roleErr) throw roleErr;
       const { error: pErr } = await sb.from("service_provider_profiles").insert({
         user_id: id,
@@ -198,9 +225,15 @@ export const createServiceProvider = createServerFn({ method: "POST" })
         created_by: context.userId,
       });
       if (pErr) throw pErr;
-      const { error: sErr } = await sb.from("service_provider_services").insert(
-        data.services.map((s) => ({ provider_id: id, service_name: s.service_name, description: s.description })),
-      );
+      const { error: sErr } = await sb
+        .from("service_provider_services")
+        .insert(
+          data.services.map((s) => ({
+            provider_id: id,
+            service_name: s.service_name,
+            description: s.description,
+          })),
+        );
       if (sErr) throw sErr;
     } catch (e) {
       await rollback();
@@ -220,11 +253,17 @@ export const getServiceProvider = createServerFn({ method: "GET" })
     const [{ data: user }, { data: profile }, { data: services }, members] = await Promise.all([
       sb
         .from("users")
-        .select("id, name, email, phone, username, address, profile_image, bio, notes, status, created_at, updated_at")
+        .select(
+          "id, name, email, phone, username, address, profile_image, bio, notes, status, created_at, updated_at",
+        )
         .eq("id", data.id)
         .maybeSingle(),
       sb.from("service_provider_profiles").select("*").eq("user_id", data.id).maybeSingle(),
-      sb.from("service_provider_services").select("*").eq("provider_id", data.id).order("created_at"),
+      sb
+        .from("service_provider_services")
+        .select("*")
+        .eq("provider_id", data.id)
+        .order("created_at"),
       memberIdsByUser(sb, [data.id]),
     ]);
     if (!user) throw new Error("Service provider not found");
@@ -266,10 +305,17 @@ export const updateServiceProvider = createServerFn({ method: "POST" })
     const sb = context.supabase as any;
     await assertProvider(sb, data.id);
 
-    const { data: current } = await sb.from("users").select("email").eq("id", data.id).maybeSingle();
+    const { data: current } = await sb
+      .from("users")
+      .select("email")
+      .eq("id", data.id)
+      .maybeSingle();
     if (current && current.email !== data.email) {
       const a = await admin();
-      const { error } = await a.auth.admin.updateUserById(data.id, { email: data.email, email_confirm: true });
+      const { error } = await a.auth.admin.updateUserById(data.id, {
+        email: data.email,
+        email_confirm: true,
+      });
       if (error) throw new Error(error.message);
     }
 
@@ -305,7 +351,9 @@ export const updateServiceProvider = createServerFn({ method: "POST" })
 
 export const setServiceProviderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: uuid, status: z.enum(["active", "suspended"]) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ id: uuid, status: z.enum(["active", "suspended"]) }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
     const sb = context.supabase as any;
@@ -362,7 +410,11 @@ export const setServiceProviderImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ id: uuid, kind: z.enum(["logo", "photo"]), url: z.string().trim().url().max(2000).nullable() })
+      .object({
+        id: uuid,
+        kind: z.enum(["logo", "photo"]),
+        url: z.string().trim().url().max(2000).nullable(),
+      })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -392,8 +444,15 @@ export const setServiceProviderImage = createServerFn({ method: "POST" })
   });
 
 async function assertUniqueService(sb: any, providerId: string, name: string, exceptId?: string) {
-  const { data } = await sb.from("service_provider_services").select("id, service_name").eq("provider_id", providerId);
-  if ((data ?? []).some((s: any) => s.id !== exceptId && serviceKey(s.service_name) === serviceKey(name))) {
+  const { data } = await sb
+    .from("service_provider_services")
+    .select("id, service_name")
+    .eq("provider_id", providerId);
+  if (
+    (data ?? []).some(
+      (s: any) => s.id !== exceptId && serviceKey(s.service_name) === serviceKey(name),
+    )
+  ) {
     throw new Error("This provider already offers a service with that name");
   }
 }
@@ -424,12 +483,18 @@ export const addProviderService = createServerFn({ method: "POST" })
 export const updateProviderService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    serviceEntrySchema.extend({ id: uuid, status: z.enum(["active", "inactive"]).optional() }).parse(d),
+    serviceEntrySchema
+      .extend({ id: uuid, status: z.enum(["active", "inactive"]).optional() })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
     const sb = context.supabase as any;
-    const { data: row } = await sb.from("service_provider_services").select("provider_id").eq("id", data.id).maybeSingle();
+    const { data: row } = await sb
+      .from("service_provider_services")
+      .select("provider_id")
+      .eq("id", data.id)
+      .maybeSingle();
     if (!row) throw new Error("Service not found");
     await assertUniqueService(sb, row.provider_id, data.service_name, data.id);
     const { error } = await sb
@@ -449,7 +514,10 @@ export const removeProviderService = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
-    const { error } = await (context.supabase as any).from("service_provider_services").delete().eq("id", data.id);
+    const { error } = await (context.supabase as any)
+      .from("service_provider_services")
+      .delete()
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -461,9 +529,17 @@ export const listProviderJobs = createServerFn({ method: "GET" })
       .object({
         id: uuid,
         q: z.string().trim().max(100).optional(),
-        status: z.enum(["open", "assigned", "in_progress", "resolved", "closed", "cancelled"]).optional(),
-        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        status: z
+          .enum(["open", "assigned", "in_progress", "resolved", "closed", "cancelled"])
+          .optional(),
+        from: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+        to: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(5).max(100).default(10),
       })
@@ -498,7 +574,9 @@ export const listProviderJobs = createServerFn({ method: "GET" })
     const meterIds = [...new Set((rows ?? []).map((r: any) => r.meter_id).filter(Boolean))];
     const [{ data: residents }, { data: meters }] = await Promise.all([
       residentIds.length ? sb.from("users").select("id, name").in("id", residentIds) : { data: [] },
-      meterIds.length ? sb.from("meters").select("id, meter_number, unit_id").in("id", meterIds) : { data: [] },
+      meterIds.length
+        ? sb.from("meters").select("id, meter_number, unit_id").in("id", meterIds)
+        : { data: [] },
     ]);
     const unitIds = [...new Set((meters ?? []).map((m: any) => m.unit_id).filter(Boolean))];
     const { data: units } = unitIds.length
@@ -509,8 +587,12 @@ export const listProviderJobs = createServerFn({ method: "GET" })
       ? await sb.from("properties").select("id, name").in("id", propIds)
       : { data: [] };
 
-    const byId = <T extends { id: string }>(l: T[] | null) => new Map((l ?? []).map((x) => [x.id, x]));
-    const rm = byId(residents), mm = byId(meters), um = byId(units), pm = byId(props);
+    const byId = <T extends { id: string }>(l: T[] | null) =>
+      new Map((l ?? []).map((x) => [x.id, x]));
+    const rm = byId(residents),
+      mm = byId(meters),
+      um = byId(units),
+      pm = byId(props);
     return {
       total: count ?? 0,
       rows: (rows ?? []).map((r: any) => {

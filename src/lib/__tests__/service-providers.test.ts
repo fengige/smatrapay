@@ -17,7 +17,9 @@ describe("service provider rules", () => {
     expect(servicesListSchema.safeParse([]).success).toBe(false);
   });
   it("requires name and description for each service", () => {
-    expect(servicesListSchema.safeParse([{ service_name: "Plumbing", description: "" }]).success).toBe(false);
+    expect(
+      servicesListSchema.safeParse([{ service_name: "Plumbing", description: "" }]).success,
+    ).toBe(false);
   });
   it("rejects duplicate service names ignoring case and spacing", () => {
     const r = servicesListSchema.safeParse([

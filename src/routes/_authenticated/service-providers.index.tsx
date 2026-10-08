@@ -22,7 +22,11 @@ import { PortalLayout } from "@/components/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { listServiceProviders } from "@/lib/service-providers.functions";
 import { providerActions } from "@/lib/service-provider-schema";
-import { ProviderAvatar, StatusPill, useProviderActions } from "@/components/service-providers/ProviderUI";
+import {
+  ProviderAvatar,
+  StatusPill,
+  useProviderActions,
+} from "@/components/service-providers/ProviderUI";
 
 const LIMIT_OPTIONS = [10, 25, 50, 100];
 
@@ -37,15 +41,23 @@ export const Route = createFileRoute("/_authenticated/service-providers/")({
   head: () => ({
     meta: [
       { title: "Service Provider Management · SmatraPay" },
-      { name: "description", content: "Manage SmatraPay service providers, their services, jobs and account status." },
+      {
+        name: "description",
+        content: "Manage SmatraPay service providers, their services, jobs and account status.",
+      },
       { property: "og:title", content: "Service Provider Management · SmatraPay" },
-      { property: "og:description", content: "View, search, suspend and manage every service provider on SmatraPay." },
+      {
+        property: "og:description",
+        content: "View, search, suspend and manage every service provider on SmatraPay.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ServiceProvidersPage,
-  errorComponent: ({ error }) => <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>,
+  errorComponent: ({ error }) => (
+    <div className="p-10 text-sm text-destructive">{(error as Error).message}</div>
+  ),
 });
 
 type SortKey = "name" | "email" | "phone" | "status" | "created_at";
@@ -109,9 +121,24 @@ function ServiceProvidersPage() {
   };
 
   const cards = [
-    { label: "Total Providers", value: data?.counts.total, icon: Briefcase, tone: "bg-primary/12 text-primary" },
-    { label: "Active", value: data?.counts.active, icon: UserCheck, tone: "bg-accent/12 text-accent" },
-    { label: "Suspended", value: data?.counts.suspended, icon: ShieldAlert, tone: "bg-destructive/12 text-destructive" },
+    {
+      label: "Total Providers",
+      value: data?.counts.total,
+      icon: Briefcase,
+      tone: "bg-primary/12 text-primary",
+    },
+    {
+      label: "Active",
+      value: data?.counts.active,
+      icon: UserCheck,
+      tone: "bg-accent/12 text-accent",
+    },
+    {
+      label: "Suspended",
+      value: data?.counts.suspended,
+      icon: ShieldAlert,
+      tone: "bg-destructive/12 text-destructive",
+    },
   ];
 
   const addButton = (
@@ -124,7 +151,11 @@ function ServiceProvidersPage() {
 
   const SortTh = ({ k, label }: { k: SortKey; label: string }) => (
     <th className="px-4 py-3">
-      <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 uppercase">
+      <button
+        type="button"
+        onClick={() => toggleSort(k)}
+        className="inline-flex items-center gap-1 uppercase"
+      >
         {label} <ArrowUpDown className={`size-3 ${sortBy === k ? "text-primary" : "opacity-50"}`} />
       </button>
     </th>
@@ -146,7 +177,9 @@ function ServiceProvidersPage() {
               <span className={`flex size-10 items-center justify-center rounded-xl ${c.tone}`}>
                 <c.icon className="size-5" />
               </span>
-              <p className="mt-4 text-3xl font-extrabold text-foreground">{isLoading ? "—" : (c.value ?? 0)}</p>
+              <p className="mt-4 text-3xl font-extrabold text-foreground">
+                {isLoading ? "—" : (c.value ?? 0)}
+              </p>
               <p className="text-sm text-muted-foreground">{c.label}</p>
             </div>
           ))}
@@ -192,7 +225,9 @@ function ServiceProvidersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className={`w-full min-w-[980px] text-left text-sm ${isFetching ? "opacity-70" : ""}`}>
+              <table
+                className={`w-full min-w-[980px] text-left text-sm ${isFetching ? "opacity-70" : ""}`}
+              >
                 <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                   <tr>
                     <SortTh k="name" label="Service Provider" />
@@ -235,7 +270,9 @@ function ServiceProvidersPage() {
                                 >
                                   {r.name || "—"}
                                 </Link>
-                                {r.business_name && <p className="text-xs text-muted-foreground">{r.business_name}</p>}
+                                {r.business_name && (
+                                  <p className="text-xs text-muted-foreground">{r.business_name}</p>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -245,12 +282,17 @@ function ServiceProvidersPage() {
                             {r.services.length ? (
                               <div className="flex max-w-[220px] flex-wrap gap-1">
                                 {r.services.slice(0, 3).map((s: string) => (
-                                  <span key={s} className="rounded-md bg-secondary px-2 py-0.5 text-xs">
+                                  <span
+                                    key={s}
+                                    className="rounded-md bg-secondary px-2 py-0.5 text-xs"
+                                  >
                                     {s}
                                   </span>
                                 ))}
                                 {r.services.length > 3 && (
-                                  <span className="text-xs text-muted-foreground">+{r.services.length - 3}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    +{r.services.length - 3}
+                                  </span>
                                 )}
                               </div>
                             ) : (
@@ -261,16 +303,26 @@ function ServiceProvidersPage() {
                           <td className="px-4 py-3">
                             <StatusPill status={r.status} />
                           </td>
-                          <td className="px-4 py-3">{new Date(r.created_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-3">
+                            {new Date(r.created_at).toLocaleDateString()}
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="icon" asChild title="View">
-                                <Link to="/service-providers/$id" params={{ id: r.id }} aria-label="View">
+                                <Link
+                                  to="/service-providers/$id"
+                                  params={{ id: r.id }}
+                                  aria-label="View"
+                                >
                                   <Eye />
                                 </Link>
                               </Button>
                               <Button variant="ghost" size="icon" asChild title="Edit">
-                                <Link to="/service-providers/$id/edit" params={{ id: r.id }} aria-label="Edit">
+                                <Link
+                                  to="/service-providers/$id/edit"
+                                  params={{ id: r.id }}
+                                  aria-label="Edit"
+                                >
                                   <Pencil />
                                 </Link>
                               </Button>
@@ -323,7 +375,8 @@ function ServiceProvidersPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <span>
-                Showing {total ? (page - 1) * limit + 1 : 0}–{Math.min(page * limit, total)} of {total}
+                Showing {total ? (page - 1) * limit + 1 : 0}–{Math.min(page * limit, total)} of{" "}
+                {total}
               </span>
               <select
                 aria-label="Rows per page"
@@ -339,13 +392,25 @@ function ServiceProvidersPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(page - 1)} aria-label="Previous page">
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                aria-label="Previous page"
+              >
                 <ChevronLeft />
               </Button>
               <span>
                 Page {page} / {pages}
               </span>
-              <Button variant="outline" size="icon" disabled={page >= pages} onClick={() => setPage(page + 1)} aria-label="Next page">
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={page >= pages}
+                onClick={() => setPage(page + 1)}
+                aria-label="Next page"
+              >
                 <ChevronRight />
               </Button>
             </div>

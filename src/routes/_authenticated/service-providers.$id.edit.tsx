@@ -19,7 +19,10 @@ export const Route = createFileRoute("/_authenticated/service-providers/$id/edit
   head: () => ({
     meta: [
       { title: "Edit Service Provider · SmatraPay" },
-      { name: "description", content: "Update a service provider's personal, address and account details." },
+      {
+        name: "description",
+        content: "Update a service provider's personal, address and account details.",
+      },
       { property: "og:title", content: "Edit Service Provider · SmatraPay" },
       { property: "og:description", content: "Update a service provider's details." },
       { property: "og:type", content: "website" },
@@ -95,7 +98,11 @@ function EditProviderPage() {
   };
 
   return (
-    <PortalLayout roles={["admin"]} title="Service Provider Management" description="Edit service provider">
+    <PortalLayout
+      roles={["admin"]}
+      title="Service Provider Management"
+      description="Edit service provider"
+    >
       {error ? (
         <p className="p-6 text-sm text-destructive">{(error as Error).message}</p>
       ) : isLoading ? (
@@ -115,7 +122,9 @@ function EditProviderPage() {
                 <ArrowLeft className="size-4" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">Edit Service Provider</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  Edit Service Provider
+                </h1>
                 <p className="text-sm text-muted-foreground">{(data?.user as any)?.name}</p>
               </div>
             </div>

@@ -62,7 +62,8 @@ export function ProviderForm({
   onChange: (next: ProviderFormValues) => void;
   mode: "create" | "edit";
 }) {
-  const set = <K extends keyof ProviderFormValues>(k: K, v: ProviderFormValues[K]) => onChange({ ...values, [k]: v });
+  const set = <K extends keyof ProviderFormValues>(k: K, v: ProviderFormValues[K]) =>
+    onChange({ ...values, [k]: v });
   const regions = STATE_MAP[values.country] ?? [];
   const setService = (i: number, k: "service_name" | "description", v: string) =>
     set(
@@ -78,16 +79,32 @@ export function ProviderForm({
         </header>
         <div className="grid gap-4 p-5 sm:grid-cols-3">
           <Field label="First Name" required error={errors["first_name"]}>
-            <input className={inputClass} value={values.first_name} onChange={(e) => set("first_name", e.target.value)} />
+            <input
+              className={inputClass}
+              value={values.first_name}
+              onChange={(e) => set("first_name", e.target.value)}
+            />
           </Field>
           <Field label="Middle Name" error={errors["middle_name"]}>
-            <input className={inputClass} value={values.middle_name} onChange={(e) => set("middle_name", e.target.value)} />
+            <input
+              className={inputClass}
+              value={values.middle_name}
+              onChange={(e) => set("middle_name", e.target.value)}
+            />
           </Field>
           <Field label="Last Name" required error={errors["last_name"]}>
-            <input className={inputClass} value={values.last_name} onChange={(e) => set("last_name", e.target.value)} />
+            <input
+              className={inputClass}
+              value={values.last_name}
+              onChange={(e) => set("last_name", e.target.value)}
+            />
           </Field>
           <div className="sm:col-span-3">
-            <Field label="Business Name" error={errors["business_name"]} hint="Optional trading name">
+            <Field
+              label="Business Name"
+              error={errors["business_name"]}
+              hint="Optional trading name"
+            >
               <input
                 className={inputClass}
                 placeholder="e.g. Kamau Plumbing Services"
@@ -123,7 +140,11 @@ export function ProviderForm({
             </div>
           </Field>
           <Field label="Username" error={errors["username"]}>
-            <input className={inputClass} value={values.username} onChange={(e) => set("username", e.target.value)} />
+            <input
+              className={inputClass}
+              value={values.username}
+              onChange={(e) => set("username", e.target.value)}
+            />
           </Field>
         </div>
       </section>
@@ -135,7 +156,11 @@ export function ProviderForm({
         <div className="grid gap-4 p-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field label="Address" error={errors["address"]}>
-              <input className={inputClass} value={values.address} onChange={(e) => set("address", e.target.value)} />
+              <input
+                className={inputClass}
+                value={values.address}
+                onChange={(e) => set("address", e.target.value)}
+              />
             </Field>
           </div>
           <Field label="Country" error={errors["country"]}>
@@ -154,7 +179,11 @@ export function ProviderForm({
           </Field>
           <Field label="County / Region" error={errors["county"]}>
             {regions.length ? (
-              <select className={inputClass} value={values.county} onChange={(e) => set("county", e.target.value)}>
+              <select
+                className={inputClass}
+                value={values.county}
+                onChange={(e) => set("county", e.target.value)}
+              >
                 <option value="">Select region</option>
                 {regions.map((r) => (
                   <option key={r} value={r}>
@@ -163,11 +192,19 @@ export function ProviderForm({
                 ))}
               </select>
             ) : (
-              <input className={inputClass} value={values.county} onChange={(e) => set("county", e.target.value)} />
+              <input
+                className={inputClass}
+                value={values.county}
+                onChange={(e) => set("county", e.target.value)}
+              />
             )}
           </Field>
           <Field label="City / Town" error={errors["city"]}>
-            <input className={inputClass} value={values.city} onChange={(e) => set("city", e.target.value)} />
+            <input
+              className={inputClass}
+              value={values.city}
+              onChange={(e) => set("city", e.target.value)}
+            />
           </Field>
           <Field label="Postal Address" error={errors["postal_address"]}>
             <input
@@ -202,7 +239,12 @@ export function ProviderForm({
           )}
           <div className="sm:col-span-2">
             <Field label="Bio" error={errors["bio"]}>
-              <textarea rows={3} className={inputClass} value={values.bio} onChange={(e) => set("bio", e.target.value)} />
+              <textarea
+                rows={3}
+                className={inputClass}
+                value={values.bio}
+                onChange={(e) => set("bio", e.target.value)}
+              />
             </Field>
           </div>
           <div className="sm:col-span-2">
@@ -228,7 +270,9 @@ export function ProviderForm({
             </div>
             <button
               type="button"
-              onClick={() => set("services", [...values.services, { service_name: "", description: "" }])}
+              onClick={() =>
+                set("services", [...values.services, { service_name: "", description: "" }])
+              }
               className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-accent/10"
             >
               <Plus className="size-4" /> Add Service
@@ -237,7 +281,10 @@ export function ProviderForm({
           <div className="space-y-3 p-5">
             {errors["services"] && <p className="text-xs text-destructive">{errors["services"]}</p>}
             {values.services.map((s, i) => (
-              <div key={i} className="grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1fr_2fr_auto]">
+              <div
+                key={i}
+                className="grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1fr_2fr_auto]"
+              >
                 <Field label="Service Name" required error={errors[`services.${i}.service_name`]}>
                   <input
                     className={inputClass}
@@ -246,7 +293,11 @@ export function ProviderForm({
                     onChange={(e) => setService(i, "service_name", e.target.value)}
                   />
                 </Field>
-                <Field label="Service Description" required error={errors[`services.${i}.description`]}>
+                <Field
+                  label="Service Description"
+                  required
+                  error={errors[`services.${i}.description`]}
+                >
                   <textarea
                     rows={2}
                     className={inputClass}
@@ -259,7 +310,12 @@ export function ProviderForm({
                   type="button"
                   aria-label={`Remove service ${i + 1}`}
                   disabled={values.services.length === 1}
-                  onClick={() => set("services", values.services.filter((_, idx) => idx !== i))}
+                  onClick={() =>
+                    set(
+                      "services",
+                      values.services.filter((_, idx) => idx !== i),
+                    )
+                  }
                   className="self-start rounded-lg p-2 text-destructive hover:bg-destructive/10 disabled:opacity-40 sm:mt-7"
                 >
                   <Trash2 className="size-4" />

@@ -59,7 +59,11 @@ export function ProviderAvatar({
   rounded?: string;
 }) {
   return src ? (
-    <img src={src} alt={name ? `${name}` : "Service provider"} className={`${className} ${rounded} object-cover`} />
+    <img
+      src={src}
+      alt={name ? `${name}` : "Service provider"}
+      className={`${className} ${rounded} object-cover`}
+    />
   ) : (
     <span
       className={`${className} ${rounded} flex items-center justify-center bg-primary/10 text-xs font-bold text-primary`}
@@ -111,12 +115,18 @@ export function useProviderActions(onDone?: (action: Action) => void) {
   const mutation = useMutation({
     mutationFn: async ({ action, target }: { action: Action; target: Target }) => {
       if (action === "delete") return remove({ data: { id: target.id } });
-      return setStatus({ data: { id: target.id, status: action === "suspend" ? "suspended" : "active" } });
+      return setStatus({
+        data: { id: target.id, status: action === "suspend" ? "suspended" : "active" },
+      });
     },
     onSuccess: async (_r, { action, target }) => {
       const who = target.name || "Service provider";
       toast.success(
-        action === "delete" ? `${who} deleted` : action === "suspend" ? `${who} suspended` : `${who} is active again`,
+        action === "delete"
+          ? `${who} deleted`
+          : action === "suspend"
+            ? `${who} suspended`
+            : `${who} is active again`,
       );
       setPending(null);
       await qc.invalidateQueries({ queryKey: ["service-providers"] });
@@ -132,27 +142,34 @@ export function useProviderActions(onDone?: (action: Action) => void) {
   };
 
   const dialog = (
-    <AlertDialog open={!!pending} onOpenChange={(o) => !o && !mutation.isPending && setPending(null)}>
+    <AlertDialog
+      open={!!pending}
+      onOpenChange={(o) => !o && !mutation.isPending && setPending(null)}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {pending?.action === "delete" ? "Delete service provider?" : "Suspend service provider?"}
+            {pending?.action === "delete"
+              ? "Delete service provider?"
+              : "Suspend service provider?"}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>
-                <span className="font-semibold text-foreground">{pending?.target.name || "This provider"}</span>
+                <span className="font-semibold text-foreground">
+                  {pending?.target.name || "This provider"}
+                </span>
                 {pending?.target.email ? ` (${pending.target.email})` : ""}
               </p>
               {pending?.action === "delete" ? (
                 <p>
-                  They will be removed from the list and can no longer sign in. Their services, jobs and history are
-                  kept.
+                  They will be removed from the list and can no longer sign in. Their services, jobs
+                  and history are kept.
                 </p>
               ) : (
                 <p>
-                  They will not be able to sign in or receive new jobs. All information, services and job history are
-                  kept, and you can unsuspend them at any time.
+                  They will not be able to sign in or receive new jobs. All information, services
+                  and job history are kept, and you can unsuspend them at any time.
                 </p>
               )}
             </div>

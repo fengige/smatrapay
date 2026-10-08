@@ -23,7 +23,13 @@ import { toast } from "sonner";
 import { PortalLayout } from "@/components/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,9 +64,15 @@ export const Route = createFileRoute("/_authenticated/service-providers/$id/")({
   head: () => ({
     meta: [
       { title: "Service Provider Details · SmatraPay" },
-      { name: "description", content: "Service provider overview, account, services offered and jobs." },
+      {
+        name: "description",
+        content: "Service provider overview, account, services offered and jobs.",
+      },
       { property: "og:title", content: "Service Provider Details · SmatraPay" },
-      { property: "og:description", content: "Overview, account info, services and jobs for a service provider." },
+      {
+        property: "og:description",
+        content: "Overview, account info, services and jobs for a service provider.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -120,14 +132,23 @@ function ProviderDetails() {
           <Pause /> Suspend
         </Button>
       )}
-      <Button variant="outline" className="text-destructive" disabled={busy} onClick={() => run("delete", target)}>
+      <Button
+        variant="outline"
+        className="text-destructive"
+        disabled={busy}
+        onClick={() => run("delete", target)}
+      >
         <Trash2 /> Delete
       </Button>
     </div>
   );
 
   return (
-    <PortalLayout roles={["admin"]} title="Service Provider Management" description="Service provider details">
+    <PortalLayout
+      roles={["admin"]}
+      title="Service Provider Management"
+      description="Service provider details"
+    >
       {dialog}
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -142,7 +163,9 @@ function ProviderDetails() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{u.name}</h1>
-              <p className="text-sm text-muted-foreground">{p.business_name || "Service Provider"}</p>
+              <p className="text-sm text-muted-foreground">
+                {p.business_name || "Service Provider"}
+              </p>
             </div>
           </div>
           {actions}
@@ -150,7 +173,12 @@ function ProviderDetails() {
 
         <section className="grid gap-5 rounded-2xl border border-border bg-card p-5 md:grid-cols-[auto_auto_1fr]">
           <ImageSlot providerId={id} kind="photo" url={u.profile_image} name={u.name} />
-          <ImageSlot providerId={id} kind="logo" url={p.logo_url} name={p.business_name || u.name} />
+          <ImageSlot
+            providerId={id}
+            kind="logo"
+            url={p.logo_url}
+            name={p.business_name || u.name}
+          />
           <div className="grid content-start gap-2 text-sm sm:grid-cols-2">
             <Info label="Email" value={u.email} />
             <Info label="Phone" value={u.phone} />
@@ -267,7 +295,9 @@ function ImageSlot({
     setBusy(true);
     try {
       const path = `${providerId}/${kind}-${Date.now()}.${extensionForType(file.type)}`;
-      const { error } = await supabase.storage.from("avatars").upload(path, file, { contentType: file.type });
+      const { error } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { contentType: file.type });
       if (error) throw error;
       const { data: signed, error: sErr } = await supabase.storage
         .from("avatars")
@@ -323,11 +353,21 @@ function ImageSlot({
         onChange={(e) => void pick(e.target.files?.[0])}
       />
       <div className="flex gap-3 text-xs">
-        <button type="button" className="font-semibold text-primary hover:underline" disabled={busy} onClick={() => input.current?.click()}>
+        <button
+          type="button"
+          className="font-semibold text-primary hover:underline"
+          disabled={busy}
+          onClick={() => input.current?.click()}
+        >
           {url ? "Replace" : `Upload ${label}`}
         </button>
         {url && (
-          <button type="button" className="text-destructive hover:underline" disabled={busy} onClick={() => void remove()}>
+          <button
+            type="button"
+            className="text-destructive hover:underline"
+            disabled={busy}
+            onClick={() => void remove()}
+          >
             Remove
           </button>
         )}
@@ -337,7 +377,15 @@ function ImageSlot({
   );
 }
 
-function AccountTab({ user, profile, lastLogin }: { user: any; profile: any; lastLogin: string | null }) {
+function AccountTab({
+  user,
+  profile,
+  lastLogin,
+}: {
+  user: any;
+  profile: any;
+  lastLogin: string | null;
+}) {
   const reset = useServerFn(sendPasswordReset);
   const mutation = useMutation({
     mutationFn: () =>
@@ -379,7 +427,11 @@ function AccountTab({ user, profile, lastLogin }: { user: any; profile: any; las
               <Pencil /> Edit Account
             </Link>
           </Button>
-          <Button variant="outline" disabled={mutation.isPending || !user.email} onClick={() => mutation.mutate()}>
+          <Button
+            variant="outline"
+            disabled={mutation.isPending || !user.email}
+            onClick={() => mutation.mutate()}
+          >
             <KeyRound /> {mutation.isPending ? "Sending…" : "Reset Password"}
           </Button>
         </div>
@@ -393,7 +445,12 @@ function ServicesTab({ providerId, services }: { providerId: string; services: a
   const add = useServerFn(addProviderService);
   const update = useServerFn(updateProviderService);
   const remove = useServerFn(removeProviderService);
-  const [editing, setEditing] = useState<{ id?: string; service_name: string; description: string; status?: string } | null>(null);
+  const [editing, setEditing] = useState<{
+    id?: string;
+    service_name: string;
+    description: string;
+    status?: string;
+  } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [toDelete, setToDelete] = useState<any | null>(null);
 
@@ -410,7 +467,13 @@ function ServicesTab({ providerId, services }: { providerId: string; services: a
               status: (v.status as "active" | "inactive") ?? "active",
             },
           })
-        : add({ data: { provider_id: providerId, service_name: v.service_name, description: v.description } }),
+        : add({
+            data: {
+              provider_id: providerId,
+              service_name: v.service_name,
+              description: v.description,
+            },
+          }),
     onSuccess: async () => {
       toast.success("Service saved");
       setEditing(null);
@@ -481,7 +544,12 @@ function ServicesTab({ providerId, services }: { providerId: string; services: a
                   <td className="px-4 py-3">{fmtDate(s.created_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" aria-label="Edit service" onClick={() => setEditing({ ...s })}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Edit service"
+                        onClick={() => setEditing({ ...s })}
+                      >
                         <Pencil />
                       </Button>
                       <Button
@@ -554,7 +622,8 @@ function ServicesTab({ providerId, services }: { providerId: string; services: a
           <AlertDialogHeader>
             <AlertDialogTitle>Remove service?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{toDelete?.service_name}” will be removed from this provider's services. Existing jobs are not affected.
+              “{toDelete?.service_name}” will be removed from this provider's services. Existing
+              jobs are not affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -575,7 +644,14 @@ function ServicesTab({ providerId, services }: { providerId: string; services: a
   );
 }
 
-const JOB_STATUSES = ["open", "assigned", "in_progress", "resolved", "closed", "cancelled"] as const;
+const JOB_STATUSES = [
+  "open",
+  "assigned",
+  "in_progress",
+  "resolved",
+  "closed",
+  "cancelled",
+] as const;
 
 function JobsTab({ providerId }: { providerId: string }) {
   const fetchJobs = useServerFn(listProviderJobs);
@@ -605,10 +681,12 @@ function JobsTab({ providerId }: { providerId: string }) {
   });
   const rows = data?.rows ?? [];
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / limit));
-  const reset = <T,>(fn: (v: T) => void) => (v: T) => {
-    fn(v);
-    setPage(1);
-  };
+  const reset =
+    <T,>(fn: (v: T) => void) =>
+    (v: T) => {
+      fn(v);
+      setPage(1);
+    };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -636,8 +714,20 @@ function JobsTab({ providerId }: { providerId: string }) {
             </option>
           ))}
         </select>
-        <input type="date" aria-label="From date" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={from} onChange={(e) => reset(setFrom)(e.target.value)} />
-        <input type="date" aria-label="To date" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={to} onChange={(e) => reset(setTo)(e.target.value)} />
+        <input
+          type="date"
+          aria-label="From date"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          value={from}
+          onChange={(e) => reset(setFrom)(e.target.value)}
+        />
+        <input
+          type="date"
+          aria-label="To date"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          value={to}
+          onChange={(e) => reset(setTo)(e.target.value)}
+        />
       </div>
       {error ? (
         <p className="p-6 text-sm text-destructive">{(error as Error).message}</p>
@@ -646,7 +736,19 @@ function JobsTab({ providerId }: { providerId: string }) {
           <table className="w-full min-w-[1000px] text-left text-sm">
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
-                {["Job ID", "Service", "Resident", "Property", "Unit", "Description", "Requested", "Scheduled", "Status", "Completed", "Actions"].map((h) => (
+                {[
+                  "Job ID",
+                  "Service",
+                  "Resident",
+                  "Property",
+                  "Unit",
+                  "Description",
+                  "Requested",
+                  "Scheduled",
+                  "Status",
+                  "Completed",
+                  "Actions",
+                ].map((h) => (
                   <th key={h} className="px-3 py-3">
                     {h}
                   </th>
@@ -668,9 +770,15 @@ function JobsTab({ providerId }: { providerId: string }) {
                 </tr>
               ) : (
                 rows.map((j: any) => (
-                  <tr key={j.id} className="cursor-pointer border-t border-border hover:bg-muted/30" onClick={() => setOpen(j)}>
+                  <tr
+                    key={j.id}
+                    className="cursor-pointer border-t border-border hover:bg-muted/30"
+                    onClick={() => setOpen(j)}
+                  >
                     <td className="px-3 py-3 font-semibold">{j.request_number}</td>
-                    <td className="px-3 py-3 capitalize">{String(j.issue_type).replace(/_/g, " ")}</td>
+                    <td className="px-3 py-3 capitalize">
+                      {String(j.issue_type).replace(/_/g, " ")}
+                    </td>
                     <td className="px-3 py-3">{j.resident_name ?? "—"}</td>
                     <td className="px-3 py-3">{j.property_name ?? "—"}</td>
                     <td className="px-3 py-3">{j.unit_number ?? "—"}</td>
@@ -696,13 +804,23 @@ function JobsTab({ providerId }: { providerId: string }) {
       <div className="flex items-center justify-between border-t border-border p-4 text-sm text-muted-foreground">
         <span>{data?.total ?? 0} jobs</span>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
             Previous
           </Button>
           <span>
             Page {page} / {pages}
           </span>
-          <Button variant="outline" size="sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= pages}
+            onClick={() => setPage(page + 1)}
+          >
             Next
           </Button>
         </div>
@@ -723,7 +841,10 @@ function JobsTab({ providerId }: { providerId: string }) {
               <Info label="Priority" value={open.priority} />
               <Info label="Meter" value={open.meter_number} />
               <Info label="Resident" value={open.resident_name} />
-              <Info label="Property / Unit" value={[open.property_name, open.unit_number].filter(Boolean).join(" · ")} />
+              <Info
+                label="Property / Unit"
+                value={[open.property_name, open.unit_number].filter(Boolean).join(" · ")}
+              />
               <Info label="Requested" value={fmtDateTime(open.created_at)} />
               <Info label="Scheduled" value={fmtDate(open.preferred_date)} />
               <Info label="Completed" value={fmtDateTime(open.completed_at)} />

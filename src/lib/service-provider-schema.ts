@@ -106,7 +106,11 @@ export const editServiceProviderSchema = z.object({
   ...providerDetailsFields,
 });
 
-export function fullName(p: { first_name?: string | null | undefined; middle_name?: string | null | undefined; last_name?: string | null | undefined }) {
+export function fullName(p: {
+  first_name?: string | null | undefined;
+  middle_name?: string | null | undefined;
+  last_name?: string | null | undefined;
+}) {
   return [p.first_name, p.middle_name, p.last_name]
     .map((v) => (v ?? "").trim())
     .filter(Boolean)
@@ -114,7 +118,9 @@ export function fullName(p: { first_name?: string | null | undefined; middle_nam
 }
 
 /** Statuses an admin can act on; suspended providers cannot receive new jobs. */
-export function providerActions(status: string): ("view" | "edit" | "suspend" | "unsuspend" | "delete")[] {
+export function providerActions(
+  status: string,
+): ("view" | "edit" | "suspend" | "unsuspend" | "delete")[] {
   return status === "suspended"
     ? ["view", "edit", "unsuspend", "delete"]
     : ["view", "edit", "suspend", "delete"];
