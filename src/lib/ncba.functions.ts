@@ -143,7 +143,8 @@ async function filtered(supabase: any, select: string, f: z.output<typeof bankSe
   let q = supabase.from("bank_notifications").select(select, opts);
   q = applyBankFilters(q, f);
   if (nums) q = q.in("meter_number", nums.length ? nums : ["__none__"]);
-  return q;
+  // Wrapped: returning the builder from an async fn would execute it (it is thenable).
+  return { q };
 }
 
 export type BankPaymentExportRow = NcbaPaymentRow & {
@@ -218,7 +219,7 @@ export const searchBankPayments = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const supabase = context.supabase as any;
     const start = (data.page - 1) * data.pageSize;
-    let q = await filtered(supabase, COLS, data, { count: "exact" });
+    let { q } = await filtered(supabase, COLS, data, { count: "exact" });
     q = q.order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
@@ -236,7 +237,7 @@ export const exportBankPayments = createServerFn({ method: "POST" })
     const supabase = context.supabase as any;
     const all: any[] = [];
     for (let start = 0; start < 50000; start += 1000) {
-      let q = await filtered(supabase, COLS, data);
+      let { q } = await filtered(supabase, COLS, data);
       q = q.order("created_at", { ascending: data.sortDir === "asc" }).order("id").range(start, start + 999);
       const { data: rows, error } = await q;
       if (error) throw new Error(error.message);
