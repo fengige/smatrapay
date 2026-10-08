@@ -240,7 +240,7 @@ function TransactionRecordsPage() {
             {field("Meter Number", <input className={input} value={draft.meter} onChange={(e) => setDraft({ ...draft, meter: e.target.value })} />)}
             {field("Owner", <input className={input} value={draft.owner} onChange={(e) => setDraft({ ...draft, owner: e.target.value })} />)}
             {field("Owner Type", sel("ownerType", [["vendor", "Vendor"], ["landlord", "Landlord"], ["agent", "Agent"]]))}
-            {field("Vending Software", sel("software", (data?.softwareOptions ?? []).map((v) => [v, v])))}
+            {field("Vending Software", sel("software", (data?.softwareOptions ?? []).map((v: string) => [v, v])))}
             {field("Token Status", sel("tokenStatus", [["generated", "Generated"], ["failed", "Failed"], ["pending", "Pending"], ["revoked", "Revoked"], ["expired", "Expired"]]))}
             {field("Payment Status", sel("paymentStatus", [["completed", "Completed"], ["received", "Received"], ["processing", "Processing"]]))}
             {field("SMS Status", sel("smsStatus", [["sent", "Sent"], ["queued", "Queued"], ["failed", "Failed"], ["not_sent", "Not Sent"], ["not_applicable", "Not Applicable"]]))}
@@ -271,7 +271,7 @@ function TransactionRecordsPage() {
               {isLoading && <tr><td colSpan={18} className="px-4 py-10 text-center"><Loader2 className="mx-auto size-5 animate-spin" /></td></tr>}
               {isError && <tr><td colSpan={18} className="px-4 py-10 text-center text-destructive">Could not load transactions. {(error as Error)?.message}</td></tr>}
               {!isLoading && !isError && rows.length === 0 && <tr><td colSpan={18} className="px-4 py-10 text-center text-muted-foreground">No transactions for this selection.</td></tr>}
-              {rows.map((r) => (
+              {rows.map((r: TxnRecord) => (
                 <tr key={r.record_id} className="border-t border-border align-top">
                   <td className="px-3 py-2 whitespace-nowrap">{new Date(r.txn_at).toLocaleString()}</td>
                   <td className="px-3 py-2 font-semibold">{r.bank || "—"}</td>
