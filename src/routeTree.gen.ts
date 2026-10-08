@@ -18,6 +18,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as AuthenticatedBankPaymentsRouteImport } from './routes/_authenticated/bank-payments'
 import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
+import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedMeterDashboardRouteImport } from './routes/_authenticated/meter-dashboard'
 import { Route as AuthenticatedPaymentHistoryRouteImport } from './routes/_authenticated/payment-history'
@@ -59,6 +60,7 @@ import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_au
 import { Route as AuthenticatedResidentsIndexRouteImport } from './routes/_authenticated/residents.index'
 import { Route as AuthenticatedResidentsNewRouteImport } from './routes/_authenticated/residents.new'
 import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
+import { Route as AuthenticatedServiceProviderJobsRouteImport } from './routes/_authenticated/service-provider/jobs'
 import { Route as AuthenticatedServiceProvidersIndexRouteImport } from './routes/_authenticated/service-providers.index'
 import { Route as AuthenticatedServiceProvidersNewRouteImport } from './routes/_authenticated/service-providers.new'
 import { Route as AuthenticatedUnitsUnitIdRouteImport } from './routes/_authenticated/units.$unitId'
@@ -70,6 +72,7 @@ import { Route as AuthenticatedVendingSoftwareSoftwareIdRouteImport } from './ro
 import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
+import { Route as AuthenticatedVendorJobsRouteImport } from './routes/_authenticated/vendor/jobs'
 import { Route as AuthenticatedVendorMeterSuppliersRouteImport } from './routes/_authenticated/vendor/meter-suppliers'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
 import { Route as AuthenticatedVendorPosRouteImport } from './routes/_authenticated/vendor/pos'
@@ -177,6 +180,11 @@ const AuthenticatedConfigurationsRoute =
     path: '/configurations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
   id: '/landlords',
   path: '/landlords',
@@ -416,6 +424,12 @@ const AuthenticatedServiceProviderDashboardRoute =
     path: '/service-provider/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedServiceProviderJobsRoute =
+  AuthenticatedServiceProviderJobsRouteImport.update({
+    id: '/service-provider/jobs',
+    path: '/service-provider/jobs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedServiceProvidersIndexRoute =
   AuthenticatedServiceProvidersIndexRouteImport.update({
     id: '/service-providers/',
@@ -479,6 +493,11 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorJobsRoute = AuthenticatedVendorJobsRouteImport.update({
+  id: '/vendor/jobs',
+  path: '/vendor/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedVendorMeterSuppliersRoute =
   AuthenticatedVendorMeterSuppliersRouteImport.update({
     id: '/vendor/meter-suppliers',
@@ -843,6 +862,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AuthenticatedAgentsRouteWithChildren
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
   '/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
+  '/jobs': typeof AuthenticatedJobsRoute
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/payment-history': typeof AuthenticatedPaymentHistoryRoute
@@ -876,6 +896,7 @@ export interface FileRoutesByFullPath {
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/service-provider/jobs': typeof AuthenticatedServiceProviderJobsRoute
   '/service-providers/new': typeof AuthenticatedServiceProvidersNewRoute
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
@@ -884,6 +905,7 @@ export interface FileRoutesByFullPath {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/vendor/jobs': typeof AuthenticatedVendorJobsRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -963,6 +985,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
+  '/jobs': typeof AuthenticatedJobsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
@@ -991,6 +1014,7 @@ export interface FileRoutesByTo {
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/service-provider/jobs': typeof AuthenticatedServiceProviderJobsRoute
   '/service-providers/new': typeof AuthenticatedServiceProvidersNewRoute
   '/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/users/new': typeof AuthenticatedUsersNewRoute
@@ -998,6 +1022,7 @@ export interface FileRoutesByTo {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/vendor/jobs': typeof AuthenticatedVendorJobsRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1081,6 +1106,7 @@ export interface FileRoutesById {
   '/_authenticated/agents': typeof AuthenticatedAgentsRouteWithChildren
   '/_authenticated/bank-payments': typeof AuthenticatedBankPaymentsRoute
   '/_authenticated/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
+  '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/_authenticated/payment-history': typeof AuthenticatedPaymentHistoryRoute
@@ -1114,6 +1140,7 @@ export interface FileRoutesById {
   '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
   '/_authenticated/residents/new': typeof AuthenticatedResidentsNewRoute
   '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
+  '/_authenticated/service-provider/jobs': typeof AuthenticatedServiceProviderJobsRoute
   '/_authenticated/service-providers/new': typeof AuthenticatedServiceProvidersNewRoute
   '/_authenticated/units/$unitId': typeof AuthenticatedUnitsUnitIdRoute
   '/_authenticated/users/$id': typeof AuthenticatedUsersIdRouteWithChildren
@@ -1122,6 +1149,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/_authenticated/vendor/jobs': typeof AuthenticatedVendorJobsRoute
   '/_authenticated/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/_authenticated/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1205,6 +1233,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/bank-payments'
     | '/configurations'
+    | '/jobs'
     | '/landlords'
     | '/meter-dashboard'
     | '/payment-history'
@@ -1238,6 +1267,7 @@ export interface FileRouteTypes {
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
+    | '/service-provider/jobs'
     | '/service-providers/new'
     | '/units/$unitId'
     | '/users/$id'
@@ -1246,6 +1276,7 @@ export interface FileRouteTypes {
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
+    | '/vendor/jobs'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
     | '/vendor/pos'
@@ -1325,6 +1356,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/bank-payments'
+    | '/jobs'
     | '/meter-dashboard'
     | '/payment-history'
     | '/pos'
@@ -1353,6 +1385,7 @@ export interface FileRouteTypes {
     | '/resident/dashboard'
     | '/residents/new'
     | '/service-provider/dashboard'
+    | '/service-provider/jobs'
     | '/service-providers/new'
     | '/units/$unitId'
     | '/users/new'
@@ -1360,6 +1393,7 @@ export interface FileRouteTypes {
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
+    | '/vendor/jobs'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
     | '/vendor/pos'
@@ -1442,6 +1476,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents'
     | '/_authenticated/bank-payments'
     | '/_authenticated/configurations'
+    | '/_authenticated/jobs'
     | '/_authenticated/landlords'
     | '/_authenticated/meter-dashboard'
     | '/_authenticated/payment-history'
@@ -1475,6 +1510,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resident/dashboard'
     | '/_authenticated/residents/new'
     | '/_authenticated/service-provider/dashboard'
+    | '/_authenticated/service-provider/jobs'
     | '/_authenticated/service-providers/new'
     | '/_authenticated/units/$unitId'
     | '/_authenticated/users/$id'
@@ -1483,6 +1519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/activation'
     | '/_authenticated/vendor/assignments'
     | '/_authenticated/vendor/dashboard'
+    | '/_authenticated/vendor/jobs'
     | '/_authenticated/vendor/meter-suppliers'
     | '/_authenticated/vendor/notifications'
     | '/_authenticated/vendor/pos'
@@ -1639,6 +1676,13 @@ declare module '@tanstack/react-router' {
       path: '/configurations'
       fullPath: '/configurations'
       preLoaderRoute: typeof AuthenticatedConfigurationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jobs': {
+      id: '/_authenticated/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof AuthenticatedJobsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/landlords': {
@@ -1928,6 +1972,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServiceProviderDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/service-provider/jobs': {
+      id: '/_authenticated/service-provider/jobs'
+      path: '/service-provider/jobs'
+      fullPath: '/service-provider/jobs'
+      preLoaderRoute: typeof AuthenticatedServiceProviderJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/service-providers/': {
       id: '/_authenticated/service-providers/'
       path: '/service-providers'
@@ -2003,6 +2054,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor/dashboard'
       fullPath: '/vendor/dashboard'
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/jobs': {
+      id: '/_authenticated/vendor/jobs'
+      path: '/vendor/jobs'
+      fullPath: '/vendor/jobs'
+      preLoaderRoute: typeof AuthenticatedVendorJobsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/meter-suppliers': {
@@ -2585,6 +2643,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedBankPaymentsRoute: typeof AuthenticatedBankPaymentsRoute
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
+  AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedMeterDashboardRoute: typeof AuthenticatedMeterDashboardRoute
   AuthenticatedPaymentHistoryRoute: typeof AuthenticatedPaymentHistoryRoute
@@ -2608,12 +2667,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetersBulkAddRoute: typeof AuthenticatedMetersBulkAddRoute
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
+  AuthenticatedServiceProviderJobsRoute: typeof AuthenticatedServiceProviderJobsRoute
   AuthenticatedServiceProvidersNewRoute: typeof AuthenticatedServiceProvidersNewRoute
   AuthenticatedUnitsUnitIdRoute: typeof AuthenticatedUnitsUnitIdRoute
   AuthenticatedVendingSoftwareSoftwareIdRoute: typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
+  AuthenticatedVendorJobsRoute: typeof AuthenticatedVendorJobsRoute
   AuthenticatedVendorMeterSuppliersRoute: typeof AuthenticatedVendorMeterSuppliersRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
   AuthenticatedVendorPosRoute: typeof AuthenticatedVendorPosRoute
@@ -2661,6 +2722,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBankPaymentsRoute: AuthenticatedBankPaymentsRoute,
   AuthenticatedConfigurationsRoute:
     AuthenticatedConfigurationsRouteWithChildren,
+  AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedMeterDashboardRoute: AuthenticatedMeterDashboardRoute,
   AuthenticatedPaymentHistoryRoute: AuthenticatedPaymentHistoryRoute,
@@ -2686,6 +2748,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResidentDashboardRoute: AuthenticatedResidentDashboardRoute,
   AuthenticatedServiceProviderDashboardRoute:
     AuthenticatedServiceProviderDashboardRoute,
+  AuthenticatedServiceProviderJobsRoute: AuthenticatedServiceProviderJobsRoute,
   AuthenticatedServiceProvidersNewRoute: AuthenticatedServiceProvidersNewRoute,
   AuthenticatedUnitsUnitIdRoute: AuthenticatedUnitsUnitIdRoute,
   AuthenticatedVendingSoftwareSoftwareIdRoute:
@@ -2693,6 +2756,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
+  AuthenticatedVendorJobsRoute: AuthenticatedVendorJobsRoute,
   AuthenticatedVendorMeterSuppliersRoute:
     AuthenticatedVendorMeterSuppliersRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
