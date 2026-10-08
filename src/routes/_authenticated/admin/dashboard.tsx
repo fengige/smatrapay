@@ -7,8 +7,8 @@ import {
   ChevronRight,
   Coins,
   Gauge,
-  MessageSquare,
-  ShieldCheck,
+  CreditCard,
+  RefreshCw,
   Users,
   Zap,
 } from "lucide-react";
@@ -27,7 +27,8 @@ import { getAdminStats } from "@/lib/stats.functions";
 import { getConfiguration } from "@/lib/configurations.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { useSessionIdentity } from "@/components/PortalLayout";
-import { roleLabel } from "@/lib/portals";
+import { Button } from "@/components/ui/button";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 export const Route = createFileRoute("/_authenticated/admin/dashboard")({
   head: () => ({
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
       {
         name: "description",
         content:
-          "SmatraPay admin dashboard: vendors, meters, pending enquiries, platform statistics and system status.",
+           "SmatraPay admin dashboard: current vendors, meters, properties, tokens and bank payments requiring attention.",
       },
       { property: "og:title", content: "Admin dashboard · SmatraPay" },
       {
@@ -158,11 +159,13 @@ function AdminDashboard() {
   const access = Route.useLoaderData();
   const identity = useSessionIdentity();
   const fetchStats = useServerFn(getAdminStats);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: () => fetchStats(),
     enabled: access.allowed,
+    refetchInterval: 60_000,
   });
+  useRealtimeRefresh("admin-dashboard", ["users", "user_roles", "meters", "properties", "units", "meter_tokens", "bank_notifications"], [["admin-stats"]], access.allowed);
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
@@ -180,60 +183,63 @@ function AdminDashboard() {
       .join("")
       .toUpperCase() || "SA";
 
-  const vendors = data?.byRole?.["vendor"] ?? 0;
-  const meters = 0;
-  const enquiries = 0;
+  const vendors = data?.vendors.total;
+  const meters = data?.meters.total;
 
   const stats = [
     {
       label: "Total Vendors",
       value: fmt(vendors),
       icon: Building2,
-      caption: `${fmt(data?.byStatus?.["active"])} active accounts`,
+       caption: `${fmt(data?.vendors.active)} active vendors`,
+       to: "/vendors",
     },
     {
       label: "Total Meters",
       value: fmt(meters),
       icon: Gauge,
-      caption: "Registered devices",
+       caption: `${fmt(data?.meters.active)} active meters`,
+       to: "/meters",
     },
     {
-      label: "Pending Enquiries",
-      value: fmt(enquiries),
-      icon: MessageSquare,
-      caption: "New website leads",
+       label: "Generated Tokens",
+       value: fmt(data?.tokens),
+       icon: Zap,
+       caption: "All recorded tokens",
+       to: "/token-ledger",
     },
     {
-      label: "System Status",
-      value: "Healthy",
-      valueClass: "text-2xl",
+       label: "Payments Needing Attention",
+       value: fmt(data?.bankAttention),
       icon: Activity,
-      caption: "All services operational",
+       caption: `${fmt(data?.queuedPayments)} queued for retry`,
+       to: "/bank-payments",
     },
   ];
 
   const quickActions = [
-    { label: "Add Vendor", caption: "Create account", to: "/users", icon: Building2 },
-    { label: "Meters", caption: "Manage units", to: "/users", icon: Gauge },
-    { label: "Account", caption: "System settings", to: "/users", icon: ShieldCheck },
-  ];
+     { label: "Add Vendor", caption: "Create account", to: "/vendors/new", icon: Building2 },
+     { label: "Meters", caption: "Registered meters", to: "/meters", icon: Gauge },
+     { label: "Bank Payments", caption: "Payments & retries", to: "/bank-payments", icon: CreditCard },
+   ] as const;
 
   const chartData = [
     { name: "Vendors", count: vendors },
-    { name: "Active Vendors", count: data?.byStatus?.["active"] ?? 0 },
+     { name: "Active Vendors", count: data?.vendors.active },
     { name: "Meters", count: meters },
-    { name: "Active Meters", count: meters },
-    { name: "Pending Enquiries", count: enquiries },
-    { name: "Resolved Enquiries", count: 0 },
+     { name: "Active Meters", count: data?.meters.active },
+     { name: "Properties", count: data?.properties },
+     { name: "Units", count: data?.units },
   ];
-  const hasChartData = chartData.some((d) => d.count > 0);
+   const hasChartData = chartData.some((d) => (d.count ?? 0) > 0);
 
-  const recentVendors = (data?.recent ?? []).filter((u) => u.role === "vendor").slice(0, 5);
+   const recentVendors = data?.recentVendors ?? [];
 
   const networkRows = [
     { label: "Total Vendors", value: vendors, icon: Building2 },
-    { label: "Active Meters", value: meters, icon: Gauge },
-    { label: "Total Meters", value: meters, icon: Users },
+     { label: "Active Meters", value: data?.meters.active, icon: Gauge },
+     { label: "Properties", value: data?.properties, icon: Building2 },
+     { label: "Units", value: data?.units, icon: Users },
   ];
 
   return (
@@ -245,7 +251,6 @@ function AdminDashboard() {
     >
       {/* Hero banner */}
       <section className="relative overflow-hidden rounded-3xl bg-brand-panel px-6 py-7 text-panel-foreground sm:px-8">
-        <div className="orb orb-1" aria-hidden />
         <div className="relative flex items-center gap-6">
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Admin Dashboard</h2>
@@ -260,10 +265,19 @@ function AdminDashboard() {
         </div>
       </section>
 
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <p role={isError ? "alert" : undefined} className={isError ? "text-sm text-destructive" : "text-xs text-muted-foreground"}>
+          {isError ? "Could not refresh dashboard records. Please try again." : data ? `Updated ${new Date(data.updatedAt).toLocaleTimeString()}` : "Loading dashboard records…"}
+        </p>
+        <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+          <RefreshCw className={isFetching ? "size-4 animate-spin" : "size-4"} /> Refresh
+        </Button>
+      </div>
+
       {/* Stat cards */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
+           <Link key={s.label} to={s.to} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary">
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-semibold text-muted-foreground">{s.label}</p>
               <span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
@@ -271,14 +285,12 @@ function AdminDashboard() {
               </span>
             </div>
             <p
-              className={`mt-3 font-extrabold tracking-tight text-foreground ${
-                s.valueClass ?? "text-3xl"
-              }`}
+               className="mt-3 text-3xl font-extrabold text-foreground"
             >
-              {isLoading && s.label !== "System Status" ? "—" : s.value}
+               {isLoading ? "—" : s.value}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">{s.caption}</p>
-          </div>
+           </Link>
         ))}
       </div>
 
@@ -306,11 +318,11 @@ function AdminDashboard() {
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <section className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
           <h2 className="text-base font-bold text-foreground">Platform Statistics</h2>
-          <p className="text-sm text-muted-foreground">Overview of vendors, meters &amp; enquiries</p>
+           <p className="text-sm text-muted-foreground">Vendors, meters, properties &amp; units</p>
           <div className="mt-5 h-72">
             {!hasChartData ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                No platform data available yet
+                 {isError ? "Records unavailable" : isLoading ? "Loading records…" : "No platform records yet"}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -354,8 +366,8 @@ function AdminDashboard() {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h2 className="text-sm font-bold text-foreground">Recent Vendors</h2>
               <Link
-                to="/users"
-                search={{ page: 1, limit: 10 }}
+                 to="/vendors"
+                search={{ page: 1, limit: 10, status: "all", q: "" }}
                 className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
               >
                 View All <ChevronRight className="size-3" />
@@ -376,10 +388,10 @@ function AdminDashboard() {
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">
+                     <Link to="/vendors/$id" params={{ id: u.id }} className="block truncate text-sm font-semibold text-foreground hover:text-primary">
                       {u.name ?? u.email ?? "—"}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">{roleLabel(u.role)}</p>
+                     </Link>
+                     <p className="truncate text-xs text-muted-foreground">{u.email ?? "Vendor"}</p>
                   </div>
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-[0.7rem] font-semibold capitalize text-secondary-foreground">
                     {u.status}
@@ -388,7 +400,7 @@ function AdminDashboard() {
               ))}
               {recentVendors.length === 0 && (
                 <li className="py-8 text-center text-sm text-muted-foreground">
-                  No vendors registered yet
+                   {isError ? "Vendor records unavailable" : isLoading ? "Loading vendors…" : "No vendors registered yet"}
                 </li>
               )}
             </ul>
@@ -398,14 +410,14 @@ function AdminDashboard() {
             <div className="relative">
               <h2 className="flex items-center gap-2 text-base font-bold">
                 <Zap className="size-4" />
-                Network Status
+                 Portfolio Summary
               </h2>
               <p className="text-xs text-panel-muted">Registered entities overview</p>
               <ul className="mt-4 space-y-1">
                 {networkRows.map((row) => (
                   <li
                     key={row.label}
-                    className="flex items-center gap-3 border-b border-white/10 py-2.5 text-sm font-semibold last:border-0"
+                     className="flex items-center gap-3 border-b border-panel-foreground/10 py-2.5 text-sm font-semibold last:border-0"
                   >
                     <row.icon className="size-4 text-panel-muted" />
                     <span className="flex-1">{row.label}</span>
@@ -414,8 +426,7 @@ function AdminDashboard() {
                 ))}
               </ul>
               <Link
-                to="/users"
-                search={{ page: 1, limit: 10 }}
+                 to="/meter-dashboard"
                 className="mt-4 flex w-full items-center justify-center rounded-xl bg-background px-4 py-2.5 text-sm font-bold text-foreground transition-opacity hover:opacity-90"
               >
                 Review Fleet
