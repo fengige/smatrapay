@@ -65,7 +65,9 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
   const list = vendor ? vendorList : adminList;
   const exportAll = vendor ? vendorExport : adminExport;
   const retry = useServerFn(retryNcbaPayment);
-  const resend = useServerFn(resendTokenSms);
+  const adminResend = useServerFn(resendTokenSms);
+  const vendorResend = useServerFn(vendorResendTokenSms);
+  const resend = vendor ? vendorResend : adminResend;
 
   useEffect(() => { const t = setTimeout(() => { setQ(quick); setPage(1); }, 300); return () => clearTimeout(t); }, [quick]);
 
@@ -291,7 +293,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
                   <td className="px-3 py-2">{r.payment_status === "received" ? "Payment Received" : cap(r.payment_status)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button type="button" onClick={() => setDetail(r)} className="rounded-lg border border-border px-2 py-1 font-medium">Details</button>
-                    {!vendor && r.token_id && r.token_status === "generated" && (
+                    {r.token_id && r.token_status === "generated" && (
                       <button type="button" disabled={resendM.isPending} onClick={() => resendM.mutate(r.token_id!)} aria-label="Resend token SMS" className="ml-1 rounded-lg border border-border px-2 py-1"><MessageSquare className="inline size-3.5" /></button>
                     )}
                     {canRetry(r) && (
@@ -335,7 +337,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
             ))}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               {detail.token && <button type="button" onClick={() => void copy(detail.token!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-sm"><Copy className="size-4" /> Copy Token</button>}
-              {!vendor && detail.token_id && detail.token_status === "generated" && <button type="button" disabled={resendM.isPending} onClick={() => resendM.mutate(detail.token_id!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-sm"><MessageSquare className="size-4" /> Resend Token SMS</button>}
+              {detail.token_id && detail.token_status === "generated" && <button type="button" disabled={resendM.isPending} onClick={() => resendM.mutate(detail.token_id!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-sm"><MessageSquare className="size-4" /> Resend Token SMS</button>}
               {canRetry(detail) && <button type="button" onClick={() => setConfirmRetry(detail)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground"><RotateCcw className="size-4" /> Retry Token Generation</button>}
               <button type="button" onClick={() => setDetail(null)} className="rounded-lg border border-border px-3.5 py-2 text-sm">Close</button>
             </div>
