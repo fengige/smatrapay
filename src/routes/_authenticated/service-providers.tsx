@@ -162,10 +162,15 @@ function ServiceProvidersPage() {
       return;
     }
     const header = columns.map((column) => column.label);
-    const rows = filtered.map((row) => columns.map((column) =>
-      column.key === "created_at" ? date(row.created_at)
-        : column.key === "role" ? "Service Provider" : row[column.key] ?? "",
-    ));
+    const rows = filtered.map((row) =>
+      columns.map((column) =>
+        column.key === "created_at"
+          ? date(row.created_at)
+          : column.key === "role"
+            ? "Service Provider"
+            : (row[column.key] ?? ""),
+      ),
+    );
     const csv = [header, ...rows]
       .map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
@@ -176,42 +181,96 @@ function ServiceProvidersPage() {
     link.download = `smatrapay-service-providers-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success(`Exported ${filtered.length} service provider${filtered.length === 1 ? "" : "s"}`);
+    toast.success(
+      `Exported ${filtered.length} service provider${filtered.length === 1 ? "" : "s"}`,
+    );
   };
 
   const cards = [
-    { label: "Total Providers", value: stats.total, icon: Briefcase, tone: "bg-primary/12 text-primary" },
-    { label: "Active Providers", value: stats.active, icon: UserCheck, tone: "bg-accent/12 text-accent" },
-    { label: "Pending Providers", value: stats.pending, icon: UsersIcon, tone: "bg-primary/12 text-primary" },
-    { label: "Suspended Providers", value: stats.suspended, icon: ShieldAlert, tone: "bg-destructive/12 text-destructive" },
+    {
+      label: "Total Providers",
+      value: stats.total,
+      icon: Briefcase,
+      tone: "bg-primary/12 text-primary",
+    },
+    {
+      label: "Active Providers",
+      value: stats.active,
+      icon: UserCheck,
+      tone: "bg-accent/12 text-accent",
+    },
+    {
+      label: "Pending Providers",
+      value: stats.pending,
+      icon: UsersIcon,
+      tone: "bg-primary/12 text-primary",
+    },
+    {
+      label: "Suspended Providers",
+      value: stats.suspended,
+      icon: ShieldAlert,
+      tone: "bg-destructive/12 text-destructive",
+    },
   ];
 
   const exportControls = (
     <div className="relative">
       <div className="flex flex-wrap items-center gap-2">
-        <Button asChild><Link to="/users/new"><UserPlus /> Add User</Link></Button>
-        <Button variant="outline" onClick={exportCsv} disabled={isLoading || !!error || !filtered.length}>
+        <Button asChild>
+          <Link to="/users/new">
+            <UserPlus /> Add User
+          </Link>
+        </Button>
+        <Button
+          variant="outline"
+          onClick={exportCsv}
+          disabled={isLoading || !!error || !filtered.length}
+        >
           <Download /> Export CSV ({filtered.length})
         </Button>
-        <Button variant="outline" size="icon" aria-label="Choose export columns" title="Choose export columns"
-          aria-expanded={exportOpen} onClick={() => setExportOpen((open) => !open)}>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Choose export columns"
+          title="Choose export columns"
+          aria-expanded={exportOpen}
+          onClick={() => setExportOpen((open) => !open)}
+        >
           <SlidersHorizontal />
         </Button>
       </div>
       {exportOpen && (
         <div className="absolute right-0 z-40 mt-2 w-64 rounded-lg border border-border bg-background p-3">
-          <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Columns to export</p>
+          <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+            Columns to export
+          </p>
           {EXPORT_COLUMNS.map((column) => (
-            <label key={column.key} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50">
-              <input type="checkbox" className="size-4 accent-primary" checked={selectedColumns.includes(column.key)}
-                onChange={(event) => setSelectedColumns((previous) => event.target.checked
-                  ? [...previous, column.key] : previous.filter((key) => key !== column.key))} />
+            <label
+              key={column.key}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+            >
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={selectedColumns.includes(column.key)}
+                onChange={(event) =>
+                  setSelectedColumns((previous) =>
+                    event.target.checked
+                      ? [...previous, column.key]
+                      : previous.filter((key) => key !== column.key),
+                  )
+                }
+              />
               {column.label}
             </label>
           ))}
           <div className="mt-2 flex justify-between border-t border-border pt-2">
-            <Button variant="ghost" size="sm" onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}>Select all</Button>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}>Reset</Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}>
+              Select all
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}>
+              Reset
+            </Button>
           </div>
         </div>
       )}
@@ -219,17 +278,26 @@ function ServiceProvidersPage() {
   );
 
   return (
-    <PortalLayout roles={["admin"]} title="Service Provider Management" description="Manage your service provider directory"
-      actions={<div className="hidden xl:block">{exportControls}</div>}>
+    <PortalLayout
+      roles={["admin"]}
+      title="Service Provider Management"
+      description="Manage your service provider directory"
+      actions={<div className="hidden xl:block">{exportControls}</div>}
+    >
       <div className="space-y-5 pt-3">
         <div className="flex justify-end xl:hidden">{exportControls}</div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
             <div key={card.label} className="rounded-2xl border border-border bg-card p-5">
-              <span className={`flex size-10 items-center justify-center rounded-xl ${card.tone}`} aria-hidden="true">
+              <span
+                className={`flex size-10 items-center justify-center rounded-xl ${card.tone}`}
+                aria-hidden="true"
+              >
                 <card.icon className="size-5" />
               </span>
-              <p className="mt-4 text-3xl font-extrabold text-foreground">{isLoading ? "—" : card.value}</p>
+              <p className="mt-4 text-3xl font-extrabold text-foreground">
+                {isLoading ? "—" : card.value}
+              </p>
               <p className="text-sm text-muted-foreground">{card.label}</p>
             </div>
           ))}
@@ -239,16 +307,31 @@ function ServiceProvidersPage() {
           <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between">
             <div className="input-shell flex w-full max-w-sm items-center gap-2">
               <Search className="size-4 shrink-0 text-muted-foreground" />
-              <input className="input-field min-w-0" placeholder="Search providers by name, email, phone…"
-                aria-label="Search service providers" value={search} onChange={(event) => setSearch(event.target.value)} />
+              <input
+                className="input-field min-w-0"
+                placeholder="Search providers by name, email, phone…"
+                aria-label="Search service providers"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium uppercase text-muted-foreground">Role:</span>
-              <span className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">Service Provider</span>
-              <select aria-label="Filter by status" className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
-                value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <span className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+                Service Provider
+              </span>
+              <select
+                aria-label="Filter by status"
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
                 <option value="all">All Status</option>
-                {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+                {STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -256,60 +339,167 @@ function ServiceProvidersPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                <tr>{["Service Provider", "Username", "Phone", "Role", "Status", "Joined", "Actions"].map((heading) =>
-                  <th key={heading} className={`px-4 py-3 ${heading === "Actions" ? "text-right" : ""}`}>{heading}</th>)}
+                <tr>
+                  {[
+                    "Service Provider",
+                    "Username",
+                    "Phone",
+                    "Role",
+                    "Status",
+                    "Joined",
+                    "Actions",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      className={`px-4 py-3 ${heading === "Actions" ? "text-right" : ""}`}
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Loading service providers…</td></tr>
-                ) : error ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-destructive">
-                    <p>{(error as Error).message}</p>
-                    <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>Refresh</Button>
-                  </td></tr>
-                ) : paged.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No service providers match your filters.</td></tr>
-                ) : paged.map((row) => (
-                  <tr key={row.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {row.profile_image ? <img src={row.profile_image} alt={row.name ?? "Service provider avatar"} className="size-9 shrink-0 rounded-full object-cover" />
-                          : <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">{initials(row)}</span>}
-                        <div><div className="font-semibold text-foreground">{row.name || "—"}</div><div className="text-xs text-muted-foreground">{row.email || "—"}</div></div>
-                      </div>
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      Loading service providers…
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.username || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.phone || "—"}</td>
-                    <td className="px-4 py-3 text-primary">Service Provider</td>
-                    <td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusTone[row.status] ?? "bg-muted text-muted-foreground"}`}>
-                      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />{row.status || "—"}
-                    </span></td>
-                    <td className="px-4 py-3 text-muted-foreground">{date(row.created_at)}</td>
-                    <td className="px-4 py-3"><div className="flex justify-end gap-1">
-                      <Button asChild variant="ghost" size="icon"><Link to="/users/$id" params={{ id: row.id }} aria-label="View service provider" title="View service provider"><Eye /></Link></Button>
-                      <Button asChild variant="ghost" size="icon"><Link to="/users/$id/edit" params={{ id: row.id }} aria-label="Edit service provider" title="Edit service provider"><Pencil /></Link></Button>
-                    </div></td>
                   </tr>
-                ))}
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                      <p>{(error as Error).message}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => void refetch()}
+                      >
+                        Refresh
+                      </Button>
+                    </td>
+                  </tr>
+                ) : paged.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      No service providers match your filters.
+                    </td>
+                  </tr>
+                ) : (
+                  paged.map((row) => (
+                    <tr key={row.id} className="border-t border-border hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {row.profile_image ? (
+                            <img
+                              src={row.profile_image}
+                              alt={row.name ?? "Service provider avatar"}
+                              className="size-9 shrink-0 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                              {initials(row)}
+                            </span>
+                          )}
+                          <div>
+                            <div className="font-semibold text-foreground">{row.name || "—"}</div>
+                            <div className="text-xs text-muted-foreground">{row.email || "—"}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.username || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.phone || "—"}</td>
+                      <td className="px-4 py-3 text-primary">Service Provider</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusTone[row.status] ?? "bg-muted text-muted-foreground"}`}
+                        >
+                          <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
+                          {row.status || "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{date(row.created_at)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <Button asChild variant="ghost" size="icon">
+                            <Link
+                              to="/users/$id"
+                              params={{ id: row.id }}
+                              aria-label="View service provider"
+                              title="View service provider"
+                            >
+                              <Eye />
+                            </Link>
+                          </Button>
+                          <Button asChild variant="ghost" size="icon">
+                            <Link
+                              to="/users/$id/edit"
+                              params={{ id: row.id }}
+                              aria-label="Edit service provider"
+                              title="Edit service provider"
+                            >
+                              <Pencil />
+                            </Link>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row">
-            <p className="text-sm text-muted-foreground">Showing <span className="font-medium text-foreground">{filtered.length ? (page - 1) * pageSize + 1 : 0}</span>–
-              <span className="font-medium text-foreground">{Math.min(page * pageSize, filtered.length)}</span> of <span className="font-medium text-foreground">{filtered.length}</span> providers</p>
+            <p className="text-sm text-muted-foreground">
+              Showing{" "}
+              <span className="font-medium text-foreground">
+                {filtered.length ? (page - 1) * pageSize + 1 : 0}
+              </span>
+              –
+              <span className="font-medium text-foreground">
+                {Math.min(page * pageSize, filtered.length)}
+              </span>{" "}
+              of <span className="font-medium text-foreground">{filtered.length}</span> providers
+            </p>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1.5 text-sm text-muted-foreground">Rows
-                <select aria-label="Rows per page" className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
-                  value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
-                  {LIMIT_OPTIONS.map((limit) => <option key={limit} value={limit}>{limit}</option>)}
+              <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                Rows
+                <select
+                  aria-label="Rows per page"
+                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                  value={pageSize}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                >
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" aria-label="Previous page" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft /></Button>
-                <span className="min-w-[4.5rem] px-2 text-center text-sm text-muted-foreground"><span className="font-medium text-foreground">{page}</span> / {totalPages}</span>
-                <Button variant="outline" size="icon" aria-label="Next page" disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight /></Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Previous page"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  <ChevronLeft />
+                </Button>
+                <span className="min-w-[4.5rem] px-2 text-center text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{page}</span> / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Next page"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  <ChevronRight />
+                </Button>
               </div>
             </div>
           </div>
