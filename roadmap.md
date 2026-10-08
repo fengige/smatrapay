@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Rebuild Service Providers to match the Users page layout, filters, export controls and table.
+
 - [x] Mail tab: send-test email button (managed mail pipeline)
 - [x] Google Map tab: live map preview with configured key
 - [x] Admin dashboard: currency conversion helper card

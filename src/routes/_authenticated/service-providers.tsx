@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
   Briefcase,
+  SlidersHorizontal,
+  UserPlus,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -17,6 +19,8 @@ import {
 
 import { listUsersByRole } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const DEFAULT_LIMIT = 10;
 const LIMIT_OPTIONS = [10, 25, 50, 100];
@@ -69,14 +73,14 @@ type Row = {
 const STATUSES = ["active", "pending", "inactive", "suspended"];
 
 const statusTone: Record<string, string> = {
-  active: "bg-emerald-500/12 text-emerald-600",
-  pending: "bg-amber-500/15 text-amber-600",
+  active: "bg-accent/12 text-accent",
+  pending: "bg-primary/12 text-primary",
   inactive: "bg-muted text-muted-foreground",
   suspended: "bg-destructive/12 text-destructive",
 };
 
 function date(value: string | null) {
-  return value ? new Date(value).toLocaleDateString() : "";
+  return value ? new Date(value).toLocaleDateString() : "—";
 }
 
 function initials(row: Row) {
@@ -89,9 +93,22 @@ function initials(row: Row) {
     .join("");
 }
 
+const EXPORT_COLUMNS: { key: keyof Row; label: string }[] = [
+  { key: "name", label: "Full Name" },
+  { key: "email", label: "Email Address" },
+  { key: "username", label: "Username" },
+  { key: "phone", label: "Phone Number" },
+  { key: "role", label: "Portal Role" },
+  { key: "status", label: "Account Status" },
+  { key: "created_at", label: "Joined Date" },
+];
+const DEFAULT_COLUMNS = EXPORT_COLUMNS.map((column) => column.key);
+
 function ServiceProvidersPage() {
   const fetchProviders = useServerFn(listUsersByRole);
   const [search, setSearch] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState<(keyof Row)[]>(DEFAULT_COLUMNS);
   const [statusFilter, setStatusFilter] = useState("all");
 
   const { page: currentPage, limit: pageSize } = Route.useSearch();
@@ -105,7 +122,7 @@ function ServiceProvidersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, statusFilter]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["users", "service_provider"],
     queryFn: () => fetchProviders({ data: { role: "service_provider" } }),
   });
@@ -139,15 +156,21 @@ function ServiceProvidersPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Full Name", "Email", "Username", "Phone", "Status", "Joined"];
-    const rows = filtered.map((r) => [
-      r.name ?? "",
-      r.email ?? "",
-      r.username ?? "",
-      r.phone ?? "",
-      r.status,
-      date(r.created_at),
-    ]);
+    const columns = EXPORT_COLUMNS.filter((column) => selectedColumns.includes(column.key));
+    if (!columns.length) {
+      toast.error("Pick at least one column to export");
+      return;
+    }
+    const header = columns.map((column) => column.label);
+    const rows = filtered.map((row) =>
+      columns.map((column) =>
+        column.key === "created_at"
+          ? date(row.created_at)
+          : column.key === "role"
+            ? "Service Provider"
+            : (row[column.key] ?? ""),
+      ),
+    );
     const csv = [header, ...rows]
       .map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
@@ -158,157 +181,266 @@ function ServiceProvidersPage() {
     link.download = `smatrapay-service-providers-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+    toast.success(
+      `Exported ${filtered.length} service provider${filtered.length === 1 ? "" : "s"}`,
+    );
   };
+
+  const cards = [
+    {
+      label: "Total Providers",
+      value: stats.total,
+      icon: Briefcase,
+      tone: "bg-primary/12 text-primary",
+    },
+    {
+      label: "Active Providers",
+      value: stats.active,
+      icon: UserCheck,
+      tone: "bg-accent/12 text-accent",
+    },
+    {
+      label: "Pending Providers",
+      value: stats.pending,
+      icon: UsersIcon,
+      tone: "bg-primary/12 text-primary",
+    },
+    {
+      label: "Suspended Providers",
+      value: stats.suspended,
+      icon: ShieldAlert,
+      tone: "bg-destructive/12 text-destructive",
+    },
+  ];
+
+  const exportControls = (
+    <div className="relative">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild>
+          <Link to="/users/new">
+            <UserPlus /> Add User
+          </Link>
+        </Button>
+        <Button
+          variant="outline"
+          onClick={exportCsv}
+          disabled={isLoading || !!error || !filtered.length}
+        >
+          <Download /> Export CSV ({filtered.length})
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Choose export columns"
+          title="Choose export columns"
+          aria-expanded={exportOpen}
+          onClick={() => setExportOpen((open) => !open)}
+        >
+          <SlidersHorizontal />
+        </Button>
+      </div>
+      {exportOpen && (
+        <div className="absolute right-0 z-40 mt-2 w-64 rounded-lg border border-border bg-background p-3">
+          <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+            Columns to export
+          </p>
+          {EXPORT_COLUMNS.map((column) => (
+            <label
+              key={column.key}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+            >
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={selectedColumns.includes(column.key)}
+                onChange={(event) =>
+                  setSelectedColumns((previous) =>
+                    event.target.checked
+                      ? [...previous, column.key]
+                      : previous.filter((key) => key !== column.key),
+                  )
+                }
+              />
+              {column.label}
+            </label>
+          ))}
+          <div className="mt-2 flex justify-between border-t border-border pt-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}>
+              Select all
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedColumns(DEFAULT_COLUMNS)}>
+              Reset
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <PortalLayout
       roles={["admin"]}
       title="Service Provider Management"
-      description="All service provider accounts"
+      description="Manage your service provider directory"
+      actions={<div className="hidden xl:block">{exportControls}</div>}
     >
-      <div className="space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Service Provider Management
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Every account with the service provider role on SmatraPay
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={exportCsv}
-            disabled={!filtered.length}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
-          >
-            <Download className="size-4" /> Export CSV
-          </button>
-        </div>
-
+      <div className="space-y-5 pt-3">
+        <div className="flex justify-end xl:hidden">{exportControls}</div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total Providers" value={stats.total} icon={Briefcase} />
-          <StatCard label="Active" value={stats.active} icon={UserCheck} tone="text-emerald-600" />
-          <StatCard label="Pending" value={stats.pending} icon={UsersIcon} tone="text-amber-600" />
-          <StatCard
-            label="Suspended"
-            value={stats.suspended}
-            icon={ShieldAlert}
-            tone="text-destructive"
-          />
+          {cards.map((card) => (
+            <div key={card.label} className="rounded-2xl border border-border bg-card p-5">
+              <span
+                className={`flex size-10 items-center justify-center rounded-xl ${card.tone}`}
+                aria-hidden="true"
+              >
+                <card.icon className="size-5" />
+              </span>
+              <p className="mt-4 text-3xl font-extrabold text-foreground">
+                {isLoading ? "—" : card.value}
+              </p>
+              <p className="text-sm text-muted-foreground">{card.label}</p>
+            </div>
+          ))}
         </div>
 
-        <section className="rounded-2xl border border-border bg-card">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-            <div className="flex min-w-[220px] flex-1 items-stretch overflow-hidden rounded-lg border border-border focus-within:border-primary">
-              <span className="flex items-center bg-muted/50 px-3 text-muted-foreground">
-                <Search className="size-4" />
-              </span>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between">
+            <div className="input-shell flex w-full max-w-sm items-center gap-2">
+              <Search className="size-4 shrink-0 text-muted-foreground" />
               <input
+                className="input-field min-w-0"
+                placeholder="Search providers by name, email, phone…"
+                aria-label="Search service providers"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search service providers by name, email, username or phone"
-                className="w-full bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/70"
+                onChange={(event) => setSearch(event.target.value)}
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            >
-              <option value="all">All statuses</option>
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s[0]?.toUpperCase()}
-                  {s.slice(1)}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium uppercase text-muted-foreground">Role:</span>
+              <span className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+                Service Provider
+              </span>
+              <select
+                aria-label="Filter by status"
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="all">All Status</option>
+                {STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Service Provider</th>
-                  <th className="px-4 py-3 font-semibold">Username</th>
-                  <th className="px-4 py-3 font-semibold">Phone</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Joined</th>
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  {[
+                    "Service Provider",
+                    "Username",
+                    "Phone",
+                    "Role",
+                    "Status",
+                    "Joined",
+                    "Actions",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      className={`px-4 py-3 ${heading === "Actions" ? "text-right" : ""}`}
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                       Loading service providers…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-destructive">
-                      {(error as Error).message}
+                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
+                      <p>{(error as Error).message}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => void refetch()}
+                      >
+                        Refresh
+                      </Button>
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                      No service providers found.
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                      No service providers match your filters.
                     </td>
                   </tr>
                 ) : (
-                  paged.map((r) => (
-                    <tr key={r.id} className="border-t border-border/70">
+                  paged.map((row) => (
+                    <tr key={row.id} className="border-t border-border hover:bg-muted/30">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <span className="inline-flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                            {r.profile_image ? (
-                              <img
-                                src={r.profile_image}
-                                alt={r.name ?? "Service provider avatar"}
-                                className="size-full object-cover"
-                              />
-                            ) : (
-                              initials(r)
-                            )}
-                          </span>
+                          {row.profile_image ? (
+                            <img
+                              src={row.profile_image}
+                              alt={row.name ?? "Service provider avatar"}
+                              className="size-9 shrink-0 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                              {initials(row)}
+                            </span>
+                          )}
                           <div>
-                            <div className="font-medium text-foreground">{r.name ?? "—"}</div>
-                            <div className="text-xs text-muted-foreground">{r.email ?? "—"}</div>
+                            <div className="font-semibold text-foreground">{row.name || "—"}</div>
+                            <div className="text-xs text-muted-foreground">{row.email || "—"}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.username ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.phone ?? "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.username || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.phone || "—"}</td>
+                      <td className="px-4 py-3 text-primary">Service Provider</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                            statusTone[r.status] ?? "bg-muted text-muted-foreground"
-                          }`}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusTone[row.status] ?? "bg-muted text-muted-foreground"}`}
                         >
-                          {r.status}
+                          <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
+                          {row.status || "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{date(r.created_at)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{date(row.created_at)}</td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Link
-                            to="/users/$id"
-                            params={{ id: r.id }}
-                            aria-label="View service provider"
-                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Eye className="size-4" />
-                          </Link>
-                          <Link
-                            to="/users/$id/edit"
-                            params={{ id: r.id }}
-                            aria-label="Edit service provider"
-                            className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10"
-                          >
-                            <Pencil className="size-4" />
-                          </Link>
+                        <div className="flex justify-end gap-1">
+                          <Button asChild variant="ghost" size="icon">
+                            <Link
+                              to="/users/$id"
+                              params={{ id: row.id }}
+                              aria-label="View service provider"
+                              title="View service provider"
+                            >
+                              <Eye />
+                            </Link>
+                          </Button>
+                          <Button asChild variant="ghost" size="icon">
+                            <Link
+                              to="/users/$id/edit"
+                              params={{ id: row.id }}
+                              aria-label="Edit service provider"
+                              title="Edit service provider"
+                            >
+                              <Pencil />
+                            </Link>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -318,73 +450,61 @@ function ServiceProvidersPage() {
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span>Rows per page</span>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
-              >
-                {LIMIT_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <span>
-                {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-                {Math.min(page * pageSize, filtered.length)} of {filtered.length}
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row">
+            <p className="text-sm text-muted-foreground">
+              Showing{" "}
+              <span className="font-medium text-foreground">
+                {filtered.length ? (page - 1) * pageSize + 1 : 0}
               </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page <= 1}
-                className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <span className="text-muted-foreground">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page >= totalPages}
-                className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent/10 disabled:opacity-50"
-                aria-label="Next page"
-              >
-                <ChevronRight className="size-4" />
-              </button>
+              –
+              <span className="font-medium text-foreground">
+                {Math.min(page * pageSize, filtered.length)}
+              </span>{" "}
+              of <span className="font-medium text-foreground">{filtered.length}</span> providers
+            </p>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                Rows
+                <select
+                  aria-label="Rows per page"
+                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                  value={pageSize}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                >
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Previous page"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  <ChevronLeft />
+                </Button>
+                <span className="min-w-[4.5rem] px-2 text-center text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{page}</span> / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Next page"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  <ChevronRight />
+                </Button>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     </PortalLayout>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: number;
-  icon: typeof UsersIcon;
-  tone?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <Icon className={`size-4 ${tone ?? "text-primary"}`} />
-      </div>
-      <div className="mt-2 text-2xl font-bold text-foreground">{value}</div>
-    </div>
   );
 }
