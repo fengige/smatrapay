@@ -77,9 +77,9 @@ export function Field({
   hint,
 }: {
   label: string;
-  required?: boolean;
-  error?: string;
-  hint?: string;
+  required?: boolean | undefined;
+  error?: string | undefined;
+  hint?: string | undefined;
   children: ReactNode;
 }) {
   return (
