@@ -516,7 +516,7 @@ async function logSmsAttempt(
 }
 
 /** Attempt one re-send; records an audit entry for the attempt either way. */
-async function resendOne(
+export async function resendOne(
   supabase: any,
   actorId: string | null,
   id: string,

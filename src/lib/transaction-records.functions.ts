@@ -206,3 +206,23 @@ export const exportVendorTransactions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data, context }) => { const ids = await vendorMeterIds(context); return runExport(await adminClient(), data, ids); });
+
+/** Vendor re-sends a token receipt SMS — only for tokens on their own meters (owner SMS config still applies). */
+export const vendorResendTokenSms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ids = await vendorMeterIds(context);
+    const admin = await adminClient();
+    const { data: tok } = await admin.from("meter_tokens").select("id, meter_id, status").eq("id", data.id).maybeSingle();
+    // Same message whether missing or another vendor's — never reveal ownership.
+    if (!tok || !ids.includes(tok.meter_id)) throw new Error("Token not found");
+    if (tok.status !== "issued") throw new Error("Only generated tokens can be re-sent");
+    const { resendOne } = await import("@/lib/tokens.functions");
+    const r = await resendOne(admin, (context as any).userId ?? null, data.id, null);
+    if (r.status === "failed") throw new Error(r.error ?? "Failed to send SMS");
+    const { assertVendor, logVendorAction } = await import("@/lib/vendor.server");
+    const vendorId = await assertVendor(context as never);
+    await logVendorAction(admin, vendorId, "VENDOR_TOKEN_SMS_RESENT", { type: "meter_token", id: data.id }, { status: r.status });
+    return { status: r.status };
+  });
