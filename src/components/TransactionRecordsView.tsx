@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Copy, Downl
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
-import { exportTransactionRecords, exportVendorTransactions, listTransactionRecords, listVendorTransactions, type TxnRecord, type TxnSearch } from "@/lib/transaction-records.functions";
+import { exportTransactionRecords, exportVendorTransactions, listTransactionRecords, listVendorTransactions, vendorResendTokenSms, type TxnRecord, type TxnSearch } from "@/lib/transaction-records.functions";
 import { retryNcbaPayment } from "@/lib/ncba.functions";
 import { resendTokenSms } from "@/lib/tokens.functions";
 
