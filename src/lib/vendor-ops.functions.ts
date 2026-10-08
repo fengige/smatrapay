@@ -989,6 +989,18 @@ export const assignServiceTechnician = createServerFn({ method: "POST" })
       .eq("vendor_id", vendorId)
       .maybeSingle();
     if (!tech) throw new Error("Access denied");
+    if (tech.user_id) {
+      // Suspended or deleted service providers keep their history but cannot take new jobs.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: account } = await (supabaseAdmin as any)
+        .from("users")
+        .select("status")
+        .eq("id", tech.user_id)
+        .maybeSingle();
+      if (account && account.status !== "active") {
+        throw new Error("This technician's account is suspended and cannot receive new jobs");
+      }
+    }
 
     const { error } = await supabase
       .from("service_requests")
