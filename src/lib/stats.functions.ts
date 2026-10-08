@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { summarizeVendors } from "@/lib/admin-dashboard";
 
 /** Admin-only platform overview metrics, computed server-side under RLS. */
 export const getAdminStats = createServerFn({ method: "GET" })
@@ -13,14 +14,32 @@ export const getAdminStats = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Error("Admin access required");
 
-    const [profilesResult, rolesResult] = await Promise.all([
-      supabase.from("users").select("id, name, email, status, created_at, profile_image"),
-      supabase.from("user_roles").select("user_id, role"),
+    // Read every page so totals and recent vendors are not capped by the API row limit.
+    async function allRows<T>(read: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) {
+      const rows: T[] = [];
+      for (let from = 0; ; from += 1000) {
+        const result = await read(from, from + 999);
+        if (result.error) throw new Error(result.error.message);
+        rows.push(...(result.data ?? []));
+        if ((result.data?.length ?? 0) < 1000) return rows;
+      }
+    }
+    const [profiles, roles, meterTotal, activeMeters, properties, units, tokens, bankAttention, queuedPayments] = await Promise.all([
+      allRows((from, to) => supabase.from("users").select("id, name, email, status, created_at, profile_image").order("id").range(from, to)),
+      allRows((from, to) => supabase.from("user_roles").select("user_id, role").order("user_id").order("role").range(from, to)),
+      supabase.from("meters").select("id", { count: "exact", head: true }),
+      supabase.from("meters").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("properties").select("id", { count: "exact", head: true }),
+      supabase.from("units").select("id", { count: "exact", head: true }),
+      supabase.from("meter_tokens").select("id", { count: "exact", head: true }),
+      supabase.from("bank_notifications").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending", "needs_review", "processing"]),
+      supabase.from("bank_notifications").select("id", { count: "exact", head: true }).eq("status", "retry_pending"),
     ]);
-    if (profilesResult.error) throw new Error(profilesResult.error.message);
-
-    const profiles = profilesResult.data ?? [];
-    const roles = rolesResult.data ?? [];
+    for (const result of [meterTotal, activeMeters, properties, units, tokens, bankAttention, queuedPayments]) {
+      if (result.error) throw new Error(result.error.message);
+      if (result.count === null) throw new Error("Dashboard totals are unavailable");
+    }
+    const vendors = summarizeVendors(profiles, roles);
 
     const byStatus: Record<string, number> = {};
     for (const p of profiles) byStatus[p.status] = (byStatus[p.status] ?? 0) + 1;
@@ -73,6 +92,15 @@ export const getAdminStats = createServerFn({ method: "GET" })
       : 0;
 
     return {
+      vendors: { total: vendors.total, active: vendors.active },
+      recentVendors: vendors.recent,
+      meters: { total: meterTotal.count ?? 0, active: activeMeters.count ?? 0 },
+      properties: properties.count ?? 0,
+      units: units.count ?? 0,
+      tokens: tokens.count ?? 0,
+      bankAttention: bankAttention.count ?? 0,
+      queuedPayments: queuedPayments.count ?? 0,
+      updatedAt: new Date().toISOString(),
       total: profiles.length,
       newToday: since(1),
       newThisWeek: last7,
