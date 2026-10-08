@@ -107,9 +107,9 @@ function BankPaymentsRoutePage() {
   });
 
   const applyFilters = () => {
-    if (draft.minAmount && toNum(draft.minAmount) == null) return toast.error("Minimum amount must be a number");
-    if (draft.maxAmount && toNum(draft.maxAmount) == null) return toast.error("Maximum amount must be a number");
-    if (draft.from && draft.to && draft.from > draft.to) return toast.error("From date must be before To date");
+    if (draft.minAmount && toNum(draft.minAmount) == null) { toast.error("Minimum amount must be a number"); return; }
+    if (draft.maxAmount && toNum(draft.maxAmount) == null) { toast.error("Maximum amount must be a number"); return; }
+    if (draft.from && draft.to && draft.from > draft.to) { toast.error("From date must be before To date"); return; }
     setAdv(draft); setPage(1); setAdvOpen(false);
   };
   const clearFilters = () => { setDraft(EMPTY); setAdv(EMPTY); setQuick(""); setQ(""); setPage(1); };
@@ -127,7 +127,7 @@ function BankPaymentsRoutePage() {
         a.href = URL.createObjectURL(blob); a.download = name; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       } else if (kind === "xlsx") {
-        const { default: writeXlsxFile } = await import("write-excel-file");
+        const { default: writeXlsxFile } = await import("write-excel-file/browser");
         const header = EXPORT_COLUMNS.map((c) => ({ value: c.header, fontWeight: "bold" as const }));
         const body = all.map((r) => EXPORT_COLUMNS.map((c) => {
           const v = c.value(r);
