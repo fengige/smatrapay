@@ -21,7 +21,6 @@ import {
   Settings,
   ShoppingCart,
   Store,
-  UserCheck,
   UserCircle,
   Users,
   type LucideIcon,
