@@ -66,7 +66,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Token Ledger", icon: Receipt, to: "/token-ledger" },
           { label: "Bank Payments", icon: Receipt, to: "/bank-payments" },
           { label: "Vending Performance", icon: BarChart3, to: "/vending-dashboard" },
-          { label: "Transaction Records", icon: ArrowLeftRight },
+          { label: "Transaction Records", icon: ArrowLeftRight, to: "/transaction-records" },
         ],
       },
       {
