@@ -52,3 +52,4 @@
 
 - [x] Admin dashboard: replace placeholder metrics with current records and correct module links
 - [x] Staff login: hide the Agent portal from the "Select Portal" list
+- [x] Admin sidebar: hide the Agent Management menu entry
