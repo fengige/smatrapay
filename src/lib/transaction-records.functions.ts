@@ -61,10 +61,11 @@ const COLS = "record_id, token_id, bank_notification_id, txn_at, bank, trans_id,
 
 const clean = (s: string) => s.replace(/[%,()*\\]/g, " ").trim();
 
-function build(supabase: any, select: string, f: z.output<typeof schema>, opts?: any) {
+function build(supabase: any, select: string, f: z.output<typeof schema>, opts?: any, meterIds?: string[] | null) {
   // Dates are Nairobi days (UTC+3), both ends inclusive.
   let q = supabase.from("transaction_records").select(select, opts)
     .gte("txn_at", `${f.from}T00:00:00+03:00`).lte("txn_at", `${f.to}T23:59:59.999+03:00`);
+  if (meterIds) q = q.in("meter_id", meterIds.length ? meterIds : ["00000000-0000-0000-0000-000000000000"]);
   if (f.bank) q = q.eq("bank", f.bank);
   if (clean(f.transId)) q = q.ilike("trans_id", `%${clean(f.transId)}%`);
   if (clean(f.meter)) q = q.ilike("meter_number", `%${clean(f.meter)}%`);
@@ -109,42 +110,82 @@ export function summarize(rows: { amount_paid: any; commission_amount: any; vat_
   return { total: rows.length, successful: ok, failed, amount_paid: paid / 100, commission: comm / 100, vat: vat / 100, units: units / 10000, tokens };
 }
 
-export const listTransactionRecords = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => schema.extend({
-    page: z.number().int().min(1).max(100000).default(1),
-    pageSize: z.number().int().refine((n) => [25, 50, 100, 200].includes(n)).default(50),
-  }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
-    const supabase = (context as any).supabase;
-    const start = (data.page - 1) * data.pageSize;
-    const { data: rows, error, count } = await build(supabase, COLS, data, { count: "exact" })
-      .order(data.sort, { ascending: data.dir === "asc", nullsFirst: false })
-      .order("record_id")
-      .range(start, start + data.pageSize - 1);
-    if (error) throw new Error(error.message);
+const listInput = (d: unknown) => schema.extend({
+  page: z.number().int().min(1).max(100000).default(1),
+  pageSize: z.number().int().refine((n) => [25, 50, 100, 200].includes(n)).default(50),
+}).parse(d);
 
-    // Summary over the whole filtered set, computed server-side from minimal columns.
-    const agg: any[] = [];
-    for (let s = 0; s < 100000; s += 1000) {
-      const { data: part, error: e2 } = await build(supabase, "record_id, token_id, amount_paid, commission_amount, vat_on_commission_amount, units, token_status", data)
-        .order("record_id").range(s, s + 999);
-      if (e2) throw new Error(e2.message);
-      agg.push(...(part ?? []));
-      if (!part || part.length < 1000) break;
-    }
+async function runList(supabase: any, data: ReturnType<typeof listInput>, meterIds: string[] | null) {
+  const start = (data.page - 1) * data.pageSize;
+  const { data: rows, error, count } = await build(supabase, COLS, data, { count: "exact" }, meterIds)
+    .order(data.sort, { ascending: data.dir === "asc", nullsFirst: false })
+    .order("record_id")
+    .range(start, start + data.pageSize - 1);
+  if (error) throw new Error(error.message);
+  // Summary over the whole filtered set, computed server-side from minimal columns.
+  const agg: any[] = [];
+  for (let s = 0; s < 100000; s += 1000) {
+    const { data: part, error: e2 } = await build(supabase, "record_id, token_id, amount_paid, commission_amount, vat_on_commission_amount, units, token_status, bank, vending_software", data, undefined, meterIds)
+      .order("record_id").range(s, s + 999);
+    if (e2) throw new Error(e2.message);
+    agg.push(...(part ?? []));
+    if (!part || part.length < 1000) break;
+  }
+  let bankOptions: string[]; let softwareOptions: string[];
+  if (meterIds) {
+    bankOptions = [...new Set<string>(agg.map((r) => r.bank).filter(Boolean))].sort();
+    softwareOptions = [...new Set<string>(agg.map((r) => r.vending_software).filter(Boolean))].sort();
+  } else {
     const [{ data: banks }, { data: sw }] = await Promise.all([
       supabase.from("bank_notifications").select("bank").limit(1000),
       supabase.from("vending_software").select("name").order("name"),
     ]);
-    return {
-      rows: (rows ?? []).map(mapRow),
-      total: count ?? 0,
-      summary: summarize(agg),
-      bankOptions: [...new Set<string>((banks ?? []).map((b: any) => b.bank).filter(Boolean))].sort(),
-      softwareOptions: (sw ?? []).map((s: any) => s.name as string),
-    };
+    bankOptions = [...new Set<string>((banks ?? []).map((b: any) => b.bank).filter(Boolean))].sort();
+    softwareOptions = (sw ?? []).map((x: any) => x.name as string);
+  }
+  return { rows: (rows ?? []).map(mapRow), total: count ?? 0, summary: summarize(agg), bankOptions, softwareOptions };
+}
+
+async function runExport(supabase: any, data: z.output<typeof schema>, meterIds: string[] | null) {
+  const all: TxnRecord[] = [];
+  for (let s = 0; s < 50000; s += 1000) {
+    const { data: rows, error } = await build(supabase, COLS, data, undefined, meterIds)
+      .order(data.sort, { ascending: data.dir === "asc", nullsFirst: false }).order("record_id").range(s, s + 999);
+    if (error) throw new Error(error.message);
+    all.push(...(rows ?? []).map(mapRow));
+    if (!rows || rows.length < 1000) break;
+  }
+  // Tokens are not exported.
+  return all.map((r) => ({ ...r, token: null }));
+}
+
+/** Meters registered to the signed-in vendor; the vendor comes from the session only. */
+async function vendorMeterIds(context: any): Promise<string[]> {
+  const { assertVendor } = await import("@/lib/vendor.server");
+  const vendorId = await assertVendor(context as never);
+  // The vendor's own RLS-scoped meter list defines what they may see.
+  const ids: string[] = [];
+  for (let s = 0; s < 20000; s += 1000) {
+    const { data, error } = await context.supabase.from("meters").select("id").eq("vendor_id", vendorId).order("id").range(s, s + 999);
+    if (error) throw new Error(error.message);
+    ids.push(...(data ?? []).map((m: any) => m.id as string));
+    if (!data || data.length < 1000) break;
+  }
+  return ids;
+}
+
+/** Reads the view privileged (so bank and owner columns resolve) but always filtered to the vendor's meters. */
+async function adminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as any;
+}
+
+export const listTransactionRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(listInput)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    return runList((context as any).supabase, data, null);
   });
 
 export const exportTransactionRecords = createServerFn({ method: "POST" })
@@ -152,15 +193,16 @@ export const exportTransactionRecords = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const supabase = (context as any).supabase;
-    const all: TxnRecord[] = [];
-    for (let s = 0; s < 50000; s += 1000) {
-      const { data: rows, error } = await build(supabase, COLS, data)
-        .order(data.sort, { ascending: data.dir === "asc", nullsFirst: false }).order("record_id").range(s, s + 999);
-      if (error) throw new Error(error.message);
-      all.push(...(rows ?? []).map(mapRow));
-      if (!rows || rows.length < 1000) break;
-    }
-    // Tokens are not exported.
-    return all.map((r) => ({ ...r, token: null }));
+    return runExport((context as any).supabase, data, null);
   });
+
+/** Vendor portal: same data, limited to the vendor's own meters. */
+export const listVendorTransactions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(listInput)
+  .handler(async ({ data, context }) => { const ids = await vendorMeterIds(context); return runList(await adminClient(), data, ids); });
+
+export const exportVendorTransactions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => schema.parse(d))
+  .handler(async ({ data, context }) => { const ids = await vendorMeterIds(context); return runExport(await adminClient(), data, ids); });

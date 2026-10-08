@@ -81,6 +81,7 @@ import { Route as AuthenticatedVendorServiceProvidersRouteImport } from './route
 import { Route as AuthenticatedVendorTokenLedgerRouteImport } from './routes/_authenticated/vendor/token-ledger'
 import { Route as AuthenticatedVendorTokenManagementRouteImport } from './routes/_authenticated/vendor/token-management'
 import { Route as AuthenticatedVendorTokensRouteImport } from './routes/_authenticated/vendor/tokens'
+import { Route as AuthenticatedVendorTransactionsRouteImport } from './routes/_authenticated/vendor/transactions'
 import { Route as AuthenticatedVendorsIndexRouteImport } from './routes/_authenticated/vendors.index'
 import { Route as AuthenticatedVendorsNewRouteImport } from './routes/_authenticated/vendors.new'
 import { Route as AuthenticatedZonesIndexRouteImport } from './routes/_authenticated/zones.index'
@@ -540,6 +541,12 @@ const AuthenticatedVendorTokensRoute =
     path: '/vendor/tokens',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorTransactionsRoute =
+  AuthenticatedVendorTransactionsRouteImport.update({
+    id: '/vendor/transactions',
+    path: '/vendor/transactions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorsIndexRoute =
   AuthenticatedVendorsIndexRouteImport.update({
     id: '/',
@@ -868,6 +875,7 @@ export interface FileRoutesByFullPath {
   '/vendor/token-ledger': typeof AuthenticatedVendorTokenLedgerRoute
   '/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
   '/vendor/tokens': typeof AuthenticatedVendorTokensRoute
+  '/vendor/transactions': typeof AuthenticatedVendorTransactionsRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
   '/configurations/': typeof AuthenticatedConfigurationsIndexRoute
@@ -978,6 +986,7 @@ export interface FileRoutesByTo {
   '/vendor/token-ledger': typeof AuthenticatedVendorTokenLedgerRoute
   '/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
   '/vendor/tokens': typeof AuthenticatedVendorTokensRoute
+  '/vendor/transactions': typeof AuthenticatedVendorTransactionsRoute
   '/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
   '/configurations': typeof AuthenticatedConfigurationsIndexRoute
@@ -1098,6 +1107,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/token-ledger': typeof AuthenticatedVendorTokenLedgerRoute
   '/_authenticated/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
   '/_authenticated/vendor/tokens': typeof AuthenticatedVendorTokensRoute
+  '/_authenticated/vendor/transactions': typeof AuthenticatedVendorTransactionsRoute
   '/_authenticated/vendors/new': typeof AuthenticatedVendorsNewRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
   '/_authenticated/configurations/': typeof AuthenticatedConfigurationsIndexRoute
@@ -1218,6 +1228,7 @@ export interface FileRouteTypes {
     | '/vendor/token-ledger'
     | '/vendor/token-management'
     | '/vendor/tokens'
+    | '/vendor/transactions'
     | '/vendors/new'
     | '/agents/'
     | '/configurations/'
@@ -1328,6 +1339,7 @@ export interface FileRouteTypes {
     | '/vendor/token-ledger'
     | '/vendor/token-management'
     | '/vendor/tokens'
+    | '/vendor/transactions'
     | '/vendors/new'
     | '/agents'
     | '/configurations'
@@ -1447,6 +1459,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/token-ledger'
     | '/_authenticated/vendor/token-management'
     | '/_authenticated/vendor/tokens'
+    | '/_authenticated/vendor/transactions'
     | '/_authenticated/vendors/new'
     | '/_authenticated/agents/'
     | '/_authenticated/configurations/'
@@ -2030,6 +2043,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorTokensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/transactions': {
+      id: '/_authenticated/vendor/transactions'
+      path: '/vendor/transactions'
+      fullPath: '/vendor/transactions'
+      preLoaderRoute: typeof AuthenticatedVendorTransactionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendors/': {
       id: '/_authenticated/vendors/'
       path: '/'
@@ -2546,6 +2566,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorTokenLedgerRoute: typeof AuthenticatedVendorTokenLedgerRoute
   AuthenticatedVendorTokenManagementRoute: typeof AuthenticatedVendorTokenManagementRoute
   AuthenticatedVendorTokensRoute: typeof AuthenticatedVendorTokensRoute
+  AuthenticatedVendorTransactionsRoute: typeof AuthenticatedVendorTransactionsRoute
   AuthenticatedMeterSuppliersIndexRoute: typeof AuthenticatedMeterSuppliersIndexRoute
   AuthenticatedMetersIndexRoute: typeof AuthenticatedMetersIndexRoute
   AuthenticatedPaymentMethodsIndexRoute: typeof AuthenticatedPaymentMethodsIndexRoute
@@ -2626,6 +2647,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorTokenManagementRoute:
     AuthenticatedVendorTokenManagementRoute,
   AuthenticatedVendorTokensRoute: AuthenticatedVendorTokensRoute,
+  AuthenticatedVendorTransactionsRoute: AuthenticatedVendorTransactionsRoute,
   AuthenticatedMeterSuppliersIndexRoute: AuthenticatedMeterSuppliersIndexRoute,
   AuthenticatedMetersIndexRoute: AuthenticatedMetersIndexRoute,
   AuthenticatedPaymentMethodsIndexRoute: AuthenticatedPaymentMethodsIndexRoute,
