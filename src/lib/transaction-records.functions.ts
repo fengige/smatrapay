@@ -217,10 +217,12 @@ export const vendorResendTokenSms = createServerFn({ method: "POST" })
     const { data: tok } = await admin.from("meter_tokens").select("id, meter_id, status").eq("id", data.id).maybeSingle();
     // Same message whether missing or another vendor's — never reveal ownership.
     if (!tok || !ids.includes(tok.meter_id)) throw new Error("Token not found");
-    if (tok.status !== "generated") throw new Error("Only generated tokens can be re-sent");
+    if (tok.status !== "issued") throw new Error("Only generated tokens can be re-sent");
     const { resendOne } = await import("@/lib/tokens.functions");
     const r = await resendOne(admin, (context as any).userId ?? null, data.id, null);
     if (r.status === "failed") throw new Error(r.error ?? "Failed to send SMS");
-    await admin.from("audit_logs").insert({ actor_id: (context as any).userId, action: "VENDOR_TOKEN_SMS_RESENT", entity_type: "meter_token", entity_id: data.id, details: { status: r.status } }).then(() => {}, () => {});
+    const { assertVendor, logVendorAction } = await import("@/lib/vendor.server");
+    const vendorId = await assertVendor(context as never);
+    await logVendorAction(admin, vendorId, "VENDOR_TOKEN_SMS_RESENT", { type: "meter_token", id: data.id }, { status: r.status });
     return { status: r.status };
   });
