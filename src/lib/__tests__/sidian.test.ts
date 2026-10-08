@@ -39,3 +39,21 @@ describe("Sidian C2B notification", () => {
     expect([b.commission_amount, b.vat_on_commission_amount, b.net_amount]).toEqual([5, 0.8, 94.2]);
   });
 });
+
+import { matchSidianAuth } from "../sidian.server";
+import { sidianInput } from "../payment-accounts.functions";
+describe("vendor-specific Sidian settings", () => {
+  const a = { username: "vendorA", password: "pa", shortcode: "111999" };
+  const b = { username: "vendorB", password: "pb", shortcode: "222888" };
+  it("Vendor A's credentials match Vendor A's settings", () => expect(matchSidianAuth(basic("vendorA", "pa"), [a])).toEqual(a));
+  it("Vendor B's credentials are rejected for a Vendor A meter", () => expect(matchSidianAuth(basic("vendorB", "pb"), [a])).toBeNull());
+  it("Vendor A's credentials with Vendor B's shortcode are rejected", () => {
+    expect(checkSidianPayload(sidianPayload.parse(withData({ BusinessShortCode: "222888" })), a)).toBe("SHORTCODE_INVALID");
+  });
+  it("BusinessShortCode keeps leading zeros", () => {
+    expect(sidianInput.parse({ endpoint: "https://x.co/n", username: "u", business_shortcode: "000123" }).business_shortcode).toBe("000123");
+  });
+  it("BusinessShortCode rejects letters", () => {
+    expect(sidianInput.safeParse({ endpoint: "https://x.co/n", username: "u", business_shortcode: "12A4" }).success).toBe(false);
+  });
+});

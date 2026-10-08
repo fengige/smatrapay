@@ -31,7 +31,28 @@ export type PaymentAccountRow = {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+  /** Sidian Bank settings; the password is never returned, only whether it is set. */
+  sidian: SidianSummary | null;
 };
+
+export type SidianSummary = {
+  endpoint: string;
+  username: string;
+  business_shortcode: string;
+  password_configured: boolean;
+};
+
+export function isSidianMethod(m?: { code?: string | null; name?: string | null } | null) {
+  return /sidian/i.test(`${m?.code ?? ""} ${m?.name ?? ""}`);
+}
+
+export const sidianInput = z.object({
+  endpoint: z.string().trim().min(1, "End Point is required").max(500).url("Enter a valid URL"),
+  username: z.string().trim().min(1, "Username is required").max(200),
+  /** Blank on edit keeps the stored password. */
+  password: z.string().max(200).optional().nullable(),
+  business_shortcode: z.string().trim().min(1, "BusinessShortCode is required").max(20).regex(/^\d+$/, "BusinessShortCode must contain digits only"),
+});
 
 export function maskAccountNumber(value: string): string {
   const v = (value ?? "").trim();
@@ -58,6 +79,7 @@ const accountInput = z.object({
   details: z.string().trim().max(500).optional().nullable(),
   is_active: z.boolean().optional().default(true),
   is_default: z.boolean().optional().default(false),
+  sidian: sidianInput.optional().nullable(),
 });
 
 const accountUpdateInput = accountInput.extend({ id: z.string().uuid() });
@@ -88,7 +110,42 @@ function mapAccount(r: any): PaymentAccountRow {
     is_default: Boolean(r.is_default),
     created_at: r.created_at,
     updated_at: r.updated_at,
+    sidian: null,
   };
+}
+
+/** Saves Sidian credentials server-side (service role; table has no client access). */
+async function saveSidian(
+  context: { supabase: any },
+  accountId: string,
+  ownerId: string,
+  methodId: string,
+  sidian: z.infer<typeof sidianInput> | null | undefined,
+  isNew: boolean,
+) {
+  const { data: m } = await context.supabase.from("payment_methods").select("code, name").eq("id", methodId).maybeSingle();
+  if (!isSidianMethod(m)) return;
+  if (!sidian) throw new Error("Sidian Bank Configuration is required");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as any;
+  const { data: existing } = await db.from("payment_account_sidian_settings").select("account_id").eq("account_id", accountId).maybeSingle();
+  const password = sidian.password?.trim() ? sidian.password : null;
+  if (!existing && !password) throw new Error("Password is required");
+  const values: Record<string, unknown> = {
+    account_id: accountId,
+    owner_id: ownerId,
+    endpoint: sidian.endpoint,
+    username: sidian.username,
+    business_shortcode: sidian.business_shortcode,
+    ...(password ? { password } : {}),
+  };
+  const { error } = existing
+    ? await db.from("payment_account_sidian_settings").update(values).eq("account_id", accountId)
+    : await db.from("payment_account_sidian_settings").insert(values);
+  if (error) {
+    if (isNew) await context.supabase.from("payment_method_accounts").delete().eq("id", accountId);
+    throw new Error("Could not save the Sidian Bank configuration");
+  }
 }
 
 const SELECT =
@@ -132,7 +189,21 @@ export const listPaymentAccounts = createServerFn({ method: "GET" })
       .select(SELECT)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { accounts: ((data ?? []) as any[]).map(mapAccount) };
+    const accounts = ((data ?? []) as any[]).map(mapAccount);
+    const ids = accounts.filter((a) => isSidianMethod({ code: a.payment_method_code, name: a.payment_method_name })).map((a) => a.id);
+    if (ids.length) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: cfg } = await (supabaseAdmin as any)
+        .from("payment_account_sidian_settings")
+        .select("account_id, endpoint, username, business_shortcode, password")
+        .in("account_id", ids);
+      const byId = new Map(((cfg ?? []) as any[]).map((c) => [c.account_id, c]));
+      for (const a of accounts) {
+        const c = byId.get(a.id);
+        if (c) a.sidian = { endpoint: c.endpoint, username: c.username, business_shortcode: c.business_shortcode, password_configured: !!c.password };
+      }
+    }
+    return { accounts };
   });
 
 async function assertUserHasRole(
@@ -212,6 +283,7 @@ export const addPaymentAccount = createServerFn({ method: "POST" })
         throw new Error("This account number is already saved for this user and payment method");
       throw new Error(error.message);
     }
+    await saveSidian(context as never, inserted.id, data.user_id, data.payment_method_id, data.sidian, true);
     return { ok: true, id: inserted?.id as string };
   });
 
@@ -253,6 +325,7 @@ export const updatePaymentAccount = createServerFn({ method: "POST" })
         throw new Error("This account number is already saved for this user and payment method");
       throw new Error(error.message);
     }
+    await saveSidian(context as never, data.id, data.user_id, data.payment_method_id, data.sidian, false);
     return { ok: true };
   });
 

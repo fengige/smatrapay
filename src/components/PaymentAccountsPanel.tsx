@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Loader2, Pencil, Plus, Power, Search, Star, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Pencil, Plus, Power, Search, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -12,6 +12,7 @@ import {
   setDefaultPaymentAccount,
   setPaymentAccountStatus,
   updatePaymentAccount,
+  isSidianMethod,
   type PaymentAccountRow,
   type PaymentUserType,
 } from "@/lib/payment-accounts.functions";
@@ -264,7 +265,17 @@ export function PaymentAccountsPanel({
                   <td className="px-3 py-3 capitalize">{a.user_type}</td>
                   <td className="px-3 py-3">{a.user_name}</td>
                   <td className="px-3 py-3">{a.account_name || "—"}</td>
-                  <td className="px-3 py-3 font-mono">{a.account_number_masked}</td>
+                  <td className="px-3 py-3 font-mono">
+                    {a.sidian ? (
+                      <span className="block font-sans text-xs leading-5">
+                        <span className="block">BusinessShortCode: <span className="font-mono">{a.sidian.business_shortcode}</span></span>
+                        <span className="block max-w-[16rem] truncate" title={a.sidian.endpoint}>End Point: {a.sidian.endpoint}</span>
+                        <span className="block">Username: configured · Password: ••••••••</span>
+                      </span>
+                    ) : (
+                      a.account_number_masked
+                    )}
+                  </td>
                   <td className="px-3 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -342,7 +353,16 @@ export function PaymentAccountsPanel({
             <Detail label="User type" value={viewing.user_type} />
             <Detail label="User" value={viewing.user_name} />
             <Detail label="Account name" value={viewing.account_name || "—"} />
-            <Detail label="Account number" value={viewing.account_number} />
+            {viewing.sidian ? (
+              <>
+                <Detail label="BusinessShortCode" value={viewing.sidian.business_shortcode} />
+                <Detail label="End Point" value={viewing.sidian.endpoint} />
+                <Detail label="Username" value="Configured" />
+                <Detail label="Password" value={viewing.sidian.password_configured ? "••••••••" : "Not set"} />
+              </>
+            ) : (
+              <Detail label="Account number" value={viewing.account_number} />
+            )}
             <Detail label="Bank" value={viewing.bank_name || "—"} />
             <Detail label="Branch" value={viewing.branch || "—"} />
             <Detail label="Paybill / Till" value={viewing.paybill_number || "—"} />
@@ -481,13 +501,20 @@ function AccountDialog({
   const [isActive, setIsActive] = useState(account?.is_active ?? true);
   const [isDefault, setIsDefault] = useState(account?.is_default ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sdEndpoint, setSdEndpoint] = useState(account?.sidian?.endpoint ?? "");
+  const [sdUser, setSdUser] = useState(account?.sidian?.username ?? "");
+  const [sdPassword, setSdPassword] = useState("");
+  const [sdShowPw, setSdShowPw] = useState(false);
+  const [sdShortcode, setSdShortcode] = useState(account?.sidian?.business_shortcode ?? "");
+  const sdHasPassword = !!account?.sidian?.password_configured;
 
   const activeMethods = useMemo(
     () => methods.filter((m) => m.is_active || m.id === account?.payment_method_id),
     [methods, account],
   );
   const method = activeMethods.find((m) => m.id === methodId) ?? null;
-  const shape = fieldsFor(method);
+  const sidian = isSidianMethod(method);
+  const shape = sidian ? { numberLabel: "Account Number", bank: false, branch: false, paybill: false } : fieldsFor(method);
 
   const usersQuery = useQuery({
     queryKey: ["payment-users", userType],
@@ -509,8 +536,11 @@ function AccountDialog({
         user_type: userType as PaymentUserType,
         user_id: userId,
         account_name: accountName.trim() || null,
-        account_number: accountNumber.trim(),
-        bank_name: shape.bank ? bankName.trim() || null : null,
+        account_number: sidian ? sdShortcode.trim() : accountNumber.trim(),
+        sidian: sidian
+          ? { endpoint: sdEndpoint.trim(), username: sdUser.trim(), password: sdPassword || null, business_shortcode: sdShortcode.trim() }
+          : null,
+        bank_name: sidian ? "Sidian Bank" : shape.bank ? bankName.trim() || null : null,
         branch: shape.branch ? branch.trim() || null : null,
         paybill_number: shape.paybill ? paybill.trim() || null : null,
         details: details.trim() || null,
@@ -535,7 +565,14 @@ function AccountDialog({
     if (!userType) next["userType"] = "User type is required";
     if (!userId) next["user"] = "User is required";
     const number = accountNumber.trim();
-    if (number.length < 4) next["number"] = `${shape.numberLabel} is required`;
+    if (sidian) {
+      if (!sdEndpoint.trim()) next["sdEndpoint"] = "End Point is required";
+      else if (!/^https?:\/\/\S+$/i.test(sdEndpoint.trim())) next["sdEndpoint"] = "Enter a valid URL starting with https://";
+      if (!sdUser.trim()) next["sdUser"] = "Username is required";
+      if (!sdPassword && !sdHasPassword) next["sdPassword"] = "Password is required";
+      if (!sdShortcode.trim()) next["sdShortcode"] = "BusinessShortCode is required";
+      else if (!/^\d{4,20}$/.test(sdShortcode.trim())) next["sdShortcode"] = "BusinessShortCode must be 4–20 digits";
+    } else if (number.length < 4) next["number"] = `${shape.numberLabel} is required`;
     else if (!/^[0-9+\-\s]+$/.test(number))
       next["number"] = "Only digits, spaces, + and - are allowed";
     else if (shape.paybill && !/^\+?\d[\d\s-]{6,}$/.test(number))
@@ -619,6 +656,37 @@ function AccountDialog({
         )}
 
 
+        {sidian && (
+          <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
+            <h3 className="text-sm font-semibold text-foreground">Sidian Bank Configuration</h3>
+            <Field label="End Point" id="sd-endpoint" error={errors["sdEndpoint"]}>
+              <input id="sd-endpoint" type="url" value={sdEndpoint} onChange={(e) => setSdEndpoint(e.target.value)}
+                placeholder="https://example.com/api/sidian/notification"
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm" />
+            </Field>
+            <Field label="Username" id="sd-user" error={errors["sdUser"]}>
+              <input id="sd-user" value={sdUser} autoComplete="off" onChange={(e) => setSdUser(e.target.value)}
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm" />
+            </Field>
+            <Field label="Password" id="sd-password" error={errors["sdPassword"]}>
+              <div className="relative">
+                <input id="sd-password" type={sdShowPw ? "text" : "password"} autoComplete="new-password" value={sdPassword}
+                  onChange={(e) => setSdPassword(e.target.value)}
+                  placeholder={sdHasPassword ? "•••••••• (leave blank to keep)" : ""}
+                  className="h-11 w-full rounded-xl border border-border bg-background px-3 pr-11 text-sm" />
+                <button type="button" onClick={() => setSdShowPw((v) => !v)} aria-label={sdShowPw ? "Hide password" : "Show password"}
+                  className="absolute right-2 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent/10">
+                  {sdShowPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </Field>
+            <Field label="BusinessShortCode" id="sd-shortcode" error={errors["sdShortcode"]}>
+              <input id="sd-shortcode" inputMode="numeric" value={sdShortcode} onChange={(e) => setSdShortcode(e.target.value)}
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm" />
+            </Field>
+          </div>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Account Name" id="pa-name">
             <input
@@ -628,15 +696,17 @@ function AccountDialog({
               className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
             />
           </Field>
-          <Field label={shape.numberLabel} id="pa-number" error={errors["number"]}>
-            <input
-              id="pa-number"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-              inputMode="tel"
-              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-          </Field>
+          {!sidian && (
+            <Field label={shape.numberLabel} id="pa-number" error={errors["number"]}>
+              <input
+                id="pa-number"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                inputMode="tel"
+                className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              />
+            </Field>
+          )}
         </div>
 
         {shape.bank && (

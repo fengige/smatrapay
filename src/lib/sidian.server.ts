@@ -118,3 +118,53 @@ export async function processSidianNotification(p: SidianPayload) {
   if (result.status === "completed") return ack("0", "Success");
   return ack("0", "Payment recorded — token generation pending");
 }
+
+export type SidianResolution =
+  | { kind: "candidates"; configs: SidianAuthConfig[]; source: "owner" | "shortcode" | "global" }
+  | { kind: "disabled" }
+  | { kind: "none" };
+
+/**
+ * Finds which Sidian credentials may sign this notification: the meter owner's
+ * own Sidian Bank account (landlord -> agent -> vendor), else accounts using the
+ * notified shortcode, else the platform-wide fallback secrets.
+ */
+export async function resolveSidianConfig(meterNumber: string, shortcode: string): Promise<SidianResolution> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as any;
+  const load = async (filter: (q: any) => any) => {
+    const { data } = await filter(
+      db.from("payment_account_sidian_settings").select("owner_id, username, password, business_shortcode, payment_method_accounts!inner(is_active, is_default)"),
+    );
+    return (data ?? []) as any[];
+  };
+
+  const { data: meter } = await db.from("meters").select("landlord_id, agent_id, vendor_id").eq("meter_number", meterNumber).maybeSingle();
+  const owners = [meter?.landlord_id, meter?.agent_id, meter?.vendor_id].filter(Boolean).map(String);
+  if (owners.length) {
+    const rows = await load((q) => q.in("owner_id", owners));
+    for (const owner of owners) {
+      const mine = rows.filter((r) => r.owner_id === owner);
+      if (!mine.length) continue;
+      const active = mine.filter((r) => r.payment_method_accounts?.is_active);
+      if (!active.length) return { kind: "disabled" };
+      active.sort((a, b) => Number(!!b.payment_method_accounts?.is_default) - Number(!!a.payment_method_accounts?.is_default));
+      return { kind: "candidates", source: "owner", configs: active.map((r) => ({ username: r.username, password: r.password, shortcode: r.business_shortcode })) };
+    }
+  }
+
+  const byCode = (await load((q) => q.eq("business_shortcode", shortcode))).filter((r) => r.payment_method_accounts?.is_active);
+  if (byCode.length)
+    return { kind: "candidates", source: "shortcode", configs: byCode.map((r) => ({ username: r.username, password: r.password, shortcode: r.business_shortcode })) };
+
+  const g = { username: process.env["SIDIAN_USERNAME"] ?? "", password: process.env["SIDIAN_PASSWORD"] ?? "", shortcode: process.env["SIDIAN_SHORTCODE"] ?? "" };
+  if (g.username && g.password && g.shortcode) return { kind: "candidates", source: "global", configs: [g] };
+  return { kind: "none" };
+}
+
+/** The credential set the request authenticated with, or null. Checks every candidate (no early exit). */
+export function matchSidianAuth(authHeader: string | null, configs: SidianAuthConfig[]): SidianAuthConfig | null {
+  let hit: SidianAuthConfig | null = null;
+  for (const c of configs) if (checkSidianAuth(authHeader, c) && !hit) hit = c;
+  return hit;
+}
