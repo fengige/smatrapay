@@ -51,3 +51,4 @@
 - [ ] Live Sidian C2B test through token and SMS (blocked: Sidian username/password not saved)
 
 - [x] Admin dashboard: replace placeholder metrics with current records and correct module links
+- [x] Staff login: hide the Agent portal from the "Select Portal" list
