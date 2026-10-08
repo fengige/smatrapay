@@ -110,13 +110,13 @@ function BankPaymentsRoutePage() {
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center"><Loader2 className="mx-auto size-5 animate-spin" /></td></tr>
+                <tr><td colSpan={9} className="px-4 py-10 text-center"><Loader2 className="mx-auto size-5 animate-spin" /></td></tr>
               )}
               {isError && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-destructive">Could not load NCBA payments.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-destructive">Could not load NCBA payments.</td></tr>
               )}
               {!isLoading && !isError && data.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                   {filter === "problems" ? "No NCBA payments need attention." : "No NCBA payments yet."}
                 </td></tr>
               )}
@@ -125,8 +125,9 @@ function BankPaymentsRoutePage() {
                 return (
                   <tr key={r.id} className="border-t border-border align-top">
                     <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-3 font-mono text-xs"><span className="mr-1 font-sans font-semibold">{r.bank ?? "NCBA"}</span>{r.trans_id}</td>
-                    <td className="px-4 py-3">{r.narrative ?? "—"}</td>
+                    <td className="px-4 py-3 font-semibold">{r.bank ?? "—"}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{r.trans_id ?? "—"}</td>
+                    <td className="px-4 py-3">{r.meter_number ?? "—"}</td>
                     <td className="px-4 py-3 text-right">{kes(r.trans_amount)}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${st.cls}`}>{st.label}</span>
