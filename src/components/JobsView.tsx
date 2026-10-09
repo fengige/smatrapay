@@ -18,6 +18,8 @@ import {
   listAssignableProviders,
   listJobs,
   listMyJobs,
+  updateMyJobStatus,
+  PROVIDER_TRANSITIONS,
   type JobRow,
 } from "@/lib/jobs.functions";
 
@@ -71,6 +73,18 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
     queryFn: () => fetchProviders(),
     enabled: mode !== "provider",
   });
+
+  const setStatus_ = useServerFn(updateMyJobStatus);
+  const statusMut = useMutation({
+    mutationFn: (v: { id: string; status: "in_progress" | "resolved" | "cancelled" }) =>
+      setStatus_({ data: v }),
+    onSuccess: () => {
+      toast.success("Job updated — the vendor and customer have been notified");
+      qc.invalidateQueries({ queryKey: ["jobs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const ACTION_LABEL = { in_progress: "Start (In Progress)", resolved: "Completed", cancelled: "Cancel" } as const;
 
   const assignMut = useMutation({
     mutationFn: (v: { id: string; provider_id: string }) => assign({ data: v }),
@@ -136,7 +150,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
               {mode !== "provider" && <th className="px-4 py-3">Service Provider</th>}
               <th className="px-4 py-3">Requested</th>
               <th className="px-4 py-3">Status</th>
-              {mode !== "provider" && <th className="px-4 py-3 text-right">Actions</th>}
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -183,8 +197,28 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
                   )}
                   <td className="px-4 py-3">{date(r.created_at)}</td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">{label(r.status)}</span>
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">{r.status === "resolved" ? "Completed" : label(r.status)}</span>
                   </td>
+                  {mode === "provider" && (
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        {(PROVIDER_TRANSITIONS[r.status] ?? []).map((st) => (
+                          <Button
+                            key={st}
+                            size="sm"
+                            variant={st === "cancelled" ? "outline" : "default"}
+                            disabled={statusMut.isPending}
+                            onClick={() => {
+                              if (st === "cancelled" && !window.confirm(`Cancel ${r.request_number}?`)) return;
+                              statusMut.mutate({ id: r.id, status: st as "in_progress" | "resolved" | "cancelled" });
+                            }}
+                          >
+                            {ACTION_LABEL[st as keyof typeof ACTION_LABEL]}
+                          </Button>
+                        ))}
+                      </div>
+                    </td>
+                  )}
                   {mode !== "provider" && (
                     <td className="px-4 py-3 text-right">
                       {!FINISHED.includes(r.status) && (
