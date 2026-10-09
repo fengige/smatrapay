@@ -59,3 +59,4 @@
 - [x] Service provider "My Jobs" page (/service-provider/jobs)
 - [x] Shared service catalog; providers pick services from it
 - [ ] Signed-in check as a service provider (blocked: no service provider account exists in the database yet)
+- [x] My Jobs status updates (In Progress / Completed / Cancelled) with vendor + customer notifications
