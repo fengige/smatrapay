@@ -297,3 +297,73 @@ export const listServiceCatalog = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { services: (data ?? []) as { id: string; name: string; description: string }[] };
   });
+
+/** Allowed provider moves on their own jobs. "Completed" maps to the existing "resolved" status. */
+export const PROVIDER_TRANSITIONS: Record<string, string[]> = {
+  open: ["in_progress", "cancelled"],
+  assigned: ["in_progress", "cancelled"],
+  in_progress: ["resolved", "cancelled"],
+};
+
+export const updateMyJobStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: uuid,
+        status: z.enum(["in_progress", "resolved", "cancelled"]),
+        note: z.string().trim().max(1000).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    await resolveScope(ctx, "provider");
+    const sb = await admin();
+    const { data: m } = await sb.from("installation_team_members").select("id").eq("user_id", ctx.userId);
+    const mine = (m ?? []).map((r: any) => r.id as string);
+    const { data: job } = await sb
+      .from("service_requests")
+      .select("id, request_number, vendor_id, resident_id, status, technician_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!job || !mine.includes(job.technician_id)) throw new Error("Job not found");
+    if (!(PROVIDER_TRANSITIONS[job.status] ?? []).includes(data.status)) {
+      throw new Error(`A ${job.status.replace(/_/g, " ")} job can't be moved to ${data.status.replace(/_/g, " ")}`);
+    }
+    const now = new Date().toISOString();
+    const { error } = await sb
+      .from("service_requests")
+      .update({
+        status: data.status,
+        ...(data.status === "resolved" ? { completed_at: now, ...(data.note ? { resolution: data.note } : {}) } : {}),
+      })
+      .eq("id", job.id)
+      .eq("status", job.status);
+    if (error) throw new Error(error.message);
+
+    const label = { in_progress: "In Progress", resolved: "Completed", cancelled: "Cancelled" }[data.status];
+    await sb.from("service_request_events").insert({
+      request_id: job.id,
+      vendor_id: job.vendor_id,
+      actor_id: ctx.userId,
+      event_type: "status_changed",
+      from_status: job.status,
+      to_status: data.status,
+      note: data.note || `Service provider marked the job ${label}`,
+    });
+    const recipients = [job.vendor_id, job.resident_id].filter(Boolean) as string[];
+    if (recipients.length) {
+      await sb.from("notifications").insert(
+        recipients.map((user_id) => ({
+          user_id,
+          type: "service_request_status",
+          title: `Job ${label}`,
+          message: `${job.request_number} is now ${label}.`,
+          resource_type: "service_request",
+          resource_id: job.id,
+        })),
+      );
+    }
+    return { ok: true };
+  });
