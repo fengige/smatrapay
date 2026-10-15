@@ -10,7 +10,7 @@ import { ack, parseNcbaAmount, safeEqual, vendNcbaNotification, processDueNcbaRe
  */
 
 export const SIDIAN_BANK = "SIDIAN";
-export const SIDIAN_TRANSACTION_TYPES = ["C2B_CONFIRMATION"];
+export const SIDIAN_TRANSACTION_TYPES = ["C2B_CONFIRMATION", "Pay Bill"];
 
 /**
  * Which ConfirmationRequest.status values mean a confirmed payment.
