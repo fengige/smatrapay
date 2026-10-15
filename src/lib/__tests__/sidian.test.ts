@@ -30,6 +30,10 @@ describe("Sidian C2B notification", () => {
     const p = sidianPayload.parse({ ConfirmationRequest: { ...sample.ConfirmationRequest, TransactionType: "C2B_VALIDATION" } });
     expect(checkSidianPayload(p, cfg)).toBe("TRANS_TYPE_UNSUPPORTED");
   });
+  it("accepts the Pay Bill transaction type", () => {
+    const p = sidianPayload.parse({ ConfirmationRequest: { ...sample.ConfirmationRequest, TransactionType: "Pay Bill" } });
+    expect(checkSidianPayload(p, cfg)).toBeNull();
+  });
   it("only status 0 issues a token", () => {
     expect(isSidianPaymentConfirmed(0)).toBe(true);
     expect(isSidianPaymentConfirmed(1)).toBe(false);
