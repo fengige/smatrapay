@@ -21,4 +21,10 @@ describe("admin sidebar", () => {
       expect(adminLabels).toContain(label);
     }
   });
+  it("labels the admin jobs route Jobs Management", () => {
+    const items = navGroupsForRoles(["admin"]).flatMap((group) => group.items);
+    const jobs = items.find((item) => item.to === "/jobs");
+    expect(jobs?.label).toBe("Jobs Management");
+    expect(adminLabels).not.toContain("Jobs");
+  });
 });

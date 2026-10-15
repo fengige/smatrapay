@@ -76,7 +76,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Property Management", icon: Home, to: "/properties" },
           { label: "Vendor Management", icon: Store, to: "/vendors" },
           { label: "Service Provider", icon: Briefcase, to: "/service-providers" },
-          { label: "Jobs", icon: Wrench, to: "/jobs" },
+          { label: "Jobs Management", icon: Wrench, to: "/jobs" },
           { label: "User Management", to: "/users", icon: UserCircle },
         ],
       },
