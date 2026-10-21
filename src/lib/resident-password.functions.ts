@@ -62,7 +62,7 @@ export const resetResidentPassword = createServerFn({ method: "POST" })
 
 export const completePasswordRecovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ password: z.string().min(8).max(72).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ password: z.string().min(6).max(72) }).parse(d))
   .handler(async ({ data, context }) => {
     setResponseHeader("Cache-Control", "no-store");
     if (!verifiedRecoveryClaims(context.claims)) throw new Error("This reset link is invalid or has expired. Request a new one.");

@@ -16,8 +16,8 @@ function scopedClient(allowed: boolean, profile: unknown, assignment: unknown) {
 }
 describe("Resident managed password policy", () => {
   it("rejects mismatched confirmation", () => expect(residentAccountPasswordInput.safeParse({ ...valid, confirmation: "Different9!" }).success).toBe(false));
-  it.each(["Ab1!xyz", "UPPERCASE9!", "lowercase9!", "NoNumbers!!", "NoSymbols99", "A".repeat(73) + "a9!"])("rejects weak password %s", (password) => expect(residentAccountPasswordInput.safeParse({ ...valid, password, confirmation: password }).success).toBe(false));
-  it("accepts policy-compliant matching passwords", () => expect(residentAccountPasswordInput.safeParse(valid).success).toBe(true));
+  it.each(["abc12", "A".repeat(73)])("rejects passwords outside 6–72 characters: %s", (password) => expect(residentAccountPasswordInput.safeParse({ ...valid, password, confirmation: password }).success).toBe(false));
+  it.each(["simple", "lowercase", "123456"])("accepts passwords without character-type rules: %s", (password) => expect(residentAccountPasswordInput.safeParse({ ...valid, password, confirmation: password }).success).toBe(true));
   it("rejects non-resident accounts", () => expect(eligibleResidentRoles(["user"])).toBe(false));
   it.each(["admin", "vendor", "moderator", "landlord", "agent", "service_provider"])("rejects resident with privileged role %s", (role) => expect(eligibleResidentRoles(["resident", role])).toBe(false));
 });

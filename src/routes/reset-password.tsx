@@ -32,11 +32,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 const RULES = [
-  { label: "At least 8 characters", test: (v: string) => v.length >= 8 },
-  { label: "One uppercase letter", test: (v: string) => /[A-Z]/.test(v) },
-  { label: "One lowercase letter", test: (v: string) => /[a-z]/.test(v) },
-  { label: "One number", test: (v: string) => /\d/.test(v) },
-  { label: "One symbol", test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+  { label: "At least 6 characters", test: (v: string) => v.length >= 6 },
 ];
 
 function ResetPasswordPage() {
@@ -72,7 +68,7 @@ function ResetPasswordPage() {
   const strength = (passed / RULES.length) * 100;
   const strengthLabel = passed <= 2 ? "Weak" : passed <= 4 ? "Good" : "Strong";
   const mismatch = confirm.length > 0 && confirm !== password;
-  const canSubmit = valid && passed === RULES.length && !mismatch && confirm.length > 0 && !saving;
+  const canSubmit = valid && password.length >= 6 && !mismatch && confirm.length > 0 && !saving;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
