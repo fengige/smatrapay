@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { listMyPurchases, retryTokenPurchase } from "@/lib/resident-portal.functions";
 import { PURCHASE_LABEL, canRetryVend, type PurchaseStatus } from "@/lib/resident-portal";
 import { Badge, Card, Empty, field, kes, residentHead, when } from "@/components/resident/ResidentUI";
-import { PurchaseStatusCard } from "./buy-tokens";
+import { PurchaseStatusCard } from "@/components/resident/PurchaseStatusCard";
 
 export const Route = createFileRoute("/_authenticated/resident/transactions")({
   head: residentHead("My Transactions", "Your token purchases, M-Pesa receipts and token retrieval."),
