@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Resident profile: Personal Info, Account, Audit Logs; own private photo preview/upload/removal; provider password change and verified TOTP; isolation tests and live verification.
+- [x] Resident profile implementation: Personal Info, Account, Audit Logs; private own-photo preview/upload/removal, permitted existing resident fields, provider password verification, TOTP enrollment/verified disabling and own paginated audits; 48 tests passed and build OK.
+- [ ] Resident profile live acceptance: photo upload/edit/removal, personal save, real password change, TOTP enrollment/verification/disable and persistence/isolation checks (blocked: resident session access was declined; resident sign-in in preview is required). Provider TOTP availability remains unverified; no recovery codes or SMS second factors are offered.
 
 - [x] Resident email-style sign-in: registered email or existing username with private matching; 44 tests passed; real email/password login, My Jobs (empty) and My Properties (assigned home/meter) verified.
 

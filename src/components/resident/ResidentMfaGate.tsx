@@ -14,6 +14,7 @@ export function ResidentMfaGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true;
     const check = async () => {
+      if (alive) setError("");
       try {
         const user = await supabase.auth.getUser();
         if (!user.data.user) { if (alive) { setFactor(null); setChecking(false); } return; }
