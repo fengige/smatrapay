@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Resident Account tabs: admin-only and vendor-scoped password updates, policy validation, audit and resident notification.
+- [ ] Verify Account password update with the authentication provider and resident sign-in; verify scope rejection.
+
 - [x] Resident username/password sign-in: private account lookup, case-insensitive usernames, active resident checks, persistent abuse limits.
 - [x] Resident username password recovery: generic responses, trusted redirects, SDK recovery event and server-verified recovery authentication before password change.
 - [x] Resident authentication rules (25 tests), signed-out login/recovery and forged recovery URL rejection verified; latest build passed.
