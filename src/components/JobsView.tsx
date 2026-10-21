@@ -78,8 +78,10 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
   const statusMut = useMutation({
     mutationFn: (v: { id: string; status: "in_progress" | "resolved" | "cancelled" }) =>
       setStatus_({ data: v }),
-    onSuccess: () => {
-      toast.success("Job updated — the vendor and customer have been notified");
+    onSuccess: (result) => {
+      toast.success("Job updated");
+      if (result.sms.status === "submitted") toast.success(result.sms.message);
+      else toast.warning(`Job saved, but SMS failed: ${result.sms.message}`);
       qc.invalidateQueries({ queryKey: ["jobs"] });
     },
     onError: (e: Error) => toast.error(e.message),

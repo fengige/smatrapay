@@ -324,7 +324,7 @@ export const updateMyJobStatus = createServerFn({ method: "POST" })
     const mine = (m ?? []).map((r: any) => r.id as string);
     const { data: job } = await sb
       .from("service_requests")
-      .select("id, request_number, vendor_id, resident_id, status, technician_id")
+      .select("id, request_number, vendor_id, resident_id, meter_id, status, technician_id")
       .eq("id", data.id)
       .maybeSingle();
     if (!job || !mine.includes(job.technician_id)) throw new Error("Job not found");
@@ -332,18 +332,24 @@ export const updateMyJobStatus = createServerFn({ method: "POST" })
       throw new Error(`A ${job.status.replace(/_/g, " ")} job can't be moved to ${data.status.replace(/_/g, " ")}`);
     }
     const now = new Date().toISOString();
-    const { error } = await sb
+    const { data: changed, error } = await sb
       .from("service_requests")
       .update({
         status: data.status,
         ...(data.status === "resolved" ? { completed_at: now, ...(data.note ? { resolution: data.note } : {}) } : {}),
       })
       .eq("id", job.id)
-      .eq("status", job.status);
+      .eq("status", job.status)
+      .eq("technician_id", job.technician_id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!changed) throw new Error("This job changed already. Refresh My Jobs before updating it.");
 
     const label = { in_progress: "In Progress", resolved: "Completed", cancelled: "Cancelled" }[data.status];
+    const eventId = crypto.randomUUID();
     await sb.from("service_request_events").insert({
+      id: eventId,
       request_id: job.id,
       vendor_id: job.vendor_id,
       actor_id: ctx.userId,
@@ -365,5 +371,7 @@ export const updateMyJobStatus = createServerFn({ method: "POST" })
         })),
       );
     }
-    return { ok: true };
+    const { sendJobStatusSms } = await import("@/lib/job-status-sms.server");
+    const sms = await sendJobStatusSms(sb, job, data.status, ctx.userId, eventId);
+    return { ok: true, sms };
   });
