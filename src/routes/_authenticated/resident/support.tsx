@@ -8,9 +8,8 @@ import { toast } from "sonner";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { askResidentSupport } from "@/lib/resident-portal.functions";
-import { Card, field, residentHead }
+import { Card, field, residentHead } from "@/components/resident/ResidentUI";
 import { EnquiryPanel } from "@/components/resident/EnquiryPanel";
-import  from "@/components/resident/ResidentUI";
 
 export const Route = createFileRoute("/_authenticated/resident/support")({
   head: residentHead("Resident Support", "Ask the SmatraPay assistant about tokens, meters and requests, or contact a person."),
