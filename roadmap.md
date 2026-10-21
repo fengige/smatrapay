@@ -1,6 +1,7 @@
 # Roadmap
 
 - [ ] My Jobs: send real customer SMS on status changes using existing owner SMS settings; preserve changes when sending fails.
+- [ ] Customer Jobs: resident-only service requests, statuses and provider updates.
 
 - [x] Rebuild Service Providers to match the Users page layout, filters, export controls and table.
 
