@@ -57,6 +57,7 @@ import { Route as AuthenticatedPaymentMethodsIndexRouteImport } from './routes/_
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
 import { Route as AuthenticatedPropertiesNewRouteImport } from './routes/_authenticated/properties.new'
 import { Route as AuthenticatedResidentDashboardRouteImport } from './routes/_authenticated/resident/dashboard'
+import { Route as AuthenticatedResidentJobsRouteImport } from './routes/_authenticated/resident/jobs'
 import { Route as AuthenticatedResidentsIndexRouteImport } from './routes/_authenticated/residents.index'
 import { Route as AuthenticatedResidentsNewRouteImport } from './routes/_authenticated/residents.new'
 import { Route as AuthenticatedServiceProviderDashboardRouteImport } from './routes/_authenticated/service-provider/dashboard'
@@ -404,6 +405,12 @@ const AuthenticatedResidentDashboardRoute =
   AuthenticatedResidentDashboardRouteImport.update({
     id: '/resident/dashboard',
     path: '/resident/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResidentJobsRoute =
+  AuthenticatedResidentJobsRouteImport.update({
+    id: '/resident/jobs',
+    path: '/resident/jobs',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedResidentsIndexRoute =
@@ -894,6 +901,7 @@ export interface FileRoutesByFullPath {
   '/meters/bulk-add': typeof AuthenticatedMetersBulkAddRoute
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
+  '/resident/jobs': typeof AuthenticatedResidentJobsRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/service-provider/jobs': typeof AuthenticatedServiceProviderJobsRoute
@@ -1012,6 +1020,7 @@ export interface FileRoutesByTo {
   '/meters/bulk-add': typeof AuthenticatedMetersBulkAddRoute
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
+  '/resident/jobs': typeof AuthenticatedResidentJobsRoute
   '/residents/new': typeof AuthenticatedResidentsNewRoute
   '/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/service-provider/jobs': typeof AuthenticatedServiceProviderJobsRoute
@@ -1138,6 +1147,7 @@ export interface FileRoutesById {
   '/_authenticated/meters/bulk-add': typeof AuthenticatedMetersBulkAddRoute
   '/_authenticated/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/_authenticated/resident/dashboard': typeof AuthenticatedResidentDashboardRoute
+  '/_authenticated/resident/jobs': typeof AuthenticatedResidentJobsRoute
   '/_authenticated/residents/new': typeof AuthenticatedResidentsNewRoute
   '/_authenticated/service-provider/dashboard': typeof AuthenticatedServiceProviderDashboardRoute
   '/_authenticated/service-provider/jobs': typeof AuthenticatedServiceProviderJobsRoute
@@ -1265,6 +1275,7 @@ export interface FileRouteTypes {
     | '/meters/bulk-add'
     | '/properties/new'
     | '/resident/dashboard'
+    | '/resident/jobs'
     | '/residents/new'
     | '/service-provider/dashboard'
     | '/service-provider/jobs'
@@ -1383,6 +1394,7 @@ export interface FileRouteTypes {
     | '/meters/bulk-add'
     | '/properties/new'
     | '/resident/dashboard'
+    | '/resident/jobs'
     | '/residents/new'
     | '/service-provider/dashboard'
     | '/service-provider/jobs'
@@ -1508,6 +1520,7 @@ export interface FileRouteTypes {
     | '/_authenticated/meters/bulk-add'
     | '/_authenticated/properties/new'
     | '/_authenticated/resident/dashboard'
+    | '/_authenticated/resident/jobs'
     | '/_authenticated/residents/new'
     | '/_authenticated/service-provider/dashboard'
     | '/_authenticated/service-provider/jobs'
@@ -1949,6 +1962,13 @@ declare module '@tanstack/react-router' {
       path: '/resident/dashboard'
       fullPath: '/resident/dashboard'
       preLoaderRoute: typeof AuthenticatedResidentDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resident/jobs': {
+      id: '/_authenticated/resident/jobs'
+      path: '/resident/jobs'
+      fullPath: '/resident/jobs'
+      preLoaderRoute: typeof AuthenticatedResidentJobsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/residents/': {
@@ -2666,6 +2686,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetersMeterIdRoute: typeof AuthenticatedMetersMeterIdRoute
   AuthenticatedMetersBulkAddRoute: typeof AuthenticatedMetersBulkAddRoute
   AuthenticatedResidentDashboardRoute: typeof AuthenticatedResidentDashboardRoute
+  AuthenticatedResidentJobsRoute: typeof AuthenticatedResidentJobsRoute
   AuthenticatedServiceProviderDashboardRoute: typeof AuthenticatedServiceProviderDashboardRoute
   AuthenticatedServiceProviderJobsRoute: typeof AuthenticatedServiceProviderJobsRoute
   AuthenticatedServiceProvidersNewRoute: typeof AuthenticatedServiceProvidersNewRoute
@@ -2746,6 +2767,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMetersMeterIdRoute: AuthenticatedMetersMeterIdRoute,
   AuthenticatedMetersBulkAddRoute: AuthenticatedMetersBulkAddRoute,
   AuthenticatedResidentDashboardRoute: AuthenticatedResidentDashboardRoute,
+  AuthenticatedResidentJobsRoute: AuthenticatedResidentJobsRoute,
   AuthenticatedServiceProviderDashboardRoute:
     AuthenticatedServiceProviderDashboardRoute,
   AuthenticatedServiceProviderJobsRoute: AuthenticatedServiceProviderJobsRoute,
