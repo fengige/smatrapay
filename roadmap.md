@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Resident username/password sign-in: private account lookup, case-insensitive usernames, active resident checks, persistent abuse limits.
+- [ ] Resident username password recovery: generic responses and verified recovery-session password change.
+- [ ] Verify resident sign-in, recovery, existing Google/staff flows, and supported screen sizes.
+
 - [x] My Jobs: customer SMS sending using existing owner SMS settings, failure history and safe status persistence; notification tests passed.
 - [x] Customer Jobs: resident-only service requests, statuses and provider updates at /resident/jobs; isolation tests passed.
 - [ ] Signed-in customer SMS and Customer Jobs verification (blocked: no session can be minted for the requesting user's account; sign-in required).
