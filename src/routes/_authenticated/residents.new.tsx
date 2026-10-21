@@ -104,8 +104,9 @@ function NewResidentPage() {
 
   const mutation = useMutation({
     mutationFn: (data: typeof form) => create({ data } as never),
-    onSuccess: async () => {
+    onSuccess: async (result: { passwordSetupSent?: boolean }) => {
       toast.success("Resident created successfully");
+      if (result.passwordSetupSent === false) toast.warning("The password setup email could not be sent. Use Reset Password from resident details to try again.");
       await queryClient.invalidateQueries({ queryKey: ["users", "resident"] });
       navigate({ to: "/residents", search: { page: 1, limit: 10 } });
     },
@@ -140,11 +141,6 @@ function NewResidentPage() {
   };
 
   const hasErrors = Object.keys(errors).length > 0;
-  const passwordChecks = {
-    length: form.password.length >= 8,
-    letter: /[A-Za-z]/.test(form.password),
-    number: /[0-9]/.test(form.password),
-  };
 
   return (
     <PortalLayout roles={["admin"]} title="Resident Management" description="Add a new resident">

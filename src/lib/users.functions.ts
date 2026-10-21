@@ -21,7 +21,7 @@ const roleEnum = z.enum([
 const profilePatch = z.object({
   id: z.string().uuid(),
   name: z.string().trim().max(120).nullable().optional(),
-  username: residentUsername.or(z.literal("")).nullable().optional(),
+  username: z.string().trim().max(60).regex(/^[a-zA-Z0-9._-]*$/).nullable().optional(),
   email: z.string().trim().email().max(255).nullable().optional(),
   phone: z.string().trim().max(40).nullable().optional(),
   profile_image: z.string().trim().max(500).nullable().optional(),

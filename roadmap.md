@@ -1,8 +1,9 @@
 # Roadmap
 
-- [ ] Resident username/password sign-in: private account lookup, case-insensitive usernames, active resident checks, persistent abuse limits.
-- [ ] Resident username password recovery: generic responses and verified recovery-session password change.
-- [ ] Verify resident sign-in, recovery, existing Google/staff flows, and supported screen sizes.
+- [x] Resident username/password sign-in: private account lookup, case-insensitive usernames, active resident checks, persistent abuse limits.
+- [x] Resident username password recovery: generic responses, trusted redirects, SDK recovery event and server-verified recovery authentication before password change.
+- [x] Resident authentication rules (25 tests), signed-out login/recovery and forged recovery URL rejection verified; latest build passed.
+- [ ] Successful resident password sign-in and emailed recovery completion (blocked: no requesting-user account/session available; requires an existing resident to sign in and use their recovery email).
 
 - [x] My Jobs: customer SMS sending using existing owner SMS settings, failure history and safe status persistence; notification tests passed.
 - [x] Customer Jobs: resident-only service requests, statuses and provider updates at /resident/jobs; isolation tests passed.
