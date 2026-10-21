@@ -11,6 +11,10 @@ export async function authorizeResidentAccount(client: Client, actorId: string, 
   // the existing vendor_scope_resident_ids relationship, never an input owner ID.
   const { data: profile, error } = await client.from("users").select("id, name, username, status").eq("id", target.id).maybeSingle();
   if (error || !profile) throw new Error("Access denied.");
+  if (target.portal === "vendor") {
+    const assignment = await client.from("unit_assignments").select("id").eq("user_id", target.id).eq("role", "resident").is("end_date", null).limit(1).maybeSingle();
+    if (assignment.error || !assignment.data) throw new Error("Access denied.");
+  }
   return profile;
 }
 
