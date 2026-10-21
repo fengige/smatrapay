@@ -72,7 +72,7 @@ function ResetPasswordPage() {
   const strength = (passed / RULES.length) * 100;
   const strengthLabel = passed <= 2 ? "Weak" : passed <= 4 ? "Good" : "Strong";
   const mismatch = confirm.length > 0 && confirm !== password;
-  const canSubmit = valid && passed === RULES.length && !mismatch && confirm.length > 0 && !saving;
+  const canSubmit = valid && password.length >= 6 && !mismatch && confirm.length > 0 && !saving;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

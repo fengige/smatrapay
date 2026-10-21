@@ -53,7 +53,7 @@ export function ResidentAccountTab({ id, portal }: { id: string; portal: "admin"
           <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" title={`${visible[field] ? "Hide" : "Show"} ${field === "password" ? "new password" : "confirmation"}`} aria-label={`${visible[field] ? "Hide" : "Show"} ${field === "password" ? "new password" : "confirmation"}`} onClick={() => setVisible((value) => ({ ...value, [field]: !value[field] }))}>{visible[field] ? <EyeOff /> : <Eye />}</Button>
         </div>
       </div>)}
-      <p id="resident-password-policy" className="text-xs text-muted-foreground">8–72 characters with uppercase and lowercase letters, a number, and a symbol.</p>
+      <p id="resident-password-policy" className="text-xs text-muted-foreground">At least 6 characters.</p>
       <div className="space-y-1" aria-live="polite"><div className="flex gap-1" role="meter" aria-label="Password strength" aria-valuemin={0} aria-valuemax={5} aria-valuenow={strength}>{Array.from({ length: 5 }, (_, index) => <span key={index} className={`h-1.5 flex-1 rounded-sm ${index < strength ? "bg-primary" : "bg-muted"}`} />)}</div><p className="text-xs text-muted-foreground">{password ? strength === 5 ? "Strong" : strength >= 3 ? "Fair — complete all requirements" : "Weak" : "Password strength"}</p></div>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <div className="flex flex-wrap gap-2"><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? <Loader2 className="animate-spin" /> : <KeyRound />}Update Password</Button><Button type="button" variant="outline" disabled={mutation.isPending} onClick={clear}>Cancel</Button></div>
