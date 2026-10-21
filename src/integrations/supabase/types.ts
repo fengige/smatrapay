@@ -1950,6 +1950,134 @@ export type Database = {
           },
         ]
       }
+      resident_enquiries: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          reference: string
+          resident_id: string
+          staff_response: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          reference?: string
+          resident_id: string
+          staff_response?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          reference?: string
+          resident_id?: string
+          staff_response?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resident_feedback: {
+        Row: {
+          category: string
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          resident_id: string
+          service_request_id: string | null
+        }
+        Insert: {
+          category: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          resident_id: string
+          service_request_id?: string | null
+        }
+        Update: {
+          category?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          resident_id?: string
+          service_request_id?: string | null
+        }
+        Relationships: []
+      }
+      resident_token_purchases: {
+        Row: {
+          amount: number
+          checkout_request_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          meter_id: string
+          mpesa_receipt_number: string | null
+          mpesa_transaction_id: string | null
+          phone: string
+          request_id: string
+          resident_id: string
+          status: string
+          token_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          checkout_request_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          meter_id: string
+          mpesa_receipt_number?: string | null
+          mpesa_transaction_id?: string | null
+          phone: string
+          request_id: string
+          resident_id: string
+          status?: string
+          token_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          checkout_request_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          meter_id?: string
+          mpesa_receipt_number?: string | null
+          mpesa_transaction_id?: string | null
+          phone?: string
+          request_id?: string
+          resident_id?: string
+          status?: string
+          token_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_token_purchases_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           created_at: string
