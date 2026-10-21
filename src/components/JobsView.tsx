@@ -198,7 +198,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
                   <td className="px-4 py-3">{[r.property_name, r.unit_number].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.meter_number ?? "—"}</td>
                   {mode === "admin" && <td className="px-4 py-3">{r.vendor_name ?? "—"}</td>}
-                   {canAssign && (
+                   {mode !== "provider" && (
                     <td className="px-4 py-3">
                       {r.provider_name ? (
                         mode === "admin" && r.provider_id ? (
@@ -281,7 +281,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
           {updates.isPending ? <p className="text-sm text-muted-foreground">Loading updates…</p>
             : updates.error ? <p className="text-sm text-destructive">{updates.error.message}</p>
             : !updates.data?.updates.length ? <p className="text-sm text-muted-foreground">No updates yet.</p>
-            : <ol className="space-y-3">{updates.data.updates.map((u) => <li key={u.id} className="border-l-2 border-border pl-3 text-sm">
+            : <ol className="space-y-3">{updates.data.updates.map((u: { id: string; assigned: boolean; status: string | null; created_at: string; note: string | null }) => <li key={u.id} className="border-l-2 border-border pl-3 text-sm">
               <p className="font-medium">{u.assigned ? "Service provider assigned" : u.status === "resolved" ? "Completed" : label(u.status || "Updated")}</p>
               <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleString("en-KE")}</p>
               {u.note && <p className="mt-1 whitespace-pre-wrap break-words">{u.note}</p>}

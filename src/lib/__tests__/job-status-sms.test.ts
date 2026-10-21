@@ -35,7 +35,9 @@ describe("customer job SMS", () => {
     const result = await sendJobStatusSms(db.sb, job, status, "provider-user", "event-1");
     expect(result.status).toBe("submitted");
     expect(fetcher).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(fetcher.mock.calls[0][1].body);
+    const call = fetcher.mock.calls[0];
+    if (!call) throw new Error("Expected an SMS request");
+    const body = JSON.parse(call[1].body);
     expect(body.to).toBe("254712345678");
     expect(body.refId).toBe("job-event-1");
     expect(db.queries).toContainEqual({ table: "vendor_sms_configurations", field: "vendor_id", value: "landlord" });
