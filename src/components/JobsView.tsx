@@ -20,6 +20,7 @@ import {
   listMyJobs,
   listCustomerJobs,
   getCustomerJobUpdates,
+  getJobUpdates,
   updateMyJobStatus,
   PROVIDER_TRANSITIONS,
   type JobRow,
@@ -34,11 +35,12 @@ const input =
 const label = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const date = (d: string | null) => (d ? new Date(d).toLocaleDateString("en-KE") : "—");
 
-export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "customer" }) {
+export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "provider" | "customer"; residentId?: string }) {
   const fetchJobs = useServerFn(listJobs);
   const fetchMine = useServerFn(listMyJobs);
   const fetchCustomer = useServerFn(listCustomerJobs);
   const fetchUpdates = useServerFn(getCustomerJobUpdates);
+  const fetchStaffUpdates = useServerFn(getJobUpdates);
   const fetchProviders = useServerFn(listAssignableProviders);
   const assign = useServerFn(assignJobToProvider);
   const qc = useQueryClient();
@@ -54,13 +56,16 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
   const [pick, setPick] = useState("");
   const [detail, setDetail] = useState<JobRow | null>(null);
   const canAssign = mode === "admin" || mode === "vendor";
+  const canViewDetails = mode !== "provider";
   const updates = useQuery({
-    queryKey: ["customer-job-updates", detail?.id],
+    queryKey: ["job-updates", mode, detail?.id],
     queryFn: () => {
       if (!detail) throw new Error("Select a job");
-      return fetchUpdates({ data: { id: detail.id } });
+      return mode === "customer"
+        ? fetchUpdates({ data: { id: detail.id } })
+        : fetchStaffUpdates({ data: { id: detail.id } });
     },
-    enabled: mode === "customer" && !!detail,
+    enabled: canViewDetails && !!detail,
   });
   const limit = 20;
 
@@ -73,14 +78,14 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
     limit,
   };
   const jobs = useQuery({
-    queryKey: ["jobs", mode, filters, provider, unassigned],
+    queryKey: ["jobs", mode, residentId, filters, provider, unassigned],
     queryFn: () =>
       mode === "customer"
         ? fetchCustomer({ data: filters })
         : mode === "provider"
         ? fetchMine({ data: filters })
         : fetchJobs({
-            data: { ...filters, provider: provider || undefined, unassigned: unassigned || undefined },
+            data: { ...filters, provider: provider || undefined, unassigned: unassigned || undefined, resident: residentId },
           }),
     placeholderData: keepPreviousData,
   });
