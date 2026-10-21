@@ -25,12 +25,14 @@ import {
   Trash2,
   UserCheck,
   UserX,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/users.functions";
 import { listAssignmentAuditLogs, listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { JobsView } from "@/components/JobsView";
 
 export const Route = createFileRoute("/_authenticated/residents/$id/")({
   head: () => ({
@@ -112,7 +114,7 @@ function ResidentDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "invoices" | "payments" | "meters" | "history" | "notes" | "audit"
+    "property" | "invoices" | "payments" | "meters" | "jobs" | "history" | "notes" | "audit"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<string>("all");
@@ -479,6 +481,7 @@ function ResidentDetailPage() {
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
                     ["meters", "Meters"],
+                    ["jobs", "Jobs"],
                     ["history", "Status History"],
                     ["notes", "Notes & Bio"],
                     ["audit", "Audit Logs"],
