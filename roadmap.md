@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Resident profile: Personal Info, Account, Audit Logs; own private photo preview/upload/removal; provider password change and verified TOTP; isolation tests and live verification.
+
 - [x] Resident email-style sign-in: registered email or existing username with private matching; 44 tests passed; real email/password login, My Jobs (empty) and My Properties (assigned home/meter) verified.
 
 - [x] Resident Account tabs at /residents/$id and /vendor/residents/$residentId: admin-only and current vendor-assignment-scoped Auth password updates, policy validation, audit and resident notification; 42 tests passed and build OK.
