@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { residentOwnsJob } from "@/lib/jobs-access";
 
 /**
  * Jobs = existing service_requests. A job reaches a service provider through an
@@ -11,7 +12,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const uuid = z.string().uuid();
 type Ctx = { supabase: any; userId: string };
-type Scope = { kind: "admin" } | { kind: "vendor"; vendorId: string } | { kind: "provider"; userId: string };
+type Scope = { kind: "admin" } | { kind: "vendor"; vendorId: string } | { kind: "provider"; userId: string } | { kind: "resident"; userId: string };
 
 async function hasRole(ctx: Ctx, role: string) {
   const { data } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: role });
@@ -88,6 +89,7 @@ async function runList(scope: Scope, data: ListInput) {
       { count: "exact" },
     );
   if (scope.kind === "vendor") q = q.eq("vendor_id", scope.vendorId);
+  if (scope.kind === "resident") q = q.eq("resident_id", scope.userId);
   if (memberFilter) q = q.in("technician_id", memberFilter);
   if (data.unassigned) q = q.is("technician_id", null);
   if (data.status) q = q.eq("status", data.status);
@@ -165,6 +167,44 @@ export const listMyJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => listInput.omit({ provider: true, unassigned: true }).parse(d))
   .handler(async ({ data, context }) => runList(await resolveScope(context as Ctx, "provider"), data));
+
+export const listCustomerJobs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => listInput.omit({ provider: true, unassigned: true }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    if (!(await hasRole(ctx, "resident"))) throw new Error("Resident access required");
+    return runList({ kind: "resident", userId: ctx.userId }, data);
+  });
+
+export const getCustomerJobUpdates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    if (!(await hasRole(ctx, "resident"))) throw new Error("Resident access required");
+    const sb = await admin();
+    const { data: job } = await sb.from("service_requests").select("resident_id")
+      .eq("id", data.id).eq("resident_id", ctx.userId).maybeSingle();
+    if (!residentOwnsJob(ctx.userId, job)) throw new Error("Job not found");
+    const { data: events, error } = await sb.from("service_request_events")
+      .select("id, event_type, to_status, note, actor_id, created_at")
+      .eq("request_id", data.id).in("event_type", ["status_changed", "technician_assigned"])
+      .order("created_at", { ascending: false }).limit(100);
+    if (error) throw new Error(error.message);
+    const actorIds = [...new Set((events ?? []).map((e: any) => e.actor_id).filter(Boolean))];
+    const { data: roles } = actorIds.length
+      ? await sb.from("user_roles").select("user_id").in("user_id", actorIds).eq("role", "service_provider")
+      : { data: [] };
+    const providers = new Set((roles ?? []).map((r: any) => r.user_id));
+    // Never disclose staff/internal notes or SMS failures to residents.
+    return { updates: (events ?? []).map((e: any) => ({
+      id: e.id as string, created_at: e.created_at as string,
+      status: e.to_status as string | null,
+      assigned: e.event_type === "technician_assigned",
+      note: e.event_type === "status_changed" && providers.has(e.actor_id) ? e.note as string | null : null,
+    })) };
+  });
 
 /** Active, non-deleted service providers with their offered services. */
 export const listAssignableProviders = createServerFn({ method: "GET" })

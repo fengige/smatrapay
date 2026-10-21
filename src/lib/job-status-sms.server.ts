@@ -78,7 +78,7 @@ export async function sendJobStatusSms(
       from: config.sender_id, to: phone, refId,
       message: `SmatraPay: Your service request ${job.request_number} is now ${label}.`,
     };
-    if (config.message_type === 2) body.messageType = "2";
+    if (config.message_type === 2) body["messageType"] = "2";
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(config.api_url, {

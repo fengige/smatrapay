@@ -18,6 +18,8 @@ import {
   listAssignableProviders,
   listJobs,
   listMyJobs,
+  listCustomerJobs,
+  getCustomerJobUpdates,
   updateMyJobStatus,
   PROVIDER_TRANSITIONS,
   type JobRow,
@@ -32,9 +34,11 @@ const input =
 const label = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const date = (d: string | null) => (d ? new Date(d).toLocaleDateString("en-KE") : "—");
 
-export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
+export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "customer" }) {
   const fetchJobs = useServerFn(listJobs);
   const fetchMine = useServerFn(listMyJobs);
+  const fetchCustomer = useServerFn(listCustomerJobs);
+  const fetchUpdates = useServerFn(getCustomerJobUpdates);
   const fetchProviders = useServerFn(listAssignableProviders);
   const assign = useServerFn(assignJobToProvider);
   const qc = useQueryClient();
@@ -48,6 +52,16 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
   const [page, setPage] = useState(1);
   const [target, setTarget] = useState<JobRow | null>(null);
   const [pick, setPick] = useState("");
+  const [detail, setDetail] = useState<JobRow | null>(null);
+  const canAssign = mode === "admin" || mode === "vendor";
+  const updates = useQuery({
+    queryKey: ["customer-job-updates", detail?.id],
+    queryFn: () => {
+      if (!detail) throw new Error("Select a job");
+      return fetchUpdates({ data: { id: detail.id } });
+    },
+    enabled: mode === "customer" && !!detail,
+  });
   const limit = 20;
 
   const filters = {
@@ -61,7 +75,9 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
   const jobs = useQuery({
     queryKey: ["jobs", mode, filters, provider, unassigned],
     queryFn: () =>
-      mode === "provider"
+      mode === "customer"
+        ? fetchCustomer({ data: filters })
+        : mode === "provider"
         ? fetchMine({ data: filters })
         : fetchJobs({
             data: { ...filters, provider: provider || undefined, unassigned: unassigned || undefined },
@@ -71,7 +87,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
   const providers = useQuery({
     queryKey: ["assignable-providers"],
     queryFn: () => fetchProviders(),
-    enabled: mode !== "provider",
+    enabled: canAssign,
   });
 
   const setStatus_ = useServerFn(updateMyJobStatus);
@@ -121,7 +137,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
             <option key={s} value={s}>{label(s)}</option>
           ))}
         </select>
-        {mode !== "provider" && (
+        {canAssign && (
           <>
             <select className={input} value={provider} onChange={(e) => (setProvider(e.target.value), reset())}>
               <option value="">All service providers</option>
@@ -182,7 +198,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
                   <td className="px-4 py-3">{[r.property_name, r.unit_number].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.meter_number ?? "—"}</td>
                   {mode === "admin" && <td className="px-4 py-3">{r.vendor_name ?? "—"}</td>}
-                  {mode !== "provider" && (
+                   {canAssign && (
                     <td className="px-4 py-3">
                       {r.provider_name ? (
                         mode === "admin" && r.provider_id ? (
@@ -246,6 +262,29 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" }) {
           <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</Button>
         </div>
       </div>
+
+      <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{detail?.request_number}</DialogTitle></DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="font-medium">{detail?.issue_type}</p>
+            <p>{detail?.description || "—"}</p>
+            <p>Provider: {detail?.provider_name || "Unassigned"}</p>
+            <p>Status: {detail?.status === "resolved" ? "Completed" : label(detail?.status || "open")}</p>
+            <p>Scheduled: {date(detail?.preferred_date ?? null)}</p>
+            <p>Completed: {date(detail?.completed_at ?? null)}</p>
+          </div>
+          <h3 className="font-medium">Provider updates</h3>
+          {updates.isPending ? <p className="text-sm text-muted-foreground">Loading updates…</p>
+            : updates.error ? <p className="text-sm text-destructive">{updates.error.message}</p>
+            : !updates.data?.updates.length ? <p className="text-sm text-muted-foreground">No updates yet.</p>
+            : <ol className="space-y-3">{updates.data.updates.map((u) => <li key={u.id} className="border-l-2 border-border pl-3 text-sm">
+              <p className="font-medium">{u.assigned ? "Service provider assigned" : u.status === "resolved" ? "Completed" : label(u.status || "Updated")}</p>
+              <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleString("en-KE")}</p>
+              {u.note && <p className="mt-1 whitespace-pre-wrap break-words">{u.note}</p>}
+            </li>)}</ol>}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!target} onOpenChange={(o) => !o && setTarget(null)}>
         <DialogContent>
