@@ -24,6 +24,7 @@ import {
   splitName,
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
+import { JobsView } from "@/components/JobsView";
 import {
   assignVendorResidentUnit,
   getVendorResident,
@@ -58,6 +59,7 @@ const TABS = [
   ["invoices", "Invoices"],
   ["payments", "Payment History"],
   ["meters", "Meters"],
+  ["jobs", "Jobs"],
   ["history", "Status History"],
 ] as const;
 
@@ -506,6 +508,13 @@ function VendorResidentDetail() {
                   </div>
                 ))
               )}
+            </section>
+          )}
+
+          {tab === "jobs" && (
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-4 text-sm font-bold text-foreground">Jobs</h2>
+              <JobsView mode="vendor" residentId={residentId} />
             </section>
           )}
 

@@ -20,6 +20,7 @@ import {
   listMyJobs,
   listCustomerJobs,
   getCustomerJobUpdates,
+  getJobUpdates,
   updateMyJobStatus,
   PROVIDER_TRANSITIONS,
   type JobRow,
@@ -34,11 +35,12 @@ const input =
 const label = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const date = (d: string | null) => (d ? new Date(d).toLocaleDateString("en-KE") : "—");
 
-export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "customer" }) {
+export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "provider" | "customer"; residentId?: string }) {
   const fetchJobs = useServerFn(listJobs);
   const fetchMine = useServerFn(listMyJobs);
   const fetchCustomer = useServerFn(listCustomerJobs);
   const fetchUpdates = useServerFn(getCustomerJobUpdates);
+  const fetchStaffUpdates = useServerFn(getJobUpdates);
   const fetchProviders = useServerFn(listAssignableProviders);
   const assign = useServerFn(assignJobToProvider);
   const qc = useQueryClient();
@@ -54,13 +56,16 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
   const [pick, setPick] = useState("");
   const [detail, setDetail] = useState<JobRow | null>(null);
   const canAssign = mode === "admin" || mode === "vendor";
+  const canViewDetails = mode !== "provider";
   const updates = useQuery({
-    queryKey: ["customer-job-updates", detail?.id],
+    queryKey: ["job-updates", mode, detail?.id],
     queryFn: () => {
       if (!detail) throw new Error("Select a job");
-      return fetchUpdates({ data: { id: detail.id } });
+      return mode === "customer"
+        ? fetchUpdates({ data: { id: detail.id } })
+        : fetchStaffUpdates({ data: { id: detail.id } });
     },
-    enabled: mode === "customer" && !!detail,
+    enabled: canViewDetails && !!detail,
   });
   const limit = 20;
 
@@ -73,14 +78,14 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
     limit,
   };
   const jobs = useQuery({
-    queryKey: ["jobs", mode, filters, provider, unassigned],
+    queryKey: ["jobs", mode, residentId, filters, provider, unassigned],
     queryFn: () =>
       mode === "customer"
         ? fetchCustomer({ data: filters })
         : mode === "provider"
         ? fetchMine({ data: filters })
         : fetchJobs({
-            data: { ...filters, provider: provider || undefined, unassigned: unassigned || undefined },
+            data: { ...filters, provider: provider || undefined, unassigned: unassigned || undefined, resident: residentId },
           }),
     placeholderData: keepPreviousData,
   });
@@ -161,7 +166,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
             <tr>
               <th className="px-4 py-3">Job ID</th>
               <th className="px-4 py-3">Issue</th>
-              <th className="px-4 py-3">Resident</th>
+              {!residentId && <th className="px-4 py-3">Resident</th>}
               <th className="px-4 py-3">Property / Unit</th>
               <th className="px-4 py-3">Meter</th>
               {mode === "admin" && <th className="px-4 py-3">Vendor</th>}
@@ -177,7 +182,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
             ) : jobs.error ? (
               <tr><td colSpan={10} className="px-4 py-10 text-center text-destructive">{(jobs.error as Error).message}</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">No jobs match these filters.</td></tr>
+              <tr><td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">{residentId ? "No service requests for this resident yet." : "No jobs match these filters."}</td></tr>
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="border-t border-border">
@@ -194,7 +199,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
                     <div className="font-medium text-foreground">{r.issue_type}</div>
                     {r.description && <div className="line-clamp-1 text-xs text-muted-foreground">{r.description}</div>}
                   </td>
-                  <td className="px-4 py-3">{r.resident_name ?? "—"}</td>
+                  {!residentId && <td className="px-4 py-3">{r.resident_name ?? "—"}</td>}
                   <td className="px-4 py-3">{[r.property_name, r.unit_number].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.meter_number ?? "—"}</td>
                   {mode === "admin" && <td className="px-4 py-3">{r.vendor_name ?? "—"}</td>}
@@ -239,12 +244,15 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
                   )}
                   {canAssign && (
                     <td className="px-4 py-3 text-right">
-                      {!FINISHED.includes(r.status) && (
-                        <Button size="sm" variant="outline" onClick={() => (setTarget(r), setPick(r.provider_id ?? ""))}>
-                          <UserPlus className="mr-1 h-4 w-4" />
-                          {r.provider_name ? "Reassign" : "Assign"}
-                        </Button>
-                      )}
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setDetail(r)}>View</Button>
+                        {!FINISHED.includes(r.status) && (
+                          <Button size="sm" variant="outline" onClick={() => (setTarget(r), setPick(r.provider_id ?? ""))}>
+                            <UserPlus className="mr-1 h-4 w-4" />
+                            {r.provider_name ? "Reassign" : "Assign"}
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   )}
                   {mode === "customer" && <td className="px-4 py-3 text-right">
@@ -277,7 +285,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
             <p>Scheduled: {date(detail?.preferred_date ?? null)}</p>
             <p>Completed: {date(detail?.completed_at ?? null)}</p>
           </div>
-          <h3 className="font-medium">Provider updates</h3>
+          <h3 className="font-medium">{mode === "customer" ? "Provider updates" : "Job activity"}</h3>
           {updates.isPending ? <p className="text-sm text-muted-foreground">Loading updates…</p>
             : updates.error ? <p className="text-sm text-destructive">{updates.error.message}</p>
             : !updates.data?.updates.length ? <p className="text-sm text-muted-foreground">No updates yet.</p>

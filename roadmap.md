@@ -64,3 +64,4 @@
 - [x] Shared service catalog; providers pick services from it
 - [ ] Signed-in check as a service provider (blocked: no service provider account exists in the database yet)
 - [x] My Jobs status updates (In Progress / Completed / Cancelled) with vendor + customer notifications
+- [x] Jobs tab on resident details (/residents/$id and /vendor/residents/$residentId): resident-filtered job list, staff job timeline, vendor scope enforced server-side
