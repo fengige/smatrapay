@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ComingSoon, residentHead } from "@/components/resident/ResidentUI";
-import { EnquiryPanel } from "./support";
+import { EnquiryPanel } from "@/components/resident/EnquiryPanel";
 
 export const Route = createFileRoute("/_authenticated/resident/financial-services")({
   head: residentHead("Insurance & Loans", "Send an insurance or loan enquiry to SmatraPay."),

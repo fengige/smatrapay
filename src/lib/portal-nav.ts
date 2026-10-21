@@ -25,6 +25,10 @@ import {
   Users,
   type LucideIcon,
   Bot,
+  FileText,
+  Headset,
+  MessageSquareHeart,
+  ShieldCheck,
 } from "lucide-react";
 import { dashboardForRoles } from "./portals";
 
@@ -169,7 +173,35 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       items: [{ label: "My Jobs", icon: Wrench, to: "/service-provider/jobs" }],
     });
   } else if (roles.includes("resident")) {
-    groups.push({ heading: "SERVICE", items: [{ label: "Customer Jobs", icon: Wrench, to: "/resident/jobs" }] });
+    groups.push(
+      {
+        heading: "MY PROPERTY",
+        items: [
+          { label: "My Properties & Meters", icon: Home, to: "/resident/meters" },
+          { label: "My Documents", icon: FileText, to: "/resident/documents" },
+        ],
+      },
+      {
+        heading: "UTILITIES & PAYMENTS",
+        items: [
+          { label: "Buy Tokens", icon: KeyRound, to: "/resident/buy-tokens" },
+          { label: "Pay Rent & Bills", icon: CreditCard, to: "/resident/bills" },
+          { label: "My Transactions", icon: ArrowLeftRight, to: "/resident/transactions" },
+          { label: "My Statements", icon: Receipt, to: "/resident/statements" },
+        ],
+      },
+      { heading: "SERVICES", items: [{ label: "Maintenance & Service Requests", icon: Wrench, to: "/resident/jobs" }] },
+      { heading: "FINANCIAL SERVICES", items: [{ label: "Insurance & Loans", icon: ShieldCheck, to: "/resident/financial-services" }] },
+      {
+        heading: "SUPPORT & COMMUNICATION",
+        items: [
+          { label: "Resident Support", icon: Headset, to: "/resident/support" },
+          { label: "Surveys & Feedback", icon: MessageSquareHeart, to: "/resident/feedback" },
+          { label: "My Notifications", icon: Bell, to: "/resident/notifications" },
+        ],
+      },
+      { heading: "ACCOUNT", items: [{ label: "My Profile", icon: UserCircle, to: "/resident/profile" }] },
+    );
   } else {
     groups.push({
       heading: "Account",
