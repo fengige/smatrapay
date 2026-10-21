@@ -511,6 +511,13 @@ function VendorResidentDetail() {
             </section>
           )}
 
+          {tab === "jobs" && (
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-4 text-sm font-bold text-foreground">Jobs</h2>
+              <JobsView mode="vendor" residentId={residentId} />
+            </section>
+          )}
+
           {tab === "history" && (
             <section className="rounded-2xl border border-border bg-card">
               <header className="border-b border-border px-4 py-3">
