@@ -255,6 +255,7 @@ function VendorResidentsPage() {
           middle_name: form.middle_name.trim(),
           last_name: form.last_name.trim(),
           email: form.email.trim(),
+          username: form.username?.trim(),
           phone: form.phone.trim(),
           id_number: form.id_number.trim(),
           address: form.address.trim(),
@@ -309,6 +310,7 @@ function VendorResidentsPage() {
     setForm({
       ...parts,
       email: r.email ?? "",
+      username: r.username ?? "",
       phone: r.phone ?? "",
       id_number: r.id_number ?? "",
       address: r.address ?? "",

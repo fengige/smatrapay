@@ -10,6 +10,7 @@ export type ResidentForm = {
   middle_name: string;
   last_name: string;
   email: string;
+  username?: string;
   phone: string;
   id_number: string;
   address: string;
@@ -22,6 +23,7 @@ export const emptyResidentForm: ResidentForm = {
   middle_name: "",
   last_name: "",
   email: "",
+  username: "",
   phone: "",
   id_number: "",
   address: "",
@@ -206,6 +208,7 @@ export function ResidentFormFields({
         )}
         {showContact && (
           <>
+            <Field label="Username"><input className={inputClass} value={form.username ?? ""} onChange={(e) => set("username", e.target.value)} maxLength={60} pattern="[a-zA-Z0-9._-]+" autoComplete="off" /></Field>
             <Field label="Email address" required>
               <input
                 type="email"

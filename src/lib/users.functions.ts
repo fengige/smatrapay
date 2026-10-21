@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createUserSchema } from "@/lib/user-schema";
 import type { Database } from "@/integrations/supabase/types";
+import { normalizeUsername } from "./resident-password";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
 const roleEnum = z.enum([
@@ -81,6 +82,12 @@ export const updateUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { id, role, ...fields } = data;
+    if (fields.username !== undefined) {
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+      if (!isAdmin) throw new Error("Only admins can assign usernames here");
+      const { data: resident } = await supabase.rpc("has_role", { _user_id: id, _role: "resident" });
+      if (resident && fields.username) fields.username = normalizeUsername(fields.username);
+    }
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
     ) as Database["public"]["Tables"]["users"]["Update"];
@@ -89,7 +96,7 @@ export const updateUser = createServerFn({ method: "POST" })
       .from("users")
       .update({ ...patch, updated_by: userId })
       .eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(error.code === "23505" ? "This username is already assigned. Choose another." : error.message);
 
     if (role) {
       const { data: isAdmin } = await supabase.rpc("has_role", {
@@ -129,9 +136,14 @@ export const createUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const username = data.username ? (data.role === "resident" ? normalizeUsername(data.username) : data.username) : null;
+    if (username) {
+      const { data: duplicate } = await supabaseAdmin.from("users").select("id").ilike("username", username).maybeSingle();
+      if (duplicate) throw new Error("This username is already assigned. Choose another.");
+    }
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
-      password: data.password,
+      password: data.role === "resident" ? `${crypto.randomUUID()}Aa1!` : data.password,
       email_confirm: true,
       user_metadata: { name: data.name },
     });
@@ -142,7 +154,7 @@ export const createUser = createServerFn({ method: "POST" })
       id,
       name: data.name,
       email: data.email,
-      username: data.username || null,
+      username,
       phone: data.phone || null,
       bio: data.bio || null,
       notes: data.notes || null,
@@ -155,15 +167,18 @@ export const createUser = createServerFn({ method: "POST" })
       created_by: userId,
       updated_by: userId,
     });
-    if (profileError) throw new Error(profileError.message);
+    if (profileError) { await supabaseAdmin.auth.admin.deleteUser(id); throw new Error(profileError.code === "23505" ? "This username is already assigned. Choose another." : profileError.message); }
 
     await supabaseAdmin.from("user_roles").delete().eq("user_id", id);
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: id, role: data.role });
-    if (roleError) throw new Error(roleError.message);
-
-    return { ok: true, id };
+    if (roleError) { await supabaseAdmin.auth.admin.deleteUser(id); throw new Error(roleError.message); }
+    if (data.role === "resident") {
+      const { error: setupError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, { redirectTo: "https://apps.smatrapay.com/reset-password?type=recovery" });
+      return { ok: true, id, passwordSetupSent: !setupError };
+    }
+    return { ok: true, id, passwordSetupSent: false };
   });
 
 export const getUserById = createServerFn({ method: "GET" })
