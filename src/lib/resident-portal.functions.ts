@@ -74,7 +74,7 @@ export const getResidentHome = createServerFn({ method: "GET" })
       const ownerId = m.landlord_id ?? m.agent_id ?? m.vendor_id;
       return {
         id: m.id, meter_number: m.meter_number, type: m.type ?? "Electricity", status: m.status,
-        supplier: supMap.get(m.supplier_id) ?? "—", vending_software: swMap.get(m.vending_software_id) ?? "—",
+        supplier: String(supMap.get(m.supplier_id) ?? "—"), vending_software: String(swMap.get(m.vending_software_id) ?? "—"),
         unit_number: u?.unit_number ?? "—", property_name: p?.name ?? "—",
         owner: ownerId ? owners.get(ownerId) ?? "—" : "—",
         owner_type: m.landlord_id ? "Landlord" : m.agent_id ? "Agent" : m.vendor_id ? "Vendor" : null,
