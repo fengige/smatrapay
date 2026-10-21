@@ -33,6 +33,7 @@ import { deleteUser, getUserById, sendPasswordReset, updateUser } from "@/lib/us
 import { listAssignmentAuditLogs, listUserAssignments } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
 import { JobsView } from "@/components/JobsView";
+import { ResidentAccountTab } from "@/components/resident/ResidentAccountTab";
 
 export const Route = createFileRoute("/_authenticated/residents/$id/")({
   head: () => ({
@@ -114,7 +115,7 @@ function ResidentDetailPage() {
   const [confirm, setConfirm] = useState<null | "status" | "delete" | "reset">(null);
   const [resetSentAt, setResetSentAt] = useState<string | null>(null);
   const [tab, setTab] = useState<
-    "property" | "invoices" | "payments" | "meters" | "jobs" | "history" | "notes" | "audit"
+    "property" | "account" | "invoices" | "payments" | "meters" | "jobs" | "history" | "notes" | "audit"
   >("property");
   const [auditQuery, setAuditQuery] = useState("");
   const [auditAction, setAuditAction] = useState<string>("all");
@@ -478,6 +479,7 @@ function ResidentDetailPage() {
                 {(
                   [
                     ["property", "My Property"],
+                    ["account", "Account"],
                     ["invoices", "Invoices"],
                     ["payments", "Payment History"],
                     ["meters", "Meters"],
@@ -502,6 +504,7 @@ function ResidentDetailPage() {
                 ))}
               </div>
 
+              {tab === "account" && <ResidentAccountTab id={id} portal="admin" />}
               {tab === "property" && (
               <Section title="My Property" icon={<Building2 className="size-4 text-primary" />}>
                 <div className="p-6">

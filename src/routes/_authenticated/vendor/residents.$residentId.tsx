@@ -25,6 +25,7 @@ import {
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
 import { JobsView } from "@/components/JobsView";
+import { ResidentAccountTab } from "@/components/resident/ResidentAccountTab";
 import {
   assignVendorResidentUnit,
   getVendorResident,
@@ -56,6 +57,7 @@ export const Route = createFileRoute("/_authenticated/vendor/residents/$resident
 
 const TABS = [
   ["property", "My Property"],
+  ["account", "Account"],
   ["invoices", "Invoices"],
   ["payments", "Payment History"],
   ["meters", "Meters"],
@@ -335,6 +337,7 @@ function VendorResidentDetail() {
             ))}
           </div>
 
+          {tab === "account" && <ResidentAccountTab id={residentId} portal="vendor" />}
           {tab === "property" && (
             <section className="space-y-4">
               {currentAssignment ? (
