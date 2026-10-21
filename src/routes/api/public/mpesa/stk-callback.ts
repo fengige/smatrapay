@@ -66,6 +66,20 @@ export const Route = createFileRoute("/api/public/mpesa/stk-callback")({
           }
         }
 
+        if (checkoutRequestId) {
+          try {
+            const { completeResidentPurchase } = await import("@/lib/resident-purchase.server");
+            await completeResidentPurchase(
+              checkoutRequestId,
+              String(resultCode) === "0",
+              item("MpesaReceiptNumber") ? String(item("MpesaReceiptNumber")) : null,
+              cb.ResultDesc ?? null,
+            );
+          } catch {
+            /* Payment is already recorded; vending can be retried. */
+          }
+        }
+
         return Response.json({ ResultCode: 0, ResultDesc: "Accepted" });
       },
     },
