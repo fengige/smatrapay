@@ -8,7 +8,7 @@ const valid = { id, portal: "vendor", password: "NewResident9!", confirmation: "
 function query(result: unknown) {
   const chain: Record<string, any> = {};
   for (const method of ["select", "eq", "is", "limit"]) chain[method] = vi.fn(() => chain);
-  chain.maybeSingle = vi.fn(async () => result);
+  chain["maybeSingle"] = vi.fn(async () => result);
   return chain;
 }
 function scopedClient(allowed: boolean, profile: unknown, assignment: unknown) {
@@ -42,7 +42,7 @@ describe("Resident account server authorization", () => {
   });
   it("checks the actual Auth account and rejects mixed roles", async () => {
     const chain = query({});
-    chain.eq = vi.fn(async () => ({ data: [{ role: "resident" }, { role: "admin" }] }));
+    chain["eq"] = vi.fn(async () => ({ data: [{ role: "resident" }, { role: "admin" }] }));
     const admin = { from: () => chain, auth: { admin: { getUserById: vi.fn(async () => ({ data: { user: { id } } })) } } };
     await expect(managedResidentAccount(admin as never, id)).rejects.toThrow("not eligible");
     expect(admin.auth.admin.getUserById).toHaveBeenCalledWith(id);
