@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { residentCredentials, residentUsername, GENERIC_LOGIN_ERROR, GENERIC_RESET_MESSAGE, trustedRecoveryUrl } from "./resident-password";
+import { residentCredentials, residentUsername, GENERIC_LOGIN_ERROR, GENERIC_RESET_MESSAGE, trustedRecoveryUrl, verifiedRecoveryClaims } from "./resident-password";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { residentDecision } from "./resident-signin";
 
 async function prepare(username: string, action: "login" | "reset") {
@@ -57,4 +58,15 @@ export const resetResidentPassword = createServerFn({ method: "POST" })
       await account.supabaseAdmin.auth.resetPasswordForEmail(account.email, { redirectTo: trustedRecoveryUrl(getRequestHeader("origin")) });
     }
     return { message: GENERIC_RESET_MESSAGE };
+  });
+
+export const completePasswordRecovery = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ password: z.string().min(8).max(72).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    setResponseHeader("Cache-Control", "no-store");
+    if (!verifiedRecoveryClaims(context.claims)) throw new Error("This reset link is invalid or has expired. Request a new one.");
+    const { error } = await context.supabase.auth.updateUser({ password: data.password });
+    if (error) throw new Error("Could not update your password. Request a fresh reset link and try again.");
+    return { ok: true };
   });

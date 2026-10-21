@@ -12,3 +12,6 @@ export function trustedRecoveryUrl(origin: string | null | undefined) {
   const allowed = new Set(["https://apps.smatrapay.com", "https://smatrapay.lovable.app", "https://id-preview--120f9cd8-ee3d-469e-82d2-af8e1b8971ee.lovable.app", "http://localhost:8080"]);
   return `${origin && allowed.has(origin) ? origin : "https://apps.smatrapay.com"}/reset-password?type=recovery`;
 }
+export function verifiedRecoveryClaims(claims: { amr?: unknown }) {
+  return Array.isArray(claims.amr) && claims.amr.some((entry: unknown) => typeof entry === "object" && entry !== null && "method" in entry && (entry.method === "otp" || entry.method === "recovery"));
+}
