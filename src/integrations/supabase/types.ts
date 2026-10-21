@@ -1950,6 +1950,24 @@ export type Database = {
           },
         ]
       }
+      resident_auth_limits: {
+        Row: {
+          attempts: number
+          key_hash: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          key_hash: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          key_hash?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       resident_enquiries: {
         Row: {
           created_at: string
@@ -3425,6 +3443,10 @@ export type Database = {
         Returns: Json
       }
       bulk_add_meters: { Args: { p_payload: Json }; Returns: Json }
+      consume_resident_auth_limit: {
+        Args: { p_key: string; p_limit: number; p_window: number }
+        Returns: boolean
+      }
       create_resident_service_request: {
         Args: {
           p_description: string
