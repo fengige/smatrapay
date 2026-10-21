@@ -168,6 +168,8 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       heading: "WORK",
       items: [{ label: "My Jobs", icon: Wrench, to: "/service-provider/jobs" }],
     });
+  } else if (roles.includes("resident")) {
+    groups.push({ heading: "SERVICE", items: [{ label: "Customer Jobs", icon: Wrench, to: "/resident/jobs" }] });
   } else {
     groups.push({
       heading: "Account",
