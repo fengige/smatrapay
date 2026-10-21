@@ -33,6 +33,14 @@ import {
   type DashboardPath,
   type PortalId,
 } from "@/lib/portals";
+import {
+  RESIDENT_RETURN_KEY,
+  oauthErrorMessage,
+  residentDecision,
+  safeResidentReturn,
+} from "@/lib/resident-signin";
+
+const GOOGLE_PENDING_KEY = "sp_google_pending";
 
 const features = [
   { icon: Bot, text: "Cards, mobile money, bank transfers & wallets" },
@@ -231,17 +239,109 @@ function ResidentAuth() {
     }
   }
 
+  const navigate = useNavigate();
+  const loadAccess = useServerFn(getMyAccess);
+  const [checking, setChecking] = useState(true);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const finishing = useRef(false);
+
+  /** Verify session + resident role/profile server-side, then enter the Resident Portal. */
+  async function finishResidentSignIn(fromGoogle: boolean): Promise<boolean> {
+    if (finishing.current) return false;
+    finishing.current = true;
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        if (fromGoogle) throw new Error("We couldn't establish your session. Please try again.");
+        return false;
+      }
+      let access;
+      try {
+        access = await loadAccess();
+      } catch {
+        throw new Error("We couldn't verify your resident account. Please try again.");
+      }
+      const decision = residentDecision(access);
+      if (!decision.ok) {
+        // Only act on accounts that just came through resident Google sign-in;
+        // existing staff sessions are left untouched.
+        if (!fromGoogle) return false;
+        if (decision.reason !== "staff") await supabase.auth.signOut();
+        throw new Error(decision.message);
+      }
+      const target = safeResidentReturn(sessionStorage.getItem(RESIDENT_RETURN_KEY));
+      sessionStorage.removeItem(RESIDENT_RETURN_KEY);
+      if (fromGoogle) toast.success("Signed in successfully");
+      await navigate({ to: target, replace: true });
+      return true;
+    } finally {
+      finishing.current = false;
+    }
+  }
+
+  // Handles the return from Google (full-page redirect) and revisits while signed in.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const url = new URL(window.location.href);
+      const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+      const oauthError = oauthErrorMessage(
+        url.searchParams.get("error") ?? hash.get("error"),
+        url.searchParams.get("error_description") ?? hash.get("error_description"),
+      );
+      const fromGoogle = sessionStorage.getItem(GOOGLE_PENDING_KEY) === "1";
+      sessionStorage.removeItem(GOOGLE_PENDING_KEY);
+      if (oauthError) {
+        setAccessError(oauthError);
+        toast.error(oauthError);
+        window.history.replaceState(null, "", url.pathname);
+        setChecking(false);
+        return;
+      }
+      try {
+        await finishResidentSignIn(fromGoogle);
+      } catch (err) {
+        if (!cancelled) {
+          const msg = errorMessage(err, "Google sign-in failed");
+          setAccessError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleGoogle() {
     setGoogleLoading(true);
+    setAccessError(null);
     try {
+      const requested = new URL(window.location.href).searchParams.get("redirect");
+      sessionStorage.setItem(RESIDENT_RETURN_KEY, safeResidentReturn(requested));
+      sessionStorage.setItem(GOOGLE_PENDING_KEY, "1");
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-      if (result.error) throw new Error("Google sign-in failed");
+      if (result.error) {
+        sessionStorage.removeItem(GOOGLE_PENDING_KEY);
+        const msg = String((result.error as { message?: string }).message ?? "");
+        throw new Error(
+          /cancel|closed|denied/i.test(msg)
+            ? "Google sign-in was cancelled. You can try again."
+            : "Google sign-in failed. Please try again.",
+        );
+      }
       if (result.redirected) return;
-      await afterLogin();
+      sessionStorage.removeItem(GOOGLE_PENDING_KEY);
+      await finishResidentSignIn(true);
     } catch (err) {
-      toast.error(errorMessage(err, "Google sign-in failed"));
+      const msg = errorMessage(err, "Google sign-in failed");
+      setAccessError(msg);
+      toast.error(msg);
     } finally {
       setGoogleLoading(false);
     }
@@ -265,12 +365,17 @@ function ResidentAuth() {
       <button
         type="button"
         onClick={handleGoogle}
-        disabled={googleLoading}
+        disabled={googleLoading || checking}
         className="btn-primary w-full"
       >
-        {googleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
+        {googleLoading || checking ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
         Continue with Google
       </button>
+      {accessError && (
+        <p role="alert" className="mt-3 text-sm text-destructive">
+          {accessError}
+        </p>
+      )}
 
       <div className="divider">or</div>
 
