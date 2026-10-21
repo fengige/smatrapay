@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createUserSchema, residentCreateSchema } from "@/lib/user-schema";
 import type { Database } from "@/integrations/supabase/types";
-import { normalizeUsername } from "./resident-password";
+import { normalizeUsername, residentUsername, trustedRecoveryUrl } from "./resident-password";
+import { getRequestHeader } from "@tanstack/react-start/server";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
 const roleEnum = z.enum([
@@ -20,7 +21,7 @@ const roleEnum = z.enum([
 const profilePatch = z.object({
   id: z.string().uuid(),
   name: z.string().trim().max(120).nullable().optional(),
-  username: z.string().trim().max(60).nullable().optional(),
+  username: residentUsername.or(z.literal("")).nullable().optional(),
   email: z.string().trim().email().max(255).nullable().optional(),
   phone: z.string().trim().max(40).nullable().optional(),
   profile_image: z.string().trim().max(500).nullable().optional(),
@@ -138,7 +139,7 @@ export const createUser = createServerFn({ method: "POST" })
 
     const username = data.username ? (data.role === "resident" ? normalizeUsername(data.username) : data.username) : null;
     if (username) {
-      const { data: duplicate } = await supabaseAdmin.from("users").select("id").ilike("username", username).maybeSingle();
+      const { data: duplicate } = await supabaseAdmin.from("users").select("id").ilike("username", username.replace(/_/g, "\\_")).maybeSingle();
       if (duplicate) throw new Error("This username is already assigned. Choose another.");
     }
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
@@ -175,7 +176,7 @@ export const createUser = createServerFn({ method: "POST" })
       .insert({ user_id: id, role: data.role });
     if (roleError) { await supabaseAdmin.auth.admin.deleteUser(id); throw new Error(roleError.message); }
     if (data.role === "resident") {
-      const { error: setupError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, { redirectTo: "https://apps.smatrapay.com/reset-password?type=recovery" });
+      const { error: setupError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, { redirectTo: trustedRecoveryUrl(getRequestHeader("origin")) });
       return { ok: true, id, passwordSetupSent: !setupError };
     }
     return { ok: true, id, passwordSetupSent: false };

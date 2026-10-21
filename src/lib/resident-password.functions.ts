@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader } from "@tanstack/react-start/server";
+import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { residentCredentials, residentUsername, GENERIC_LOGIN_ERROR, GENERIC_RESET_MESSAGE } from "./resident-password";
+import { residentCredentials, residentUsername, GENERIC_LOGIN_ERROR, GENERIC_RESET_MESSAGE, trustedRecoveryUrl } from "./resident-password";
 import { residentDecision } from "./resident-signin";
 
 async function prepare(username: string, action: "login" | "reset") {
@@ -28,6 +28,7 @@ async function prepare(username: string, action: "login" | "reset") {
 export const signInResidentPassword = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => residentCredentials.parse(d))
   .handler(async ({ data }) => {
+    setResponseHeader("Cache-Control", "no-store");
     const account = await prepare(data.username, "login");
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
     const url = process.env["SUPABASE_URL"];
@@ -42,17 +43,18 @@ export const signInResidentPassword = createServerFn({ method: "POST" })
       throw new Error(error?.status && error.status >= 500 ? "Authentication service unavailable. Please try again later." : GENERIC_LOGIN_ERROR);
     }
     const decision = residentDecision({ profile: account.profile, roles: account.roles });
-    if (!decision.ok) { await client.auth.signOut(); throw new Error(decision.message); }
+    if (!decision.ok) { await client.auth.signOut(); throw new Error(GENERIC_LOGIN_ERROR); }
     return { access_token: signed.session.access_token, refresh_token: signed.session.refresh_token };
   });
 
 export const resetResidentPassword = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ username: residentUsername }).parse(d))
   .handler(async ({ data }) => {
+    setResponseHeader("Cache-Control", "no-store");
     const account = await prepare(data.username, "reset");
     if (account.email && residentDecision({ profile: account.profile, roles: account.roles }).ok) {
       // Never let untrusted input choose the email or redirect destination.
-      await account.supabaseAdmin.auth.resetPasswordForEmail(account.email, { redirectTo: "https://apps.smatrapay.com/reset-password?type=recovery" });
+      await account.supabaseAdmin.auth.resetPasswordForEmail(account.email, { redirectTo: trustedRecoveryUrl(getRequestHeader("origin")) });
     }
     return { message: GENERIC_RESET_MESSAGE };
   });

@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { hasRecoveryIntent, normalizeUsername, residentCredentials, residentUsername } from "../resident-password";
+import { hasRecoveryIntent, normalizeUsername, residentCredentials, residentUsername, trustedRecoveryUrl } from "../resident-password";
 import { residentDecision } from "../resident-signin";
 import { createUserSchema, residentCreateSchema } from "../user-schema";
 
 describe("resident credentials", () => {
+  it("only sends recovery links to trusted app origins", () => {
+    expect(trustedRecoveryUrl("https://evil.example")).toBe("https://apps.smatrapay.com/reset-password?type=recovery");
+    expect(trustedRecoveryUrl("http://localhost:8080")).toBe("http://localhost:8080/reset-password?type=recovery");
+  });
   it("normalizes usernames case-insensitively", () => {
     expect(normalizeUsername("  Felix.Ngige_1  ")).toBe("felix.ngige_1");
     expect(residentUsername.parse("  Felix.Ngige_1  ")).toBe("felix.ngige_1");

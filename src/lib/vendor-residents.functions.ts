@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
-import { residentUsername } from "./resident-password";
+import { residentUsername, trustedRecoveryUrl } from "./resident-password";
+import { getRequestHeader } from "@tanstack/react-start/server";
 
 /**
  * Vendor-scoped resident management.
@@ -563,7 +564,7 @@ export const createVendorResident = createServerFn({ method: "POST" })
 
     const name = fullName(data);
     if (data.username) {
-      const { data: duplicate } = await supabaseAdmin.from("users").select("id").ilike("username", data.username).maybeSingle();
+      const { data: duplicate } = await supabaseAdmin.from("users").select("id").ilike("username", data.username.replace(/_/g, "\\_")).maybeSingle();
       if (duplicate) throw new Error("This username is already assigned. Choose another.");
     }
     const tempPassword = `${crypto.randomUUID()}Aa1!`;
@@ -623,7 +624,7 @@ export const createVendorResident = createServerFn({ method: "POST" })
       { email: data.email, unit_id: data.unit_id ?? null },
     );
 
-    const { error: setupError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, { redirectTo: "https://apps.smatrapay.com/reset-password?type=recovery" });
+    const { error: setupError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, { redirectTo: trustedRecoveryUrl(getRequestHeader("origin")) });
     return { ok: true, id, passwordSetupSent: !setupError };
   });
 
