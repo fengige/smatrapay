@@ -24,6 +24,7 @@ import {
   splitName,
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
+import { JobsView } from "@/components/JobsView";
 import {
   assignVendorResidentUnit,
   getVendorResident,
@@ -58,6 +59,7 @@ const TABS = [
   ["invoices", "Invoices"],
   ["payments", "Payment History"],
   ["meters", "Meters"],
+  ["jobs", "Jobs"],
   ["history", "Status History"],
 ] as const;
 

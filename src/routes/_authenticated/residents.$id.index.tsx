@@ -687,6 +687,14 @@ function ResidentDetailPage() {
                 </Section>
               )}
 
+              {tab === "jobs" && (
+                <Section title="Jobs" icon={<Wrench className="size-4 text-primary" />}>
+                  <div className="p-6">
+                    <JobsView mode="admin" residentId={id} />
+                  </div>
+                </Section>
+              )}
+
               {tab === "audit" && (
                 <Section title="Audit Logs" icon={<ShieldCheck className="size-4 text-primary" />}>
                   <div className="flex flex-wrap items-end gap-3 border-b border-border px-6 py-4">
