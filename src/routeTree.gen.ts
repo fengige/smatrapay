@@ -26,6 +26,7 @@ import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/po
 import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authenticated/pos-shift-report'
 import { Route as AuthenticatedPriceManagementRouteImport } from './routes/_authenticated/price-management'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
+import { Route as AuthenticatedResidentInboxRouteImport } from './routes/_authenticated/resident-inbox'
 import { Route as AuthenticatedResidentsRouteImport } from './routes/_authenticated/residents'
 import { Route as AuthenticatedTokenLedgerRouteImport } from './routes/_authenticated/token-ledger'
 import { Route as AuthenticatedTokenManagementRouteImport } from './routes/_authenticated/token-management'
@@ -236,6 +237,12 @@ const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResidentInboxRoute =
+  AuthenticatedResidentInboxRouteImport.update({
+    id: '/resident-inbox',
+    path: '/resident-inbox',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedResidentsRoute = AuthenticatedResidentsRouteImport.update({
   id: '/residents',
   path: '/residents',
@@ -954,6 +961,7 @@ export interface FileRoutesByFullPath {
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
+  '/resident-inbox': typeof AuthenticatedResidentInboxRoute
   '/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
@@ -1087,6 +1095,7 @@ export interface FileRoutesByTo {
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/price-management': typeof AuthenticatedPriceManagementRoute
+  '/resident-inbox': typeof AuthenticatedResidentInboxRoute
   '/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
@@ -1222,6 +1231,7 @@ export interface FileRoutesById {
   '/_authenticated/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
   '/_authenticated/price-management': typeof AuthenticatedPriceManagementRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
+  '/_authenticated/resident-inbox': typeof AuthenticatedResidentInboxRoute
   '/_authenticated/residents': typeof AuthenticatedResidentsRouteWithChildren
   '/_authenticated/token-ledger': typeof AuthenticatedTokenLedgerRoute
   '/_authenticated/token-management': typeof AuthenticatedTokenManagementRoute
@@ -1361,6 +1371,7 @@ export interface FileRouteTypes {
     | '/pos-shift-report'
     | '/price-management'
     | '/properties'
+    | '/resident-inbox'
     | '/residents'
     | '/token-ledger'
     | '/token-management'
@@ -1494,6 +1505,7 @@ export interface FileRouteTypes {
     | '/pos'
     | '/pos-shift-report'
     | '/price-management'
+    | '/resident-inbox'
     | '/token-ledger'
     | '/token-management'
     | '/transaction-records'
@@ -1628,6 +1640,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pos-shift-report'
     | '/_authenticated/price-management'
     | '/_authenticated/properties'
+    | '/_authenticated/resident-inbox'
     | '/_authenticated/residents'
     | '/_authenticated/token-ledger'
     | '/_authenticated/token-management'
@@ -1888,6 +1901,13 @@ declare module '@tanstack/react-router' {
       path: '/properties'
       fullPath: '/properties'
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resident-inbox': {
+      id: '/_authenticated/resident-inbox'
+      path: '/resident-inbox'
+      fullPath: '/resident-inbox'
+      preLoaderRoute: typeof AuthenticatedResidentInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/residents': {
@@ -2891,6 +2911,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPosShiftReportRoute: typeof AuthenticatedPosShiftReportRoute
   AuthenticatedPriceManagementRoute: typeof AuthenticatedPriceManagementRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
+  AuthenticatedResidentInboxRoute: typeof AuthenticatedResidentInboxRoute
   AuthenticatedResidentsRoute: typeof AuthenticatedResidentsRouteWithChildren
   AuthenticatedTokenLedgerRoute: typeof AuthenticatedTokenLedgerRoute
   AuthenticatedTokenManagementRoute: typeof AuthenticatedTokenManagementRoute
@@ -2982,6 +3003,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPosShiftReportRoute: AuthenticatedPosShiftReportRoute,
   AuthenticatedPriceManagementRoute: AuthenticatedPriceManagementRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
+  AuthenticatedResidentInboxRoute: AuthenticatedResidentInboxRoute,
   AuthenticatedResidentsRoute: AuthenticatedResidentsRouteWithChildren,
   AuthenticatedTokenLedgerRoute: AuthenticatedTokenLedgerRoute,
   AuthenticatedTokenManagementRoute: AuthenticatedTokenManagementRoute,

@@ -34,6 +34,27 @@ async function admin() {
   return supabaseAdmin as any;
 }
 
+export const getResidentJobPhotos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    const isAdmin = await hasRole(ctx, "admin");
+    const isVendor = await hasRole(ctx, "vendor");
+    const isResident = await hasRole(ctx, "resident");
+    if (!isAdmin && !isVendor && !isResident) throw new Error("Access denied");
+    const sb = await admin();
+    const { data: job } = await sb.from("service_requests").select("vendor_id, resident_id").eq("id", data.id).maybeSingle();
+    if (!job || (!isAdmin && !(isVendor && job.vendor_id === ctx.userId) && !(isResident && job.resident_id === ctx.userId))) throw new Error("Job not found");
+    const { data: events, error } = await sb.from("service_request_events").select("id, storage_path")
+      .eq("request_id", data.id).eq("event_type", "resident_photo").order("created_at");
+    if (error) throw new Error("Could not load photos");
+    return Promise.all((events ?? []).map(async (event: { id: string; storage_path: string }) => {
+      const { data: signed } = await sb.storage.from("meter-evidence").createSignedUrl(event.storage_path, 300);
+      return { id: event.id, url: signed?.signedUrl as string | undefined };
+    }));
+  });
+
 export const listInput = z.object({
   q: z.string().trim().max(100).optional(),
   status: z.enum(["open", "assigned", "in_progress", "resolved", "closed", "cancelled"]).optional(),

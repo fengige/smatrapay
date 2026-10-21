@@ -24,6 +24,7 @@ import {
   updateMyJobStatus,
   PROVIDER_TRANSITIONS,
   type JobRow,
+  getResidentJobPhotos,
 } from "@/lib/jobs.functions";
 
 const STATUSES = ["open", "assigned", "in_progress", "resolved", "closed", "cancelled"] as const;
@@ -41,6 +42,7 @@ export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "pro
   const fetchCustomer = useServerFn(listCustomerJobs);
   const fetchUpdates = useServerFn(getCustomerJobUpdates);
   const fetchStaffUpdates = useServerFn(getJobUpdates);
+  const fetchPhotos = useServerFn(getResidentJobPhotos);
   const fetchProviders = useServerFn(listAssignableProviders);
   const assign = useServerFn(assignJobToProvider);
   const qc = useQueryClient();
@@ -57,6 +59,12 @@ export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "pro
   const [detail, setDetail] = useState<JobRow | null>(null);
   const canAssign = mode === "admin" || mode === "vendor";
   const canViewDetails = mode !== "provider";
+  const photos = useQuery({
+    queryKey: ["resident-job-photos", detail?.id],
+    queryFn: () => { if (!detail) throw new Error("Select a job"); return fetchPhotos({ data: { id: detail.id } }); },
+    enabled: canViewDetails && !!detail,
+    staleTime: 240_000,
+  });
   const updates = useQuery({
     queryKey: ["job-updates", mode, detail?.id],
     queryFn: () => {
@@ -285,6 +293,10 @@ export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "pro
             <p>Scheduled: {date(detail?.preferred_date ?? null)}</p>
             <p>Completed: {date(detail?.completed_at ?? null)}</p>
           </div>
+          {photos.isPending ? <p className="text-sm text-muted-foreground">Loading photos…</p> : photos.error ? <p className="text-sm text-destructive">Could not load photos.</p> : !!photos.data?.length && <div className="space-y-2">
+            <h3 className="font-medium">Resident photos</h3>
+            <div className="grid grid-cols-2 gap-2">{photos.data.map((photo, i) => photo.url ? <a key={photo.id} href={photo.url} target="_blank" rel="noreferrer"><img src={photo.url} alt={`Maintenance photo ${i + 1}`} className="aspect-square w-full rounded-md object-cover" /></a> : <p key={photo.id} className="text-sm text-muted-foreground">Photo unavailable</p>)}</div>
+          </div>}
           <h3 className="font-medium">{mode === "customer" ? "Provider updates" : "Job activity"}</h3>
           {updates.isPending ? <p className="text-sm text-muted-foreground">Loading updates…</p>
             : updates.error ? <p className="text-sm text-destructive">{updates.error.message}</p>

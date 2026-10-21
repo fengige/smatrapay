@@ -68,6 +68,6 @@
 
 - [x] Resident Portal: dashboard, properties & meters, M-Pesa token purchase (owner config → platform), transactions with safe retry, token statement, maintenance requests, notifications, profile, AI support + escalation, feedback, insurance/loan enquiries.
 - [ ] Rent/service-charge invoices, rent statements, documents (deferred by user: "coming soon").
-- [ ] Photo uploads on resident maintenance requests.
-- [ ] Staff screens for resident feedback and enquiries (admin can read them in the database for now).
+- [ ] Photo uploads on resident maintenance requests (current request).
+- [ ] Staff screen for resident feedback and enquiries (current request).
 - [ ] Signed-in resident verification (blocked: no resident session available to the agent).

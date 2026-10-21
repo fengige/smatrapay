@@ -1,0 +1,4 @@
+CREATE OR REPLACE FUNCTION public.resident_evidence_unattached(p_path text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$ SELECT p_path LIKE auth.uid()::text || '/resident-requests/%' AND NOT EXISTS (SELECT 1 FROM public.service_request_events WHERE storage_path = p_path) $$;
+REVOKE ALL ON FUNCTION public.resident_evidence_unattached(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.resident_evidence_unattached(text) TO authenticated;
+ALTER POLICY "Residents remove unattached maintenance evidence" ON storage.objects USING (bucket_id = 'meter-evidence' AND public.has_role(auth.uid(), 'resident') AND (storage.foldername(name))[1] = auth.uid()::text AND (storage.foldername(name))[2] = 'resident-requests' AND public.resident_evidence_unattached(name));

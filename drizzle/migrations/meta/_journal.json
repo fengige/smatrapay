@@ -64,6 +64,20 @@
       "when": 1792568782899,
       "tag": "0008_resident_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792570988653,
+      "tag": "0009_resident_request_photos",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792571168123,
+      "tag": "0010_protect_attached_resident_evidence",
+      "breakpoints": true
     }
   ]
 }
