@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Resident email-style sign-in: accept registered email alongside existing username, retain private matching and validate sign-in.
+
 - [x] Resident Account tabs at /residents/$id and /vendor/residents/$residentId: admin-only and current vendor-assignment-scoped Auth password updates, policy validation, audit and resident notification; 42 tests passed and build OK.
 - [ ] Real Account password update and resident sign-in verification (blocked: no account matches the requesting user; sign in in the preview). Signed-out access denial and mocked server scope/provider outcomes verified.
 
