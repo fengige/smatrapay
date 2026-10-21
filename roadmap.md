@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] My Jobs: send real customer SMS on status changes using existing owner SMS settings; preserve changes when sending fails.
+
 - [x] Rebuild Service Providers to match the Users page layout, filters, export controls and table.
 
 - [x] Mail tab: send-test email button (managed mail pipeline)
