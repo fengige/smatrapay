@@ -3,6 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canRetryVend, FEEDBACK_CATEGORIES, tokenVisible, validatePurchaseAmount } from "./resident-portal";
+import { ownsResidentPhoto, residentPhotoPaths } from "./resident-photos";
 
 const uuid = z.string().uuid();
 
@@ -280,6 +281,7 @@ export const createMyServiceRequest = createServerFn({ method: "POST" })
     meter_id: uuid, issue_type: z.string().min(2).max(60),
     priority: z.enum(["low", "medium", "high"]), description: z.string().trim().min(5).max(2000),
     preferred_date: z.string().optional(),
+    photo_paths: residentPhotoPaths,
   }).parse(d))
   .handler(async ({ data, context }) => {
     const s = await residentScope(context as any);
@@ -287,18 +289,13 @@ export const createMyServiceRequest = createServerFn({ method: "POST" })
     if (!m) throw new Error("Meter not found");
     const vendorId = /^[0-9a-f-]{36}$/i.test(m.vendor_id ?? "") ? m.vendor_id : null;
     if (!vendorId) throw new Error("This meter has no managing vendor yet. Please contact your property manager.");
-    const { data: created, error } = await s.db.from("service_requests").insert({
-      vendor_id: vendorId, meter_id: m.id, resident_id: context.userId, issue_type: data.issue_type,
-      priority: data.priority, description: data.description, preferred_date: data.preferred_date || null, created_by: context.userId,
-    }).select("id, request_number").single();
+    if (data.photo_paths.some((path) => !ownsResidentPhoto(path, context.userId))) throw new Error("Invalid photo attachment");
+    const { data: created, error } = await s.db.rpc("create_resident_service_request", {
+      p_resident: context.userId, p_meter: m.id, p_vendor: vendorId, p_issue: data.issue_type,
+      p_priority: data.priority, p_description: data.description, p_preferred: data.preferred_date || null,
+      p_photos: [...new Set(data.photo_paths)],
+    });
     if (error) throw new Error("Could not submit the request. Please try again.");
-    await s.db.from("service_request_events").insert({
-      request_id: created.id, vendor_id: vendorId, actor_id: context.userId, event_type: "created", to_status: "open", note: data.description,
-    });
-    await s.db.from("notifications").insert({
-      user_id: vendorId, type: "service_request", title: "New resident service request",
-      message: `${created.request_number}: ${data.issue_type} on meter ${m.meter_number}`, resource_type: "service_request", resource_id: created.id,
-    });
     return { request_number: created.request_number as string };
   });
 

@@ -9,6 +9,8 @@ import { JobsView } from "@/components/JobsView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createMyServiceRequest, listMyMetersForForms } from "@/lib/resident-portal.functions";
 import { field } from "@/components/resident/ResidentUI";
+import { Button } from "@/components/ui/button";
+import { MaintenancePhotos } from "@/components/resident/MaintenancePhotos";
 
 export const Route = createFileRoute("/_authenticated/resident/jobs")({
   head: () => ({ meta: [
@@ -30,7 +32,7 @@ function CustomerJobs() {
   const access = Route.useLoaderData();
   const [open, setOpen] = useState(false);
   return <DashboardShell access={access} title="Maintenance & Service Requests" description="Report a problem and follow its progress."
-    actions={<button className="btn-primary px-4" onClick={() => setOpen(true)}>New request</button>}>
+    actions={<Button onClick={() => setOpen(true)}>New request</Button>}>
     <JobsView mode="customer" />
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
@@ -46,9 +48,11 @@ function RequestForm({ onDone }: { onDone: () => void }) {
   const createFn = useServerFn(createMyServiceRequest);
   const qc = useQueryClient();
   const meters = useQuery({ queryKey: ["resident-form-meters"], queryFn: () => metersFn() });
-  const [f, setF] = useState({ meter_id: "", issue_type: ISSUES[0]!, priority: "medium" as "low" | "medium" | "high", description: "", preferred_date: "" });
+  const [f, setF] = useState({ meter_id: "", issue_type: ISSUES[0] ?? "Other", priority: "medium" as "low" | "medium" | "high", description: "", preferred_date: "" });
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const m = useMutation({
-    mutationFn: () => createFn({ data: { ...f, meter_id: f.meter_id || meters.data?.[0]?.id || "" } }),
+    mutationFn: () => createFn({ data: { ...f, photo_paths: photos, meter_id: f.meter_id || meters.data?.[0]?.id || "" } }),
     onSuccess: (r) => { toast.success(`Request ${r.request_number} submitted`); qc.invalidateQueries(); onDone(); },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -62,7 +66,8 @@ function RequestForm({ onDone }: { onDone: () => void }) {
       <label className="block text-sm">Priority<select className={`${field} mt-1`} value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value as never })}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
       <label className="block text-sm">Describe the problem<textarea className={`${field} mt-1 h-24 py-2`} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} required minLength={5} /></label>
       <label className="block text-sm">Preferred date (optional)<input type="date" className={`${field} mt-1`} value={f.preferred_date} onChange={(e) => setF({ ...f, preferred_date: e.target.value })} /></label>
-      <button className="btn-primary w-full" disabled={m.isPending || f.description.trim().length < 5}>{m.isPending ? "Submitting…" : "Submit request"}</button>
+      <MaintenancePhotos paths={photos} onChange={setPhotos} onBusy={setUploading} />
+      <Button className="w-full" disabled={uploading || m.isPending || f.description.trim().length < 5}>{m.isPending ? "Submitting…" : "Submit request"}</Button>
     </form>
   );
 }
