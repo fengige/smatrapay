@@ -65,3 +65,9 @@
 - [ ] Signed-in check as a service provider (blocked: no service provider account exists in the database yet)
 - [x] My Jobs status updates (In Progress / Completed / Cancelled) with vendor + customer notifications
 - [x] Jobs tab on resident details (/residents/$id and /vendor/residents/$residentId): resident-filtered job list, staff job timeline, vendor scope enforced server-side
+
+- [x] Resident Portal: dashboard, properties & meters, M-Pesa token purchase (owner config → platform), transactions with safe retry, token statement, maintenance requests, notifications, profile, AI support + escalation, feedback, insurance/loan enquiries.
+- [ ] Rent/service-charge invoices, rent statements, documents (deferred by user: "coming soon").
+- [ ] Photo uploads on resident maintenance requests.
+- [ ] Staff screens for resident feedback and enquiries (admin can read them in the database for now).
+- [ ] Signed-in resident verification (blocked: no resident session available to the agent).
