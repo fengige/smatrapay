@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createUserSchema } from "@/lib/user-schema";
+import { createUserSchema, residentCreateSchema } from "@/lib/user-schema";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizeUsername } from "./resident-password";
 
@@ -125,7 +125,7 @@ export const deleteUser = createServerFn({ method: "POST" })
 
 export const createUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => createUserSchema.parse(data))
+  .inputValidator((data: unknown) => (typeof data === "object" && data !== null && "role" in data && data.role === "resident" ? residentCreateSchema : createUserSchema).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", {

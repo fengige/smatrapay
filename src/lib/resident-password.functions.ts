@@ -14,7 +14,7 @@ async function prepare(username: string, action: "login" | "reset") {
     if (error) throw new Error("Authentication service unavailable. Please try again later.");
     if (!data) throw new Error("Too many attempts. Please try again in 15 minutes.");
   }
-  const { data: profile, error } = await supabaseAdmin.from("users").select("id, status, username").ilike("username", username).maybeSingle();
+  const { data: profile, error } = await supabaseAdmin.from("users").select("id, status, username").ilike("username", username.replace(/_/g, "\\_")).maybeSingle();
   if (error) throw new Error("Authentication service unavailable. Please try again later.");
   if (!profile) return { supabaseAdmin, profile: null, email: null, roles: [] as string[] };
   const [auth, roles] = await Promise.all([

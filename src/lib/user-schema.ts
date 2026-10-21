@@ -51,7 +51,7 @@ export const createUserSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters" })
     .max(72, { message: "Password must be 72 characters or less" })
     .regex(/[A-Za-z]/, { message: "Password must include at least one letter" })
-    .regex(/[0-9]/, { message: "Password must include at least one number" }).or(z.literal("")),
+    .regex(/[0-9]/, { message: "Password must include at least one number" }),
   username: z
     .string()
     .trim()
@@ -74,7 +74,9 @@ export const createUserSchema = z.object({
   ...residencyFields,
   role: userRoleEnum.default("user"),
 
-}).refine((data) => data.role === "resident" || data.password.length >= 8, { path: ["password"], message: "Password must be at least 8 characters" });
+});
+
+export const residentCreateSchema = createUserSchema.extend({ role: z.literal("resident"), password: z.string().max(72).default("") });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
 
