@@ -39,6 +39,7 @@ const listInput = z.object({
   status: z.enum(["open", "assigned", "in_progress", "resolved", "closed", "cancelled"]).optional(),
   provider: uuid.optional(),
   unassigned: z.boolean().optional(),
+  resident: uuid.optional(),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   page: z.number().int().min(1).default(1),
@@ -92,6 +93,7 @@ async function runList(scope: Scope, data: ListInput) {
   if (scope.kind === "resident") q = q.eq("resident_id", scope.userId);
   if (memberFilter) q = q.in("technician_id", memberFilter);
   if (data.unassigned) q = q.is("technician_id", null);
+  if (data.resident) q = q.eq("resident_id", data.resident);
   if (data.status) q = q.eq("status", data.status);
   if (data.from) q = q.gte("created_at", `${data.from}T00:00:00+03:00`);
   if (data.to) q = q.lte("created_at", `${data.to}T23:59:59.999+03:00`);
@@ -165,12 +167,12 @@ export const listJobs = createServerFn({ method: "GET" })
 
 export const listMyJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => listInput.omit({ provider: true, unassigned: true }).parse(d))
+  .inputValidator((d: unknown) => listInput.omit({ provider: true, unassigned: true, resident: true }).parse(d))
   .handler(async ({ data, context }) => runList(await resolveScope(context as Ctx, "provider"), data));
 
 export const listCustomerJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => listInput.omit({ provider: true, unassigned: true }).parse(d))
+  .inputValidator((d: unknown) => listInput.omit({ provider: true, unassigned: true, resident: true }).parse(d))
   .handler(async ({ data, context }) => {
     const ctx = context as Ctx;
     if (!(await hasRole(ctx, "resident"))) throw new Error("Resident access required");
@@ -204,6 +206,35 @@ export const getCustomerJobUpdates = createServerFn({ method: "GET" })
       assigned: e.event_type === "technician_assigned",
       note: e.event_type === "status_changed" && providers.has(e.actor_id) ? e.note as string | null : null,
     })) };
+  });
+
+/** Staff-facing job timeline: full event history for a job the caller is allowed to see. */
+export const getJobUpdates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    const scope = await resolveScope(ctx, "staff");
+    const sb = await admin();
+    const { data: job } = await sb.from("service_requests").select("id, vendor_id")
+      .eq("id", data.id).maybeSingle();
+    if (!job || (scope.kind === "vendor" && job.vendor_id !== scope.vendorId)) {
+      throw new Error("Job not found");
+    }
+    const { data: events, error } = await sb.from("service_request_events")
+      .select("id, event_type, from_status, to_status, note, created_at")
+      .eq("request_id", data.id)
+      .order("created_at", { ascending: false }).limit(200);
+    if (error) throw new Error(error.message);
+    return {
+      updates: (events ?? []).map((e: any) => ({
+        id: e.id as string,
+        created_at: e.created_at as string,
+        status: e.to_status as string | null,
+        assigned: e.event_type === "technician_assigned",
+        note: e.note as string | null,
+      })),
+    };
   });
 
 /** Active, non-deleted service providers with their offered services. */
