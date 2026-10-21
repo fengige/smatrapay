@@ -66,7 +66,13 @@ export const completePasswordRecovery = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     setResponseHeader("Cache-Control", "no-store");
     if (!verifiedRecoveryClaims(context.claims)) throw new Error("This reset link is invalid or has expired. Request a new one.");
-    const { error } = await context.supabase.auth.updateUser({ password: data.password });
-    if (error) throw new Error("Could not update your password. Request a fresh reset link and try again.");
+    const url = process.env["SUPABASE_URL"];
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    const bearer = getRequestHeader("authorization");
+    if (!url || !key || !bearer) throw new Error("Password recovery is unavailable. Please try again later.");
+    // The middleware client has a bearer header but no persisted Auth session;
+    // update the verified recovery user through Auth, never the admin client.
+    const response = await fetch(`${url}/auth/v1/user`, { method: "PUT", headers: { apikey: key, Authorization: bearer, "Content-Type": "application/json" }, body: JSON.stringify({ password: data.password }) });
+    if (!response.ok) throw new Error("Could not update your password. Request a fresh reset link and try again.");
     return { ok: true };
   });
