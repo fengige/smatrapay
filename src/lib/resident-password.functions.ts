@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { residentCredentials, residentUsername, GENERIC_LOGIN_ERROR, GENERIC_RESET_MESSAGE, trustedRecoveryUrl, verifiedRecoveryClaims } from "./resident-password";
+import { residentCredentials, residentLoginIdentifier, residentIdentifierLookup, normalizeUsername, GENERIC_LOGIN_ERROR, GENERIC_RESET_MESSAGE, trustedRecoveryUrl, verifiedRecoveryClaims } from "./resident-password";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { residentDecision } from "./resident-signin";
 
@@ -15,7 +15,8 @@ async function prepare(username: string, action: "login" | "reset") {
     if (error) throw new Error("Authentication service unavailable. Please try again later.");
     if (!data) throw new Error("Too many attempts. Please try again in 15 minutes.");
   }
-  const { data: profile, error } = await supabaseAdmin.from("users").select("id, status, username").ilike("username", username.replace(/_/g, "\\_")).maybeSingle();
+  const lookup = residentIdentifierLookup(username);
+  const { data: profile, error } = await supabaseAdmin.from("users").select("id, status, username").ilike(lookup.column, lookup.value).maybeSingle();
   if (error) throw new Error("Authentication service unavailable. Please try again later.");
   if (!profile) return { supabaseAdmin, profile: null, email: null, roles: [] as string[] };
   const [auth, roles] = await Promise.all([
@@ -23,6 +24,10 @@ async function prepare(username: string, action: "login" | "reset") {
     supabaseAdmin.from("user_roles").select("role").eq("user_id", profile.id),
   ]);
   if (auth.error || roles.error) throw new Error("Authentication service unavailable. Please try again later.");
+  // A stale profile email must never become an alias for a different Auth email.
+  if (lookup.column === "email" && normalizeUsername(auth.data.user?.email ?? "") !== username) {
+    return { supabaseAdmin, profile: null, email: null, roles: [] as string[] };
+  }
   return { supabaseAdmin, profile, email: auth.data.user?.email ?? null, roles: (roles.data ?? []).map((r) => r.role) as string[] };
 }
 
@@ -49,7 +54,7 @@ export const signInResidentPassword = createServerFn({ method: "POST" })
   });
 
 export const resetResidentPassword = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ username: residentUsername }).parse(d))
+  .inputValidator((d: unknown) => z.object({ username: residentLoginIdentifier }).parse(d))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "no-store");
     const account = await prepare(data.username, "reset");

@@ -5,7 +5,7 @@ import { Eye, EyeOff, Loader2, Lock, LogIn, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { residentCredentials, residentUsername } from "@/lib/resident-password";
+import { residentCredentials, residentLoginIdentifier } from "@/lib/resident-password";
 import { resetResidentPassword, signInResidentPassword } from "@/lib/resident-password.functions";
 
 export function ResidentPasswordLogin({ disabled, onSignedIn }: { disabled: boolean; onSignedIn: () => Promise<unknown> }) {
@@ -39,7 +39,7 @@ export function ResidentPasswordLogin({ disabled, onSignedIn }: { disabled: bool
   }
   return <>
     <form className="space-y-4" onSubmit={submit}>
-      <div><label htmlFor="resident-username" className="field-label">Username <span className="text-destructive">*</span></label><div className="input-shell"><span className="input-addon"><UserRound className="size-4" /></span><input id="resident-username" className="input-field" autoComplete="username" required maxLength={60} value={username} onChange={(e) => setUsername(e.target.value)} /></div></div>
+      <div><label htmlFor="resident-username" className="field-label">Username or email <span className="text-destructive">*</span></label><div className="input-shell"><span className="input-addon"><UserRound className="size-4" /></span><input id="resident-username" className="input-field" autoComplete="username" required maxLength={254} value={username} onChange={(e) => setUsername(e.target.value)} /></div></div>
       <div><div className="mb-1 flex items-center justify-between"><label htmlFor="resident-password" className="field-label mb-0">Password <span className="text-destructive">*</span></label><Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => { setForgot(true); setResetUsername(username); setResetMessage(""); }}>Forgot Password?</Button></div>
         <div className="input-shell"><span className="input-addon"><Lock className="size-4" /></span><input id="resident-password" className="input-field" type={show ? "text" : "password"} autoComplete="current-password" required maxLength={256} value={password} onChange={(e) => setPassword(e.target.value)} /><Button type="button" variant="ghost" size="icon" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow(!show)}>{show ? <EyeOff /> : <Eye />}</Button></div>
       </div>
@@ -48,8 +48,8 @@ export function ResidentPasswordLogin({ disabled, onSignedIn }: { disabled: bool
       <Button type="submit" className="w-full" disabled={disabled || busy}>{busy ? <Loader2 className="animate-spin" /> : <LogIn />}{busy ? "Signing in…" : "Sign In"}</Button>
     </form>
     <Dialog open={forgot} onOpenChange={setForgot}><DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Reset your password</DialogTitle></DialogHeader>
-      <form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); if (resetBusy) return; const parsed = residentUsername.safeParse(resetUsername); if (!parsed.success) { setResetMessage("Enter a valid username."); return; } setResetBusy(true); try { const r = await reset({ data: { username: parsed.data } }); setResetMessage(r.message); } catch (e) { setResetMessage((e as Error).message); } finally { setResetBusy(false); } }}>
-        <label className="field-label" htmlFor="recovery-username">Username</label><div className="input-shell"><input id="recovery-username" className="input-field" autoComplete="username" required maxLength={60} value={resetUsername} onChange={(e) => setResetUsername(e.target.value)} /></div>
+      <form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); if (resetBusy) return; const parsed = residentLoginIdentifier.safeParse(resetUsername); if (!parsed.success) { setResetMessage("Enter a valid username or email address."); return; } setResetBusy(true); try { const r = await reset({ data: { username: parsed.data } }); setResetMessage(r.message); } catch (e) { setResetMessage((e as Error).message); } finally { setResetBusy(false); } }}>
+        <label className="field-label" htmlFor="recovery-username">Username or email</label><div className="input-shell"><input id="recovery-username" className="input-field" autoComplete="username" required maxLength={254} value={resetUsername} onChange={(e) => setResetUsername(e.target.value)} /></div>
         {resetMessage && <p role="status" className="text-sm text-muted-foreground">{resetMessage}</p>}
         <Button className="w-full" disabled={resetBusy}>{resetBusy ? "Sending…" : "Send reset link"}</Button>
       </form>
