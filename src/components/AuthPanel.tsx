@@ -25,6 +25,7 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { getMyAccess } from "@/lib/auth.functions";
+import { ResidentPasswordLogin } from "@/components/resident/ResidentPasswordLogin";
 import {
   RESIDENT_DASHBOARD,
   dashboardForRoles,
@@ -377,6 +378,8 @@ function ResidentAuth() {
         </p>
       )}
 
+      <div className="divider">or</div>
+      <ResidentPasswordLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(true)} />
       <div className="divider">or</div>
 
       <form className="space-y-4" onSubmit={sendOtp} noValidate>

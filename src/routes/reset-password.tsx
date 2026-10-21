@@ -4,6 +4,7 @@ import { Check, Eye, EyeOff, Loader2, Lock, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { hasRecoveryIntent } from "@/lib/resident-password";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/reset-password")({
       { title: "Reset your SmatraPay password" },
       {
         name: "description",
-        content: "Choose a new, secure password for your SmatraPay staff account.",
+        content: "Choose a new, secure password for your SmatraPay account.",
       },
       { property: "og:title", content: "Reset your SmatraPay password" },
       {
@@ -45,14 +46,15 @@ function ResetPasswordPage() {
 
   useEffect(() => {
     let active = true;
-    // Supabase sets a recovery session from the emailed link.
-    supabase.auth.getSession().then(({ data }) => {
+    const recovery = hasRecoveryIntent(window.location.hash, window.location.search);
+    // A normal signed-in session is not a password-recovery authorization.
+    supabase.auth.getUser().then(({ data, error }) => {
       if (!active) return;
-      setValid(Boolean(data.session));
+      setValid(recovery && !error && Boolean(data.user));
       setReady(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || session) setValid(true);
+      if (event === "PASSWORD_RECOVERY" && session) { setValid(true); setReady(true); }
     });
     return () => {
       active = false;
@@ -64,7 +66,7 @@ function ResetPasswordPage() {
   const strength = (passed / RULES.length) * 100;
   const strengthLabel = passed <= 2 ? "Weak" : passed <= 4 ? "Good" : "Strong";
   const mismatch = confirm.length > 0 && confirm !== password;
-  const canSubmit = passed === RULES.length && !mismatch && confirm.length > 0 && !saving;
+  const canSubmit = valid && passed === RULES.length && !mismatch && confirm.length > 0 && !saving;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
