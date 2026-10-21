@@ -92,6 +92,13 @@
       "when": 1792571787184,
       "tag": "0012_bound_resident_auth_limit_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792579039928,
+      "tag": "0013_resident_profile_protected_fields",
+      "breakpoints": true
     }
   ]
 }
