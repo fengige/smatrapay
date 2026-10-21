@@ -14,11 +14,11 @@ export const Route = createFileRoute("/_authenticated/resident/jobs")({
   ] }),
   loader: () => checkRoleAccess({ data: { role: "resident" } }),
   component: CustomerJobs,
-  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message}</p>,
+  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error instanceof Error ? error.message : "Could not load your jobs."}</p>,
 });
 
 function CustomerJobs() {
-  return <DashboardShell access={Route.useLoaderData()} title="Customer Jobs">
+  return <DashboardShell access={Route.useLoaderData()} title="Customer Jobs" description="Your service requests.">
     <JobsView mode="customer" />
   </DashboardShell>;
 }

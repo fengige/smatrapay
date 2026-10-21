@@ -198,7 +198,7 @@ export const getCustomerJobUpdates = createServerFn({ method: "GET" })
       : { data: [] };
     const providers = new Set((roles ?? []).map((r: any) => r.user_id));
     // Never disclose staff/internal notes or SMS failures to residents.
-    return { updates: (events ?? []).map((e: any) => ({
+    return { updates: (events ?? []).map((e: any): { id: string; created_at: string; status: string | null; assigned: boolean; note: string | null } => ({
       id: e.id as string, created_at: e.created_at as string,
       status: e.to_status as string | null,
       assigned: e.event_type === "technician_assigned",

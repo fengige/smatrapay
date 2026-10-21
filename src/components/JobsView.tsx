@@ -237,7 +237,7 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
                       </div>
                     </td>
                   )}
-                  {mode !== "provider" && (
+                  {canAssign && (
                     <td className="px-4 py-3 text-right">
                       {!FINISHED.includes(r.status) && (
                         <Button size="sm" variant="outline" onClick={() => (setTarget(r), setPick(r.provider_id ?? ""))}>
@@ -247,6 +247,9 @@ export function JobsView({ mode }: { mode: "admin" | "vendor" | "provider" | "cu
                       )}
                     </td>
                   )}
+                  {mode === "customer" && <td className="px-4 py-3 text-right">
+                    <Button size="sm" variant="outline" onClick={() => setDetail(r)}>View updates</Button>
+                  </td>}
                 </tr>
               ))
             )}
