@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Resident email-style sign-in: accept registered email alongside existing username, retain private matching and validate sign-in.
+- [x] Resident email-style sign-in: registered email or existing username with private matching; 44 tests passed; real email/password login, My Jobs (empty) and My Properties (assigned home/meter) verified.
 
 - [x] Resident Account tabs at /residents/$id and /vendor/residents/$residentId: admin-only and current vendor-assignment-scoped Auth password updates, policy validation, audit and resident notification; 42 tests passed and build OK.
 - [ ] Real Account password update and resident sign-in verification (blocked: no account matches the requesting user; sign in in the preview). Signed-out access denial and mocked server scope/provider outcomes verified.
@@ -8,7 +8,8 @@
 - [x] Resident username/password sign-in: private account lookup, case-insensitive usernames, active resident checks, persistent abuse limits.
 - [x] Resident username password recovery: generic responses, trusted redirects, SDK recovery event and server-verified recovery authentication before password change.
 - [x] Resident authentication rules (25 tests), signed-out login/recovery and forged recovery URL rejection verified; latest build passed.
-- [ ] Successful resident password sign-in and emailed recovery completion (blocked: no requesting-user account/session available; requires an existing resident to sign in and use their recovery email).
+- [x] Successful resident password sign-in verified with the supplied resident account.
+- [ ] Emailed recovery completion (requires access to the resident's recovery email).
 
 - [x] My Jobs: customer SMS sending using existing owner SMS settings, failure history and safe status persistence; notification tests passed.
 - [x] Customer Jobs: resident-only service requests, statuses and provider updates at /resident/jobs; isolation tests passed.
@@ -81,4 +82,4 @@
 - [x] Private photo uploads on resident maintenance requests; authorized resident/admin/vendor job details show photos.
 - [x] Admin Resident Feedback & Enquiries screen at /resident-inbox: search, type filter, pagination, message details and replies.
 - [ ] Signed-in photo submission and staff reply verification (blocked: requesting user's account has no mintable session; sign-in required).
-- [ ] Signed-in resident verification (blocked: no resident session available to the agent).
+- [x] Signed-in resident verification: email/password login redirects to /resident/dashboard; /resident/jobs and /resident/meters load successfully.
