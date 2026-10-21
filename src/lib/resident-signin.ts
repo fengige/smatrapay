@@ -8,7 +8,7 @@ export function safeResidentReturn(path: string | null | undefined): string {
   if (!path.startsWith("/resident/") || path.startsWith("//") || path.includes("\\")) {
     return RESIDENT_DASHBOARD;
   }
-  if (/[\s:]/.test(path.split("?")[0])) return RESIDENT_DASHBOARD;
+  if (/[\s:]/.test(path.split("?")[0] ?? "")) return RESIDENT_DASHBOARD;
   return path;
 }
 
