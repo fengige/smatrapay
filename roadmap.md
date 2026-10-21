@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] My Jobs: send real customer SMS on status changes using existing owner SMS settings; preserve changes when sending fails.
-- [ ] Customer Jobs: resident-only service requests, statuses and provider updates.
+- [x] My Jobs: customer SMS sending using existing owner SMS settings, failure history and safe status persistence; notification tests passed.
+- [x] Customer Jobs: resident-only service requests, statuses and provider updates at /resident/jobs; isolation tests passed.
+- [ ] Signed-in customer SMS and Customer Jobs verification (blocked: no session can be minted for the requesting user's account; sign-in required).
 
 - [x] Rebuild Service Providers to match the Users page layout, filters, export controls and table.
 

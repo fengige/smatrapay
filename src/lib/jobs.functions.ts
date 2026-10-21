@@ -189,7 +189,7 @@ export const getCustomerJobUpdates = createServerFn({ method: "GET" })
     if (!residentOwnsJob(ctx.userId, job)) throw new Error("Job not found");
     const { data: events, error } = await sb.from("service_request_events")
       .select("id, event_type, to_status, note, actor_id, created_at")
-      .eq("request_id", data.id).in("event_type", ["status_changed", "technician_assigned"])
+      .eq("request_id", data.id).in("event_type", ["status_changed", "status_change", "resolved", "technician_assigned"])
       .order("created_at", { ascending: false }).limit(100);
     if (error) throw new Error(error.message);
     const actorIds = [...new Set((events ?? []).map((e: any) => e.actor_id).filter(Boolean))];
