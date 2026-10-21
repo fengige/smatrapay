@@ -12,7 +12,7 @@ import { Card, Empty, field, kes, residentHead } from "@/components/resident/Res
 
 export const Route = createFileRoute("/_authenticated/resident/buy-tokens")({
   head: residentHead("Buy Tokens", "Buy electricity, water or gas tokens for your meters with M-Pesa."),
-  validateSearch: (s: Record<string, unknown>) => ({ meter: typeof s.meter === "string" ? s.meter : undefined, purchase: typeof s.purchase === "string" ? s.purchase : undefined }),
+  validateSearch: (s: Record<string, unknown>) => ({ meter: typeof s["meter"] === "string" ? (s["meter"] as string) : undefined, purchase: typeof s["purchase"] === "string" ? (s["purchase"] as string) : undefined }),
   loader: () => checkRoleAccess({ data: { role: "resident" } }),
   component: Page,
   errorComponent: () => <p className="p-8 text-sm">Could not load Buy Tokens.</p>,

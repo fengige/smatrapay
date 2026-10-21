@@ -52,7 +52,7 @@ function Page() {
               {([["property", "property_name", "All properties"], ["unit", "unit_number", "All units"], ["type", "type", "All types"], ["supplier", "supplier", "All suppliers"], ["status", "status", "All statuses"]] as const).map(([k, col, all]) => (
                 <select key={k} className={field} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={all}>
                   <option value="">{all}</option>
-                  {opts(col).map((o) => <option key={o} value={o}>{o}</option>)}
+                  {opts(col).map((o) => <option key={String(o)} value={String(o)}>{String(o)}</option>)}
                 </select>
               ))}
             </div>

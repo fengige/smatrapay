@@ -6,6 +6,11 @@ import { canRetryVend, FEEDBACK_CATEGORIES, tokenVisible, validatePurchaseAmount
 
 const uuid = z.string().uuid();
 
+export type PurchaseRow = {
+  id: string; meter_id: string; status: string; created_at: string; amount: number;
+  mpesa_receipt_number: string | null; error_message: string | null; meter_number: string; meter_type: string;
+};
+
 /**
  * Everything the signed-in resident may see, resolved server-side from their own
  * active unit assignments. All other queries are filtered to these ids.
@@ -30,7 +35,7 @@ async function residentScope(ctx: { supabase: any; userId: string }) {
   const { data: meters } = unitIds.length
     ? await db.from("meters").select("id, meter_number, type, status, unit_id, supplier_id, vending_software_id, landlord_id, agent_id, vendor_id, price_per_unit, commission_percentage, vat_on_commission_percentage").in("unit_id", unitIds)
     : { data: [] };
-  return { db, assignments: active, units: units ?? [], properties: props ?? [], meters: (meters ?? []) as any[] };
+  return { db, assignments: active as any[], units: (units ?? []) as any[], properties: (props ?? []) as any[], meters: (meters ?? []) as any[] };
 }
 
 async function names(db: any, ids: string[]) {
@@ -98,7 +103,7 @@ export const getResidentHome = createServerFn({ method: "GET" })
         .reduce((a: number, p: any) => a + Number(p.amount), 0),
       activeJobs: (jobs.data ?? []).filter((j: any) => !["resolved", "closed", "cancelled"].includes(j.status)).length,
       recentJobs: (jobs.data ?? []).slice(0, 5),
-      recentPurchases: pRows.slice(0, 5).map((p: any) => ({ ...p, amount: Number(p.amount), meter_number: meterNo.get(p.meter_id) ?? "—" })),
+      recentPurchases: (pRows as any[]).slice(0, 5).map((p: any) => ({ id: p.id as string, status: p.status as string, created_at: p.created_at as string, amount: Number(p.amount), meter_number: (meterNo.get(p.meter_id) ?? "—") as string })),
       notifications: notes.data ?? [],
     };
   });
@@ -259,8 +264,9 @@ export const listMyPurchases = createServerFn({ method: "POST" })
     const ids = [...new Set((rows ?? []).map((r: any) => r.meter_id))];
     const { data: ms } = ids.length ? await s.db.from("meters").select("id, meter_number, type").in("id", ids) : { data: [] };
     const M = new Map((ms ?? []).map((m: any) => [m.id, m]));
-    let out = (rows ?? []).map((r: any) => ({
-      ...r, amount: Number(r.amount),
+    let out: PurchaseRow[] = ((rows ?? []) as any[]).map((r: any) => ({
+      id: r.id, meter_id: r.meter_id, status: r.status, created_at: r.created_at,
+      mpesa_receipt_number: r.mpesa_receipt_number ?? null, error_message: r.error_message ?? null, amount: Number(r.amount),
       meter_number: (M.get(r.meter_id) as any)?.meter_number ?? "—", meter_type: (M.get(r.meter_id) as any)?.type ?? "—",
     }));
     const term = data.q?.trim().toLowerCase();
