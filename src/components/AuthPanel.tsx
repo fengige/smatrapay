@@ -262,6 +262,18 @@ function ResidentAuth() {
 
   return (
     <div className="fade-swap">
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={googleLoading}
+        className="btn-primary w-full"
+      >
+        {googleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
+        Continue with Google
+      </button>
+
+      <div className="divider">or</div>
+
       <form className="space-y-4" onSubmit={sendOtp} noValidate>
         <div>
           <label htmlFor="phone" className="field-label">
@@ -312,23 +324,15 @@ function ResidentAuth() {
           )}
         </div>
 
-        <button type="submit" disabled={sending} className="btn-primary w-full">
+        <button type="submit" disabled={sending} className="btn-outline w-full">
           {sending ? <Loader2 className="size-4 animate-spin" /> : <Phone className="size-4" />}
           {sending ? "Sending code…" : "Send OTP"}
         </button>
       </form>
 
-      <div className="divider">or</div>
-
-      <button
-        type="button"
-        onClick={handleGoogle}
-        disabled={googleLoading}
-        className="btn-outline w-full"
-      >
-        {googleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
-        Continue with Google
-      </button>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        Phone (SMS) sign-in is coming soon.
+      </p>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
         By continuing you agree to our terms and privacy policy.
