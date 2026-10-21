@@ -4,6 +4,11 @@ import { Check, Eye, EyeOff, Loader2, Lock, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { verifiedRecoveryClaims } from "@/lib/resident-password";
+import { completePasswordRecovery } from "@/lib/resident-password.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -12,7 +17,7 @@ export const Route = createFileRoute("/reset-password")({
       { title: "Reset your SmatraPay password" },
       {
         name: "description",
-        content: "Choose a new, secure password for your SmatraPay staff account.",
+        content: "Choose a new, secure password for your SmatraPay account.",
       },
       { property: "og:title", content: "Reset your SmatraPay password" },
       {
@@ -36,6 +41,8 @@ const RULES = [
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const completeRecovery = useServerFn(completePasswordRecovery);
+  const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
   const [valid, setValid] = useState(false);
   const [password, setPassword] = useState("");
@@ -45,18 +52,19 @@ function ResetPasswordPage() {
 
   useEffect(() => {
     let active = true;
-    // Supabase sets a recovery session from the emailed link.
-    supabase.auth.getSession().then(({ data }) => {
+    const check = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const { data, error } = token ? await supabase.auth.getClaims(token) : { data: null, error: true };
       if (!active) return;
-      setValid(Boolean(data.session));
+      setValid(!error && Boolean(data?.claims && verifiedRecoveryClaims(data.claims) && sessionStorage.getItem("sp_recovery_user") === data.claims.sub));
       setReady(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || session) setValid(true);
-    });
+    };
+    window.addEventListener("sp-password-recovery", check);
+    void check();
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
+      window.removeEventListener("sp-password-recovery", check);
     };
   }, []);
 
@@ -64,18 +72,20 @@ function ResetPasswordPage() {
   const strength = (passed / RULES.length) * 100;
   const strengthLabel = passed <= 2 ? "Weak" : passed <= 4 ? "Good" : "Strong";
   const mismatch = confirm.length > 0 && confirm !== password;
-  const canSubmit = passed === RULES.length && !mismatch && confirm.length > 0 && !saving;
+  const canSubmit = valid && passed === RULES.length && !mismatch && confirm.length > 0 && !saving;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      await completeRecovery({ data: { password } });
       toast.success("Password updated. Please sign in.");
+      sessionStorage.removeItem("sp_recovery_user");
+      await queryClient.cancelQueries();
+      queryClient.clear();
       await supabase.auth.signOut();
-      await navigate({ to: "/" });
+      await navigate({ to: "/", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update your password");
     } finally {
@@ -98,9 +108,9 @@ function ResetPasswordPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               This reset link is invalid or has expired. Request a new one from the sign-in page.
             </p>
-            <button onClick={() => navigate({ to: "/" })} className="btn-primary mt-6 w-full">
+            <Button onClick={() => navigate({ to: "/" })} className="mt-6 w-full">
               Back to sign in
-            </button>
+            </Button>
           </>
         ) : (
           <form className="mt-6 space-y-4" onSubmit={submit} noValidate>
@@ -121,14 +131,15 @@ function ResetPasswordPage() {
                   placeholder="Create a strong password"
                   className="input-field"
                 />
-                <button
+                <Button
                   type="button"
                   aria-label={show ? "Hide password" : "Show password"}
                   onClick={() => setShow((v) => !v)}
                   className="input-addon transition-colors hover:text-foreground"
+                  variant="ghost" size="icon"
                 >
                   {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
+                </Button>
               </div>
 
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -185,10 +196,10 @@ function ResetPasswordPage() {
               )}
             </div>
 
-            <button type="submit" disabled={!canSubmit} className="btn-primary w-full">
+            <Button type="submit" disabled={!canSubmit} className="w-full">
               {saving && <Loader2 className="size-4 animate-spin" />}
               {saving ? "Updating…" : "Update password"}
-            </button>
+            </Button>
           </form>
         )}
       </div>

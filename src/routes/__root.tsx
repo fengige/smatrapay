@@ -127,7 +127,12 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) {
+        sessionStorage.setItem("sp_recovery_user", session.user.id);
+        window.dispatchEvent(new Event("sp-password-recovery"));
+      }
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") sessionStorage.removeItem("sp_recovery_user");
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
@@ -137,7 +142,7 @@ function RootComponent() {
 
   // "Remember me" off: end the session when the browser session ends.
   useEffect(() => {
-    if (localStorage.getItem("sp_remember") === "0" && !sessionStorage.getItem("sp_active")) {
+    if (localStorage.getItem("sp_remember") === "0" && !sessionStorage.getItem("sp_active") && !window.location.pathname.startsWith("/reset-password")) {
       void supabase.auth.signOut();
     }
     sessionStorage.setItem("sp_active", "1");

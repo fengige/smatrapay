@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 
 import { createUser } from "@/lib/users.functions";
-import { createUserSchema, fieldErrors } from "@/lib/user-schema";
+import { residentCreateSchema as createUserSchema, fieldErrors } from "@/lib/user-schema";
 import { PortalLayout } from "@/components/PortalLayout";
 
 export const Route = createFileRoute("/_authenticated/residents/new")({
@@ -104,8 +104,9 @@ function NewResidentPage() {
 
   const mutation = useMutation({
     mutationFn: (data: typeof form) => create({ data } as never),
-    onSuccess: async () => {
+    onSuccess: async (result: { passwordSetupSent?: boolean }) => {
       toast.success("Resident created successfully");
+      if (result.passwordSetupSent === false) toast.warning("The password setup email could not be sent. Use Reset Password from resident details to try again.");
       await queryClient.invalidateQueries({ queryKey: ["users", "resident"] });
       navigate({ to: "/residents", search: { page: 1, limit: 10 } });
     },
@@ -140,11 +141,6 @@ function NewResidentPage() {
   };
 
   const hasErrors = Object.keys(errors).length > 0;
-  const passwordChecks = {
-    length: form.password.length >= 8,
-    letter: /[A-Za-z]/.test(form.password),
-    number: /[0-9]/.test(form.password),
-  };
 
   return (
     <PortalLayout roles={["admin"]} title="Resident Management" description="Add a new resident">
@@ -343,25 +339,7 @@ function NewResidentPage() {
                 <h2 className="text-base font-semibold text-foreground">Account Details</h2>
               </header>
               <div className="grid gap-4 p-5 sm:grid-cols-2">
-                <Field label="Temporary Password" required error={errors["password"]}>
-                  <input
-                    id="resident-password"
-                    type="password"
-                    className={inputClass}
-                    placeholder="Min 8 chars, letters and numbers"
-                    value={form.password}
-                    disabled={isSaving}
-                    aria-invalid={!!errors["password"]}
-                    aria-describedby={errors["password"] ? "resident-password-error" : "password-hint"}
-                    onChange={(e) => set("password", e.target.value)}
-                    onBlur={() => blur("password")}
-                  />
-                  <div id="password-hint" className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <PasswordCheck ok={passwordChecks.length}>At least 8 characters</PasswordCheck>
-                    <PasswordCheck ok={passwordChecks.letter}>One letter</PasswordCheck>
-                    <PasswordCheck ok={passwordChecks.number}>One number</PasswordCheck>
-                  </div>
-                </Field>
+                <div><p className="field-label">Password setup</p><p className="text-sm text-muted-foreground">A secure password setup link is sent to the resident’s registered email.</p></div>
                 <Field label="Role" required>
                   <input
                     disabled
@@ -428,8 +406,7 @@ function NewResidentPage() {
                 </select>
               </Field>
               <p className="mt-3 text-xs text-muted-foreground">
-                The resident account is confirmed automatically. Ask the resident to change their
-                temporary password after the first sign-in.
+                The resident chooses their own password using the secure setup link.
               </p>
             </div>
           </section>

@@ -54,6 +54,9 @@ export const checkRoleAccess = createServerFn({ method: "POST" })
 
     const roles = (rolesResult.data ?? []).map((r) => r.role as string);
     const status = profileResult.data?.status ?? "active";
+    if (data.role === "resident" && (!profileResult.data || status !== "active")) {
+      return { allowed: false, roles, reason: "suspended" as const };
+    }
 
     if (status === "suspended" || status === "inactive") {
       return { allowed: false, roles, reason: "suspended" as const };

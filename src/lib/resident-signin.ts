@@ -30,11 +30,11 @@ export function residentDecision(access: ResidentAccess): ResidentDecision {
     return {
       ok: false,
       reason: "no_profile",
-      message: "This Google account is not linked to a SmatraPay resident profile. Please contact your property manager.",
+      message: "This account is not linked to a SmatraPay resident profile. Please contact your property manager.",
     };
   }
-  const status = access.profile.status ?? "active";
-  if (status === "suspended" || status === "inactive") {
+  const status = access.profile.status;
+  if (status !== "active") {
     return { ok: false, reason: "inactive", message: "Your account is not active. Please contact support." };
   }
   const staff = access.roles.filter((r) => r !== "resident" && r !== "user");

@@ -78,6 +78,20 @@
       "when": 1792571168123,
       "tag": "0010_protect_attached_resident_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792571350462,
+      "tag": "0011_resident_username_auth_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792571787184,
+      "tag": "0012_bound_resident_auth_limit_retention",
+      "breakpoints": true
     }
   ]
 }

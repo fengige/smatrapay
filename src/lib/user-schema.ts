@@ -76,6 +76,8 @@ export const createUserSchema = z.object({
 
 });
 
+export const residentCreateSchema = createUserSchema.extend({ role: z.literal("resident"), password: z.string().max(72).default("") });
+
 export type CreateUserInput = z.input<typeof createUserSchema>;
 
 export function fieldErrors(error: z.ZodError): Record<string, string> {

@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
+import { residentUsername, trustedRecoveryUrl } from "./resident-password";
+import { getRequestHeader } from "@tanstack/react-start/server";
 
 /**
  * Vendor-scoped resident management.
@@ -19,6 +21,7 @@ export type VendorResidentRow = {
   id: string;
   name: string | null;
   email: string | null;
+  username: string | null;
   phone: string | null;
   id_number: string | null;
   address: string | null;
@@ -134,7 +137,7 @@ export const listVendorResidents = createServerFn({ method: "GET" })
     const { data: users } = residentIds.length
       ? await supabase
           .from("users")
-          .select("id, name, email, phone, status, profile_image, created_at, id_number, address")
+          .select("id, name, email, username, phone, status, profile_image, created_at, id_number, address")
           .in("id", residentIds)
       : { data: [] as any[] };
 
@@ -158,6 +161,7 @@ export const listVendorResidents = createServerFn({ method: "GET" })
         id: user.id,
         name: user.name ?? null,
         email: user.email ?? null,
+        username: user.username ?? null,
         phone: user.phone ?? null,
         id_number: user.id_number ?? null,
         address: user.address ?? null,
@@ -183,12 +187,13 @@ export const listVendorResidents = createServerFn({ method: "GET" })
     const seen = new Set(rows.map((r) => r.id));
     const { data: scopeUsers } = await supabase
       .from("users")
-      .select("id, name, email, phone, status, profile_image, created_at, id_number, address");
+      .select("id, name, email, username, phone, status, profile_image, created_at, id_number, address");
     for (const u of ((scopeUsers ?? []) as any[]).filter((u) => !seen.has(u.id))) {
       rows.push({
         id: u.id,
         name: u.name ?? null,
         email: u.email ?? null,
+        username: u.username ?? null,
         phone: u.phone ?? null,
         id_number: u.id_number ?? null,
         address: u.address ?? null,
@@ -431,6 +436,7 @@ export const getVendorResident = createServerFn({ method: "GET" })
         id: resident.id as string,
         name: (resident.name ?? null) as string | null,
         email: (resident.email ?? null) as string | null,
+        username: (resident.username ?? null) as string | null,
         phone: (resident.phone ?? null) as string | null,
         id_number: (resident.id_number ?? null) as string | null,
         address: (resident.address ?? null) as string | null,
@@ -510,6 +516,7 @@ export const getVendorResident = createServerFn({ method: "GET" })
   });
 
 const profileFields = {
+  username: residentUsername.optional().or(z.literal("")),
   first_name: z.string().trim().max(60).optional().or(z.literal("")),
   middle_name: z.string().trim().max(60).optional().or(z.literal("")),
   last_name: z.string().trim().max(60).optional().or(z.literal("")),
@@ -556,7 +563,11 @@ export const createVendorResident = createServerFn({ method: "POST" })
     if (existing) throw new Error("An account with this email address already exists");
 
     const name = fullName(data);
-    const tempPassword = `Sm${Math.random().toString(36).slice(2, 10)}${Math.floor(Math.random() * 9000 + 1000)}`;
+    if (data.username) {
+      const { data: duplicate } = await supabaseAdmin.from("users").select("id").ilike("username", data.username.replace(/_/g, "\\_")).maybeSingle();
+      if (duplicate) throw new Error("This username is already assigned. Choose another.");
+    }
+    const tempPassword = `${crypto.randomUUID()}Aa1!`;
 
     const { data: created, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -574,6 +585,7 @@ export const createVendorResident = createServerFn({ method: "POST" })
       name,
       email: data.email,
       phone: data.phone || null,
+      username: data.username || null,
       id_number: data.id_number || null,
       address: data.address || null,
       profile_image: data.profile_image || null,
@@ -581,7 +593,7 @@ export const createVendorResident = createServerFn({ method: "POST" })
       created_by: userId,
       updated_by: userId,
     });
-    if (profileError) throw new Error(profileError.message);
+    if (profileError) { await supabaseAdmin.auth.admin.deleteUser(id); throw new Error(profileError.code === "23505" ? "This username is already assigned. Choose another." : profileError.message); }
 
     await supabaseAdmin
       .from("user_roles")
@@ -612,7 +624,8 @@ export const createVendorResident = createServerFn({ method: "POST" })
       { email: data.email, unit_id: data.unit_id ?? null },
     );
 
-    return { ok: true, id };
+    const { error: setupError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, { redirectTo: trustedRecoveryUrl(getRequestHeader("origin")) });
+    return { ok: true, id, passwordSetupSent: !setupError };
   });
 
 export const updateVendorResident = createServerFn({ method: "POST" })
@@ -639,6 +652,7 @@ export const updateVendorResident = createServerFn({ method: "POST" })
     if (name) patch["name"] = name;
     if (data.email) patch["email"] = data.email;
     if (data.phone !== undefined) patch["phone"] = data.phone || null;
+    if (data.username !== undefined) patch["username"] = data.username || null;
     if (data.id_number !== undefined) patch["id_number"] = data.id_number || null;
     if (data.address !== undefined) patch["address"] = data.address || null;
     if (data.profile_image !== undefined) patch["profile_image"] = data.profile_image;

@@ -89,6 +89,7 @@ function AddResidentPage() {
           middle_name: form.middle_name.trim(),
           last_name: form.last_name.trim(),
           email: form.email.trim(),
+          username: form.username?.trim(),
           phone: form.phone.trim(),
           id_number: form.id_number.trim(),
           address: form.address.trim(),
@@ -99,6 +100,7 @@ function AddResidentPage() {
       }),
     onSuccess: async (res) => {
       toast.success("Resident created successfully");
+      if (!res.passwordSetupSent) toast.warning("The password setup email could not be sent. Use Reset Password from resident details to try again.");
       if (applicationId) {
         try {
           await linkApplication({ data: { id: applicationId, resident_id: res.id } });

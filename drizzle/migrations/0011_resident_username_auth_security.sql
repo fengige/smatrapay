@@ -1,0 +1,9 @@
+CREATE UNIQUE INDEX users_username_normalized_unique ON public.users (lower(btrim(username))) WHERE nullif(btrim(username),'') IS NOT NULL;
+CREATE OR REPLACE FUNCTION public.normalize_resident_username() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF EXISTS(SELECT 1 FROM public.user_roles WHERE user_id=NEW.id AND role='resident') THEN NEW.username := nullif(lower(btrim(NEW.username)),''); END IF; RETURN NEW; END $$;
+CREATE TRIGGER normalize_resident_username BEFORE INSERT OR UPDATE OF username ON public.users FOR EACH ROW EXECUTE FUNCTION public.normalize_resident_username();
+CREATE TABLE public.resident_auth_limits (key_hash text PRIMARY KEY, attempts integer NOT NULL DEFAULT 1, window_start timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.resident_auth_limits TO service_role;
+ALTER TABLE public.resident_auth_limits ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.consume_resident_auth_limit(p_key text, p_limit integer, p_window integer) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE n integer; BEGIN INSERT INTO public.resident_auth_limits(key_hash) VALUES(p_key) ON CONFLICT(key_hash) DO UPDATE SET attempts=CASE WHEN resident_auth_limits.window_start < now()-make_interval(secs=>p_window) THEN 1 ELSE resident_auth_limits.attempts+1 END,window_start=CASE WHEN resident_auth_limits.window_start < now()-make_interval(secs=>p_window) THEN now() ELSE resident_auth_limits.window_start END RETURNING attempts INTO n; RETURN n <= p_limit; END $$;
+REVOKE ALL ON FUNCTION public.consume_resident_auth_limit(text,integer,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.consume_resident_auth_limit(text,integer,integer) TO service_role;

@@ -19,6 +19,8 @@ export type PurchaseRow = {
 async function residentScope(ctx: { supabase: any; userId: string }) {
   const { data: isResident } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "resident" });
   if (!isResident) throw new Error("Resident access required");
+  const { data: profile, error: profileError } = await ctx.supabase.from("users").select("status").eq("id", ctx.userId).maybeSingle();
+  if (profileError || profile?.status !== "active") throw new Error("An active linked resident account is required");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
   const today = new Date().toISOString().slice(0, 10);
