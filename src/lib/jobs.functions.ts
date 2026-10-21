@@ -34,7 +34,7 @@ async function admin() {
   return supabaseAdmin as any;
 }
 
-const listInput = z.object({
+export const listInput = z.object({
   q: z.string().trim().max(100).optional(),
   status: z.enum(["open", "assigned", "in_progress", "resolved", "closed", "cancelled"]).optional(),
   provider: uuid.optional(),
