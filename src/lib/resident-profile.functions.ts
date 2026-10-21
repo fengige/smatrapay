@@ -81,5 +81,5 @@ export const listResidentProfileAudit = createServerFn({ method: "POST" }).middl
   if (data.to) query = query.lte("created_at", `${data.to}T23:59:59.999Z`);
   const result = await query.order("created_at", { ascending: false }).range(data.page * 20, data.page * 20 + 19);
   if (result.error) throw new Error("Could not load activity.");
-  return { count: result.count ?? 0, rows: (result.data ?? []).map(row => ({ id: row.id, created_at: row.created_at, activity: row.action.replace(/^resident_/, "").replace(/_(success|failed|attempt)$/, "").replaceAll("_", " "), status: (row.changes as Record<string, unknown>)?.status === "failed" ? "failed" : (row.changes as Record<string, unknown>)?.status === "attempt" ? "attempt" : "success", description: "Account activity" })) };
+  return { count: result.count ?? 0, rows: (result.data ?? []).map(row => ({ id: row.id, created_at: row.created_at, activity: row.action.replace(/^resident_/, "").replace(/_(success|failed|attempt)$/, "").replaceAll("_", " "), status: (row.changes as Record<string, unknown> )?.["status"] === "failed" ? "failed" : (row.changes as Record<string, unknown> )?.["status"] === "attempt" ? "attempt" : "success", description: "Account activity" })) };
 });
