@@ -75,7 +75,7 @@ export const providerDetailsFields = {
     .trim()
     .max(60)
     .regex(/^[a-zA-Z0-9._-]*$/, {
-      message: "Username can only contain letters, numbers, dots, dashes and underscores",
+      message: "Use letters, numbers, dots, dashes or underscores",
     })
     .optional()
     .or(z.literal("")),

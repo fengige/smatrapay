@@ -57,7 +57,7 @@ export const createUserSchema = z.object({
     .trim()
     .max(60, { message: "Username must be 60 characters or less" })
     .regex(/^[a-zA-Z0-9._-]*$/, {
-      message: "Username can only contain letters, numbers, dots, dashes and underscores",
+      message: "Use letters, numbers, dots, dashes or underscores",
     })
     .optional()
     .or(z.literal("")),
@@ -106,7 +106,7 @@ export const editUserSchema = z.object({
     .trim()
     .max(60, { message: "Username must be 60 characters or less" })
     .regex(/^[a-zA-Z0-9._-]*$/, {
-      message: "Username can only contain letters, numbers, dots, dashes and underscores",
+      message: "Use letters, numbers, dots, dashes or underscores",
     })
     .optional()
     .or(z.literal("")),
