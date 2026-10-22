@@ -26,6 +26,7 @@ import { toast } from "sonner";
 
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
 import {
@@ -99,16 +100,6 @@ function StatCard({
   );
 }
 
-function initials(name: string | null, email: string | null) {
-  const source = name || email || "?";
-  return source
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export function residentCode(id: string) {
   return `RES-${id.slice(0, 8).toUpperCase()}`;
 }
@@ -127,6 +118,7 @@ function VendorResidentsPage() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["vendor-residents"],
     queryFn: () => fetchResidents(),
+    refetchInterval: 8 * 60 * 1000,
   });
   const { data: unitData } = useQuery({
     queryKey: ["vendor-assignable-units"],
@@ -517,6 +509,7 @@ function VendorResidentsPage() {
               <table className="w-full min-w-[1140px] text-left text-sm">
                 <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
+                    <th className="w-24 px-4 py-3 font-semibold">Profile Photo</th>
                     <SortHeader label="Resident" sortBy="name" />
                     <SortHeader label="Phone" sortBy="phone" />
                     <SortHeader label="Email" sortBy="email" />
@@ -532,14 +525,14 @@ function VendorResidentsPage() {
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                      <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
                         <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                         Loading residents…
                       </td>
                     </tr>
                   ) : paged.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                      <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
                         {residents.length === 0
                           ? "No residents are currently associated with your assigned zones."
                           : "No residents match these filters."}
@@ -548,19 +541,9 @@ function VendorResidentsPage() {
                   ) : (
                     paged.map((r) => (
                       <tr key={`${r.id}-${r.unit_id ?? "none"}`} className="border-t border-border/70">
+                        <td className="px-4 py-3"><ResidentAvatar photo={r.photo} name={r.name} /></td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <span className="inline-flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                              {r.profile_image ? (
-                                <img
-                                  src={r.profile_image}
-                                  alt={r.name ? `${r.name} profile photo` : "Resident profile photo"}
-                                  className="size-full object-cover"
-                                />
-                              ) : (
-                                initials(r.name, r.email)
-                              )}
-                            </span>
                             <div className="font-medium text-foreground">{r.name ?? "—"}</div>
                           </div>
                         </td>

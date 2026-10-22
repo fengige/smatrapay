@@ -34,6 +34,7 @@ import { listAssignmentAuditLogs, listUserAssignments } from "@/lib/properties.f
 import { PortalLayout } from "@/components/PortalLayout";
 import { JobsView } from "@/components/JobsView";
 import { ResidentAccountTab } from "@/components/resident/ResidentAccountTab";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 
 export const Route = createFileRoute("/_authenticated/residents/$id/")({
   head: () => ({
@@ -125,6 +126,7 @@ function ResidentDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", id],
     queryFn: () => fetchResident({ data: { id } }),
+    refetchInterval: 8 * 60 * 1000,
   });
 
   const fetchAssignmentLogs = useServerFn(listAssignmentAuditLogs);
@@ -175,13 +177,6 @@ function ResidentDetailPage() {
     },
     onError: (e: Error) => toast.error(`Could not send reset email: ${e.message}`),
   });
-
-  const initials = (resident?.name || resident?.email || "R")
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 
   const isActive = resident?.status === "active";
 
@@ -411,17 +406,7 @@ function ResidentDetailPage() {
             <aside className="space-y-5">
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex flex-col items-center text-center">
-                  {resident.profile_image ? (
-                    <img
-                      src={resident.profile_image}
-                      alt={resident.name ?? "Resident avatar"}
-                      className="size-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                      {initials}
-                    </div>
-                  )}
+                  <ResidentAvatar photo={resident.photo} name={resident.name} size="detail" />
                   <h2 className="mt-4 text-lg font-bold text-foreground">
                     {resident.name ?? "Unnamed resident"}
                   </h2>

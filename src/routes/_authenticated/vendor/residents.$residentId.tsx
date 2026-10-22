@@ -26,6 +26,7 @@ import {
 } from "@/components/vendor/ResidentForms";
 import { JobsView } from "@/components/JobsView";
 import { ResidentAccountTab } from "@/components/resident/ResidentAccountTab";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 import {
   assignVendorResidentUnit,
   getVendorResident,
@@ -122,6 +123,7 @@ function VendorResidentDetail() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["vendor-resident", residentId],
     queryFn: () => fetchResident({ data: { id: residentId } }),
+    refetchInterval: 8 * 60 * 1000,
     retry: false,
   });
   const { data: unitData } = useQuery({
@@ -257,17 +259,7 @@ function VendorResidentDetail() {
 
           <section className="rounded-2xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-center gap-4">
-              {resident.profile_image ? (
-                <img
-                  src={resident.profile_image}
-                  alt={`${resident.name ?? "Resident"} profile photo`}
-                  className="size-16 rounded-full object-cover"
-                />
-              ) : (
-                <span className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                  {(resident.name ?? resident.email ?? "R").slice(0, 1).toUpperCase()}
-                </span>
-              )}
+              <ResidentAvatar photo={resident.photo} name={resident.name} size="detail" />
               <dl className="grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Info label="Full name" value={resident.name ?? "—"} />
                 <Info

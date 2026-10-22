@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { deleteUser, listUsersByRole, updateUser } from "@/lib/users.functions";
 import { assignUnit, endAssignment, listProperties } from "@/lib/properties.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 
 const DEFAULT_LIMIT = 10;
 const LIMIT_OPTIONS = [10, 25, 50, 100];
@@ -84,6 +85,7 @@ type Row = {
   role: string;
   created_at: string;
   profile_image: string | null;
+  photo: string | null;
   assignments: Assignment[];
 };
 
@@ -100,16 +102,6 @@ type SortKey = "name" | "email" | "phone" | "property" | "status" | "created_at"
 
 function date(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : "";
-}
-
-function initials(row: Row) {
-  const source = row.name || row.email || "?";
-  return source
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
 }
 
 function currentAssignments(row: Row) {
@@ -155,6 +147,7 @@ function ResidentsPage() {
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["users", "resident"],
     queryFn: () => fetchResidents({ data: { role: "resident" } }),
+    refetchInterval: 8 * 60 * 1000,
   });
 
   const residents = useMemo(() => (data?.users ?? []) as unknown as Row[], [data]);
@@ -421,6 +414,7 @@ function ResidentsPage() {
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
+                  <th className="w-24 px-4 py-3 font-semibold">Profile Photo</th>
                   <SortHeader label="Resident" sortBy="name" />
                   <SortHeader label="Phone" sortBy="phone" />
                   <SortHeader label="My Property" sortBy="property" />
@@ -432,39 +426,29 @@ function ResidentsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                       <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                       Loading residents…
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-destructive">
+                    <td colSpan={7} className="px-4 py-10 text-center text-destructive">
                       {(error as Error).message}
                     </td>
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                       No residents found. Try adjusting your search or add a new resident.
                     </td>
                   </tr>
                 ) : (
                   paged.map((r) => (
                     <tr key={r.id} className="border-t border-border/70">
+                      <td className="px-4 py-3"><ResidentAvatar photo={r.photo} name={r.name} /></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <span className="inline-flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                            {r.profile_image ? (
-                              <img
-                                src={r.profile_image}
-                                alt={r.name ?? "Resident avatar"}
-                                className="size-full object-cover"
-                              />
-                            ) : (
-                              initials(r)
-                            )}
-                          </span>
                           <div>
                             <div className="font-medium text-foreground">{r.name ?? "—"}</div>
                             <div className="text-xs text-muted-foreground">{r.email ?? "—"}</div>

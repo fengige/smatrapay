@@ -16,6 +16,7 @@ import { Camera, Pencil, UserRound, ShieldCheck, History } from "lucide-react";
 import { ResidentPhotoDialog } from "@/components/resident/ResidentPhotoDialog";
 import { ResidentSecurity } from "@/components/resident/ResidentSecurity";
 import { ResidentProfileAudit } from "@/components/resident/ResidentProfileAudit";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 
 export const Route = createFileRoute("/_authenticated/resident/profile")({
   head: residentHead("My Profile", "Manage your SmatraPay resident information, private profile photo, account security and activity."),
@@ -32,14 +33,14 @@ function Page() {
   const q = useQuery({ queryKey: ["resident-profile"], queryFn: () => getFn(), enabled: access.allowed, refetchInterval: 8 * 60 * 1000 });
   const [f, setF] = useState({ name: "", username: "", phone: "", address: "", id_number: "", bio: "" });
   const [editing, setEditing] = useState(false); const [tab, setTab] = useState("personal"); const [photoOpen, setPhotoOpen] = useState(false); const [busy, setBusy] = useState(false); const [errors, setErrors] = useState<Record<string,string>>({});
-  const refresh = async () => { await qc.invalidateQueries({ queryKey: ["resident-profile"] }); await qc.invalidateQueries({ queryKey: ["resident-profile-audit"] }); await qc.invalidateQueries({ queryKey: ["my-access"] }); };
+  const refresh = async () => { await Promise.all(["resident-profile", "resident-profile-audit", "my-access", "users", "user", "vendor-residents", "vendor-resident"].map(key => qc.invalidateQueries({ queryKey: [key] }))); };
   const edit = () => { if (!q.data) return; setF({ name: q.data.name ?? "", username: q.data.username ?? "", phone: q.data.phone ?? "", address: q.data.address ?? "", id_number: q.data.id_number ?? "", bio: q.data.bio ?? "" }); setErrors({}); setEditing(true); setTab("personal"); };
   const profile = q.data;
   return (
     <DashboardShell access={access} title="My Profile" description="">
       {q.isPending ? <p className="py-10 text-sm text-muted-foreground">Loading profile…</p> : q.error || !profile ? <p className="py-10 text-sm text-destructive" role="alert">Could not load your profile. Refresh to try again.</p> : <div className="max-w-5xl">
         <header className="flex flex-wrap items-center gap-5 border-b border-border pb-7">
-          {profile.photo ? <img src={profile.photo} alt={`${profile.name ?? "Resident"} profile photo`} className="size-24 shrink-0 rounded-full object-cover" /> : <div className="flex size-24 shrink-0 items-center justify-center rounded-full bg-primary/10 text-3xl font-semibold text-primary">{profile.name?.split(" ").map(v => v[0]).slice(0,2).join("") || <UserRound />}</div>}
+          <ResidentAvatar photo={profile.photo} name={profile.name} size="header" />
           <div className="min-w-0 flex-1"><h2 className="break-words text-2xl font-bold">{profile.name ?? "Resident"}</h2><p className="mt-1 break-words text-sm text-muted-foreground">{profile.username ? `@${profile.username} · ` : ""}{profile.email}</p><span className="mt-2 inline-block rounded-sm bg-primary/10 px-2 py-1 text-xs font-semibold capitalize text-primary">{profile.status}</span><p className="mt-2 text-xs text-muted-foreground">Member since {day(profile.created_at)}</p></div>
           <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={edit}><Pencil />Edit Profile</Button><Button onClick={() => setPhotoOpen(true)}><Camera />Change Photo</Button></div>
         </header>
