@@ -201,8 +201,10 @@ export const getUserById = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", data.id);
 
+    const { residentAvatarUrls } = await import("./resident-avatar.server");
+    const photos = await residentAvatarUrls([profile], supabase);
     return {
-      user: profile,
+      user: { ...profile, photo: photos.get(profile.id) ?? null },
       roles: (roles ?? []).map((r) => r.role as string),
     };
   });
@@ -375,9 +377,12 @@ export const listUsersByRole = createServerFn({ method: "GET" })
       byUser.set(a.user_id, list);
     }
 
+    const { residentAvatarUrls } = await import("./resident-avatar.server");
+    const photos = data.role === "resident" ? await residentAvatarUrls(profiles ?? [], supabase) : new Map<string, string | null>();
     return {
       users: (profiles ?? []).map((p) => ({
         ...p,
+        photo: photos.get(p.id) ?? null,
         role: data.role as string,
         assignments: (byUser.get(p.id) ?? []) as { id: string; user_id: string; start_date: string; end_date: string | null; unit: { unit_number: string; property: { name: string } | null } | null }[],
       })),

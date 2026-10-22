@@ -27,6 +27,7 @@ export type VendorResidentRow = {
   address: string | null;
   status: string;
   profile_image: string | null;
+  photo?: string | null;
   created_at: string;
   assignment_id: string | null;
   unit_id: string | null;
@@ -229,7 +230,9 @@ export const listVendorResidents = createServerFn({ method: "GET" })
     const filtered = rows.filter((r) => residentRoleIds.has(r.id));
 
     filtered.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-    return { vendorId, residents: filtered };
+    const { residentAvatarUrls } = await import("./resident-avatar.server");
+    const photos = await residentAvatarUrls(filtered);
+    return { vendorId, residents: filtered.map(row => ({ ...row, photo: photos.get(row.id) ?? null })) };
   });
 
 export const listVendorAssignableUnits = createServerFn({ method: "GET" })
@@ -430,6 +433,8 @@ export const getVendorResident = createServerFn({ method: "GET" })
       id: data.id,
     });
 
+    const { residentAvatarUrls } = await import("./resident-avatar.server");
+    const photos = await residentAvatarUrls([resident]);
     return {
       viewerId: userId,
       resident: {
@@ -442,6 +447,7 @@ export const getVendorResident = createServerFn({ method: "GET" })
         address: (resident.address ?? null) as string | null,
         status: (resident.status ?? "active") as string,
         profile_image: (resident.profile_image ?? null) as string | null,
+        photo: photos.get(resident.id) ?? null,
         bio: (resident.bio ?? null) as string | null,
         notes: (resident.notes ?? null) as string | null,
         move_in_date: (resident.move_in_date ?? null) as string | null,

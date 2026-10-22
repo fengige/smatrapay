@@ -8,11 +8,9 @@ export const getResidentProfile = createServerFn({ method: "GET" }).middleware([
   setResponseHeader("Cache-Control", "no-store");
   const { ownResident } = await import("./resident-profile.server");
   const profile = await ownResident(context.supabase, context.userId);
-  let photo = profile.profile_image;
-  if (photo && validOwnAvatar(photo, context.userId)) {
-    const signed = await context.supabase.storage.from("avatars").createSignedUrl(photo, 600);
-    photo = signed.data?.signedUrl ?? null;
-  } else if (photo && !photo.startsWith("https://")) photo = null;
+  const { residentAvatarUrls } = await import("./resident-avatar.server");
+  const photos = await residentAvatarUrls([profile], context.supabase);
+  const photo = photos.get(profile.id) ?? null;
   return { ...profile, photo };
 });
 
