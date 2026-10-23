@@ -17,7 +17,7 @@ export async function residentAvatarUrls(
   const client = storageClient ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
   try {
     const signed = await client.storage.from("avatars").createSignedUrls(paths, 600);
-    const browserOrigin = import.meta.env.VITE_SUPABASE_URL;
+    const browserOrigin = import.meta.env['VITE_SUPABASE_URL'];
     const signedByPath = new Map((signed.data ?? []).map(item => {
       let url = item.signedUrl || null;
       // Storage signatures cover the object path, not the internal server origin.
