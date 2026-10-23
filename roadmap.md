@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Shared resident avatars: Profile Photo columns, authorized signed photo reads, consistent detail/profile fallbacks and refresh; preserve upload rules and verify.
+- [x] Shared resident avatars: Profile Photo columns, authorized batched ten-minute photo reads, consistent detail/profile fallbacks and refresh; upload rules unchanged; 45 tests and preview avatar states passed, build OK.
+- [ ] Shared avatar signed-in acceptance across admin/vendor/resident pages and upload/removal persistence (blocked: no account matches the requesting user for preview sign-in).
 
 - [x] Resident profile implementation: Personal Info, Account, Audit Logs; private own-photo preview/upload/removal, permitted existing resident fields, provider password verification, TOTP enrollment/verified disabling and own paginated audits; 48 tests passed and build OK.
 - [ ] Resident profile live acceptance: photo upload/edit/removal, personal save, real password change, TOTP enrollment/verification/disable and persistence/isolation checks (blocked: resident session access was declined; resident sign-in in preview is required). Provider TOTP availability remains unverified; no recovery codes or SMS second factors are offered.

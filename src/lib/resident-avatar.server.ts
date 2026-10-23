@@ -17,7 +17,18 @@ export async function residentAvatarUrls(
   const client = storageClient ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
   try {
     const signed = await client.storage.from("avatars").createSignedUrls(paths, 600);
-    const signedByPath = new Map((signed.data ?? []).map(item => [item.path, item.signedUrl || null]));
+    const browserOrigin = import.meta.env['VITE_SUPABASE_URL'];
+    const signedByPath = new Map((signed.data ?? []).map(item => {
+      let url = item.signedUrl || null;
+      // Storage signatures cover the object path, not the internal server origin.
+      if (url && browserOrigin) {
+        try {
+          const parsed = new URL(url);
+          url = `${browserOrigin.replace(/\/$/, "")}${parsed.pathname}${parsed.search}`;
+        } catch { url = null; }
+      }
+      return [item.path, url] as const;
+    }));
     for (const { id, source } of sources) {
       if (source && "path" in source) urls.set(id, signedByPath.get(source.path) ?? null);
     }

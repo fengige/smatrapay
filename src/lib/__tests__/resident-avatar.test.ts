@@ -21,12 +21,14 @@ describe("resident avatar source security", () => {
 
 describe("authorized photo resolution", () => {
   it("signs each unique path once for ten minutes and never signs foreign paths", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://photos.example.com");
     const sign = vi.fn().mockResolvedValue({ data: [{ path, signedUrl: "https://example.com/signed.png" }] });
     const client = { storage: { from: vi.fn().mockReturnValue({ createSignedUrls: sign }) } } as unknown as SupabaseClient<Database>;
     const urls = await residentAvatarUrls([{ id, profile_image: path }, { id, profile_image: path }, { id: other, profile_image: path }], client);
     expect(sign).toHaveBeenCalledExactlyOnceWith([path], 600);
-    expect(urls.get(id)).toBe("https://example.com/signed.png");
+    expect(urls.get(id)).toBe("https://photos.example.com/signed.png");
     expect(urls.get(other)).toBeNull();
+    vi.unstubAllEnvs();
   });
   it("falls back without failing resident reads when storage is unavailable", async () => {
     const client = { storage: { from: () => ({ createSignedUrls: async () => { throw new Error("Unavailable"); } }) } } as unknown as SupabaseClient<Database>;
