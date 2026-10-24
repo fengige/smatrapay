@@ -2,7 +2,7 @@ import { UserRound } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-const sizes = { table: "size-10", detail: "size-24", header: "size-24" };
+const sizes = { table: "size-10", menu: "size-9 shrink-0", detail: "size-24", header: "size-24" };
 
 /** The neutral fallback stays visible while loading and after image failures. */
 export function ResidentAvatar({ photo, name, size = "table" }: {
@@ -14,7 +14,7 @@ export function ResidentAvatar({ photo, name, size = "table" }: {
   return <Avatar className={sizes[size]} role="img" aria-label={label}>
     {photo && <AvatarImage key={photo} src={photo} alt={label} className="object-cover" referrerPolicy="no-referrer" />}
     <AvatarFallback className="bg-primary/10 text-primary">
-      <UserRound aria-hidden="true" className={cn(size === "table" ? "size-5" : "size-10")} />
+      <UserRound aria-hidden="true" className={cn(size === "table" || size === "menu" ? "size-5" : "size-10")} />
     </AvatarFallback>
   </Avatar>;
 }
