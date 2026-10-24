@@ -81,6 +81,8 @@ export function PortalLayout({
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const isVendor = roles.includes("vendor") && !roles.includes("admin");
+  const isResident = roles.includes("resident") && !isVendor && !roles.includes("admin");
+  const profilePath = isVendor ? "/vendor/profile" : isResident ? "/resident/profile" : null;
   const fetchNotifications = useServerFn(listNotifications);
   const { data: notificationData } = useQuery({
     queryKey: ["notifications"],
@@ -160,23 +162,38 @@ export function PortalLayout({
       </nav>
 
       <div className="border-t border-white/10 px-3 py-4">
-        <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-          {identity.profile_image ? (
-            <img
-              src={identity.profile_image}
-              alt={identity.name || "Profile"}
-              className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/10"
-            />
-          ) : (
+        {profilePath ? (
+          <Link
+            to={profilePath}
+            className="flex items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-panel-tile"
+          >
+            {identity.profile_image ? (
+              <img
+                src={identity.profile_image}
+                alt={identity.name || "Profile"}
+                className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+              />
+            ) : (
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
+                {avatar}
+              </span>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{identity.name || "Account"}</span>
+              <span className="block truncate text-xs text-panel-muted">{portalName}</span>
+            </span>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl px-2 py-2">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-panel-tile text-xs font-bold">
               {avatar}
             </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{identity.name || "Account"}</p>
-            <p className="truncate text-xs text-panel-muted">{portalName}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{identity.name || "Account"}</p>
+              <p className="truncate text-xs text-panel-muted">{portalName}</p>
+            </div>
           </div>
-        </div>
+        )}
         <button
           onClick={signOut}
           className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-panel-muted transition-colors hover:bg-panel-tile hover:text-panel-foreground"
@@ -298,9 +315,9 @@ export function PortalLayout({
                     role="menu"
                     className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
                   >
-                    {isVendor && (
+                    {profilePath && (
                       <Link
-                        to="/vendor/profile"
+                        to={profilePath}
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                         className="block px-4 py-2 text-sm text-foreground hover:bg-secondary"
