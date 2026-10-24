@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { navGroupsForRoles } from "@/lib/portal-nav";
 import { roleLabel } from "@/lib/portals";
 import { useFooterSettings } from "@/lib/use-footer-settings";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
+import { getResidentProfile } from "@/lib/resident-profile.functions";
 
 export function usePortalSignOut() {
   const navigate = useNavigate();
@@ -94,7 +96,19 @@ export function PortalLayout({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const groups = navGroupsForRoles(roles);
   const portalName = roles[0] ? roleLabel(roles[0]) : "Portal";
-  const identity = useSessionIdentity();
+  const sessionIdentity = useSessionIdentity();
+  const fetchResidentProfile = useServerFn(getResidentProfile);
+  const { data: residentProfile } = useQuery({
+    queryKey: ["resident-profile"],
+    queryFn: () => fetchResidentProfile(),
+    enabled: isResident,
+    refetchInterval: 8 * 60 * 1000,
+  });
+  const identity = isResident ? {
+    name: residentProfile?.name || sessionIdentity.name,
+    email: residentProfile?.email || sessionIdentity.email,
+    profile_image: residentProfile?.photo ?? null,
+  } : sessionIdentity;
   const avatar = initials(identity.name || identity.email || portalName);
 
   const sidebar = (
@@ -167,7 +181,9 @@ export function PortalLayout({
             to={profilePath}
             className="flex items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-panel-tile"
           >
-            {identity.profile_image ? (
+            {isResident ? (
+              <ResidentAvatar photo={identity.profile_image} name={identity.name} size="menu" />
+            ) : identity.profile_image ? (
               <img
                 src={identity.profile_image}
                 alt={identity.name || "Profile"}
@@ -289,7 +305,9 @@ export function PortalLayout({
                 aria-label="Account menu"
                 className="flex items-center gap-2"
               >
-                {identity.profile_image ? (
+                {isResident ? (
+                  <ResidentAvatar photo={identity.profile_image} name={identity.name} size="menu" />
+                ) : identity.profile_image ? (
                   <img
                     src={identity.profile_image}
                     alt={identity.name || "Profile"}
