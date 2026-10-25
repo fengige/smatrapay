@@ -56,6 +56,7 @@ function ResidentInbox() {
       <div className="flex flex-wrap gap-3">
         <input aria-label="Search resident messages" className={`${field} max-w-md`} placeholder={tab === "enquiries" ? "Search reference, subject or message" : "Search category or comment"} maxLength={100} value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
         {tab === "enquiries" && <select aria-label="Enquiry type" className={`${field} w-auto`} value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); setPage(1); }}><option value="">All types</option><option value="support">Support</option><option value="insurance">Insurance</option><option value="loan">Loan</option><option value="sacco">Sacco</option></select>}
+        {tab === "enquiries" && <select aria-label="Enquiry status" className={`${field} w-auto`} value={status} onChange={(e) => { setStatus(e.target.value as typeof status); setPage(1); }}><option value="">All statuses</option><option value="submitted">Submitted</option><option value="in_review">In review</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="closed">Closed</option></select>}
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm"><thead className="bg-muted text-xs uppercase text-muted-foreground"><tr>
