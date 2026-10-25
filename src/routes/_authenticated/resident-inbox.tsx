@@ -14,7 +14,7 @@ import { listResidentInbox, replyResidentEnquiry, type InboxRow } from "@/lib/re
 import { enquiryReply } from "@/lib/resident-inbox";
 
 export const Route = createFileRoute("/_authenticated/resident-inbox")({
-  head: residentHead("Resident Feedback & Enquiries", "Review resident feedback and respond to support, insurance and loan enquiries."),
+  head: residentHead("Resident Feedback & Enquiries", "Review resident feedback and respond to support, insurance, loan and sacco enquiries."),
   loader: () => checkRoleAccess({ data: { role: "admin" } }),
   component: ResidentInbox,
 });
@@ -26,7 +26,7 @@ function ResidentInbox() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"enquiries" | "feedback">("enquiries");
   const [q, setQ] = useState("");
-  const [kind, setKind] = useState<"support" | "insurance" | "loan" | "">("");
+  const [kind, setKind] = useState<"support" | "insurance" | "loan" | "sacco" | "">("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<InboxRow | null>(null);
   const [response, setResponse] = useState("");
@@ -46,7 +46,7 @@ function ResidentInbox() {
       </Tabs>
       <div className="flex flex-wrap gap-3">
         <input aria-label="Search resident messages" className={`${field} max-w-md`} placeholder={tab === "enquiries" ? "Search reference, subject or message" : "Search category or comment"} maxLength={100} value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
-        {tab === "enquiries" && <select aria-label="Enquiry type" className={`${field} w-auto`} value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); setPage(1); }}><option value="">All types</option><option value="support">Support</option><option value="insurance">Insurance</option><option value="loan">Loan</option></select>}
+        {tab === "enquiries" && <select aria-label="Enquiry type" className={`${field} w-auto`} value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); setPage(1); }}><option value="">All types</option><option value="support">Support</option><option value="insurance">Insurance</option><option value="loan">Loan</option><option value="sacco">Sacco</option></select>}
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm"><thead className="bg-muted text-xs uppercase text-muted-foreground"><tr>
