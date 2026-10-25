@@ -23,20 +23,29 @@ function ResidentInbox() {
   const access = Route.useLoaderData();
   const fetch = useServerFn(listResidentInbox);
   const reply = useServerFn(replyResidentEnquiry);
+  const decide = useServerFn(decideResidentEnquiry);
   const qc = useQueryClient();
   const [tab, setTab] = useState<"enquiries" | "feedback">("enquiries");
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<"support" | "insurance" | "loan" | "sacco" | "">("");
+  const [status, setStatus] = useState<EnquiryStatus | "">("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<InboxRow | null>(null);
   const [response, setResponse] = useState("");
-  const filters = { tab, q, kind: kind || undefined, page };
+  const filters = { tab, q, kind: kind || undefined, status: status || undefined, page };
   const list = useQuery({ queryKey: ["resident-inbox", filters], queryFn: () => fetch({ data: filters }), enabled: access.allowed, placeholderData: keepPreviousData });
+  const done = () => { setSelected(null); qc.invalidateQueries({ queryKey: ["resident-inbox"] }); qc.invalidateQueries({ queryKey: ["resident-enquiries"] }); };
   const save = useMutation({
     mutationFn: () => { const data = enquiryReply.parse({ id: selected?.id, response }); return reply({ data }); },
-    onSuccess: () => { toast.success("Reply saved"); setSelected(null); qc.invalidateQueries({ queryKey: ["resident-inbox"] }); qc.invalidateQueries({ queryKey: ["resident-enquiries"] }); },
+    onSuccess: () => { toast.success("Reply saved"); done(); },
     onError: (e) => toast.error((e as Error).message),
   });
+  const decideM = useMutation({
+    mutationFn: (to: EnquiryStatus) => decide({ data: enquiryDecision.parse({ id: selected?.id, from: selected?.status ?? "submitted", to, response: response || undefined }) }),
+    onSuccess: () => { toast.success("Status updated"); done(); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const DECISION_LABELS: Record<EnquiryStatus, string> = { submitted: "Submitted", in_review: "Mark in review", approved: "Approve", declined: "Decline", closed: "Close" };
   const pages = Math.max(1, Math.ceil((list.data?.total ?? 0) / 20));
   return <DashboardShell access={access} title="Resident Feedback & Enquiries" description="Resident messages and feedback"
     actions={<Button variant="outline" onClick={() => list.refetch()} disabled={list.isFetching}><RefreshCw />Refresh</Button>}>
