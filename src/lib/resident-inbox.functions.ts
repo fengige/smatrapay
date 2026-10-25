@@ -30,6 +30,7 @@ export const listResidentInbox = createServerFn({ method: "GET" })
     const feedback = data.tab === "feedback";
     let enquiries = context.supabase.from("resident_enquiries").select("id, resident_id, reference, kind, subject, message, status, staff_response, created_at", { count: "exact" });
     if (data.kind) enquiries = enquiries.eq("kind", data.kind);
+    if (data.status) enquiries = enquiries.eq("status", data.status);
     let q = feedback
       ? context.supabase.from("resident_feedback").select("id, resident_id, category, rating, comment, created_at", { count: "exact" })
       : enquiries;
