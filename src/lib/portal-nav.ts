@@ -178,7 +178,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       {
         heading: "MY PROPERTY",
         items: [
-          { label: "My Properties & Meters", icon: Home, to: "/resident/meters" },
+          { label: "My Homes & Meters", icon: Home, to: "/resident/meters" },
           { label: "My Documents", icon: FileText, to: "/resident/documents" },
         ],
       },
