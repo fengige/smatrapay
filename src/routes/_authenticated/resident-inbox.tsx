@@ -64,7 +64,7 @@ function ResidentInbox() {
         </tr></thead><tbody>
           {list.isPending ? <tr><td colSpan={5} className="p-8 text-center">Loading…</td></tr> : list.error ? <tr><td colSpan={5} className="p-8 text-center text-destructive">{list.error.message}</td></tr> : !list.data?.rows.length ? <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No {tab} match your search.</td></tr> : list.data.rows.map((r) => <tr key={r.id} className="border-t border-border">
             <td className="px-4 py-3">{r.resident_name}</td><td className="px-4 py-3"><p>{r.reference ?? r.category}</p><p className="text-xs capitalize text-muted-foreground">{r.kind ?? `${r.rating}/5`}</p></td>
-            <td className="max-w-sm px-4 py-3"><p className="line-clamp-2 break-words">{r.subject ?? r.comment ?? "—"}</p>{r.status && <p className="text-xs capitalize text-muted-foreground">{r.staff_response ? "Replied" : r.status}</p>}</td>
+            <td className="max-w-sm px-4 py-3"><p className="line-clamp-2 break-words">{r.subject ?? r.comment ?? "—"}</p>{r.status && <p className="text-xs text-muted-foreground">{enquiryStatusLabel(r.status)}{r.staff_response ? " · Replied" : ""}</p>}</td>
             <td className="whitespace-nowrap px-4 py-3">{when(r.created_at)}</td><td className="px-4 py-3"><Button variant="outline" size="sm" onClick={() => { setSelected(r); setResponse(r.staff_response ?? ""); }}><MessageSquare />{tab === "enquiries" ? "View / Reply" : "View"}</Button></td>
           </tr>)}
         </tbody></table>
