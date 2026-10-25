@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enquiryReply, inboxFilters, mayReadResidentInbox } from "../resident-inbox";
+import { canTransitionEnquiry, enquiryDecision, enquiryReply, enquiryStatusLabel, inboxFilters, mayReadResidentInbox } from "../resident-inbox";
 import { ownsResidentPhoto, residentPhotoPaths } from "../resident-photos";
 
 const user = "11111111-1111-4111-8111-111111111111";
