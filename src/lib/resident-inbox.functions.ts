@@ -1,10 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { enquiryReply, inboxFilters, mayReadResidentInbox } from "./resident-inbox";
+import { canTransitionEnquiry, enquiryDecision, enquiryReply, inboxFilters, mayReadResidentInbox } from "./resident-inbox";
 
 async function authorize(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
   if (error || !mayReadResidentInbox(data ? ["admin"] : [])) throw new Error("Admin access required");
+}
+
+async function auditDecision(enquiryId: string, actorId: string, action: string, details: Record<string, string | null>) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("user_audit_logs").insert({
+    user_id: actorId, actor_id: actorId, action: `resident_enquiry_${action}`,
+    changes: { enquiry_id: enquiryId, ...details },
+  });
 }
 
 export type InboxRow = {
