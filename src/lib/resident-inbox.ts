@@ -32,3 +32,6 @@ export const enquiryDecision = z.object({
   response: z.string().trim().max(2000).optional(),
 });
 export const mayReadResidentInbox = (roles: string[]) => roles.includes("admin");
+
+export const enquiryStatusLabel = (s: string | null | undefined) =>
+  ({ submitted: "Submitted", in_review: "In review", approved: "Approved", declined: "Declined", closed: "Closed" } as Record<string, string>)[s ?? ""] ?? "Submitted";

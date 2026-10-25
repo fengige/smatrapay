@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { field, residentHead, when } from "@/components/resident/ResidentUI";
-import { listResidentInbox, replyResidentEnquiry, type InboxRow } from "@/lib/resident-inbox.functions";
-import { enquiryReply } from "@/lib/resident-inbox";
+import { decideResidentEnquiry, listResidentInbox, replyResidentEnquiry, type InboxRow } from "@/lib/resident-inbox.functions";
+import { ENQUIRY_TRANSITIONS, enquiryDecision, enquiryReply, enquiryStatusLabel, type EnquiryStatus } from "@/lib/resident-inbox";
 
 export const Route = createFileRoute("/_authenticated/resident-inbox")({
   head: residentHead("Resident Feedback & Enquiries", "Review resident feedback and respond to support, insurance, loan and sacco enquiries."),
