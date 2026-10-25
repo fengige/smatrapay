@@ -73,7 +73,19 @@ function ResidentInbox() {
     </div>
     <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}><DialogContent className="max-h-[85dvh] overflow-y-auto"><DialogHeader><DialogTitle>{selected?.reference ?? "Resident feedback"}</DialogTitle></DialogHeader>
       <p className="text-sm font-medium">{selected?.resident_name}</p><p className="text-sm">{selected?.subject ?? selected?.category}</p><p className="whitespace-pre-wrap break-words text-sm">{selected?.message ?? selected?.comment ?? "No comment"}</p>
+      {selected?.status && <p className="text-sm">Status: <span className="font-medium">{enquiryStatusLabel(selected.status)}</span></p>}
       {selected?.reference && <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}><label className="block text-sm">Reply<textarea aria-label="Reply to resident" className={`${field} mt-2 h-32 py-2`} value={response} onChange={(e) => setResponse(e.target.value)} required maxLength={2000} /></label><Button disabled={save.isPending || !response.trim()}>{save.isPending ? "Saving…" : "Save reply"}</Button></form>}
+      {selected?.reference && (ENQUIRY_TRANSITIONS[(selected.status ?? "submitted") as EnquiryStatus] ?? []).length > 0 && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <p className="text-sm font-medium">Decision{response.trim() ? " (your reply above is sent with the decision)" : ""}</p>
+          <div className="flex flex-wrap gap-2">
+            {(ENQUIRY_TRANSITIONS[(selected.status ?? "submitted") as EnquiryStatus] ?? []).map((to) => (
+              <Button key={to} variant={to === "approved" ? "default" : to === "declined" ? "destructive" : "outline"} size="sm"
+                disabled={decideM.isPending} onClick={() => decideM.mutate(to)}>{DECISION_LABELS[to]}</Button>
+            ))}
+          </div>
+        </div>
+      )}
     </DialogContent></Dialog>
   </DashboardShell>;
 }
