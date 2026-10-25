@@ -106,6 +106,13 @@
       "when": 1792585636986,
       "tag": "0014_preserve_staff_avatar_workflows",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792956629776,
+      "tag": "0015_lov_database_migration",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { listMyEnquiries, submitEnquiry } from "@/lib/resident-portal.functions";
 import { Badge, Card, Empty, field, when } from "@/components/resident/ResidentUI";
-export function EnquiryPanel({ kind, title }: { kind: "support" | "insurance" | "loan"; title: string }) {
+export function EnquiryPanel({ kind, title }: { kind: "support" | "insurance" | "loan" | "sacco"; title: string }) {
   const sendFn = useServerFn(submitEnquiry);
   const listFn = useServerFn(listMyEnquiries);
   const qc = useQueryClient();

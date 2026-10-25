@@ -28,3 +28,11 @@ describe("admin sidebar", () => {
     expect(adminLabels).not.toContain("Jobs");
   });
 });
+
+describe("resident sidebar", () => {
+  it("lists Insurance, Loans and Sacco under Financial Services", () => {
+    const group = navGroupsForRoles(["resident"]).find((g) => g.heading === "FINANCIAL SERVICES");
+    expect(group?.items.map((i) => i.label)).toEqual(["Insurance", "Loans", "Sacco"]);
+    expect(group?.items.map((i) => i.to)).toEqual(["/resident/insurance", "/resident/loans", "/resident/sacco"]);
+  });
+});
