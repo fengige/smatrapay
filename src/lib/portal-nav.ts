@@ -191,7 +191,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "My Statements", icon: Receipt, to: "/resident/statements" },
         ],
       },
-      { heading: "SERVICES", items: [{ label: "Maintenance & Service Requests", icon: Wrench, to: "/resident/jobs" }] },
+      { heading: "SERVICES", items: [{ label: "Service Requests", icon: Wrench, to: "/resident/jobs" }] },
       { heading: "FINANCIAL SERVICES", items: [{ label: "Insurance & Loans", icon: ShieldCheck, to: "/resident/financial-services" }] },
       {
         heading: "SUPPORT & COMMUNICATION",
