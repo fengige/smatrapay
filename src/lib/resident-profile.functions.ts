@@ -33,21 +33,23 @@ export const saveResidentPhoto = createServerFn({ method: "POST" }).middleware([
   const mime = imageMime(bytes);
   if (!mime || file.type !== mime) throw new Error("Choose a valid JPEG, PNG or WebP photo.");
   const path = `${context.userId}/profile/${crypto.randomUUID()}.${mime === "image/jpeg" ? "jpg" : mime === "image/png" ? "png" : "webp"}`;
-  await profileAudit(context.userId, "photo_save", "attempt");
+  const photoAction = profile.profile_image ? "photo_replace" : "photo_upload";
+  const photoDetails = { had_previous_photo: Boolean(profile.profile_image), content_type: mime };
+  await profileAudit(context.userId, photoAction, "attempt", photoDetails);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const upload = await supabaseAdmin.storage.from("avatars").upload(path, bytes, { contentType: mime, upsert: false });
-  if (upload.error) { await profileAudit(context.userId, "photo_save", "failed"); throw new Error("Photo upload failed. Please try again."); }
+  if (upload.error) { await profileAudit(context.userId, photoAction, "failed", photoDetails); throw new Error("Photo upload failed. Please try again."); }
   const result = await context.supabase.from("users").update({ profile_image: path, updated_by: context.userId }).eq("id", context.userId);
-  if (result.error) { await context.supabase.storage.from("avatars").remove([path]); await profileAudit(context.userId, "photo_save", "failed"); throw new Error("Could not save the photo."); }
+  if (result.error) { await context.supabase.storage.from("avatars").remove([path]); await profileAudit(context.userId, photoAction, "failed", photoDetails); throw new Error("Could not save the photo."); }
   if (profile.profile_image && validOwnAvatar(profile.profile_image, context.userId)) await context.supabase.storage.from("avatars").remove([profile.profile_image]);
-  await profileAudit(context.userId, "photo_save", "success");
+  await profileAudit(context.userId, photoAction, "success", photoDetails);
   return { ok: true };
 });
 
 export const removeResidentPhoto = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { ownResident, profileAudit } = await import("./resident-profile.server");
   const profile = await ownResident(context.supabase, context.userId);
-  await profileAudit(context.userId, "photo_remove", "attempt");
+  await profileAudit(context.userId, "photo_remove", "attempt", { had_previous_photo: Boolean(profile.profile_image) });
   const result = await context.supabase.from("users").update({ profile_image: null, updated_by: context.userId }).eq("id", context.userId);
   if (result.error) { await profileAudit(context.userId, "photo_remove", "failed"); throw new Error("Could not remove the photo."); }
   if (profile.profile_image && validOwnAvatar(profile.profile_image, context.userId)) await context.supabase.storage.from("avatars").remove([profile.profile_image]);
