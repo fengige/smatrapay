@@ -1971,6 +1971,8 @@ export type Database = {
       resident_enquiries: {
         Row: {
           created_at: string
+          decided_at: string | null
+          decided_by: string | null
           id: string
           kind: string
           message: string
@@ -1983,6 +1985,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
           id?: string
           kind: string
           message: string
@@ -1995,6 +1999,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
           id?: string
           kind?: string
           message?: string

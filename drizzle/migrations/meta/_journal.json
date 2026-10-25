@@ -113,6 +113,13 @@
       "when": 1792956629776,
       "tag": "0015_lov_database_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792956867407,
+      "tag": "0016_resident_enquiry_decisions",
+      "breakpoints": true
     }
   ]
 }

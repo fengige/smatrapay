@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { listMyEnquiries, submitEnquiry } from "@/lib/resident-portal.functions";
+import { enquiryStatusLabel } from "@/lib/resident-inbox";
 import { Badge, Card, Empty, field, when } from "@/components/resident/ResidentUI";
 export function EnquiryPanel({ kind, title }: { kind: "support" | "insurance" | "loan" | "sacco"; title: string }) {
   const sendFn = useServerFn(submitEnquiry);
@@ -26,7 +27,7 @@ export function EnquiryPanel({ kind, title }: { kind: "support" | "insurance" | 
       <div className="mt-4 space-y-2">
         {mine.length === 0 ? <Empty>No requests yet.</Empty> : mine.map((e: any) => (
           <div key={e.id} className="rounded-lg border border-border p-3 text-sm">
-            <div className="flex justify-between gap-2"><span className="font-medium">{e.reference}</span><Badge status={e.status}>{e.status}</Badge></div>
+            <div className="flex justify-between gap-2"><span className="font-medium">{e.reference}</span><Badge status={e.status}>{enquiryStatusLabel(e.status)}</Badge></div>
             <p className="text-muted-foreground">{e.subject}</p>
             {e.staff_response && <p className="mt-1 text-xs">Reply: {e.staff_response}</p>}
             <p className="text-xs text-muted-foreground">{when(e.created_at)}</p>

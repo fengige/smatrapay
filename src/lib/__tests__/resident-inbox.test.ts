@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enquiryReply, inboxFilters, mayReadResidentInbox } from "../resident-inbox";
+import { canTransitionEnquiry, enquiryDecision, enquiryReply, enquiryStatusLabel, inboxFilters, mayReadResidentInbox } from "../resident-inbox";
 import { ownsResidentPhoto, residentPhotoPaths } from "../resident-photos";
 
 const user = "11111111-1111-4111-8111-111111111111";
@@ -31,5 +31,35 @@ describe("resident inbox permissions and validation", () => {
   it("rejects invalid pagination and unknown enquiry categories", () => {
     expect(inboxFilters.safeParse({ tab: "enquiries", page: 0 }).success).toBe(false);
     expect(inboxFilters.safeParse({ tab: "enquiries", kind: "private" }).success).toBe(false);
+  });
+  it("accepts status filters only for known statuses", () => {
+    expect(inboxFilters.safeParse({ tab: "enquiries", status: "approved" }).success).toBe(true);
+    expect(inboxFilters.safeParse({ tab: "enquiries", status: "pending" }).success).toBe(false);
+  });
+});
+describe("enquiry approval workflow", () => {
+  it("allows submitted enquiries to move to any working or final status", () => {
+    for (const to of ["in_review", "approved", "declined", "closed"]) expect(canTransitionEnquiry("submitted", to)).toBe(true);
+  });
+  it("allows in-review enquiries to be decided or closed, but not reopened", () => {
+    for (const to of ["approved", "declined", "closed"]) expect(canTransitionEnquiry("in_review", to)).toBe(true);
+    expect(canTransitionEnquiry("in_review", "submitted")).toBe(false);
+  });
+  it("treats approved, declined and closed as final", () => {
+    for (const from of ["approved", "declined", "closed"]) {
+      for (const to of ["submitted", "in_review", "approved", "declined", "closed"]) expect(canTransitionEnquiry(from, to)).toBe(false);
+    }
+  });
+  it("never allows an unknown current status to transition", () => {
+    expect(canTransitionEnquiry("whatever", "approved")).toBe(false);
+  });
+  it("validates decisions with matching from/to statuses", () => {
+    expect(enquiryDecision.safeParse({ id: user, from: "submitted", to: "approved" }).success).toBe(true);
+    expect(enquiryDecision.safeParse({ id: user, from: "submitted", to: "pending" }).success).toBe(false);
+    expect(enquiryDecision.safeParse({ id: "nope", from: "submitted", to: "approved" }).success).toBe(false);
+  });
+  it("labels statuses for display", () => {
+    expect(enquiryStatusLabel("in_review")).toBe("In review");
+    expect(enquiryStatusLabel(null)).toBe("Submitted");
   });
 });

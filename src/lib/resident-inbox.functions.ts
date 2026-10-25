@@ -1,10 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { enquiryReply, inboxFilters, mayReadResidentInbox } from "./resident-inbox";
+import { canTransitionEnquiry, enquiryDecision, enquiryReply, inboxFilters, mayReadResidentInbox } from "./resident-inbox";
 
 async function authorize(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
   if (error || !mayReadResidentInbox(data ? ["admin"] : [])) throw new Error("Admin access required");
+}
+
+async function auditDecision(enquiryId: string, actorId: string, action: string, details: Record<string, string | null>) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("user_audit_logs").insert({
+    user_id: actorId, actor_id: actorId, action: `resident_enquiry_${action}`,
+    changes: { enquiry_id: enquiryId, ...details },
+  });
 }
 
 export type InboxRow = {
@@ -22,6 +30,7 @@ export const listResidentInbox = createServerFn({ method: "GET" })
     const feedback = data.tab === "feedback";
     let enquiries = context.supabase.from("resident_enquiries").select("id, resident_id, reference, kind, subject, message, status, staff_response, created_at", { count: "exact" });
     if (data.kind) enquiries = enquiries.eq("kind", data.kind);
+    if (data.status) enquiries = enquiries.eq("status", data.status);
     let q = feedback
       ? context.supabase.from("resident_feedback").select("id, resident_id, category, rating, comment, created_at", { count: "exact" })
       : enquiries;
@@ -51,5 +60,26 @@ export const replyResidentEnquiry = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.from("resident_enquiries")
       .update({ staff_response: data.response }).eq("id", data.id).select("id").maybeSingle();
     if (error || !row) throw new Error("Could not save the reply");
+    return { ok: true };
+  });
+
+export const decideResidentEnquiry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => enquiryDecision.parse(d))
+  .handler(async ({ data, context }) => {
+    await authorize(context);
+    if (!canTransitionEnquiry(data.from, data.to)) throw new Error("That status change is not allowed");
+    // Compare-and-set on the current status so two admins cannot decide the same enquiry twice.
+    const { data: row, error } = await context.supabase.from("resident_enquiries")
+      .update({
+        status: data.to,
+        decided_by: context.userId,
+        decided_at: new Date().toISOString(),
+        ...(data.response ? { staff_response: data.response } : {}),
+      })
+      .eq("id", data.id).eq("status", data.from).select("id, reference").maybeSingle();
+    if (error) throw new Error("Could not update the enquiry");
+    if (!row) throw new Error("This enquiry was already updated by someone else — refresh and try again");
+    await auditDecision(data.id, context.userId, data.to, { reference: row.reference ?? null, from: data.from });
     return { ok: true };
   });
