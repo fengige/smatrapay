@@ -29,6 +29,7 @@ import {
   Headset,
   MessageSquareHeart,
   ShieldCheck,
+  Landmark,
 } from "lucide-react";
 import { dashboardForRoles } from "./portals";
 
@@ -192,7 +193,14 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         ],
       },
       { heading: "SERVICES", items: [{ label: "Service Requests", icon: Wrench, to: "/resident/jobs" }] },
-      { heading: "FINANCIAL SERVICES", items: [{ label: "Insurance & Loans", icon: ShieldCheck, to: "/resident/financial-services" }] },
+      {
+        heading: "FINANCIAL SERVICES",
+        items: [
+          { label: "Insurance", icon: ShieldCheck, to: "/resident/insurance" },
+          { label: "Loans", icon: BadgeDollarSign, to: "/resident/loans" },
+          { label: "Sacco", icon: Landmark, to: "/resident/sacco" },
+        ],
+      },
       {
         heading: "SUPPORT & COMMUNICATION",
         items: [

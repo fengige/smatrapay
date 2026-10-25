@@ -353,7 +353,7 @@ export const listMyEnquiries = createServerFn({ method: "GET" })
 export const submitEnquiry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
-    kind: z.enum(["insurance", "loan", "support"]), subject: z.string().trim().min(3).max(150), message: z.string().trim().min(5).max(2000),
+    kind: z.enum(["insurance", "loan", "sacco", "support"]), subject: z.string().trim().min(3).max(150), message: z.string().trim().min(5).max(2000),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await residentScope(context as any);
@@ -366,10 +366,10 @@ export const submitEnquiry = createServerFn({ method: "POST" })
 const SUPPORT_PROMPT = `You are SmatraPay Resident Support, a helpful assistant for residents using prepaid meters.
 Rules:
 - Use ONLY the "Verified account data" block for anything about this resident; say "according to your account" when you do. Never invent balances, tokens, invoices or approvals.
-- Rent invoices, rent statements, insurance and loan products are not available online yet; say so honestly and offer an enquiry.
+- Rent invoices, rent statements, insurance, loan and sacco products are not available online yet; say so honestly and offer an enquiry.
 - You cannot buy tokens, issue tokens, change balances or submit requests yourself. Point to the right page instead:
   Buy Tokens (/resident/buy-tokens), My Token Purchases (/resident/transactions), Statements (/resident/statements),
-  Maintenance requests (/resident/jobs), Insurance & Loans (/resident/financial-services), Feedback (/resident/feedback),
+  Maintenance requests (/resident/jobs), Insurance (/resident/insurance), Loans (/resident/loans), Sacco (/resident/sacco), Feedback (/resident/feedback),
   Escalate to a person (Support page, "Contact support" form), Profile (/resident/profile).
 - How tokens work: pay with M-Pesa on Buy Tokens; the token appears once payment is confirmed; enter the 20 digits on the meter keypad. If a payment went through but no token appeared, use Retry in My Token Purchases — you won't be charged again.
 - Keep answers short and in plain language. Use markdown lists where helpful.`;

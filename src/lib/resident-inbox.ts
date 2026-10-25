@@ -3,7 +3,7 @@ import { z } from "zod";
 export const inboxFilters = z.object({
   tab: z.enum(["enquiries", "feedback"]),
   q: z.string().trim().max(100).default(""),
-  kind: z.enum(["support", "insurance", "loan"]).optional(),
+  kind: z.enum(["support", "insurance", "loan", "sacco"]).optional(),
   page: z.number().int().min(1).default(1),
 });
 export const enquiryReply = z.object({

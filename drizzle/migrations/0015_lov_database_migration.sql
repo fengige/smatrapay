@@ -1,0 +1,2 @@
+ALTER TABLE public.resident_enquiries DROP CONSTRAINT IF EXISTS resident_enquiries_kind_check;
+ALTER TABLE public.resident_enquiries ADD CONSTRAINT resident_enquiries_kind_check CHECK (kind IN ('insurance','loan','sacco','support'));
