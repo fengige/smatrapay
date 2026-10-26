@@ -29,3 +29,5 @@
 - Resident Account tabs allow only admins/current scoped vendors to update resident-only Auth passwords, with password-free audits and security notifications, preventing account takeover.
 - Resident photos reuse users.profile_image/private avatars and shared fallback avatars with ten-minute signed reads; portal menus share the resident-profile query for refresh, never render raw storage paths. Preserve raw paths for edits and delete superseded own photos.
 - Resident-only identities require provider-verified TOTP assurance across RPCs and sign-in methods; bearer-bound enrollment/verification never changes staff authentication.
+- Resident mobile chrome and feature hubs reuse protected resident routes and existing server services; responsive styling is scoped to the resident shell so staff portals retain their layout.
+- PWA registration has one guarded browser module; generateSW stores only public offline fallback/icons and hashed static assets, never personal HTML or API responses, so offline access cannot disclose account data.
