@@ -7,6 +7,7 @@ import { DashboardShell } from "@/components/DashboardShell";
 import { getResidentHome, listMyPurchases } from "@/lib/resident-portal.functions";
 import { buildTokenStatement } from "@/lib/resident-portal";
 import { Card, Empty, day, field, kes, residentHead } from "@/components/resident/ResidentUI";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/resident/statements")({
   head: residentHead("My Statements", "Statements of your confirmed token payments by meter and date range."),
@@ -43,7 +44,7 @@ function Page() {
           <input type="date" className={field} value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} aria-label="To" />
         </div>
         <p className="mb-3 text-sm text-muted-foreground">{home.data?.name} · {day(f.from)} – {day(f.to)} · Opening balance {kes(0)}</p>
-        {st.lines.length === 0 ? <Empty>No confirmed payments in this period.</Empty> : (
+        {q.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading statement…</p> : q.error ? <div role="alert"><p className="text-sm text-destructive">Could not load your statement.</p><Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div> : st.lines.length === 0 ? <Empty>No confirmed payments in this period.</Empty> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-muted-foreground"><tr><th className="py-2 pr-4">Date</th><th className="pr-4">Reference</th><th className="pr-4">Description</th><th className="pr-4 text-right">Debit</th><th className="pr-4 text-right">Credit</th><th className="text-right">Balance</th></tr></thead>

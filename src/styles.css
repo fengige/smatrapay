@@ -374,6 +374,9 @@
   .resident-signin input:not([type="checkbox"]), .resident-signin select { min-height: 44px; font-size: 16px; }
   .resident-signin button { min-height: 44px; }
   .resident-signin .input-shell { min-width: 0; }
+  body:has(.resident-app) [role="dialog"] { max-width: calc(100vw - 1.5rem); max-height: 85dvh; overflow-y: auto; border-radius: 8px; }
+  body:has(.resident-app) [role="dialog"] button, body:has(.resident-app) [role="dialog"] input:not([type="checkbox"]), body:has(.resident-app) [role="dialog"] select { min-height: 44px; }
+  body:has(.resident-app) [role="dialog"] input, body:has(.resident-app) [role="dialog"] select { font-size: 16px; }
   .resident-signin section > div { max-width: 100%; }
   .resident-app { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
   .resident-app main { padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right)); }
