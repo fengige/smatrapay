@@ -1,8 +1,10 @@
 # Roadmap
 
-- [ ] Resident mobile app: resident-only mobile header, five-tab navigation, More, safe-area/touch layouts and real existing feature hubs; desktop regression preserved.
-- [ ] Resident PWA: icons/manifest, guarded offline non-sensitive fallback, online-only money actions and reconnection refresh.
-- [ ] Resident mobile acceptance: mobile/desktop navigation, sign-in/security, purchase review, requests/profile and logout; report unavailable existing workflows and blocked real actions.
+- [x] Resident mobile app: resident-only header, Home/Payments/Utilities/Requests/Account tabs, More, safe-area/touch layouts, stacked meter/payment/request lists and existing feature hubs; staff layouts retained.
+- [x] Resident PWA: logo-based icons/manifest, guarded generated worker, non-sensitive offline fallback, connection-required purchase review and reconnection refresh; no personal HTML/API caching.
+- [x] Resident regression checks: 84 tests passed; public sign-in tested at 360/768/1280px without overflow or page errors, protected mobile links redirect to sign-in, preview registers no workers; build OK.
+- [ ] Resident authenticated mobile acceptance: home/tabs, purchase confirmation, request/photo creation, profile/password/2FA and sign-out (blocked: no account matches requester; authorized resident preview sign-in required). Rent/invoices/documents remain unavailable in existing workflows.
+- [ ] Installed-app/offline acceptance on Android/iPhone (blocked: publication authorization and supported device/browser; no deployment performed).
 
 - [x] Shared resident avatars: Profile Photo columns, authorized batched ten-minute photo reads, consistent detail/profile fallbacks and refresh; upload rules unchanged; 45 tests and preview avatar states passed, build OK.
 - [ ] Shared avatar signed-in acceptance across admin/vendor/resident pages and upload/removal persistence (blocked: no account matches the requesting user for preview sign-in).
