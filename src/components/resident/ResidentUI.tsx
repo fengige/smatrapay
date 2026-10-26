@@ -19,13 +19,13 @@ export const when = (d: string | null | undefined) =>
 export const day = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString("en-KE") : "—");
 
 export const field =
-  "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function Card({ title, action, children }: { title?: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-5">
+    <section className="min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5">
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           {title && <h2 className="text-sm font-semibold text-foreground">{title}</h2>}
           {action}
         </div>
@@ -37,9 +37,9 @@ export function Card({ title, action, children }: { title?: string; action?: Rea
 
 export function Stat({ label, value, hint, to }: { label: string; value: ReactNode; hint?: string; to?: string }) {
   const body = (
-    <div className="h-full rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40">
+    <div className="h-full min-w-0 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40 sm:p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+      <p className="mt-2 break-words text-lg font-bold text-foreground sm:text-2xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );

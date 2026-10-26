@@ -17,11 +17,13 @@ export default defineConfig({
     plugins: [VitePWA({
       strategies: "generateSW",
       filename: "sw.js",
+      outDir: "dist/client",
       injectRegister: null,
       registerType: "autoUpdate",
       devOptions: { enabled: false },
       manifest: false,
       workbox: {
+        globDirectory: "public",
         globPatterns: ["offline.html", "pwa-*.png", "favicon.png"],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
