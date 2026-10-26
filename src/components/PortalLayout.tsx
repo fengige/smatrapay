@@ -11,6 +11,7 @@ import { roleLabel } from "@/lib/portals";
 import { useFooterSettings } from "@/lib/use-footer-settings";
 import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 import { getResidentProfile } from "@/lib/resident-profile.functions";
+import { ResidentMobileHeader, ResidentMobileNavigation, ResidentConnectionBanner } from "@/components/resident/ResidentMobileChrome";
 
 export function usePortalSignOut() {
   const navigate = useNavigate();
@@ -87,9 +88,9 @@ export function PortalLayout({
   const profilePath = isVendor ? "/vendor/profile" : isResident ? "/resident/profile" : null;
   const fetchNotifications = useServerFn(listNotifications);
   const { data: notificationData } = useQuery({
-    queryKey: ["notifications"],
+    queryKey: [isResident ? "resident-notifications" : "notifications"],
     queryFn: () => fetchNotifications(),
-    enabled: isVendor,
+    enabled: isVendor || isResident,
     refetchInterval: 60_000,
   });
   const unread = notificationData?.unread ?? 0;
@@ -222,7 +223,7 @@ export function PortalLayout({
   );
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className={`min-h-screen bg-background lg:flex ${isResident ? "resident-app" : ""}`}>
       <aside className="hidden w-64 shrink-0 lg:block">
         <div className="sticky top-0 h-screen">{sidebar}</div>
       </aside>
@@ -239,7 +240,8 @@ export function PortalLayout({
       )}
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/85 px-3 py-2.5 backdrop-blur sm:gap-3 sm:px-5 sm:py-3">
+        {isResident && <><ResidentMobileHeader title={title} name={identity.name} photo={identity.profile_image} unread={unread} actions={actions} /><ResidentConnectionBanner /></>}
+        <header className={`${isResident ? "hidden lg:flex" : "flex"} sticky top-0 z-30 items-center gap-2 border-b border-border bg-background/85 px-3 py-2.5 backdrop-blur sm:gap-3 sm:px-5 sm:py-3`}>
           <button
             className="shrink-0 rounded-lg border border-border p-2 lg:hidden"
             onClick={() => setOpen(true)}
@@ -275,9 +277,9 @@ export function PortalLayout({
               <MessageSquare className="size-4" />
             </button>
 
-            {isVendor ? (
+            {isVendor || isResident ? (
               <Link
-                to="/vendor/notifications"
+                to={isResident ? "/resident/notifications" : "/vendor/notifications"}
                 aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
                 className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
               >
@@ -357,7 +359,7 @@ export function PortalLayout({
           </div>
         </header>
 
-        <div className={hideHeading ? "sr-only" : "px-4 pt-4 sm:px-5 sm:pt-5"}>
+        <div className={hideHeading ? "sr-only" : `${isResident ? "hidden lg:block" : ""} px-4 pt-4 sm:px-5 sm:pt-5`}>
           <h1 className="text-base font-bold tracking-tight text-foreground sm:text-lg">{title}</h1>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
@@ -365,6 +367,7 @@ export function PortalLayout({
         <main className="px-4 pb-2 pt-1 sm:px-5">{children}</main>
 
         <PortalFooter />
+        {isResident && <ResidentMobileNavigation />}
       </div>
     </div>
   );

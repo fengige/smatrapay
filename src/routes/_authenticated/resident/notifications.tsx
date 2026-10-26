@@ -5,6 +5,7 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { listNotifications, markAllNotificationsRead, markNotificationRead } from "@/lib/notifications.functions";
 import { Card, Empty, residentHead, when } from "@/components/resident/ResidentUI";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/resident/notifications")({
   head: residentHead("My Notifications", "Payment, token and maintenance updates for your account."),
@@ -27,9 +28,9 @@ function Page() {
     <DashboardShell access={access} title="My Notifications" description={q.data ? `${q.data.unread} unread` : ""}
       actions={q.data?.unread ? <button className="btn-outline px-4" onClick={() => all.mutate()}>Mark all read</button> : undefined}>
       <Card>
-        {(q.data?.notifications ?? []).length === 0 ? <Empty>No notifications yet.</Empty> : (
+        {q.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading notifications…</p> : q.error ? <div role="alert"><p className="text-sm text-destructive">Could not load notifications.</p><Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div> : (q.data?.notifications ?? []).length === 0 ? <Empty>No notifications yet.</Empty> : (
           <ul className="divide-y divide-border">
-            {q.data!.notifications.map((n) => (
+            {(q.data?.notifications ?? []).map((n) => (
               <li key={n.id} className="flex items-start justify-between gap-4 py-3 text-sm">
                 <div>
                   <p className={n.read_at ? "text-muted-foreground" : "font-semibold text-foreground"}>{n.title}</p>

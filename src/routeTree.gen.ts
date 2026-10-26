@@ -66,7 +66,9 @@ import { Route as AuthenticatedResidentInsuranceRouteImport } from './routes/_au
 import { Route as AuthenticatedResidentJobsRouteImport } from './routes/_authenticated/resident/jobs'
 import { Route as AuthenticatedResidentLoansRouteImport } from './routes/_authenticated/resident/loans'
 import { Route as AuthenticatedResidentMetersRouteImport } from './routes/_authenticated/resident/meters'
+import { Route as AuthenticatedResidentMoreRouteImport } from './routes/_authenticated/resident/more'
 import { Route as AuthenticatedResidentNotificationsRouteImport } from './routes/_authenticated/resident/notifications'
+import { Route as AuthenticatedResidentPaymentsRouteImport } from './routes/_authenticated/resident/payments'
 import { Route as AuthenticatedResidentProfileRouteImport } from './routes/_authenticated/resident/profile'
 import { Route as AuthenticatedResidentSaccoRouteImport } from './routes/_authenticated/resident/sacco'
 import { Route as AuthenticatedResidentStatementsRouteImport } from './routes/_authenticated/resident/statements'
@@ -475,10 +477,22 @@ const AuthenticatedResidentMetersRoute =
     path: '/resident/meters',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedResidentMoreRoute =
+  AuthenticatedResidentMoreRouteImport.update({
+    id: '/resident/more',
+    path: '/resident/more',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedResidentNotificationsRoute =
   AuthenticatedResidentNotificationsRouteImport.update({
     id: '/resident/notifications',
     path: '/resident/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResidentPaymentsRoute =
+  AuthenticatedResidentPaymentsRouteImport.update({
+    id: '/resident/payments',
+    path: '/resident/payments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedResidentProfileRoute =
@@ -1008,7 +1022,9 @@ export interface FileRoutesByFullPath {
   '/resident/jobs': typeof AuthenticatedResidentJobsRoute
   '/resident/loans': typeof AuthenticatedResidentLoansRoute
   '/resident/meters': typeof AuthenticatedResidentMetersRoute
+  '/resident/more': typeof AuthenticatedResidentMoreRoute
   '/resident/notifications': typeof AuthenticatedResidentNotificationsRoute
+  '/resident/payments': typeof AuthenticatedResidentPaymentsRoute
   '/resident/profile': typeof AuthenticatedResidentProfileRoute
   '/resident/sacco': typeof AuthenticatedResidentSaccoRoute
   '/resident/statements': typeof AuthenticatedResidentStatementsRoute
@@ -1141,7 +1157,9 @@ export interface FileRoutesByTo {
   '/resident/jobs': typeof AuthenticatedResidentJobsRoute
   '/resident/loans': typeof AuthenticatedResidentLoansRoute
   '/resident/meters': typeof AuthenticatedResidentMetersRoute
+  '/resident/more': typeof AuthenticatedResidentMoreRoute
   '/resident/notifications': typeof AuthenticatedResidentNotificationsRoute
+  '/resident/payments': typeof AuthenticatedResidentPaymentsRoute
   '/resident/profile': typeof AuthenticatedResidentProfileRoute
   '/resident/sacco': typeof AuthenticatedResidentSaccoRoute
   '/resident/statements': typeof AuthenticatedResidentStatementsRoute
@@ -1282,7 +1300,9 @@ export interface FileRoutesById {
   '/_authenticated/resident/jobs': typeof AuthenticatedResidentJobsRoute
   '/_authenticated/resident/loans': typeof AuthenticatedResidentLoansRoute
   '/_authenticated/resident/meters': typeof AuthenticatedResidentMetersRoute
+  '/_authenticated/resident/more': typeof AuthenticatedResidentMoreRoute
   '/_authenticated/resident/notifications': typeof AuthenticatedResidentNotificationsRoute
+  '/_authenticated/resident/payments': typeof AuthenticatedResidentPaymentsRoute
   '/_authenticated/resident/profile': typeof AuthenticatedResidentProfileRoute
   '/_authenticated/resident/sacco': typeof AuthenticatedResidentSaccoRoute
   '/_authenticated/resident/statements': typeof AuthenticatedResidentStatementsRoute
@@ -1424,7 +1444,9 @@ export interface FileRouteTypes {
     | '/resident/jobs'
     | '/resident/loans'
     | '/resident/meters'
+    | '/resident/more'
     | '/resident/notifications'
+    | '/resident/payments'
     | '/resident/profile'
     | '/resident/sacco'
     | '/resident/statements'
@@ -1557,7 +1579,9 @@ export interface FileRouteTypes {
     | '/resident/jobs'
     | '/resident/loans'
     | '/resident/meters'
+    | '/resident/more'
     | '/resident/notifications'
+    | '/resident/payments'
     | '/resident/profile'
     | '/resident/sacco'
     | '/resident/statements'
@@ -1697,7 +1721,9 @@ export interface FileRouteTypes {
     | '/_authenticated/resident/jobs'
     | '/_authenticated/resident/loans'
     | '/_authenticated/resident/meters'
+    | '/_authenticated/resident/more'
     | '/_authenticated/resident/notifications'
+    | '/_authenticated/resident/payments'
     | '/_authenticated/resident/profile'
     | '/_authenticated/resident/sacco'
     | '/_authenticated/resident/statements'
@@ -2209,11 +2235,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResidentMetersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resident/more': {
+      id: '/_authenticated/resident/more'
+      path: '/resident/more'
+      fullPath: '/resident/more'
+      preLoaderRoute: typeof AuthenticatedResidentMoreRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/resident/notifications': {
       id: '/_authenticated/resident/notifications'
       path: '/resident/notifications'
       fullPath: '/resident/notifications'
       preLoaderRoute: typeof AuthenticatedResidentNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resident/payments': {
+      id: '/_authenticated/resident/payments'
+      path: '/resident/payments'
+      fullPath: '/resident/payments'
+      preLoaderRoute: typeof AuthenticatedResidentPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/resident/profile': {
@@ -2975,7 +3015,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResidentJobsRoute: typeof AuthenticatedResidentJobsRoute
   AuthenticatedResidentLoansRoute: typeof AuthenticatedResidentLoansRoute
   AuthenticatedResidentMetersRoute: typeof AuthenticatedResidentMetersRoute
+  AuthenticatedResidentMoreRoute: typeof AuthenticatedResidentMoreRoute
   AuthenticatedResidentNotificationsRoute: typeof AuthenticatedResidentNotificationsRoute
+  AuthenticatedResidentPaymentsRoute: typeof AuthenticatedResidentPaymentsRoute
   AuthenticatedResidentProfileRoute: typeof AuthenticatedResidentProfileRoute
   AuthenticatedResidentSaccoRoute: typeof AuthenticatedResidentSaccoRoute
   AuthenticatedResidentStatementsRoute: typeof AuthenticatedResidentStatementsRoute
@@ -3070,8 +3112,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResidentJobsRoute: AuthenticatedResidentJobsRoute,
   AuthenticatedResidentLoansRoute: AuthenticatedResidentLoansRoute,
   AuthenticatedResidentMetersRoute: AuthenticatedResidentMetersRoute,
+  AuthenticatedResidentMoreRoute: AuthenticatedResidentMoreRoute,
   AuthenticatedResidentNotificationsRoute:
     AuthenticatedResidentNotificationsRoute,
+  AuthenticatedResidentPaymentsRoute: AuthenticatedResidentPaymentsRoute,
   AuthenticatedResidentProfileRoute: AuthenticatedResidentProfileRoute,
   AuthenticatedResidentSaccoRoute: AuthenticatedResidentSaccoRoute,
   AuthenticatedResidentStatementsRoute: AuthenticatedResidentStatementsRoute,

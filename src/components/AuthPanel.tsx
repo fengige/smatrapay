@@ -79,9 +79,9 @@ export function AuthPanel() {
   const [tab, setTab] = useState<"resident" | "staff">("resident");
 
   return (
-    <main className="flex min-h-screen flex-col lg:flex-row">
+    <main className={`flex min-h-screen min-w-0 flex-col lg:flex-row ${tab === "resident" ? "resident-signin" : ""}`}>
       {/* Left brand panel (unchanged) */}
-      <section className="relative isolate flex flex-1 items-center overflow-hidden bg-brand-panel px-8 py-16 lg:px-16">
+      <section className={`relative isolate flex min-w-0 flex-1 items-center overflow-hidden bg-brand-panel px-8 py-16 lg:px-16 ${tab === "resident" ? "resident-signin-brand" : ""}`}>
         <div className="orb orb-1" aria-hidden="true" />
         <div className="orb orb-2" aria-hidden="true" />
         <div className="orb orb-3" aria-hidden="true" />
@@ -116,8 +116,8 @@ export function AuthPanel() {
       </section>
 
       {/* Right auth panel */}
-      <section className="flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-10">
-        <div className="w-full max-w-sm">
+      <section className="flex min-w-0 flex-1 items-center justify-center bg-background px-6 py-12 sm:px-10">
+        <div className="w-full min-w-0 max-w-sm">
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Choose how you want to sign in to SmatraPay

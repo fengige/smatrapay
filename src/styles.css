@@ -363,3 +363,35 @@
   }
 }
 
+/* Resident-only mobile presentation; other portals retain their existing sizing. */
+.resident-mobile-header { padding-top: env(safe-area-inset-top); }
+.resident-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+.resident-app main { padding-top: 1rem; }
+.resident-app main > * { min-width: 0; }
+@media (max-width: 1023px) {
+  .resident-signin-brand { flex: none; padding: calc(1.5rem + env(safe-area-inset-top)) 1.5rem 1.5rem; }
+  .resident-signin-brand h1, .resident-signin-brand ul, .resident-signin-brand .orb, .resident-signin-brand h1 + p { display: none; }
+  .resident-signin input:not([type="checkbox"]), .resident-signin select { min-height: 44px; font-size: 16px; }
+  .resident-signin button { min-height: 44px; }
+  .resident-signin .input-shell { min-width: 0; }
+  body:has(.resident-app) [role="dialog"] { max-width: calc(100vw - 1.5rem); max-height: 85dvh; overflow-y: auto; border-radius: 8px; }
+  body:has(.resident-app) [role="dialog"] button, body:has(.resident-app) [role="dialog"] input:not([type="checkbox"]), body:has(.resident-app) [role="dialog"] select { min-height: 44px; }
+  body:has(.resident-app) [role="dialog"] input, body:has(.resident-app) [role="dialog"] select { font-size: 16px; }
+  .resident-signin section > div { max-width: 100%; }
+  .resident-app { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+  .resident-app main { padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right)); }
+  .resident-app input:not([type="checkbox"]):not([type="radio"]), .resident-app select { min-height: 44px; font-size: 16px; }
+  .resident-app button, .resident-app main a { min-height: 44px; }
+  .resident-app main a { display: inline-flex; align-items: center; }
+  .resident-app main a.grid { display: grid; }
+  .resident-app main section { border-radius: 8px; }
+  .resident-app main p, .resident-app main dd { overflow-wrap: anywhere; }
+}
+@media print {
+  .resident-app > aside, .resident-app header, .resident-bottom-nav, .resident-app footer { display: none !important; }
+  .resident-app { padding-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+

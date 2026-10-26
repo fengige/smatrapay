@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ResidentMfaGate } from "@/components/resident/ResidentMfaGate";
+import { registerResidentPwa } from "@/lib/register-resident-pwa";
 
 function NotFoundComponent() {
   return (
@@ -79,7 +80,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#ad6229" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "SmatraPay" },
       { title: "SmatraPay" },
       { name: "description", content: "SmatraPay — secure payments for growing businesses." },
       { property: "og:title", content: "SmatraPay" },
@@ -100,6 +104,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
 
@@ -126,6 +131,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => { void registerResidentPwa().catch(() => { /* Online app remains available if registration is unsupported. */ }); }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {

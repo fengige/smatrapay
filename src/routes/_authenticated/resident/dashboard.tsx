@@ -7,6 +7,10 @@ import { DashboardShell } from "@/components/DashboardShell";
 import { getResidentHome } from "@/lib/resident-portal.functions";
 import { PURCHASE_LABEL, type PurchaseStatus } from "@/lib/resident-portal";
 import { Badge, Card, Empty, Stat, kes, residentHead, when } from "@/components/resident/ResidentUI";
+import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
+import { getResidentProfile } from "@/lib/resident-profile.functions";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/resident/dashboard")({
   head: residentHead("Overview", "Your homes, prepaid meters, token purchases and service requests in one place."),
@@ -20,15 +24,18 @@ function ResidentDashboard() {
   const fetchHome = useServerFn(getResidentHome);
   const q = useQuery({ queryKey: ["resident-home"], queryFn: () => fetchHome(), enabled: access.allowed });
   const d = q.data;
+  const getProfile = useServerFn(getResidentProfile);
+  const profile = useQuery({ queryKey: ["resident-profile"], queryFn: () => getProfile(), enabled: access.allowed });
   const byType = (t: string) => d?.meters.filter((m) => m.type === t).length ?? 0;
 
   return (
     <DashboardShell access={access} title={d ? `Welcome, ${d.name}` : "Resident dashboard"} description="Your homes, meters, purchases and requests.">
-      {q.isLoading && <p className="text-sm text-muted-foreground">Loading your account…</p>}
-      {q.error && <p className="text-sm text-destructive">{(q.error as Error).message}</p>}
+      {q.isLoading && <div role="status" aria-label="Loading your account" className="grid grid-cols-2 gap-3"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="col-span-2 h-44" /></div>}
+      {q.error && <div role="alert" className="space-y-3"><p className="text-sm text-destructive">Could not load your account. Check your connection.</p><Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div>}
       {d && (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border pb-4 lg:hidden"><div className="min-w-0"><p className="text-xs font-semibold text-muted-foreground">Your home, connected</p><h1 className="mt-1 text-xl font-bold">Hello, {d.name}</h1></div><ResidentAvatar name={d.name} photo={profile.data?.photo ?? null} size="detail" /></div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat label="My homes" value={d.homes.length} to="/resident/meters" />
             <Stat label="My meters" value={d.meters.length} hint={`${byType("Electricity")} electricity · ${byType("Water")} water · ${byType("Gas")} gas`} to="/resident/meters" />
             <Stat label="Paid this month" value={kes(d.paidThisMonth)} hint="Token purchases" to="/resident/transactions" />
@@ -38,19 +45,20 @@ function ResidentDashboard() {
             Live meter balances aren't shown: your meters' vending services don't report a reliable balance. Rent and service charge balances will appear once billing goes live.
           </p>
 
-          <div className="grid gap-3 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {[
               { to: "/resident/buy-tokens", label: "Buy Tokens", icon: KeyRound },
               { to: "/resident/bills", label: "Pay Rent", icon: Receipt },
-              { to: "/resident/statements", label: "View Statement", icon: FileText },
+              { to: "/resident/bills", label: "View Invoices", icon: FileText },
               { to: "/resident/jobs", label: "Request Maintenance", icon: Wrench },
-              { to: "/resident/support", label: "Get Help", icon: Bot },
+              { to: "/resident/transactions", label: "View Receipts", icon: Bot },
             ].map((a) => (
-              <Link key={a.to} to={a.to as never} className="btn-outline flex items-center justify-center gap-2 py-3">
+              <Link key={a.label} to={a.to as never} className="btn-outline flex h-auto min-h-14 items-center justify-center gap-2 px-2 py-3 text-center">
                 <a.icon className="size-4" /> {a.label}
               </Link>
             ))}
           </div>
+          <div className="grid gap-4 border-y border-border py-4 sm:grid-cols-2"><div><p className="text-xs font-semibold text-muted-foreground">Outstanding rent</p><p className="mt-1 text-sm">Not available yet</p></div><div><p className="text-xs font-semibold text-muted-foreground">Next payment due</p><p className="mt-1 text-sm">No rent invoice available</p></div></div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card title="My homes">
