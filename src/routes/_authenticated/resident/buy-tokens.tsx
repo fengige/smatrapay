@@ -26,6 +26,7 @@ const PRESETS = [100, 200, 500, 1000];
 function Page() {
   const access = Route.useLoaderData();
   const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const fetchHome = useServerFn(getResidentHome);
   const quoteFn = useServerFn(quoteTokenPurchase);
   const startFn = useServerFn(startTokenPurchase);
@@ -39,6 +40,7 @@ function Page() {
   const online = useResidentConnection();
   const requestId = useMemo(() => crypto.randomUUID(), [meterId, amount, phone]);
   useEffect(() => { if (!meterId && meters[0]) setMeterId(meters[0].id); }, [meters, meterId]);
+  useEffect(() => { setPurchaseId(search.purchase ?? null); }, [search.purchase]);
   const meter = meters.find((m) => m.id === meterId);
   const amt = Number(amount);
   const amtErr = amount ? validatePurchaseAmount(amt) : null;
@@ -50,13 +52,13 @@ function Page() {
   });
   const start = useMutation({
     mutationFn: () => startFn({ data: { meter_id: meterId, amount: amt, phone, request_id: requestId } }),
-    onSuccess: (r) => { setReview(false); setPurchaseId(r.id); (r.status === "payment_failed" ? toast.error : toast.info)(r.message); },
+    onSuccess: (r) => { setReview(false); setPurchaseId(r.id); void navigate({ search: { meter: meterId, purchase: r.id }, replace: true }); (r.status === "payment_failed" ? toast.error : toast.info)(r.message); },
     onError: (e) => toast.error((e as Error).message),
   });
 
   return (
     <DashboardShell access={access} title="Buy Tokens" description="Pay with M-Pesa. Your token appears here once the payment is confirmed.">
-      {purchaseId ? <PurchaseStatusCard id={purchaseId} onNew={() => { setPurchaseId(null); setAmount(""); }} /> : home.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : meters.length === 0 ? (
+      {purchaseId ? <PurchaseStatusCard id={purchaseId} onNew={() => { setPurchaseId(null); setAmount(""); void navigate({ search: { meter: meterId, purchase: undefined }, replace: true }); }} /> : home.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : home.error ? <div role="alert"><p className="text-sm text-destructive">Could not load your assigned meters.</p><Button variant="outline" onClick={() => void home.refetch()}>Try again</Button></div> : meters.length === 0 ? (
         <Empty>You have no active meters. Ask your property manager to link and activate your meter.</Empty>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
