@@ -81,12 +81,17 @@ export function checkSidianPayload(p: SidianPayload, cfg: SidianAuthConfig): str
   return null;
 }
 
-export async function processSidianNotification(p: SidianPayload) {
+/**
+ * Records and vends a Sidian notification. `parsedMeter` is the meter number from
+ * Narration; null means the narration was missing or malformed, in which case the
+ * payment is recorded as rejected (never vended, never falls back to Account).
+ */
+export async function processSidianNotification(p: SidianPayload, parsedMeter: string | null) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
   const r = p.ConfirmationRequest;
   const amount = parseNcbaAmount(r.data.Amount)!;
-  const confirmed = isSidianPaymentConfirmed(r.status);
+  const confirmed = isSidianPaymentConfirmed(r.status) && parsedMeter !== null;
 
   const { data: existing } = await db
     .from("bank_notifications").select("*").eq("bank", SIDIAN_BANK).eq("trans_id", r.TrasactionID).maybeSingle();
