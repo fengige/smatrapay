@@ -19,6 +19,7 @@ import { ResidentProfileAudit } from "@/components/resident/ResidentProfileAudit
 import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 import { usePortalSignOut } from "@/components/PortalLayout";
 import { LogOut } from "lucide-react";
+import { useResidentConnection } from "@/components/resident/ResidentMobileChrome";
 
 export const Route = createFileRoute("/_authenticated/resident/profile")({
   head: residentHead("My Profile", "Manage your SmatraPay resident information, private profile photo, account security and activity."),
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/resident/profile")({
 
 function Page() {
   const access = Route.useLoaderData();
+  const online = useResidentConnection();
   const signOut = usePortalSignOut();
   const getFn = useServerFn(getResidentProfile);
   const saveFn = useServerFn(saveResidentPersonal);
@@ -41,21 +43,21 @@ function Page() {
   const profile = q.data;
   return (
     <DashboardShell access={access} title="My Profile" description="">
-      {q.isPending ? <p className="py-10 text-sm text-muted-foreground">Loading profile…</p> : q.error || !profile ? <p className="py-10 text-sm text-destructive" role="alert">Could not load your profile. Refresh to try again.</p> : <div className="max-w-5xl">
+      {q.isPending ? <p className="py-10 text-sm text-muted-foreground">Loading profile…</p> : q.error || !profile ? <div role="alert" className="py-10"><p className="text-sm text-destructive">Could not load your profile.</p><Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div> : <div className="max-w-5xl">
         <header className="flex flex-wrap items-center gap-5 border-b border-border pb-7">
           <ResidentAvatar photo={profile.photo} name={profile.name} size="header" />
           <div className="min-w-0 flex-1"><h2 className="break-words text-2xl font-bold">{profile.name ?? "Resident"}</h2><p className="mt-1 break-words text-sm text-muted-foreground">{profile.username ? `@${profile.username} · ` : ""}{profile.email}</p><span className="mt-2 inline-block rounded-sm bg-primary/10 px-2 py-1 text-xs font-semibold capitalize text-primary">{profile.status}</span><p className="mt-2 text-xs text-muted-foreground">Member since {day(profile.created_at)}</p></div>
-          <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={edit}><Pencil />Edit Profile</Button><Button onClick={() => setPhotoOpen(true)}><Camera />Change Photo</Button></div>
+          <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!online} onClick={edit}><Pencil />Edit Profile</Button><Button disabled={!online} onClick={() => setPhotoOpen(true)}><Camera />Change Photo</Button></div>
         </header>
         <Tabs value={tab} onValueChange={setTab} className="mt-5"><TabsList className="grid h-auto w-full grid-cols-3 sm:w-fit"><TabsTrigger value="personal" className="gap-2"><UserRound className="hidden size-4 sm:block" />Personal Info</TabsTrigger><TabsTrigger value="account" className="gap-2"><ShieldCheck className="hidden size-4 sm:block" />Account</TabsTrigger><TabsTrigger value="audit" className="gap-2"><History className="hidden size-4 sm:block" />Audit Logs</TabsTrigger></TabsList>
           <TabsContent value="personal"><section className="py-6"><div className="mb-6 flex items-center justify-between"><h2 className="text-lg font-semibold">Personal Information</h2>{!editing && <Button variant="outline" onClick={edit}><Pencil />Edit Information</Button>}</div><form className="max-w-3xl space-y-5" onSubmit={async e => { e.preventDefault(); const parsed = residentPersonalInput.safeParse(f); if (!parsed.success) { const next: Record<string,string> = {}; parsed.error.issues.forEach(i => { next[String(i.path[0])] = i.message; }); setErrors(next); return; } setErrors({}); setBusy(true); try { await saveFn({ data: parsed.data }); await refresh(); setEditing(false); toast.success("Information saved"); } catch (e) { const message = (e as Error).message; setErrors({ [message.includes("username") ? "username" : "form"]: message }); } finally { setBusy(false); } }}>
             <div className="grid gap-5 sm:grid-cols-2">{([["name", "Full name"], ["username", "Username"], ["phone", "Phone number"], ["id_number", "National ID"], ["address", "Residential address"], ["bio", "About me"]] as const).map(([key, label]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label>{editing ? <Input id={`profile-${key}`} value={f[key]} disabled={busy} required={key === "name"} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? `error-${key}` : undefined} onChange={e => setF({ ...f, [key]: e.target.value })} /> : <p className="break-words text-sm">{profile[key] || "—"}</p>}{errors[key] && <p id={`error-${key}`} className="text-xs text-destructive">{errors[key]}</p>}</div>)}<div className="space-y-2"><Label>Email address</Label><p className="break-words text-sm">{profile.email || "—"}</p><p className="text-xs text-muted-foreground">Contact your account manager to change your verified sign-in email.</p></div></div>
-            {errors["form"] && <p role="alert" className="text-sm text-destructive">{errors["form"]}</p>}{editing && <div className="flex gap-2"><Button disabled={busy}>{busy ? "Saving…" : "Save Changes"}</Button><Button variant="outline" type="button" disabled={busy} onClick={() => { setEditing(false); setErrors({}); }}>Cancel</Button></div>}
+            {errors["form"] && <p role="alert" className="text-sm text-destructive">{errors["form"]}</p>}{editing && <div className="flex gap-2"><Button disabled={busy || !online}>{busy ? "Saving…" : "Save Changes"}</Button><Button variant="outline" type="button" disabled={busy} onClick={() => { setEditing(false); setErrors({}); }}>Cancel</Button></div>}
           </form></section></TabsContent>
           <TabsContent value="account"><ResidentSecurity identifier={profile.email ?? profile.username ?? ""} onChange={() => void refresh()} /></TabsContent>
           <TabsContent value="audit"><ResidentProfileAudit /></TabsContent>
         </Tabs>
-        <ResidentPhotoDialog open={photoOpen} setOpen={setPhotoOpen} photo={profile.photo} onChange={refresh} />
+        <ResidentPhotoDialog open={photoOpen && online} setOpen={setPhotoOpen} photo={profile.photo} onChange={refresh} />
         <div className="mt-6 border-t border-border py-5"><Button variant="outline" className="min-h-11" onClick={signOut}><LogOut />Sign out</Button></div>
       </div>}
     </DashboardShell>

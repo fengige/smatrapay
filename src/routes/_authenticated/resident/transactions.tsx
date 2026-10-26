@@ -11,6 +11,7 @@ import { PURCHASE_LABEL, canRetryVend, type PurchaseStatus } from "@/lib/residen
 import { Badge, Card, Empty, field, kes, residentHead, when } from "@/components/resident/ResidentUI";
 import { PurchaseStatusCard } from "@/components/resident/PurchaseStatusCard";
 import { Button } from "@/components/ui/button";
+import { useResidentConnection } from "@/components/resident/ResidentMobileChrome";
 
 export const Route = createFileRoute("/_authenticated/resident/transactions")({
   head: residentHead("My Transactions", "Your token purchases, M-Pesa receipts and token retrieval."),
@@ -24,6 +25,7 @@ function Page() {
   const listFn = useServerFn(listMyPurchases);
   const retryFn = useServerFn(retryTokenPurchase);
   const qc = useQueryClient();
+  const online = useResidentConnection();
   const [f, setF] = useState({ q: "", status: "", from: "", to: "" });
   const [open, setOpen] = useState<string | null>(null);
   const q = useQuery({ queryKey: ["resident-purchases", f], queryFn: () => listFn({ data: { ...f, status: f.status || undefined, from: f.from || undefined, to: f.to || undefined } }), enabled: access.allowed });
@@ -65,7 +67,7 @@ function Page() {
                     <td className="pr-4"><Badge status={r.status}>{PURCHASE_LABEL[r.status as PurchaseStatus] ?? r.status}</Badge></td>
                     <td className="space-x-2 whitespace-nowrap">
                       <button className="text-primary" onClick={() => setOpen(r.id)}>{r.status === "vended" ? "View token" : "Details"}</button>
-                      {canRetryVend(r.status) && <button className="text-primary" disabled={retry.isPending} onClick={() => retry.mutate(r.id)}>Retry token</button>}
+                      {canRetryVend(r.status) && <Button variant="link" disabled={!online || retry.isPending} onClick={() => { if (online && !retry.isPending) retry.mutate(r.id); }}>Retry token</Button>}
                     </td>
                   </tr>
                 ))}
