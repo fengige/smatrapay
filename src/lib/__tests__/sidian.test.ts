@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkSidianAuth, checkSidianPayload, isSidianPaymentConfirmed, sidianPayload } from "../sidian.server";
+import { checkSidianAuth, checkSidianPayload, isSidianPaymentConfirmed, parseSidianNarration, sidianPayload } from "../sidian.server";
 import { deductCommission } from "../commission";
 
 const cfg = { username: "sidian", password: "s3cret", shortcode: "111999" };
@@ -7,7 +7,7 @@ const basic = (u: string, p: string) => `Basic ${btoa(`${u}:${p}`)}`;
 const sample = {
   ConfirmationRequest: {
     status: 0,
-    data: { Reference: "REF1", Amount: "100.00", Date: "2026-08-31 16:30:00", BusinessShortCode: "111999", MSISDN: "254711111111", Names: "Test Customer", Account: "001234567890", Narration: "test" },
+    data: { Reference: "REF1", Amount: "100.00", Date: "2026-08-31 16:30:00", BusinessShortCode: "111999", MSISDN: "254711111111", Names: "Test Customer", Account: "000053", Narration: "000053#14503254824" },
     TransactionType: "C2B_CONFIRMATION",
     TrasactionID: "TX1",
   },
@@ -15,8 +15,29 @@ const sample = {
 const withData = (d: object) => ({ ConfirmationRequest: { ...sample.ConfirmationRequest, data: { ...sample.ConfirmationRequest.data, ...d } } });
 
 describe("Sidian C2B notification", () => {
-  it("Account, not Reference or MSISDN, is the meter number", () => {
-    expect(sidianPayload.parse(sample).ConfirmationRequest.data.Account).toBe("001234567890");
+  it("parses the meter number from Narration, not Account", () => {
+    const d = sidianPayload.parse(sample).ConfirmationRequest.data;
+    expect(parseSidianNarration(d.Narration)).toEqual({ expressnumber: "000053", meternumber: "14503254824" });
+    expect(d.Account).toBe("000053");
+  });
+  it("preserves leading zeros in express number and meter number", () => {
+    expect(parseSidianNarration("000053#0012345678")).toEqual({ expressnumber: "000053", meternumber: "0012345678" });
+  });
+  it("rejects a missing narration", () => {
+    expect(parseSidianNarration(null)).toBeNull();
+    expect(parseSidianNarration(undefined)).toBeNull();
+    expect(parseSidianNarration("")).toBeNull();
+  });
+  it("rejects a narration without the # delimiter", () => {
+    expect(parseSidianNarration("00005314503254824")).toBeNull();
+  });
+  it("rejects an empty meter number", () => {
+    expect(parseSidianNarration("000053#")).toBeNull();
+    expect(parseSidianNarration("000053#  ")).toBeNull();
+  });
+  it("rejects an empty express number and extra delimiters", () => {
+    expect(parseSidianNarration("#14503254824")).toBeNull();
+    expect(parseSidianNarration("a#b#c")).toBeNull();
   });
   it("accepts the correct username and password", () => expect(checkSidianAuth(basic("sidian", "s3cret"), cfg)).toBe(true));
   it("rejects a wrong password", () => expect(checkSidianAuth(basic("sidian", "x"), cfg)).toBe(false));

@@ -6,7 +6,7 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
     handlers: {
       POST: async ({ request }) => {
         const { ack } = await import("@/lib/ncba.server");
-        const { checkSidianPayload, matchSidianAuth, processSidianNotification, resolveSidianConfig, sidianPayload } =
+        const { checkSidianPayload, matchSidianAuth, parseSidianNarration, processSidianNotification, resolveSidianConfig, sidianPayload } =
           await import("@/lib/sidian.server");
 
         let body: unknown;
@@ -19,9 +19,12 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
         if (!parsed.success) return ack("1", "Invalid request", 400);
         const d = parsed.data.ConfirmationRequest.data;
 
+        // The meter to vend comes from Narration (expressnumber#meternumber), never Account.
+        const narration = parseSidianNarration(d.Narration);
+
         let resolved;
         try {
-          resolved = await resolveSidianConfig(d.Account, d.BusinessShortCode);
+          resolved = await resolveSidianConfig(narration?.meternumber ?? d.Account, d.BusinessShortCode);
         } catch {
           return ack("1", "Temporary error — retry later", 500);
         }
@@ -37,7 +40,8 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
         if (err === "AMOUNT_INVALID") return ack("1", "Invalid amount", 400);
 
         try {
-          return await processSidianNotification(parsed.data);
+          // A malformed narration is still recorded (rejected) for reconciliation, but never vended.
+          return await processSidianNotification(parsed.data, narration?.meternumber ?? null);
         } catch {
           return ack("1", "Temporary error — retry later", 500);
         }

@@ -42,6 +42,17 @@ export type SidianPayload = z.infer<typeof sidianPayload>;
 
 export type SidianAuthConfig = { username: string; password: string; shortcode: string };
 
+/**
+ * Sidian's Narration carries `expressnumber#meternumber` (e.g. "000053#14503254824").
+ * The meter number after `#` — never the Account field — identifies the meter to vend.
+ * Returns null when the narration is missing or malformed; callers must not fall back to Account.
+ */
+export function parseSidianNarration(narration: string | null | undefined): { expressnumber: string; meternumber: string } | null {
+  const parts = (narration ?? "").trim().split("#").map((s) => s.trim());
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  return { expressnumber: parts[0], meternumber: parts[1] };
+}
+
 /** Reads HTTP Basic credentials; never logged. */
 export function parseBasicAuth(header: string | null): { user: string; pass: string } | null {
   if (!header || !/^basic\s+/i.test(header)) return null;
@@ -70,12 +81,17 @@ export function checkSidianPayload(p: SidianPayload, cfg: SidianAuthConfig): str
   return null;
 }
 
-export async function processSidianNotification(p: SidianPayload) {
+/**
+ * Records and vends a Sidian notification. `parsedMeter` is the meter number from
+ * Narration; null means the narration was missing or malformed, in which case the
+ * payment is recorded as rejected (never vended, never falls back to Account).
+ */
+export async function processSidianNotification(p: SidianPayload, parsedMeter: string | null) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
   const r = p.ConfirmationRequest;
   const amount = parseNcbaAmount(r.data.Amount)!;
-  const confirmed = isSidianPaymentConfirmed(r.status);
+  const confirmed = isSidianPaymentConfirmed(r.status) && parsedMeter !== null;
 
   const { data: existing } = await db
     .from("bank_notifications").select("*").eq("bank", SIDIAN_BANK).eq("trans_id", r.TrasactionID).maybeSingle();
@@ -98,11 +114,16 @@ export async function processSidianNotification(p: SidianPayload) {
     narrative: r.data.Narration?.trim() || null,
     mobile: r.data.MSISDN || null,
     payer_name: r.data.Names?.trim() || null,
-    meter_number: r.data.Account,
+    // Parsed from Narration; Account is kept only as bill_ref_number for reference.
+    meter_number: parsedMeter ?? r.data.Account,
     status: confirmed ? "processing" : "rejected",
     attempts: (existing?.attempts ?? 0) + 1,
-    error_code: confirmed ? null : "PAYMENT_NOT_CONFIRMED",
-    error_message: confirmed ? null : `Sidian reported status ${r.status}; no token issued.`,
+    error_code: confirmed ? null : parsedMeter === null ? "NARRATION_INVALID" : "PAYMENT_NOT_CONFIRMED",
+    error_message: confirmed
+      ? null
+      : parsedMeter === null
+        ? "Narration missing or not in expressnumber#meternumber format; no token issued."
+        : `Sidian reported status ${r.status}; no token issued.`,
   };
   const saved = existing
     ? await db.from("bank_notifications").update(record).eq("id", existing.id).select("id").single()
@@ -111,7 +132,11 @@ export async function processSidianNotification(p: SidianPayload) {
     if (/duplicate|unique/i.test(saved.error.message)) return ack("1", "Notification is being processed — retry later", 409);
     return ack("1", "Could not record the notification — retry later", 500);
   }
-  if (!confirmed) return ack("0", "Notification recorded — payment not confirmed");
+  if (!confirmed)
+    return ack(
+      "0",
+      parsedMeter === null ? "Notification recorded — narration invalid, no token issued" : "Notification recorded — payment not confirmed",
+    );
 
   const result = await vendNcbaNotification(saved.data.id);
   try { await processDueNcbaRetries(3); } catch { /* never affects this payment */ }
