@@ -1,7 +1,7 @@
 import { Link, useRouterState, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Bell, CreditCard, Gauge, Home, MoreHorizontal, UserRound, WifiOff, Wrench } from "lucide-react";
+import { Bell, CreditCard, Gauge, Headset, Home, MoreHorizontal, UserRound, WifiOff, Wrench } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { ResidentAvatar } from "./ResidentAvatar";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export function ResidentMobileHeader({ title, name, photo, unread, actions }: { 
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2">
       <Link to="/resident/dashboard" className="min-w-0"><img src={logo} alt="SmatraPay" className="h-6 w-auto max-w-full" /></Link>
       <div className="flex shrink-0 items-center gap-1">
+        <Button asChild variant="ghost" size="icon" className="size-11"><Link to="/resident/support" aria-label="Ask Resident Support"><Headset /></Link></Button>
         <Button asChild variant="ghost" size="icon" className="relative size-11"><Link to="/resident/notifications" aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}><Bell />{unread > 0 && <span className="absolute right-1 top-1 size-2 rounded-full bg-primary" />}</Link></Button>
         <Button asChild variant="ghost" size="icon" className="size-11"><Link to="/resident/profile" aria-label="My Profile"><ResidentAvatar name={name} photo={photo} size="menu" /></Link></Button>
       </div>
