@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkSidianAuth, checkSidianPayload, isSidianPaymentConfirmed, sidianPayload } from "../sidian.server";
+import { checkSidianAuth, checkSidianPayload, isSidianPaymentConfirmed, parseSidianNarration, sidianPayload } from "../sidian.server";
 import { deductCommission } from "../commission";
 
 const cfg = { username: "sidian", password: "s3cret", shortcode: "111999" };
