@@ -99,4 +99,4 @@
 - [ ] Signed-in photo submission and staff reply verification (blocked: requesting user's account has no mintable session; sign-in required).
 - [x] Signed-in resident verification: email/password login redirects to /resident/dashboard; /resident/jobs and /resident/meters load successfully.
 
-- [ ] Publish resident PWA for phone install testing (after support chat)
+- [x] Publish resident PWA for phone install testing
