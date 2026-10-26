@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Signed-in users can read app settings" ON public.app_settings;
+CREATE POLICY "Admins can read app settings" ON public.app_settings FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
