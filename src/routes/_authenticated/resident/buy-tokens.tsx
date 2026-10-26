@@ -9,6 +9,9 @@ import { getResidentHome, quoteTokenPurchase, startTokenPurchase } from "@/lib/r
 import { validatePurchaseAmount } from "@/lib/resident-portal";
 import { PurchaseStatusCard } from "@/components/resident/PurchaseStatusCard";
 import { Card, Empty, field, kes, residentHead } from "@/components/resident/ResidentUI";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useResidentConnection } from "@/components/resident/ResidentMobileChrome";
 
 export const Route = createFileRoute("/_authenticated/resident/buy-tokens")({
   head: residentHead("Buy Tokens", "Buy electricity, water or gas tokens for your meters with M-Pesa."),
@@ -32,6 +35,8 @@ function Page() {
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [purchaseId, setPurchaseId] = useState<string | null>(search.purchase ?? null);
+  const [review, setReview] = useState(false);
+  const online = useResidentConnection();
   const requestId = useMemo(() => crypto.randomUUID(), [meterId, amount, phone]);
   useEffect(() => { if (!meterId && meters[0]) setMeterId(meters[0].id); }, [meters, meterId]);
   const meter = meters.find((m) => m.id === meterId);
@@ -45,7 +50,7 @@ function Page() {
   });
   const start = useMutation({
     mutationFn: () => startFn({ data: { meter_id: meterId, amount: amt, phone, request_id: requestId } }),
-    onSuccess: (r) => { setPurchaseId(r.id); (r.status === "payment_failed" ? toast.error : toast.success)(r.message); },
+    onSuccess: (r) => { setReview(false); setPurchaseId(r.id); (r.status === "payment_failed" ? toast.error : toast.info)(r.message); },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -56,7 +61,7 @@ function Page() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <Card title="Purchase details">
-            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); start.mutate(); }}>
+            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (online && quote.data && !quote.isFetching && !start.isPending) setReview(true); }}>
               <label className="block text-sm">Meter
                 <select className={`${field} mt-1`} value={meterId} onChange={(e) => setMeterId(e.target.value)}>
                   {meters.map((m) => <option key={m.id} value={m.id}>{m.type} · {m.meter_number} · {m.property_name} {m.unit_number}</option>)}
@@ -64,7 +69,7 @@ function Page() {
               </label>
               <div className="text-sm">Amount (KES)
                 <div className="mt-1 flex flex-wrap gap-2">
-                  {PRESETS.map((p) => <button type="button" key={p} onClick={() => setAmount(String(p))} className={amt === p ? "btn-primary px-3" : "btn-outline px-3"}>{p}</button>)}
+                  {PRESETS.map((p) => <Button type="button" variant={amt === p ? "default" : "outline"} key={p} onClick={() => setAmount(String(p))}>{p}</Button>)}
                 </div>
                 <input className={`${field} mt-2`} inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))} placeholder="Or enter an amount" />
                 {amtErr && <p className="mt-1 text-xs text-destructive">{amtErr}</p>}
@@ -72,9 +77,7 @@ function Page() {
               <label className="block text-sm">M-Pesa phone number
                 <input className={`${field} mt-1`} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07XX XXX XXX" inputMode="tel" />
               </label>
-              <button className="btn-primary w-full" disabled={!meter || !amount || !!amtErr || phone.replace(/\D/g, "").length < 9 || start.isPending}>
-                {start.isPending ? "Sending M-Pesa prompt…" : `Pay ${amount ? kes(amt) : ""} with M-Pesa`}
-              </button>
+              <Button className="min-h-11 w-full" disabled={!online || !quote.data || quote.isFetching || !!quote.error || !meter || !amount || !!amtErr || phone.replace(/\D/g, "").length < 9 || start.isPending}>Review payment</Button>
             </form>
           </Card>
           <Card title="Summary">
@@ -87,16 +90,33 @@ function Page() {
                 <Row k="Token value" v={kes(quote.data.net_amount)} strong />
                 {quote.data.estimated_units != null && <Row k="Estimated units" v={String(quote.data.estimated_units)} />}
               </dl>
-            ) : <p className="mt-4 text-sm text-muted-foreground">Enter an amount to see the breakdown.</p>}
+            ) : <p className="mt-4 text-sm text-muted-foreground">{quote.isFetching ? "Calculating your quote…" : "Enter an amount to see the breakdown."}</p>}
             {quote.error && <p className="mt-2 text-xs text-destructive">{(quote.error as Error).message}</p>}
           </Card>
         </div>
       )}
+      <Dialog open={review} onOpenChange={(open) => { if (!start.isPending) setReview(open); }}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Confirm token purchase</DialogTitle><DialogDescription>Check the meter and amount before sending an M-Pesa prompt.</DialogDescription></DialogHeader>
+          <dl className="space-y-3 text-sm">
+            <Row k="Meter" v={meter?.meter_number ?? "—"} />
+            <Row k="M-Pesa phone" v={phone} />
+            <Row k="You pay" v={kes(quote.data?.total_to_pay)} strong />
+            <Row k="Commission" v={kes(quote.data?.commission_amount)} />
+            <Row k="VAT on commission" v={kes(quote.data?.vat_on_commission_amount)} />
+            <Row k="Token value" v={kes(quote.data?.net_amount)} />
+            {quote.data?.estimated_units != null && <Row k="Estimated units" v={String(quote.data.estimated_units)} />}
+          </dl>
+          <p className="text-sm text-muted-foreground">Your token is issued only after payment confirmation. Do not submit another payment while this one is pending.</p>
+          <Button className="min-h-11" disabled={!online || start.isPending || quote.isFetching || !!quote.error} onClick={() => { if (!start.isPending && online) start.mutate(); }}>{start.isPending ? "Sending M-Pesa prompt…" : `Confirm & pay ${kes(quote.data?.total_to_pay)}`}</Button>
+          <Button variant="outline" disabled={start.isPending} onClick={() => setReview(false)}>Go back</Button>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   );
 }
 
 function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
-  return <div className={`flex justify-between ${strong ? "font-semibold text-foreground" : "text-muted-foreground"}`}><dt>{k}</dt><dd>{v}</dd></div>;
+  return <div className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 ${strong ? "font-semibold text-foreground" : "text-muted-foreground"}`}><dt>{k}</dt><dd className="text-right">{v}</dd></div>;
 }
 

@@ -23,7 +23,7 @@ export default defineConfig({
       manifest: false,
       workbox: {
         globPatterns: ["offline.html", "pwa-*.png", "favicon.png"],
-        navigateFallback: undefined,
+        navigateFallback: null,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {

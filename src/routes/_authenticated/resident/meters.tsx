@@ -6,6 +6,7 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { getResidentHome } from "@/lib/resident-portal.functions";
 import { Badge, Card, Empty, day, field, residentHead, when } from "@/components/resident/ResidentUI";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/resident/meters")({
   head: residentHead("My Properties & Meters", "The homes, units and prepaid meters assigned to you."),
@@ -27,6 +28,7 @@ function Page() {
   return (
     <DashboardShell access={access} title="My Properties & Meters" description="Homes and meters linked to your account.">
       {q.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {q.error && <div role="alert"><p className="text-sm text-destructive">Could not load homes and meters.</p><Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div>}
       {q.data && (
         <div className="space-y-6">
           <Card title="My homes">
@@ -57,7 +59,9 @@ function Page() {
               ))}
             </div>
             {meters.length === 0 ? <Empty>No meters match.</Empty> : (
-              <div className="overflow-x-auto">
+              <>
+              <ul className="divide-y divide-border lg:hidden">{meters.map((m) => <li key={m.id} className="space-y-3 py-4"><div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><div className="min-w-0"><p className="text-sm font-semibold">{m.type}</p><p className="mt-1 font-mono text-sm">{m.meter_number}</p></div><Badge status={m.status}>{m.status}</Badge></div><p className="text-sm text-muted-foreground">{m.property_name} · Unit {m.unit_number}<br />{m.supplier} · {m.owner}</p><p className="text-xs text-muted-foreground">Last purchase: {when(m.last_purchase_at)}</p>{m.status === "active" && <Button asChild><Link to="/resident/buy-tokens" search={{ meter: m.id }}>Buy tokens</Link></Button>}</li>)}</ul>
+              <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs uppercase text-muted-foreground">
                     <tr><th className="py-2 pr-4">Meter</th><th className="pr-4">Type</th><th className="pr-4">Home</th><th className="pr-4">Supplier</th><th className="pr-4">Managed by</th><th className="pr-4">Status</th><th className="pr-4">Last purchase</th><th /></tr>
@@ -78,6 +82,7 @@ function Page() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
             <p className="mt-3 text-xs text-muted-foreground">Live balances are unavailable — your vending services don't report them reliably.</p>
           </Card>
