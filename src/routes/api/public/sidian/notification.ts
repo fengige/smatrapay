@@ -40,7 +40,8 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
         if (err === "AMOUNT_INVALID") return ack("1", "Invalid amount", 400);
 
         try {
-          return await processSidianNotification(parsed.data);
+          // A malformed narration is still recorded (rejected) for reconciliation, but never vended.
+          return await processSidianNotification(parsed.data, narration?.meternumber ?? null);
         } catch {
           return ack("1", "Temporary error — retry later", 500);
         }
