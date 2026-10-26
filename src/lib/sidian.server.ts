@@ -114,11 +114,16 @@ export async function processSidianNotification(p: SidianPayload, parsedMeter: s
     narrative: r.data.Narration?.trim() || null,
     mobile: r.data.MSISDN || null,
     payer_name: r.data.Names?.trim() || null,
-    meter_number: r.data.Account,
+    // Parsed from Narration; Account is kept only as bill_ref_number for reference.
+    meter_number: parsedMeter ?? r.data.Account,
     status: confirmed ? "processing" : "rejected",
     attempts: (existing?.attempts ?? 0) + 1,
-    error_code: confirmed ? null : "PAYMENT_NOT_CONFIRMED",
-    error_message: confirmed ? null : `Sidian reported status ${r.status}; no token issued.`,
+    error_code: confirmed ? null : parsedMeter === null ? "NARRATION_INVALID" : "PAYMENT_NOT_CONFIRMED",
+    error_message: confirmed
+      ? null
+      : parsedMeter === null
+        ? "Narration missing or not in expressnumber#meternumber format; no token issued."
+        : `Sidian reported status ${r.status}; no token issued.`,
   };
   const saved = existing
     ? await db.from("bank_notifications").update(record).eq("id", existing.id).select("id").single()
