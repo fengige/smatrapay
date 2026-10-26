@@ -52,7 +52,7 @@ function Page() {
               {msgs.length === 1 && <div className="flex flex-wrap gap-2">{STARTERS.map((s) => <button key={s} className="btn-outline px-3 text-xs" onClick={() => send(s)}>{s}</button>)}</div>}
             </div>
             <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); send(text); }}>
-              <input autoFocus className={field} value={text} onChange={(e) => setText(e.target.value)} placeholder={navigator.onLine === false ? "Connect to the internet to ask" : "Ask about payments, tokens, rent or repairs…"} aria-label="Message" />
+              <input autoFocus className={field} value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask about payments, tokens, rent or repairs…" aria-label="Message" />
               <button className="btn-primary min-h-11 min-w-11 px-3" disabled={!text.trim() || ask.isPending} aria-label="Send"><Send className="size-4" /></button>
             </form>
           </div>
