@@ -120,6 +120,13 @@
       "when": 1792956867407,
       "tag": "0016_resident_enquiry_decisions",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793016733304,
+      "tag": "0017_migration",
+      "breakpoints": true
     }
   ]
 }
