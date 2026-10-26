@@ -11,6 +11,7 @@ import { PURCHASE_LABEL, canRetryVend, type PurchaseStatus } from "@/lib/residen
 import { Badge, Card, Empty, field, kes, residentHead, when } from "@/components/resident/ResidentUI";
 import { PurchaseStatusCard } from "@/components/resident/PurchaseStatusCard";
 import { Button } from "@/components/ui/button";
+import { useResidentConnection } from "@/components/resident/ResidentMobileChrome";
 
 export const Route = createFileRoute("/_authenticated/resident/transactions")({
   head: residentHead("My Transactions", "Your token purchases, M-Pesa receipts and token retrieval."),
@@ -24,6 +25,7 @@ function Page() {
   const listFn = useServerFn(listMyPurchases);
   const retryFn = useServerFn(retryTokenPurchase);
   const qc = useQueryClient();
+  const online = useResidentConnection();
   const [f, setF] = useState({ q: "", status: "", from: "", to: "" });
   const [open, setOpen] = useState<string | null>(null);
   const q = useQuery({ queryKey: ["resident-purchases", f], queryFn: () => listFn({ data: { ...f, status: f.status || undefined, from: f.from || undefined, to: f.to || undefined } }), enabled: access.allowed });
@@ -47,7 +49,7 @@ function Page() {
         </div>
         {q.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : q.error ? <div role="alert"><p className="text-sm text-destructive">Could not load payments.</p><Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div> : (q.data ?? []).length === 0 ? <Empty>No transactions found.</Empty> : (
           <>
-          <ul className="divide-y divide-border lg:hidden">{(q.data ?? []).map((r) => <li key={r.id} className="space-y-3 py-4"><div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><div className="min-w-0"><p className="font-semibold">{kes(r.amount)}</p><p className="mt-1 text-xs text-muted-foreground">{r.meter_type} · {r.meter_number}</p></div><Badge status={r.status}>{PURCHASE_LABEL[r.status as PurchaseStatus] ?? r.status}</Badge></div><p className="text-xs text-muted-foreground">{when(r.created_at)}<br />M-Pesa · {r.mpesa_receipt_number ?? "Receipt pending"}</p><div className="flex gap-2"><Button variant="outline" onClick={() => setOpen(r.id)}>{r.status === "vended" ? "View token & receipt" : "View status"}</Button>{canRetryVend(r.status) && <Button disabled={retry.isPending} onClick={() => retry.mutate(r.id)}>Retry token</Button>}</div></li>)}</ul>
+          <ul className="divide-y divide-border lg:hidden">{(q.data ?? []).map((r) => <li key={r.id} className="space-y-3 py-4"><div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><div className="min-w-0"><p className="font-semibold">{kes(r.amount)}</p><p className="mt-1 text-xs text-muted-foreground">{r.meter_type} · {r.meter_number}</p></div><Badge status={r.status}>{PURCHASE_LABEL[r.status as PurchaseStatus] ?? r.status}</Badge></div><p className="text-xs text-muted-foreground">{when(r.created_at)}<br />M-Pesa · {r.mpesa_receipt_number ?? "Receipt pending"}</p><div className="flex gap-2"><Button variant="outline" onClick={() => setOpen(r.id)}>{r.status === "vended" ? "View token & receipt" : "View status"}</Button>{canRetryVend(r.status) && <Button disabled={!online || retry.isPending} onClick={() => { if (online && !retry.isPending) retry.mutate(r.id); }}>Retry token</Button>}</div></li>)}</ul>
           <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-muted-foreground">
@@ -65,7 +67,7 @@ function Page() {
                     <td className="pr-4"><Badge status={r.status}>{PURCHASE_LABEL[r.status as PurchaseStatus] ?? r.status}</Badge></td>
                     <td className="space-x-2 whitespace-nowrap">
                       <button className="text-primary" onClick={() => setOpen(r.id)}>{r.status === "vended" ? "View token" : "Details"}</button>
-                      {canRetryVend(r.status) && <button className="text-primary" disabled={retry.isPending} onClick={() => retry.mutate(r.id)}>Retry token</button>}
+                      {canRetryVend(r.status) && <Button variant="link" disabled={!online || retry.isPending} onClick={() => { if (online && !retry.isPending) retry.mutate(r.id); }}>Retry token</Button>}
                     </td>
                   </tr>
                 ))}

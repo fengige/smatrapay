@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Resident mobile follow-up: installation control in More, allowlisted notification links, offline request/receipt/profile/security controls and refresh-safe existing payment links; current services reused.
+- [x] Follow-up regression: 68 tests passed; 360/768/1280px public sign-in/offline screenshots without overflow or page errors; resident/admin/vendor URLs deny signed-out access, manifest/icons load and preview registers no workers; build OK.
+
 - [x] Resident mobile app: resident-only header, Home/Payments/Utilities/Requests/Account tabs, More, safe-area/touch layouts, stacked meter/payment/request lists and existing feature hubs; staff layouts retained.
 - [x] Resident PWA: logo-based icons/manifest, guarded generated worker, non-sensitive offline fallback, connection-required purchase review and reconnection refresh; no personal HTML/API caching.
 - [x] Resident regression checks: 84 tests passed; public sign-in tested at 360/768/1280px without overflow or page errors, protected mobile links redirect to sign-in, preview registers no workers; build OK.

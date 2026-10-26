@@ -11,6 +11,7 @@ import { createMyServiceRequest, listMyMetersForForms } from "@/lib/resident-por
 import { field } from "@/components/resident/ResidentUI";
 import { Button } from "@/components/ui/button";
 import { MaintenancePhotos } from "@/components/resident/MaintenancePhotos";
+import { useResidentConnection } from "@/components/resident/ResidentMobileChrome";
 
 export const Route = createFileRoute("/_authenticated/resident/jobs")({
   head: () => ({ meta: [
@@ -47,6 +48,7 @@ function RequestForm({ onDone }: { onDone: () => void }) {
   const metersFn = useServerFn(listMyMetersForForms);
   const createFn = useServerFn(createMyServiceRequest);
   const qc = useQueryClient();
+  const online = useResidentConnection();
   const meters = useQuery({ queryKey: ["resident-form-meters"], queryFn: () => metersFn() });
   const [f, setF] = useState({ meter_id: "", issue_type: ISSUES[0] ?? "Other", priority: "medium" as "low" | "medium" | "high", description: "", preferred_date: "" });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -58,7 +60,10 @@ function RequestForm({ onDone }: { onDone: () => void }) {
   });
   if (meters.data && meters.data.length === 0) return <p className="text-sm text-muted-foreground">You have no meters linked to your home yet, so a request can't be routed. Contact your property manager.</p>;
   return (
-    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); m.mutate(); }}>
+    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (online && !m.isPending && !uploading && !meters.isPending && !meters.error) m.mutate(); }}>
+      {meters.isPending && <p role="status" className="text-sm text-muted-foreground">Loading your assigned meters…</p>}
+      {meters.error && <div role="alert"><p className="text-sm text-destructive">Could not load your meters.</p><Button type="button" variant="outline" onClick={() => void meters.refetch()}>Try again</Button></div>}
+      {!online && <p role="status" className="text-sm text-muted-foreground">Connect to upload photos and submit this request.</p>}
       <label className="block text-sm">Meter<select className={`${field} mt-1`} value={f.meter_id} onChange={(e) => setF({ ...f, meter_id: e.target.value })}>
         {(meters.data ?? []).map((x) => <option key={x.id} value={x.id}>{x.type} · {x.meter_number}</option>)}
       </select></label>
@@ -66,8 +71,8 @@ function RequestForm({ onDone }: { onDone: () => void }) {
       <label className="block text-sm">Priority<select className={`${field} mt-1`} value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value as never })}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
       <label className="block text-sm">Describe the problem<textarea className={`${field} mt-1 h-24 py-2`} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} required minLength={5} /></label>
       <label className="block text-sm">Preferred date (optional)<input type="date" className={`${field} mt-1`} value={f.preferred_date} onChange={(e) => setF({ ...f, preferred_date: e.target.value })} /></label>
-      <MaintenancePhotos paths={photos} onChange={setPhotos} onBusy={setUploading} />
-      <Button className="w-full" disabled={uploading || m.isPending || meters.isPending || !!meters.error || f.description.trim().length < 5}>{m.isPending ? "Submitting…" : "Submit request"}</Button>
+      {online && <MaintenancePhotos paths={photos} onChange={setPhotos} onBusy={setUploading} />}
+      <Button className="w-full" disabled={!online || uploading || m.isPending || meters.isPending || !!meters.error || f.description.trim().length < 5}>{m.isPending ? "Submitting…" : "Submit request"}</Button>
     </form>
   );
 }
