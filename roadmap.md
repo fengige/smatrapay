@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Resident mobile app: resident-only mobile header, five-tab navigation, More, safe-area/touch layouts and real existing feature hubs; desktop regression preserved.
+- [ ] Resident PWA: icons/manifest, guarded offline non-sensitive fallback, online-only money actions and reconnection refresh.
+- [ ] Resident mobile acceptance: mobile/desktop navigation, sign-in/security, purchase review, requests/profile and logout; report unavailable existing workflows and blocked real actions.
+
 - [x] Shared resident avatars: Profile Photo columns, authorized batched ten-minute photo reads, consistent detail/profile fallbacks and refresh; upload rules unchanged; 45 tests and preview avatar states passed, build OK.
 - [ ] Shared avatar signed-in acceptance across admin/vendor/resident pages and upload/removal persistence (blocked: no account matches the requesting user for preview sign-in).
 
