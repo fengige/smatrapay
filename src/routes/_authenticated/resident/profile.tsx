@@ -17,6 +17,8 @@ import { ResidentPhotoDialog } from "@/components/resident/ResidentPhotoDialog";
 import { ResidentSecurity } from "@/components/resident/ResidentSecurity";
 import { ResidentProfileAudit } from "@/components/resident/ResidentProfileAudit";
 import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
+import { usePortalSignOut } from "@/components/PortalLayout";
+import { LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/resident/profile")({
   head: residentHead("My Profile", "Manage your SmatraPay resident information, private profile photo, account security and activity."),
@@ -27,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/resident/profile")({
 
 function Page() {
   const access = Route.useLoaderData();
+  const signOut = usePortalSignOut();
   const getFn = useServerFn(getResidentProfile);
   const saveFn = useServerFn(saveResidentPersonal);
   const qc = useQueryClient();
@@ -53,6 +56,7 @@ function Page() {
           <TabsContent value="audit"><ResidentProfileAudit /></TabsContent>
         </Tabs>
         <ResidentPhotoDialog open={photoOpen} setOpen={setPhotoOpen} photo={profile.photo} onChange={refresh} />
+        <div className="mt-6 border-t border-border py-5"><Button variant="outline" className="min-h-11" onClick={signOut}><LogOut />Sign out</Button></div>
       </div>}
     </DashboardShell>
   );

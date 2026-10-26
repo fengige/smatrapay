@@ -35,7 +35,7 @@ function CustomerJobs() {
     actions={<Button onClick={() => setOpen(true)}>New request</Button>}>
     <JobsView mode="customer" />
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto [&_button]:min-h-11 [&_input]:min-h-11 [&_select]:min-h-11">
         <DialogHeader><DialogTitle>New service request</DialogTitle></DialogHeader>
         {open && <RequestForm onDone={() => setOpen(false)} />}
       </DialogContent>
@@ -67,7 +67,7 @@ function RequestForm({ onDone }: { onDone: () => void }) {
       <label className="block text-sm">Describe the problem<textarea className={`${field} mt-1 h-24 py-2`} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} required minLength={5} /></label>
       <label className="block text-sm">Preferred date (optional)<input type="date" className={`${field} mt-1`} value={f.preferred_date} onChange={(e) => setF({ ...f, preferred_date: e.target.value })} /></label>
       <MaintenancePhotos paths={photos} onChange={setPhotos} onBusy={setUploading} />
-      <Button className="w-full" disabled={uploading || m.isPending || f.description.trim().length < 5}>{m.isPending ? "Submitting…" : "Submit request"}</Button>
+      <Button className="w-full" disabled={uploading || m.isPending || meters.isPending || !!meters.error || f.description.trim().length < 5}>{m.isPending ? "Submitting…" : "Submit request"}</Button>
     </form>
   );
 }

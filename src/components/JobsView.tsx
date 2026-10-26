@@ -134,7 +134,7 @@ export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "pro
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
+      <div className={`${mode === "customer" ? "grid grid-cols-1 sm:flex sm:flex-wrap" : "flex flex-wrap"} items-end gap-3 rounded-xl border border-border bg-card p-4`}>
         <label className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <input
@@ -168,7 +168,8 @@ export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "pro
         <input type="date" className={input} value={to} onChange={(e) => (setTo(e.target.value), reset())} aria-label="To date" />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      {mode === "customer" && <div className="space-y-3 lg:hidden">{jobs.isLoading ? <p role="status" className="py-8 text-sm text-muted-foreground">Loading requests…</p> : jobs.error ? <div role="alert"><p className="text-sm text-destructive">Could not load requests.</p><Button variant="outline" onClick={() => void jobs.refetch()}>Try again</Button></div> : !rows.length ? <p className="py-8 text-center text-sm text-muted-foreground">No service requests match these filters.</p> : rows.map((r) => <article key={r.id} className="space-y-3 rounded-lg border border-border bg-card p-4"><div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2"><p className="min-w-0 font-mono text-xs text-muted-foreground">{r.request_number}</p><span className="rounded-full bg-muted px-2 py-1 text-xs">{r.status === "resolved" ? "Completed" : label(r.status)}</span></div><h2 className="text-sm font-semibold">{r.issue_type}</h2><p className="line-clamp-2 text-sm text-muted-foreground">{r.description}</p><p className="text-xs text-muted-foreground">{[r.property_name, r.unit_number].filter(Boolean).join(" · ")}<br />{date(r.created_at)} · {r.provider_name || "Provider not assigned"}</p><Button variant="outline" className="min-h-11 w-full" onClick={() => setDetail(r)}>View request & updates</Button></article>)}</div>}
+      <div className={`${mode === "customer" ? "hidden lg:block" : ""} overflow-x-auto rounded-xl border border-border bg-card`}>
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
             <tr>
@@ -273,7 +274,7 @@ export function JobsView({ mode, residentId }: { mode: "admin" | "vendor" | "pro
         </table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className={`${mode === "customer" ? "grid gap-2 sm:flex" : "flex"} items-center justify-between text-sm text-muted-foreground`}>
         <span>{total} job{total === 1 ? "" : "s"}</span>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
