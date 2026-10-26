@@ -6,7 +6,7 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
     handlers: {
       POST: async ({ request }) => {
         const { ack } = await import("@/lib/ncba.server");
-        const { checkSidianPayload, matchSidianAuth, processSidianNotification, resolveSidianConfig, sidianPayload } =
+        const { checkSidianPayload, matchSidianAuth, parseSidianNarration, processSidianNotification, resolveSidianConfig, sidianPayload } =
           await import("@/lib/sidian.server");
 
         let body: unknown;
@@ -19,9 +19,12 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
         if (!parsed.success) return ack("1", "Invalid request", 400);
         const d = parsed.data.ConfirmationRequest.data;
 
+        // The meter to vend comes from Narration (expressnumber#meternumber), never Account.
+        const narration = parseSidianNarration(d.Narration);
+
         let resolved;
         try {
-          resolved = await resolveSidianConfig(d.Account, d.BusinessShortCode);
+          resolved = await resolveSidianConfig(narration?.meternumber ?? d.Account, d.BusinessShortCode);
         } catch {
           return ack("1", "Temporary error — retry later", 500);
         }

@@ -132,7 +132,11 @@ export async function processSidianNotification(p: SidianPayload, parsedMeter: s
     if (/duplicate|unique/i.test(saved.error.message)) return ack("1", "Notification is being processed — retry later", 409);
     return ack("1", "Could not record the notification — retry later", 500);
   }
-  if (!confirmed) return ack("0", "Notification recorded — payment not confirmed");
+  if (!confirmed)
+    return ack(
+      "0",
+      parsedMeter === null ? "Notification recorded — narration invalid, no token issued" : "Notification recorded — payment not confirmed",
+    );
 
   const result = await vendNcbaNotification(saved.data.id);
   try { await processDueNcbaRetries(3); } catch { /* never affects this payment */ }
