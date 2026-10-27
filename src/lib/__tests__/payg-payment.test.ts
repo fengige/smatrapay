@@ -45,6 +45,10 @@ describe("Provider-verified Pay-as-you-go confirmation", () => {
     await verifyPaygPayment(db, { ...a, id: "attempt", status: "pending" }, callback); expect(db.rpc).toHaveBeenCalledWith("confirm_payg_payment", { p_attempt: "attempt", p_success: true, p_receipt: "ABC1234567", p_message: null });
   });
   it("does not repeat confirmation on duplicate completed callbacks", async () => { const db = dbMock(); await verifyPaygPayment(db, { ...a, id: "attempt", status: "completed", receipt: "ABC1234567" }, callback); expect(db.rpc).not.toHaveBeenCalled(); });
+  it("allows a verified late callback to fill a receipt after status-query confirmation", async () => {
+    const db = dbMock(); vi.mocked(darajaPost).mockResolvedValue({ ok: true, status: 200, body: { ResponseCode: "0", ResultCode: 0 } });
+    await verifyPaygPayment(db, { ...a, id: "attempt", status: "completed", receipt: null }, callback); expect(db.rpc).toHaveBeenCalledWith("confirm_payg_payment", expect.objectContaining({ p_receipt: "ABC1234567" }));
+  });
   it("records a provider-confirmed failure without credit", async () => {
     const db = dbMock(); vi.mocked(darajaPost).mockResolvedValue({ ok: true, status: 200, body: { ResponseCode: "0", ResultCode: 1032 } });
     await verifyPaygPayment(db, { ...a, id: "attempt", status: "pending" }); expect(db.rpc).toHaveBeenCalledWith("confirm_payg_payment", expect.objectContaining({ p_success: false, p_receipt: null }));

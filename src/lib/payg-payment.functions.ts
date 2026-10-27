@@ -22,7 +22,7 @@ export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware
 export const getPaygPaymentAvailability = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const s = await residentScope(context as any);
   const ids = [...new Set(s.meters.map(m => m.vendor_id).filter(Boolean))] as string[];
-  const results = await Promise.all(ids.map(async id => ({ vendor_id: id, available: Boolean(await mpesaConfigFor(s.db, id)) })));
+  const results = await Promise.all(ids.map(async id => { const cfg = await mpesaConfigFor(s.db, id); return { vendor_id: id, available: Boolean(cfg && cfg.currency === "KES" && cfg.country === "KE") }; }));
   return results;
 });
 
@@ -72,7 +72,12 @@ export const startPaygPayment = createServerFn({ method: "POST" }).middleware([r
   const { error: saveError } = await db.from("payg_payment_attempts").update({ status: "pending", checkout_request_id: body.CheckoutRequestID, merchant_request_id: body.MerchantRequestID }).eq("id", attempt.id).eq("status", "initiated");
   if (saveError) return fail("uncertain", "The payment requires review. Do not pay again.");
   const { data: tx } = await db.from("mpesa_transactions").insert({ payment_method_id: cfg.payment_method_id, user_id: context.userId, environment: cfg.environment, flow: "stk", merchant_request_id: body.MerchantRequestID, checkout_request_id: body.CheckoutRequestID, phone_number: phone, amount: Number(attempt.amount_cents) / 100, account_reference: `PAYG:${plan.id}`, status: "pending", result_desc: "Pay-as-you-go payment pending" }).select("id").single();
-  if (tx) await db.from("payg_payment_attempts").update({ mpesa_transaction_id: tx.id }).eq("id", attempt.id);
+  if (tx) {
+    await db.from("payg_payment_attempts").update({ mpesa_transaction_id: tx.id }).eq("id", attempt.id);
+    // A callback can beat the transaction-link write; preserve the already confirmed result.
+    const { data: state } = await db.from("payg_payment_attempts").select("status,receipt").eq("id", attempt.id).maybeSingle();
+    if (state && ["completed", "failed"].includes(state.status)) await db.from("mpesa_transactions").update({ status: state.status, mpesa_receipt_number: state.receipt }).eq("id", tx.id);
+  }
   return { id: attempt.id as string, status: "pending", message: "Check your phone and enter your M-Pesa PIN. Progress updates only after confirmation." };
 });
 

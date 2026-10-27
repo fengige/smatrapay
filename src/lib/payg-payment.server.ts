@@ -8,7 +8,7 @@ export async function capabilityHash(value: string) {
 
 /** Provider lookup, not the public callback's asserted ResultCode, confirms payment. */
 export async function verifyPaygPayment(db: any, attempt: any, callback?: any) {
-  if (!attempt.checkout_request_id || ["completed", "failed"].includes(attempt.status)) return;
+  if (!attempt.checkout_request_id || attempt.status === "failed" || (attempt.status === "completed" && (!callback || attempt.receipt))) return;
   const { data: cfg } = await db.from("payment_method_configurations").select("*").eq("id", attempt.config_id).maybeSingle();
   if (!cfg?.consumer_key || !cfg.consumer_secret || !cfg.passkey) throw new Error("Payment verification is unavailable.");
   const token = await getDarajaToken(cfg.environment, cfg.consumer_key, cfg.consumer_secret);
