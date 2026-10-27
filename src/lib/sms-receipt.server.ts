@@ -1,3 +1,4 @@
+import { formatUnits } from "@/lib/token-units";
 /**
  * Shared SMS receipt sender for admin Token Management and POS.
  * Resolves the meter's real owner from the meter record, then uses that
@@ -106,7 +107,7 @@ export async function sendTokenReceiptSms(
   const when = new Date(tok.created_at).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" });
   const text =
     `SmatraPay token for meter ${meter.meter_number}: ${tok.token}. ` +
-    `Units ${Number(tok.units ?? 0)}, KES ${Number(tok.amount ?? 0).toFixed(2)}.` +
+    `Units ${formatUnits(tok.units)}, KES ${Number(tok.amount ?? 0).toFixed(2)}.` +
     (tok.reference ? ` Ref ${tok.reference}.` : "") +
     ` ${when}`;
   const refId = `rcpt-${crypto.randomUUID()}`;

@@ -5,6 +5,7 @@ import type {
   VendingOutcome,
   VendingRequest,
 } from "./types";
+import { truncateUnits, unitsFromAmount, formatUnits } from "@/lib/token-units";
 
 /**
  * Icon-Token (ITaaS) integration.
@@ -29,7 +30,7 @@ export function iconNumber(n: number, dp: number): string {
 /** units = tokenizable amount / meter unit price (SmatraPay Price Management). */
 export function iconUnits(amount: number, pricePerUnit: number): number {
   if (!(pricePerUnit > 0)) return 0;
-  return Number((amount / pricePerUnit).toFixed(4));
+  return unitsFromAmount(amount, pricePerUnit);
 }
 
 export function iconFailure(code: string | null, desc: string | null, http: number | null) {
@@ -69,7 +70,7 @@ export const iconVendingService: VendingIntegration = {
         log: null,
       };
     const amount = req.vend_by_unit ? Number((req.units * price).toFixed(2)) : req.amount;
-    const units = req.vend_by_unit ? req.units : iconUnits(amount, price);
+    const units = req.vend_by_unit ? truncateUnits(req.units) : iconUnits(amount, price);
     if (!(amount > 0) || !(units > 0))
       return {
         outcome: { ok: false, error_code: "INVALID_AMOUNT", message: "The amount is too small to buy any units at this meter's price.", state: "failed" } as VendingOutcome,
@@ -78,7 +79,7 @@ export const iconVendingService: VendingIntegration = {
 
     const body = {
       drn: req.meter_number,
-      units: iconNumber(units, 4),
+      units: formatUnits(units),
       unitsAmount: iconNumber(amount, 2),
       taasid: c.api_taas_id ?? "",
       taaspasswd: c.api_taas_password ?? "",

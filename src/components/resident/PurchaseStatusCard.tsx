@@ -1,3 +1,4 @@
+import { formatUnits } from "@/lib/token-units";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -31,7 +32,7 @@ export function PurchaseStatusCard({ id, onNew }: { id: string; onNew?: () => vo
             <p className="min-w-0 break-all font-mono text-xl font-bold text-foreground">{tok}</p>
             <Button variant="outline" size="icon" className="size-11" aria-label="Copy token" onClick={async () => { try { await navigator.clipboard.writeText(tok.replace(/\D/g, "")); toast.success("Token copied"); } catch { toast.error("Could not copy. Select the token to copy it."); } }}><Copy className="size-4" /></Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">Enter the 20 digits on your meter keypad and press Enter. {p.token?.units != null ? `Units: ${p.token.units}.` : ""}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Enter the 20 digits on your meter keypad and press Enter. {p.token?.units != null ? `Units: ${formatUnits(p.token.units)}.` : ""}</p>
         </div>
       )}
       {onNew && !["pending_payment", "paid", "vending", "initiated"].includes(p.status) && <Button variant="outline" className="mt-4" onClick={onNew}>Buy another token</Button>}

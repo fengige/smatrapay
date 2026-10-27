@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { truncateUnits, unitsFromAmount, formatUnits } from "@/lib/token-units";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -689,7 +690,7 @@ export const requestVendorToken = createServerFn({ method: "POST" })
     if (meter.status !== "active") throw new Error("Activate this meter before requesting a token");
 
     const price = Number(meter.price_per_unit ?? 0);
-    const units = price > 0 ? Number((data.amount / price).toFixed(2)) : 0;
+    const units = price > 0 ? unitsFromAmount(data.amount, price) : 0;
     const reference = `VT-${Date.now().toString(36).toUpperCase()}`;
 
     const { data: token, error } = await supabase

@@ -1,3 +1,4 @@
+import { formatUnits, truncateUnits } from "@/lib/token-units";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -178,7 +179,7 @@ function TokenManagementPage() {
           vend_by_unit: mode === "units",
           request_id: (requestIdRef.current ??= crypto.randomUUID()),
           units: needsAmount
-            ? Number(units.toFixed(2))
+            ? truncateUnits(units)
             : needsOverdraft
               ? Number(overdraftNumber.toFixed(2))
               : 0,
@@ -424,7 +425,7 @@ function TokenManagementPage() {
                       <p className="text-xs text-destructive">{amountError}</p>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        ≈ {units.toFixed(2)} units · KES {value.toFixed(2)}
+                        ≈ {formatUnits(units)} units · KES {value.toFixed(2)}
                       </p>
                     )}
                   </div>
@@ -543,7 +544,7 @@ function TokenManagementPage() {
                 <p className="mt-1 font-mono text-xl font-bold tracking-wider">{token.token}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {token.action === "credit"
-                    ? `${token.units.toFixed(2)} units · KES ${token.amount.toFixed(2)} · `
+                    ? `${formatUnits(token.units)} units · KES ${token.amount.toFixed(2)} · `
                     : token.action === "set_max_overdraft"
                       ? `Max overdraft ${token.units.toFixed(2)} · `
                       : ""}
@@ -637,7 +638,7 @@ function TokenManagementPage() {
                       <td className="py-2 pr-4">{ACTION_LABEL[t.action]}</td>
                       <td className="py-2 pr-4">
                         {t.action === "credit"
-                          ? `${t.units.toFixed(2)} u · KES ${t.amount.toFixed(2)}`
+                          ? `${formatUnits(t.units)} u · KES ${t.amount.toFixed(2)}`
                           : t.action === "set_max_overdraft"
                             ? `Max OD ${t.units.toFixed(2)}`
                             : "—"}
@@ -701,7 +702,7 @@ function TokenManagementPage() {
                 ["Action", ACTION_LABEL[action]],
                 ...(needsAmount
                   ? ([
-                      ["Units", units.toFixed(2)],
+                      ["Units", formatUnits(units)],
                       ["Amount", `KES ${value.toFixed(2)}`],
                     ] as [string, string][])
                   : []),

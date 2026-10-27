@@ -1,3 +1,4 @@
+import { formatUnits, truncateUnits } from "@/lib/token-units";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -90,7 +91,7 @@ function VendorShiftReportPage() {
     lines.push(["Payment method", "Sales", "Units", "Amount"].map(esc).join(","));
     for (const [m, t] of byMethod) {
       lines.push(
-        [METHOD_LABEL[m] ?? m, t.count, t.units.toFixed(2), t.amount.toFixed(2)].map(esc).join(","),
+        [METHOD_LABEL[m] ?? m, t.count, formatUnits(t.units), t.amount.toFixed(2)].map(esc).join(","),
       );
     }
     lines.push(["Total", active.length, totalUnits.toFixed(2), totalAmount.toFixed(2)].map(esc).join(","));
@@ -107,7 +108,7 @@ function VendorShiftReportPage() {
           new Date(r.created_at).toLocaleString(),
           r.meter_number,
           r.token,
-          r.units.toFixed(2),
+          formatUnits(r.units),
           r.amount.toFixed(2),
           METHOD_LABEL[r.method] ?? r.method,
           r.reference ?? "",
@@ -254,7 +255,7 @@ function VendorShiftReportPage() {
                   <tr key={m} className="border-t border-border">
                     <td className="py-2 pr-4 font-medium">{METHOD_LABEL[m] ?? m}</td>
                     <td className="py-2 pr-4">{t.count}</td>
-                    <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
+                    <td className="py-2 pr-4">{formatUnits(t.units)}</td>
                     <td className="py-2">{money(t.amount)}</td>
                   </tr>
                 ))}
@@ -301,7 +302,7 @@ function VendorShiftReportPage() {
                       <td className="py-2 pr-4">{new Date(r.created_at).toLocaleString()}</td>
                       <td className="py-2 pr-4">{r.meter_number}</td>
                       <td className="py-2 pr-4 font-mono text-xs">{r.token}</td>
-                      <td className="py-2 pr-4">{r.units.toFixed(2)}</td>
+                      <td className="py-2 pr-4">{formatUnits(r.units)}</td>
                       <td className="py-2 pr-4">{money(r.amount)}</td>
                       <td className="py-2 pr-4">{METHOD_LABEL[r.method] ?? r.method}</td>
                       <td className="py-2 pr-4">{r.cashier}</td>

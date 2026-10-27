@@ -1,4 +1,5 @@
 import { getVendingIntegration } from "./registry.server";
+import { truncateUnits, unitsFromAmount, formatUnits } from "@/lib/token-units";
 import type { VendingAction, VendingCallLog, VendingCredentials } from "./types";
 
 /**
@@ -121,7 +122,7 @@ export async function vendMeterToken(
   // the token is generated. Rates: the meter's own values, else the defaults.
   let breakdown: import("@/lib/commission").CommissionBreakdown | null = null;
   let tokenAmount = p.amount;
-  let tokenUnits = p.units;
+  let tokenUnits = p.action === "credit" ? truncateUnits(p.units) : p.units;
   if (p.action === "credit") {
     const { deductCommission, grossUpForUnits } = await import("@/lib/commission");
     const { data: defaults } = await supabaseAdmin
@@ -133,13 +134,13 @@ export async function vendMeterToken(
     const vPct = Number(m.vat_on_commission_percentage ?? (defaults as any)?.vat_on_commission_percentage ?? 0);
     const price = Number(m.price_per_unit ?? 0);
     if (p.vendByUnit) {
-      breakdown = grossUpForUnits(Math.round(p.units * price * 100) / 100, cPct, vPct);
+      breakdown = grossUpForUnits(Math.round(tokenUnits * price * 100) / 100, cPct, vPct);
     } else {
       breakdown = deductCommission(p.amount, cPct, vPct);
       if (breakdown.net_amount <= 0)
         throw new Error("The amount is too small to cover the commission and VAT. Enter a larger amount.");
       tokenAmount = breakdown.net_amount;
-      tokenUnits = price > 0 ? Math.round((tokenAmount / price) * 10000) / 10000 : p.units;
+      tokenUnits = price > 0 ? unitsFromAmount(tokenAmount, price) : tokenUnits;
     }
   }
 
@@ -213,7 +214,7 @@ export async function vendMeterToken(
     }
     if (outcome.ok === true) {
       token = outcome.token;
-      if (outcome.units !== null) units = outcome.units;
+      if (outcome.units !== null) units = truncateUnits(outcome.units);
       if (outcome.amount !== null) netAmount = outcome.amount;
       provider = integration.code;
       providerReference = outcome.provider_reference;
