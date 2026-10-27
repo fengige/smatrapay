@@ -115,7 +115,7 @@ function Page() {
               <div className="space-y-1">
                 <Label htmlFor="image">Image {form.image_path && !file ? "(current image kept)" : ""}</Label>
                 <Input id="image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-                {errors.image && <p className="text-xs text-destructive">{errors.image}</p>}
+                {errors["image"] && <p className="text-xs text-destructive">{errors["image"]}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {field("price", "Price (KES)", "number")}
@@ -125,9 +125,9 @@ function Page() {
                   <Label htmlFor="freq">Frequency</Label>
                   <select id="freq" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.instalment_frequency} onChange={(e) => setForm({ ...form, instalment_frequency: e.target.value })}>
                     <option value="">—</option>
-                    {PAYG_FREQUENCIES.map((f) => <option key={f} value={f}>{f[0].toUpperCase() + f.slice(1)}</option>)}
+                    {PAYG_FREQUENCIES.map((f) => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
                   </select>
-                  {errors.instalment_frequency && <p className="text-xs text-destructive">{errors.instalment_frequency}</p>}
+                  {errors["instalment_frequency"] && <p className="text-xs text-destructive">{errors["instalment_frequency"]}</p>}
                 </div>
                 {field("instalment_count", "Number of instalments", "number")}
               </div>
