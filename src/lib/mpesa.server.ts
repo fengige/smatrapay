@@ -59,6 +59,18 @@ export function normalizeMsisdn(input: string): string {
   return digits;
 }
 
+/** Exact owner first, then the existing platform fallback. Never another owner. */
+export async function mpesaConfigFor(db: any, ownerId: string | null) {
+  const pick = async (owner: string | null) => {
+    let q = db.from("payment_method_configurations").select("*").eq("enabled", true).eq("stk_enabled", true);
+    q = owner ? q.eq("owner_id", owner) : q.is("owner_id", null);
+    const { data } = await q;
+    const rows = (data ?? []).filter((r: any) => r.business_short_code && r.passkey && r.consumer_key && r.consumer_secret);
+    return rows.find((r: any) => r.environment === "production") ?? rows[0] ?? null;
+  };
+  return (ownerId ? await pick(ownerId) : null) ?? (await pick(null));
+}
+
 export async function darajaPost<T = any>(
   environment: MpesaEnvironment,
   path: string,

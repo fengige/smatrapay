@@ -1340,6 +1340,156 @@ export type Database = {
         }
         Relationships: []
       }
+      payg_payment_attempts: {
+        Row: {
+          amount_cents: number
+          callback_hash: string
+          checkout_request_id: string | null
+          config_id: string
+          confirmed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          merchant_request_id: string | null
+          mpesa_transaction_id: string | null
+          phone: string
+          plan_id: string
+          receipt: string | null
+          request_id: string
+          resident_id: string
+          status: string
+        }
+        Insert: {
+          amount_cents: number
+          callback_hash: string
+          checkout_request_id?: string | null
+          config_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_transaction_id?: string | null
+          phone: string
+          plan_id: string
+          receipt?: string | null
+          request_id: string
+          resident_id: string
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          callback_hash?: string
+          checkout_request_id?: string | null
+          config_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_transaction_id?: string | null
+          phone?: string
+          plan_id?: string
+          receipt?: string | null
+          request_id?: string
+          resident_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payg_payment_attempts_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "payment_method_configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payg_payment_attempts_mpesa_transaction_id_fkey"
+            columns: ["mpesa_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "mpesa_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payg_payment_attempts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "payg_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payg_payment_attempts_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payg_plans: {
+        Row: {
+          created_at: string
+          down_payment_cents: number
+          frequency: string
+          id: string
+          instalment_cents: number
+          instalment_count: number
+          product_id: string
+          product_name: string
+          resident_id: string
+          total_cents: number
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          down_payment_cents: number
+          frequency: string
+          id?: string
+          instalment_cents: number
+          instalment_count: number
+          product_id: string
+          product_name: string
+          resident_id: string
+          total_cents: number
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          down_payment_cents?: number
+          frequency?: string
+          id?: string
+          instalment_cents?: number
+          instalment_count?: number
+          product_id?: string
+          product_name?: string
+          resident_id?: string
+          total_cents?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payg_plans_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "payg_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payg_plans_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payg_plans_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payg_products: {
         Row: {
           created_at: string
@@ -3496,7 +3646,27 @@ export type Database = {
         }
         Returns: Json
       }
+      begin_payg_payment: {
+        Args: {
+          p_config: string
+          p_hash: string
+          p_phone: string
+          p_plan: string
+          p_request: string
+          p_resident: string
+        }
+        Returns: Json
+      }
       bulk_add_meters: { Args: { p_payload: Json }; Returns: Json }
+      confirm_payg_payment: {
+        Args: {
+          p_attempt: string
+          p_message: string
+          p_receipt: string
+          p_success: boolean
+        }
+        Returns: boolean
+      }
       consume_resident_auth_limit: {
         Args: { p_key: string; p_limit: number; p_window: number }
         Returns: boolean

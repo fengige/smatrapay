@@ -11,6 +11,7 @@ import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 import { getResidentProfile } from "@/lib/resident-profile.functions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ResidentPaygPlans } from "@/components/payg/ResidentPaygPayments";
 
 export const Route = createFileRoute("/_authenticated/resident/dashboard")({
   head: residentHead("Overview", "Your homes, prepaid meters, token purchases and service requests in one place."),
@@ -111,6 +112,7 @@ function ResidentDashboard() {
               )}
             </Card>
           </div>
+          <ResidentPaygPlans />
         </div>
       )}
     </DashboardShell>
