@@ -32,3 +32,4 @@
 - Resident mobile chrome and feature hubs reuse protected resident routes and existing server services; responsive styling is scoped to the resident shell so staff portals retain their layout.
 - PWA registration has one guarded browser module; generateSW stores only public offline fallback/icons and hashed static assets, never personal HTML or API responses, so offline access cannot disclose account data.
 - Resident notification destinations are allowlisted resident routes; purchase identifiers remain in validated route search state so refresh checks the existing payment instead of initiating another one.
+- Pay-as-you-go products live in `payg_products` (vendor-owned via RLS, images in private `payg-products` bucket under the vendor folder); residents read active products only from vendors owning meters in their assigned units, via server functions — keeps catalogues vendor-isolated.
