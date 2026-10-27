@@ -1340,6 +1340,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payg_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          down_payment: number | null
+          id: string
+          image_path: string | null
+          instalment_amount: number | null
+          instalment_count: number | null
+          instalment_frequency: string | null
+          is_active: boolean
+          name: string
+          price: number | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          down_payment?: number | null
+          id?: string
+          image_path?: string | null
+          instalment_amount?: number | null
+          instalment_count?: number | null
+          instalment_frequency?: string | null
+          is_active?: boolean
+          name: string
+          price?: number | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          down_payment?: number | null
+          id?: string
+          image_path?: string | null
+          instalment_amount?: number | null
+          instalment_count?: number | null
+          instalment_frequency?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
       payment_account_sidian_settings: {
         Row: {
           account_id: string
