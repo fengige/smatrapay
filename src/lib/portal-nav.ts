@@ -170,6 +170,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Insurance", icon: ShieldCheck, to: "/vendor/insurance" },
           { label: "Loans", icon: BadgeDollarSign, to: "/vendor/loans" },
           { label: "Sacco", icon: Landmark, to: "/vendor/sacco" },
+          { label: "Pay-as-you-go", icon: SunMedium, to: "/vendor/pay-as-you-go" },
         ],
       },
       {
@@ -207,6 +208,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Insurance", icon: ShieldCheck, to: "/resident/insurance" },
           { label: "Loans", icon: BadgeDollarSign, to: "/resident/loans" },
           { label: "Sacco", icon: Landmark, to: "/resident/sacco" },
+          { label: "Pay-as-you-go", icon: SunMedium, to: "/resident/pay-as-you-go" },
         ],
       },
       {

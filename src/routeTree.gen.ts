@@ -68,6 +68,7 @@ import { Route as AuthenticatedResidentLoansRouteImport } from './routes/_authen
 import { Route as AuthenticatedResidentMetersRouteImport } from './routes/_authenticated/resident/meters'
 import { Route as AuthenticatedResidentMoreRouteImport } from './routes/_authenticated/resident/more'
 import { Route as AuthenticatedResidentNotificationsRouteImport } from './routes/_authenticated/resident/notifications'
+import { Route as AuthenticatedResidentPayAsYouGoRouteImport } from './routes/_authenticated/resident/pay-as-you-go'
 import { Route as AuthenticatedResidentPaymentsRouteImport } from './routes/_authenticated/resident/payments'
 import { Route as AuthenticatedResidentProfileRouteImport } from './routes/_authenticated/resident/profile'
 import { Route as AuthenticatedResidentSaccoRouteImport } from './routes/_authenticated/resident/sacco'
@@ -490,6 +491,12 @@ const AuthenticatedResidentNotificationsRoute =
   AuthenticatedResidentNotificationsRouteImport.update({
     id: '/resident/notifications',
     path: '/resident/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResidentPayAsYouGoRoute =
+  AuthenticatedResidentPayAsYouGoRouteImport.update({
+    id: '/resident/pay-as-you-go',
+    path: '/resident/pay-as-you-go',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedResidentPaymentsRoute =
@@ -1045,6 +1052,7 @@ export interface FileRoutesByFullPath {
   '/resident/meters': typeof AuthenticatedResidentMetersRoute
   '/resident/more': typeof AuthenticatedResidentMoreRoute
   '/resident/notifications': typeof AuthenticatedResidentNotificationsRoute
+  '/resident/pay-as-you-go': typeof AuthenticatedResidentPayAsYouGoRoute
   '/resident/payments': typeof AuthenticatedResidentPaymentsRoute
   '/resident/profile': typeof AuthenticatedResidentProfileRoute
   '/resident/sacco': typeof AuthenticatedResidentSaccoRoute
@@ -1183,6 +1191,7 @@ export interface FileRoutesByTo {
   '/resident/meters': typeof AuthenticatedResidentMetersRoute
   '/resident/more': typeof AuthenticatedResidentMoreRoute
   '/resident/notifications': typeof AuthenticatedResidentNotificationsRoute
+  '/resident/pay-as-you-go': typeof AuthenticatedResidentPayAsYouGoRoute
   '/resident/payments': typeof AuthenticatedResidentPaymentsRoute
   '/resident/profile': typeof AuthenticatedResidentProfileRoute
   '/resident/sacco': typeof AuthenticatedResidentSaccoRoute
@@ -1329,6 +1338,7 @@ export interface FileRoutesById {
   '/_authenticated/resident/meters': typeof AuthenticatedResidentMetersRoute
   '/_authenticated/resident/more': typeof AuthenticatedResidentMoreRoute
   '/_authenticated/resident/notifications': typeof AuthenticatedResidentNotificationsRoute
+  '/_authenticated/resident/pay-as-you-go': typeof AuthenticatedResidentPayAsYouGoRoute
   '/_authenticated/resident/payments': typeof AuthenticatedResidentPaymentsRoute
   '/_authenticated/resident/profile': typeof AuthenticatedResidentProfileRoute
   '/_authenticated/resident/sacco': typeof AuthenticatedResidentSaccoRoute
@@ -1476,6 +1486,7 @@ export interface FileRouteTypes {
     | '/resident/meters'
     | '/resident/more'
     | '/resident/notifications'
+    | '/resident/pay-as-you-go'
     | '/resident/payments'
     | '/resident/profile'
     | '/resident/sacco'
@@ -1614,6 +1625,7 @@ export interface FileRouteTypes {
     | '/resident/meters'
     | '/resident/more'
     | '/resident/notifications'
+    | '/resident/pay-as-you-go'
     | '/resident/payments'
     | '/resident/profile'
     | '/resident/sacco'
@@ -1759,6 +1771,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resident/meters'
     | '/_authenticated/resident/more'
     | '/_authenticated/resident/notifications'
+    | '/_authenticated/resident/pay-as-you-go'
     | '/_authenticated/resident/payments'
     | '/_authenticated/resident/profile'
     | '/_authenticated/resident/sacco'
@@ -2286,6 +2299,13 @@ declare module '@tanstack/react-router' {
       path: '/resident/notifications'
       fullPath: '/resident/notifications'
       preLoaderRoute: typeof AuthenticatedResidentNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resident/pay-as-you-go': {
+      id: '/_authenticated/resident/pay-as-you-go'
+      path: '/resident/pay-as-you-go'
+      fullPath: '/resident/pay-as-you-go'
+      preLoaderRoute: typeof AuthenticatedResidentPayAsYouGoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/resident/payments': {
@@ -3077,6 +3097,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResidentMetersRoute: typeof AuthenticatedResidentMetersRoute
   AuthenticatedResidentMoreRoute: typeof AuthenticatedResidentMoreRoute
   AuthenticatedResidentNotificationsRoute: typeof AuthenticatedResidentNotificationsRoute
+  AuthenticatedResidentPayAsYouGoRoute: typeof AuthenticatedResidentPayAsYouGoRoute
   AuthenticatedResidentPaymentsRoute: typeof AuthenticatedResidentPaymentsRoute
   AuthenticatedResidentProfileRoute: typeof AuthenticatedResidentProfileRoute
   AuthenticatedResidentSaccoRoute: typeof AuthenticatedResidentSaccoRoute
@@ -3178,6 +3199,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResidentMoreRoute: AuthenticatedResidentMoreRoute,
   AuthenticatedResidentNotificationsRoute:
     AuthenticatedResidentNotificationsRoute,
+  AuthenticatedResidentPayAsYouGoRoute: AuthenticatedResidentPayAsYouGoRoute,
   AuthenticatedResidentPaymentsRoute: AuthenticatedResidentPaymentsRoute,
   AuthenticatedResidentProfileRoute: AuthenticatedResidentProfileRoute,
   AuthenticatedResidentSaccoRoute: AuthenticatedResidentSaccoRoute,
