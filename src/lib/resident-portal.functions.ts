@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { truncateUnits, unitsFromAmount, formatUnits } from "@/lib/token-units";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -125,7 +126,7 @@ export const quoteTokenPurchase = createServerFn({ method: "POST" })
     const { deductCommission } = await import("./commission");
     const b = deductCommission(data.amount, Number(m.commission_percentage ?? d?.commission_percentage ?? 0), Number(m.vat_on_commission_percentage ?? d?.vat_on_commission_percentage ?? 0));
     const price = Number(m.price_per_unit ?? 0);
-    return { ...b, estimated_units: price > 0 ? Math.round((b.net_amount / price) * 100) / 100 : null, total_to_pay: data.amount };
+    return { ...b, estimated_units: price > 0 ? unitsFromAmount(b.net_amount, price) : null, total_to_pay: data.amount };
   });
 
 function baseUrl() {
