@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Create the confirmed HomePlus Max offering as Kambasco Technologies Ltd and verify persistence and Kalyango Mohammad's resident catalogue visibility (requires authorized sessions).
+- [x] Created the supplied HomePlus Max offering through Kambasco Technologies Ltd's vendor form; refresh and database read confirmed KES 2,800 down payment plus KES 65/day for 480 payments. Authorized Kalyango Mohammad session displayed the product, vendor attribution and plan in the resident catalogue; screenshots verified. Only one real product was supplied; no photo supplied.
 
 - [x] Resident mobile follow-up: installation control in More, allowlisted notification links, offline request/receipt/profile/security controls and refresh-safe existing payment links; current services reused.
 - [x] Follow-up regression: 68 tests passed; 360/768/1280px public sign-in/offline screenshots without overflow or page errors; resident/admin/vendor URLs deny signed-out access, manifest/icons load and preview registers no workers; build OK.
