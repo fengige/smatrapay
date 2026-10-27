@@ -8,10 +8,10 @@
 function plainDecimal(n: number): string {
   const s = String(n);
   if (!/e/i.test(s)) return s;
-  const [mant, expStr] = s.toLowerCase().split("e");
+  const [mant = "0", expStr = "0"] = s.toLowerCase().split("e");
   const exp = Number(expStr);
   const neg = mant.startsWith("-");
-  const [i, f = ""] = mant.replace("-", "").split(".");
+  const [i = "0", f = ""] = mant.replace("-", "").split(".");
   const digits = i + f;
   const point = i.length + exp;
   let out: string;
