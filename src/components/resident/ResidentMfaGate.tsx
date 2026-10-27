@@ -5,6 +5,7 @@ import { residentMfa } from "@/lib/resident-mfa.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 export function ResidentMfaGate({ children }: { children: ReactNode }) {
   const [factor, setFactor] = useState<string | null>(null);
@@ -33,7 +34,13 @@ export function ResidentMfaGate({ children }: { children: ReactNode }) {
     const subscription = supabase.auth.onAuthStateChange(event => { if (["SIGNED_IN", "SIGNED_OUT", "MFA_CHALLENGE_VERIFIED", "TOKEN_REFRESHED"].includes(event)) { setTimeout(() => void check(), 0); } });
     return () => { alive = false; subscription.data.subscription.unsubscribe(); };
   }, []);
-  if (checking) return <p className="p-8 text-sm text-muted-foreground">Checking account security…</p>;
+  if (checking)
+    return (
+      <div role="status" aria-live="polite" className="flex min-h-[50vh] w-full items-center justify-center p-8">
+        <img src={logo} alt="" aria-hidden="true" className="h-12 w-auto animate-pulse motion-reduce:animate-none" />
+        <span className="sr-only">Checking account security</span>
+      </div>
+    );
   if (error && !factor) return <p role="alert" className="p-8 text-sm text-destructive">{error}</p>;
   if (!factor) return <>{children}</>;
   return <main className="flex min-h-screen items-center justify-center bg-background p-6"><form className="w-full max-w-sm space-y-4" onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { const result = await security({ data: { action: "verify", purpose: "verify", factorId: factor, code } }); if (result.kind !== "verified") throw new Error("Verification failed."); const session = await supabase.auth.setSession(result); if (session.error) throw session.error; setCode(""); setFactor(null); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}><ShieldCheck className="size-10 text-primary" /><h1 className="text-xl font-bold">Verify your authenticator</h1><label className="block text-sm" htmlFor="sign-in-mfa">Authentication code</label><Input id="sign-in-mfa" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={e => setCode(e.target.value)} />{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<Button disabled={busy} className="w-full">{busy ? "Verifying…" : "Verify"}</Button><Button variant="outline" type="button" className="w-full" onClick={() => void supabase.auth.signOut()}>Sign out</Button><p className="text-xs text-muted-foreground">Lost access to your authenticator? Contact your account administrator for identity-verified recovery.</p></form></main>;
