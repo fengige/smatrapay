@@ -134,6 +134,13 @@
       "when": 1793132380118,
       "tag": "0018_payg_products",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793134840179,
+      "tag": "0019_payg_resident_payments",
+      "breakpoints": true
     }
   ]
 }
