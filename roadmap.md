@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add resident Pay-as-you-go buying and M-Pesa instalments with confirmed-payment dashboard progress, vendor isolation and duplicate-payment protection.
+
 - [x] Created the supplied HomePlus Max offering through Kambasco Technologies Ltd's vendor form; refresh and database read confirmed KES 2,800 down payment plus KES 65/day for 480 payments. Authorized Kalyango Mohammad session displayed the product, vendor attribution and plan in the resident catalogue; screenshots verified. Only one real product was supplied; no photo supplied.
 
 - [x] Resident mobile follow-up: installation control in More, allowlisted notification links, offline request/receipt/profile/security controls and refresh-safe existing payment links; current services reused.
