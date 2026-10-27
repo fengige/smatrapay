@@ -137,18 +137,6 @@ function baseUrl() {
   return "https://apps.smatrapay.com";
 }
 
-/** M-Pesa config for the meter's owner; otherwise the platform-wide one. Never another owner's. */
-async function mpesaConfigFor(db: any, ownerId: string | null) {
-  const pick = async (owner: string | null) => {
-    let q = db.from("payment_method_configurations").select("*").eq("enabled", true).eq("stk_enabled", true);
-    q = owner ? q.eq("owner_id", owner) : q.is("owner_id", null);
-    const { data } = await q;
-    const rows = (data ?? []).filter((r: any) => r.business_short_code && r.passkey && r.consumer_key && r.consumer_secret);
-    return rows.find((r: any) => r.environment === "production") ?? rows[0] ?? null;
-  };
-  return (ownerId ? await pick(ownerId) : null) ?? (await pick(null));
-}
-
 export const startTokenPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
@@ -170,6 +158,7 @@ export const startTokenPurchase = createServerFn({ method: "POST" })
     if (existing) return { id: existing.id as string, status: existing.status as string, message: "Purchase already started." };
 
     const ownerId = m.landlord_id ?? m.agent_id ?? (/^[0-9a-f-]{36}$/i.test(m.vendor_id ?? "") ? m.vendor_id : null);
+    const { mpesaConfigFor } = await import("./mpesa.server");
     const cfg = await mpesaConfigFor(db, ownerId);
     if (!cfg) throw new Error("M-Pesa payments are not set up for this meter yet. Please contact your property manager.");
 

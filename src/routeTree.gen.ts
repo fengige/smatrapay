@@ -149,6 +149,7 @@ import { Route as ApiPublicMpesaB2cResultRouteImport } from './routes/api/public
 import { Route as ApiPublicMpesaB2cTimeoutRouteImport } from './routes/api/public/mpesa/b2c-timeout'
 import { Route as ApiPublicMpesaC2bConfirmationRouteImport } from './routes/api/public/mpesa/c2b-confirmation'
 import { Route as ApiPublicMpesaC2bValidationRouteImport } from './routes/api/public/mpesa/c2b-validation'
+import { Route as ApiPublicMpesaPaygCallbackRouteImport } from './routes/api/public/mpesa/payg-callback'
 import { Route as ApiPublicMpesaStkCallbackRouteImport } from './routes/api/public/mpesa/stk-callback'
 import { Route as ApiPublicNcbaNotificationRouteImport } from './routes/api/public/ncba/notification'
 import { Route as ApiPublicSidianNotificationRouteImport } from './routes/api/public/sidian/notification'
@@ -972,6 +973,12 @@ const ApiPublicMpesaC2bValidationRoute =
     path: '/api/public/mpesa/c2b-validation',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMpesaPaygCallbackRoute =
+  ApiPublicMpesaPaygCallbackRouteImport.update({
+    id: '/api/public/mpesa/payg-callback',
+    path: '/api/public/mpesa/payg-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMpesaStkCallbackRoute =
   ApiPublicMpesaStkCallbackRouteImport.update({
     id: '/api/public/mpesa/stk-callback',
@@ -1133,6 +1140,7 @@ export interface FileRoutesByFullPath {
   '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
+  '/api/public/mpesa/payg-callback': typeof ApiPublicMpesaPaygCallbackRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/api/public/ncba/notification': typeof ApiPublicNcbaNotificationRoute
   '/api/public/sidian/notification': typeof ApiPublicSidianNotificationRoute
@@ -1272,6 +1280,7 @@ export interface FileRoutesByTo {
   '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
+  '/api/public/mpesa/payg-callback': typeof ApiPublicMpesaPaygCallbackRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/api/public/ncba/notification': typeof ApiPublicNcbaNotificationRoute
   '/api/public/sidian/notification': typeof ApiPublicSidianNotificationRoute
@@ -1421,6 +1430,7 @@ export interface FileRoutesById {
   '/api/public/mpesa/b2c-timeout': typeof ApiPublicMpesaB2cTimeoutRoute
   '/api/public/mpesa/c2b-confirmation': typeof ApiPublicMpesaC2bConfirmationRoute
   '/api/public/mpesa/c2b-validation': typeof ApiPublicMpesaC2bValidationRoute
+  '/api/public/mpesa/payg-callback': typeof ApiPublicMpesaPaygCallbackRoute
   '/api/public/mpesa/stk-callback': typeof ApiPublicMpesaStkCallbackRoute
   '/api/public/ncba/notification': typeof ApiPublicNcbaNotificationRoute
   '/api/public/sidian/notification': typeof ApiPublicSidianNotificationRoute
@@ -1570,6 +1580,7 @@ export interface FileRouteTypes {
     | '/api/public/mpesa/b2c-timeout'
     | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
+    | '/api/public/mpesa/payg-callback'
     | '/api/public/mpesa/stk-callback'
     | '/api/public/ncba/notification'
     | '/api/public/sidian/notification'
@@ -1709,6 +1720,7 @@ export interface FileRouteTypes {
     | '/api/public/mpesa/b2c-timeout'
     | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
+    | '/api/public/mpesa/payg-callback'
     | '/api/public/mpesa/stk-callback'
     | '/api/public/ncba/notification'
     | '/api/public/sidian/notification'
@@ -1857,6 +1869,7 @@ export interface FileRouteTypes {
     | '/api/public/mpesa/b2c-timeout'
     | '/api/public/mpesa/c2b-confirmation'
     | '/api/public/mpesa/c2b-validation'
+    | '/api/public/mpesa/payg-callback'
     | '/api/public/mpesa/stk-callback'
     | '/api/public/ncba/notification'
     | '/api/public/sidian/notification'
@@ -1891,6 +1904,7 @@ export interface RootRouteChildren {
   ApiPublicMpesaB2cTimeoutRoute: typeof ApiPublicMpesaB2cTimeoutRoute
   ApiPublicMpesaC2bConfirmationRoute: typeof ApiPublicMpesaC2bConfirmationRoute
   ApiPublicMpesaC2bValidationRoute: typeof ApiPublicMpesaC2bValidationRoute
+  ApiPublicMpesaPaygCallbackRoute: typeof ApiPublicMpesaPaygCallbackRoute
   ApiPublicMpesaStkCallbackRoute: typeof ApiPublicMpesaStkCallbackRoute
   ApiPublicNcbaNotificationRoute: typeof ApiPublicNcbaNotificationRoute
   ApiPublicSidianNotificationRoute: typeof ApiPublicSidianNotificationRoute
@@ -2881,6 +2895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMpesaC2bValidationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mpesa/payg-callback': {
+      id: '/api/public/mpesa/payg-callback'
+      path: '/api/public/mpesa/payg-callback'
+      fullPath: '/api/public/mpesa/payg-callback'
+      preLoaderRoute: typeof ApiPublicMpesaPaygCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mpesa/stk-callback': {
       id: '/api/public/mpesa/stk-callback'
       path: '/api/public/mpesa/stk-callback'
@@ -3318,6 +3339,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMpesaB2cTimeoutRoute: ApiPublicMpesaB2cTimeoutRoute,
   ApiPublicMpesaC2bConfirmationRoute: ApiPublicMpesaC2bConfirmationRoute,
   ApiPublicMpesaC2bValidationRoute: ApiPublicMpesaC2bValidationRoute,
+  ApiPublicMpesaPaygCallbackRoute: ApiPublicMpesaPaygCallbackRoute,
   ApiPublicMpesaStkCallbackRoute: ApiPublicMpesaStkCallbackRoute,
   ApiPublicNcbaNotificationRoute: ApiPublicNcbaNotificationRoute,
   ApiPublicSidianNotificationRoute: ApiPublicSidianNotificationRoute,
