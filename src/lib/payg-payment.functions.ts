@@ -6,7 +6,7 @@ import { paygProgress, paygStartSchema, paygTerms, type PaygPlanView } from "./p
 import { capabilityHash, verifyPaygPayment } from "./payg-payment.server";
 import { mpesaConfigFor, normalizeMsisdn, darajaTimestamp, darajaPost, getDarajaToken, stkPassword } from "./mpesa.server";
 
-export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<PaygPlanView[]> => {
   const { db } = await residentScope(context as any);
   const { data: plans, error } = await db.from("payg_plans").select("*").eq("resident_id", context.userId).order("created_at", { ascending: false });
   if (error) throw new Error("Could not load your plans.");
