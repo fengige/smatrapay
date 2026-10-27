@@ -165,6 +165,14 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         ],
       },
       {
+        heading: "FINANCIAL SERVICES",
+        items: [
+          { label: "Insurance", icon: ShieldCheck, to: "/vendor/insurance" },
+          { label: "Loans", icon: BadgeDollarSign, to: "/vendor/loans" },
+          { label: "Sacco", icon: Landmark, to: "/vendor/sacco" },
+        ],
+      },
+      {
         heading: "ACCOUNT",
         items: [{ label: "My Profile", icon: UserCircle, to: "/vendor/profile" }],
       },

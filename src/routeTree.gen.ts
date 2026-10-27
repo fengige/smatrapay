@@ -89,7 +89,9 @@ import { Route as AuthenticatedVendingSoftwareSoftwareIdRouteImport } from './ro
 import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
+import { Route as AuthenticatedVendorInsuranceRouteImport } from './routes/_authenticated/vendor/insurance'
 import { Route as AuthenticatedVendorJobsRouteImport } from './routes/_authenticated/vendor/jobs'
+import { Route as AuthenticatedVendorLoansRouteImport } from './routes/_authenticated/vendor/loans'
 import { Route as AuthenticatedVendorMeterSuppliersRouteImport } from './routes/_authenticated/vendor/meter-suppliers'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
 import { Route as AuthenticatedVendorPosRouteImport } from './routes/_authenticated/vendor/pos'
@@ -98,6 +100,7 @@ import { Route as AuthenticatedVendorPriceManagementRouteImport } from './routes
 import { Route as AuthenticatedVendorProfileRouteImport } from './routes/_authenticated/vendor/profile'
 import { Route as AuthenticatedVendorReadingsRouteImport } from './routes/_authenticated/vendor/readings'
 import { Route as AuthenticatedVendorReportsRouteImport } from './routes/_authenticated/vendor/reports'
+import { Route as AuthenticatedVendorSaccoRouteImport } from './routes/_authenticated/vendor/sacco'
 import { Route as AuthenticatedVendorServiceProvidersRouteImport } from './routes/_authenticated/vendor/service-providers'
 import { Route as AuthenticatedVendorTokenLedgerRouteImport } from './routes/_authenticated/vendor/token-ledger'
 import { Route as AuthenticatedVendorTokenManagementRouteImport } from './routes/_authenticated/vendor/token-management'
@@ -612,11 +615,23 @@ const AuthenticatedVendorDashboardRoute =
     path: '/vendor/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorInsuranceRoute =
+  AuthenticatedVendorInsuranceRouteImport.update({
+    id: '/vendor/insurance',
+    path: '/vendor/insurance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorJobsRoute = AuthenticatedVendorJobsRouteImport.update({
   id: '/vendor/jobs',
   path: '/vendor/jobs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVendorLoansRoute =
+  AuthenticatedVendorLoansRouteImport.update({
+    id: '/vendor/loans',
+    path: '/vendor/loans',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorMeterSuppliersRoute =
   AuthenticatedVendorMeterSuppliersRouteImport.update({
     id: '/vendor/meter-suppliers',
@@ -662,6 +677,12 @@ const AuthenticatedVendorReportsRoute =
   AuthenticatedVendorReportsRouteImport.update({
     id: '/vendor/reports',
     path: '/vendor/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVendorSaccoRoute =
+  AuthenticatedVendorSaccoRouteImport.update({
+    id: '/vendor/sacco',
+    path: '/vendor/sacco',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendorServiceProvidersRoute =
@@ -1041,7 +1062,9 @@ export interface FileRoutesByFullPath {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/vendor/insurance': typeof AuthenticatedVendorInsuranceRoute
   '/vendor/jobs': typeof AuthenticatedVendorJobsRoute
+  '/vendor/loans': typeof AuthenticatedVendorLoansRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1050,6 +1073,7 @@ export interface FileRoutesByFullPath {
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/vendor/sacco': typeof AuthenticatedVendorSaccoRoute
   '/vendor/service-providers': typeof AuthenticatedVendorServiceProvidersRoute
   '/vendor/token-ledger': typeof AuthenticatedVendorTokenLedgerRoute
   '/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
@@ -1175,7 +1199,9 @@ export interface FileRoutesByTo {
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/vendor/insurance': typeof AuthenticatedVendorInsuranceRoute
   '/vendor/jobs': typeof AuthenticatedVendorJobsRoute
+  '/vendor/loans': typeof AuthenticatedVendorLoansRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1184,6 +1210,7 @@ export interface FileRoutesByTo {
   '/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/vendor/sacco': typeof AuthenticatedVendorSaccoRoute
   '/vendor/service-providers': typeof AuthenticatedVendorServiceProvidersRoute
   '/vendor/token-ledger': typeof AuthenticatedVendorTokenLedgerRoute
   '/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
@@ -1319,7 +1346,9 @@ export interface FileRoutesById {
   '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
+  '/_authenticated/vendor/insurance': typeof AuthenticatedVendorInsuranceRoute
   '/_authenticated/vendor/jobs': typeof AuthenticatedVendorJobsRoute
+  '/_authenticated/vendor/loans': typeof AuthenticatedVendorLoansRoute
   '/_authenticated/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
   '/_authenticated/vendor/pos': typeof AuthenticatedVendorPosRoute
@@ -1328,6 +1357,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/profile': typeof AuthenticatedVendorProfileRoute
   '/_authenticated/vendor/readings': typeof AuthenticatedVendorReadingsRoute
   '/_authenticated/vendor/reports': typeof AuthenticatedVendorReportsRoute
+  '/_authenticated/vendor/sacco': typeof AuthenticatedVendorSaccoRoute
   '/_authenticated/vendor/service-providers': typeof AuthenticatedVendorServiceProvidersRoute
   '/_authenticated/vendor/token-ledger': typeof AuthenticatedVendorTokenLedgerRoute
   '/_authenticated/vendor/token-management': typeof AuthenticatedVendorTokenManagementRoute
@@ -1463,7 +1493,9 @@ export interface FileRouteTypes {
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
+    | '/vendor/insurance'
     | '/vendor/jobs'
+    | '/vendor/loans'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
     | '/vendor/pos'
@@ -1472,6 +1504,7 @@ export interface FileRouteTypes {
     | '/vendor/profile'
     | '/vendor/readings'
     | '/vendor/reports'
+    | '/vendor/sacco'
     | '/vendor/service-providers'
     | '/vendor/token-ledger'
     | '/vendor/token-management'
@@ -1597,7 +1630,9 @@ export interface FileRouteTypes {
     | '/vendor/activation'
     | '/vendor/assignments'
     | '/vendor/dashboard'
+    | '/vendor/insurance'
     | '/vendor/jobs'
+    | '/vendor/loans'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
     | '/vendor/pos'
@@ -1606,6 +1641,7 @@ export interface FileRouteTypes {
     | '/vendor/profile'
     | '/vendor/readings'
     | '/vendor/reports'
+    | '/vendor/sacco'
     | '/vendor/service-providers'
     | '/vendor/token-ledger'
     | '/vendor/token-management'
@@ -1740,7 +1776,9 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/activation'
     | '/_authenticated/vendor/assignments'
     | '/_authenticated/vendor/dashboard'
+    | '/_authenticated/vendor/insurance'
     | '/_authenticated/vendor/jobs'
+    | '/_authenticated/vendor/loans'
     | '/_authenticated/vendor/meter-suppliers'
     | '/_authenticated/vendor/notifications'
     | '/_authenticated/vendor/pos'
@@ -1749,6 +1787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/profile'
     | '/_authenticated/vendor/readings'
     | '/_authenticated/vendor/reports'
+    | '/_authenticated/vendor/sacco'
     | '/_authenticated/vendor/service-providers'
     | '/_authenticated/vendor/token-ledger'
     | '/_authenticated/vendor/token-management'
@@ -2396,11 +2435,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/insurance': {
+      id: '/_authenticated/vendor/insurance'
+      path: '/vendor/insurance'
+      fullPath: '/vendor/insurance'
+      preLoaderRoute: typeof AuthenticatedVendorInsuranceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/jobs': {
       id: '/_authenticated/vendor/jobs'
       path: '/vendor/jobs'
       fullPath: '/vendor/jobs'
       preLoaderRoute: typeof AuthenticatedVendorJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/loans': {
+      id: '/_authenticated/vendor/loans'
+      path: '/vendor/loans'
+      fullPath: '/vendor/loans'
+      preLoaderRoute: typeof AuthenticatedVendorLoansRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/meter-suppliers': {
@@ -2457,6 +2510,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor/reports'
       fullPath: '/vendor/reports'
       preLoaderRoute: typeof AuthenticatedVendorReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/sacco': {
+      id: '/_authenticated/vendor/sacco'
+      path: '/vendor/sacco'
+      fullPath: '/vendor/sacco'
+      preLoaderRoute: typeof AuthenticatedVendorSaccoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/service-providers': {
@@ -3031,7 +3091,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
+  AuthenticatedVendorInsuranceRoute: typeof AuthenticatedVendorInsuranceRoute
   AuthenticatedVendorJobsRoute: typeof AuthenticatedVendorJobsRoute
+  AuthenticatedVendorLoansRoute: typeof AuthenticatedVendorLoansRoute
   AuthenticatedVendorMeterSuppliersRoute: typeof AuthenticatedVendorMeterSuppliersRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
   AuthenticatedVendorPosRoute: typeof AuthenticatedVendorPosRoute
@@ -3040,6 +3102,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorProfileRoute: typeof AuthenticatedVendorProfileRoute
   AuthenticatedVendorReadingsRoute: typeof AuthenticatedVendorReadingsRoute
   AuthenticatedVendorReportsRoute: typeof AuthenticatedVendorReportsRoute
+  AuthenticatedVendorSaccoRoute: typeof AuthenticatedVendorSaccoRoute
   AuthenticatedVendorServiceProvidersRoute: typeof AuthenticatedVendorServiceProvidersRoute
   AuthenticatedVendorTokenLedgerRoute: typeof AuthenticatedVendorTokenLedgerRoute
   AuthenticatedVendorTokenManagementRoute: typeof AuthenticatedVendorTokenManagementRoute
@@ -3132,7 +3195,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
+  AuthenticatedVendorInsuranceRoute: AuthenticatedVendorInsuranceRoute,
   AuthenticatedVendorJobsRoute: AuthenticatedVendorJobsRoute,
+  AuthenticatedVendorLoansRoute: AuthenticatedVendorLoansRoute,
   AuthenticatedVendorMeterSuppliersRoute:
     AuthenticatedVendorMeterSuppliersRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
@@ -3144,6 +3209,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorProfileRoute: AuthenticatedVendorProfileRoute,
   AuthenticatedVendorReadingsRoute: AuthenticatedVendorReadingsRoute,
   AuthenticatedVendorReportsRoute: AuthenticatedVendorReportsRoute,
+  AuthenticatedVendorSaccoRoute: AuthenticatedVendorSaccoRoute,
   AuthenticatedVendorServiceProvidersRoute:
     AuthenticatedVendorServiceProvidersRoute,
   AuthenticatedVendorTokenLedgerRoute: AuthenticatedVendorTokenLedgerRoute,
