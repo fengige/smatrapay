@@ -546,7 +546,7 @@ function TokenManagementPage() {
                   {token.action === "credit"
                     ? `${formatUnits(token.units)} units · KES ${token.amount.toFixed(2)} · `
                     : token.action === "set_max_overdraft"
-                      ? `Max overdraft ${formatUnits(token.units)} · `
+                      ? `Max overdraft ${token.units.toFixed(2)} · `
                       : ""}
                   {new Date(token.created_at).toLocaleString()}
                   {token.reference ? ` · Ref ${token.reference}` : ""} · Expires{" "}
@@ -640,7 +640,7 @@ function TokenManagementPage() {
                         {t.action === "credit"
                           ? `${formatUnits(t.units)} u · KES ${t.amount.toFixed(2)}`
                           : t.action === "set_max_overdraft"
-                            ? `Max OD ${formatUnits(t.units)}`
+                            ? `Max OD ${t.units.toFixed(2)}`
                             : "—"}
                       </td>
                       <td className="py-2 pr-4 text-xs text-muted-foreground">

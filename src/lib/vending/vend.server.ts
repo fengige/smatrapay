@@ -122,7 +122,7 @@ export async function vendMeterToken(
   // the token is generated. Rates: the meter's own values, else the defaults.
   let breakdown: import("@/lib/commission").CommissionBreakdown | null = null;
   let tokenAmount = p.amount;
-  let tokenUnits = truncateUnits(p.units);
+  let tokenUnits = p.action === "credit" ? truncateUnits(p.units) : p.units;
   if (p.action === "credit") {
     const { deductCommission, grossUpForUnits } = await import("@/lib/commission");
     const { data: defaults } = await supabaseAdmin

@@ -1,3 +1,4 @@
+import { formatUnits } from "@/lib/token-units";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -90,7 +91,7 @@ function Page() {
                 <Row k={`Commission (${quote.data.commission_percentage}%)`} v={`− ${kes(quote.data.commission_amount)}`} />
                 <Row k={`VAT on commission (${quote.data.vat_on_commission_percentage}%)`} v={`− ${kes(quote.data.vat_on_commission_amount)}`} />
                 <Row k="Token value" v={kes(quote.data.net_amount)} strong />
-                {quote.data.estimated_units != null && <Row k="Estimated units" v={String(quote.data.estimated_units)} />}
+                {quote.data.estimated_units != null && <Row k="Estimated units" v={formatUnits(quote.data.estimated_units)} />}
               </dl>
             ) : <p className="mt-4 text-sm text-muted-foreground">{quote.isFetching ? "Calculating your quote…" : "Enter an amount to see the breakdown."}</p>}
             {quote.error && <p className="mt-2 text-xs text-destructive">{(quote.error as Error).message}</p>}
@@ -107,7 +108,7 @@ function Page() {
             <Row k="Commission" v={kes(quote.data?.commission_amount)} />
             <Row k="VAT on commission" v={kes(quote.data?.vat_on_commission_amount)} />
             <Row k="Token value" v={kes(quote.data?.net_amount)} />
-            {quote.data?.estimated_units != null && <Row k="Estimated units" v={String(quote.data.estimated_units)} />}
+            {quote.data?.estimated_units != null && <Row k="Estimated units" v={formatUnits(quote.data.estimated_units)} />}
           </dl>
           <p className="text-sm text-muted-foreground">Your token is issued only after payment confirmation. Do not submit another payment while this one is pending.</p>
           <Button className="min-h-11" disabled={!online || start.isPending || quote.isFetching || !!quote.error} onClick={() => { if (!start.isPending && online) start.mutate(); }}>{start.isPending ? "Sending M-Pesa prompt…" : `Confirm & pay ${kes(quote.data?.total_to_pay)}`}</Button>
