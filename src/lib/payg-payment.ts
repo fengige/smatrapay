@@ -12,6 +12,7 @@ export function paygCents(value: string | number): number {
 
 export function paygTerms(product: { down_payment: string | number | null; instalment_amount: string | number | null; instalment_count: number | null; instalment_frequency: string | null; price: string | number | null }) {
   if (product.down_payment === null || product.instalment_amount === null || !product.instalment_count || !product.instalment_frequency) throw new Error("This product does not have a complete payment plan yet.");
+  if (!Number.isInteger(product.instalment_count) || product.instalment_count < 1 || product.instalment_count > 1000 || !["daily", "weekly", "monthly"].includes(product.instalment_frequency)) throw new Error("Invalid instalment schedule.");
   const down = paygCents(product.down_payment);
   const instalment = paygCents(product.instalment_amount);
   if (instalment <= 0 || down % 100 || instalment % 100) throw new Error("This plan needs whole-shilling M-Pesa amounts.");

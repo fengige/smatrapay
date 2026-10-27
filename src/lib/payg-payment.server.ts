@@ -19,6 +19,8 @@ export async function verifyPaygPayment(db: any, attempt: any, callback?: any) {
   const body = response.body;
   if (!response.ok || String(body?.ResponseCode) !== "0" || body?.ResultCode === undefined || body?.ResultCode === null) return;
   const success = String(body.ResultCode) === "0";
+  // Only documented terminal cancellation/insufficient-funds/timeout outcomes unlock a new charge.
+  if (!success && !["1", "1032", "1037", "2001"].includes(String(body.ResultCode))) return;
   if (success && callback && !matchingPaygCallback(attempt, callback)) throw new Error("Payment details require review.");
   const { data: confirmed, error } = await db.rpc("confirm_payg_payment", { p_attempt: attempt.id, p_success: success, p_receipt: success && callback ? callback.receipt : null, p_message: success ? null : "M-Pesa confirmed that this payment did not complete." });
   if (error) throw new Error("Could not record payment confirmation.");

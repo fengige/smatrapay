@@ -52,7 +52,8 @@ export const startPaygPayment = createServerFn({ method: "POST" }).middleware([r
   if (error || !attempt) throw new Error("Could not start the payment. Check your plan before trying again.");
   if (!attempt.created) return { id: attempt.id as string, status: attempt.status as string, message: "This payment has already been started. Check its status before paying again." };
   const fail = async (status: string, message: string) => {
-    await db.from("payg_payment_attempts").update({ status, error_message: message }).eq("id", attempt.id).eq("status", "initiated");
+    const { error: writeError } = await db.from("payg_payment_attempts").update({ status, error_message: message }).eq("id", attempt.id).eq("status", "initiated");
+    if (writeError) throw new Error("Payment status could not be saved. Do not pay again; contact support.");
     return { id: attempt.id as string, status, message };
   };
   let token: string;

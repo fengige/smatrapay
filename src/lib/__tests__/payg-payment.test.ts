@@ -17,6 +17,7 @@ describe("Pay-as-you-go plan rules", () => {
   it("rejects inconsistent product prices", () => expect(() => paygTerms({ ...product, price: 33000 })).toThrow());
   it("never rounds fractional plan payments for M-Pesa", () => expect(() => paygTerms({ ...product, instalment_amount: "65.01" })).toThrow());
   it("requires a complete payment plan", () => expect(() => paygTerms({ ...product, instalment_count: null })).toThrow());
+  it("rejects schedules outside the existing product count limit", () => expect(() => paygTerms({ ...product, instalment_count: 1001 })).toThrow());
   it("starts with the down payment", () => expect(paygProgress(plan, []).next_payment_cents).toBe(280000));
   it("switches to KES 65 only after the confirmed down payment", () => expect(paygProgress(plan, [{ amount_cents: 280000, status: "completed" }]).next_payment_cents).toBe(6500));
   it("ignores pending and failed payments in progress", () => { const p = paygProgress(plan, [{ amount_cents: 280000, status: "pending" }, { amount_cents: 6500, status: "failed" }]); expect(p.paid_cents).toBe(0); expect(p.pending).toBe(true); });
@@ -52,5 +53,9 @@ describe("Provider-verified Pay-as-you-go confirmation", () => {
   it("records a provider-confirmed failure without credit", async () => {
     const db = dbMock(); vi.mocked(darajaPost).mockResolvedValue({ ok: true, status: 200, body: { ResponseCode: "0", ResultCode: 1032 } });
     await verifyPaygPayment(db, { ...a, id: "attempt", status: "pending" }); expect(db.rpc).toHaveBeenCalledWith("confirm_payg_payment", expect.objectContaining({ p_success: false, p_receipt: null }));
+  });
+  it("does not release a charge lock for an unknown nonzero provider outcome", async () => {
+    const db = dbMock(); vi.mocked(darajaPost).mockResolvedValue({ ok: true, status: 200, body: { ResponseCode: "0", ResultCode: 9999 } });
+    await verifyPaygPayment(db, { ...a, id: "attempt", status: "pending" }); expect(db.rpc).not.toHaveBeenCalled();
   });
 });
