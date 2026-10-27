@@ -30,9 +30,9 @@ describe("admin sidebar", () => {
 });
 
 describe("resident sidebar", () => {
-  it("lists Insurance, Loans and Sacco under Financial Services", () => {
+  it("lists Insurance, Loans, Sacco and Pay-as-you-go under Financial Services", () => {
     const group = navGroupsForRoles(["resident"]).find((g) => g.heading === "FINANCIAL SERVICES");
-    expect(group?.items.map((i) => i.label)).toEqual(["Insurance", "Loans", "Sacco"]);
-    expect(group?.items.map((i) => i.to)).toEqual(["/resident/insurance", "/resident/loans", "/resident/sacco"]);
+    expect(group?.items.map((i) => i.label)).toEqual(["Insurance", "Loans", "Sacco", "Pay-as-you-go"]);
+    expect(group?.items.map((i) => i.to)).toEqual(["/resident/insurance", "/resident/loans", "/resident/sacco", "/resident/pay-as-you-go"]);
   });
 });
