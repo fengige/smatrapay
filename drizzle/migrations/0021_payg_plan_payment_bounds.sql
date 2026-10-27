@@ -1,0 +1,2 @@
+ALTER TABLE public.payg_plans ADD CONSTRAINT payg_plan_supported_bounds CHECK(instalment_count <= 1000 AND instalment_cents <= 15000000 AND down_payment_cents <= 15000000 AND total_cents <= 15015000000);
+ALTER TABLE public.payg_payment_attempts ADD CONSTRAINT payg_attempt_supported_amount CHECK(amount_cents <= 15000000);

@@ -148,6 +148,13 @@
       "when": 1793135178908,
       "tag": "0020_payg_payment_least_privilege",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793135253459,
+      "tag": "0021_payg_plan_payment_bounds",
+      "breakpoints": true
     }
   ]
 }
