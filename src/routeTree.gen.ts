@@ -95,6 +95,7 @@ import { Route as AuthenticatedVendorJobsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorLoansRouteImport } from './routes/_authenticated/vendor/loans'
 import { Route as AuthenticatedVendorMeterSuppliersRouteImport } from './routes/_authenticated/vendor/meter-suppliers'
 import { Route as AuthenticatedVendorNotificationsRouteImport } from './routes/_authenticated/vendor/notifications'
+import { Route as AuthenticatedVendorPayAsYouGoRouteImport } from './routes/_authenticated/vendor/pay-as-you-go'
 import { Route as AuthenticatedVendorPosRouteImport } from './routes/_authenticated/vendor/pos'
 import { Route as AuthenticatedVendorPosShiftReportRouteImport } from './routes/_authenticated/vendor/pos-shift-report'
 import { Route as AuthenticatedVendorPriceManagementRouteImport } from './routes/_authenticated/vendor/price-management'
@@ -651,6 +652,12 @@ const AuthenticatedVendorNotificationsRoute =
     path: '/vendor/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorPayAsYouGoRoute =
+  AuthenticatedVendorPayAsYouGoRouteImport.update({
+    id: '/vendor/pay-as-you-go',
+    path: '/vendor/pay-as-you-go',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorPosRoute = AuthenticatedVendorPosRouteImport.update({
   id: '/vendor/pos',
   path: '/vendor/pos',
@@ -1075,6 +1082,7 @@ export interface FileRoutesByFullPath {
   '/vendor/loans': typeof AuthenticatedVendorLoansRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
+  '/vendor/pay-as-you-go': typeof AuthenticatedVendorPayAsYouGoRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
   '/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/vendor/price-management': typeof AuthenticatedVendorPriceManagementRoute
@@ -1213,6 +1221,7 @@ export interface FileRoutesByTo {
   '/vendor/loans': typeof AuthenticatedVendorLoansRoute
   '/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
+  '/vendor/pay-as-you-go': typeof AuthenticatedVendorPayAsYouGoRoute
   '/vendor/pos': typeof AuthenticatedVendorPosRoute
   '/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/vendor/price-management': typeof AuthenticatedVendorPriceManagementRoute
@@ -1361,6 +1370,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/loans': typeof AuthenticatedVendorLoansRoute
   '/_authenticated/vendor/meter-suppliers': typeof AuthenticatedVendorMeterSuppliersRoute
   '/_authenticated/vendor/notifications': typeof AuthenticatedVendorNotificationsRoute
+  '/_authenticated/vendor/pay-as-you-go': typeof AuthenticatedVendorPayAsYouGoRoute
   '/_authenticated/vendor/pos': typeof AuthenticatedVendorPosRoute
   '/_authenticated/vendor/pos-shift-report': typeof AuthenticatedVendorPosShiftReportRoute
   '/_authenticated/vendor/price-management': typeof AuthenticatedVendorPriceManagementRoute
@@ -1509,6 +1519,7 @@ export interface FileRouteTypes {
     | '/vendor/loans'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
+    | '/vendor/pay-as-you-go'
     | '/vendor/pos'
     | '/vendor/pos-shift-report'
     | '/vendor/price-management'
@@ -1647,6 +1658,7 @@ export interface FileRouteTypes {
     | '/vendor/loans'
     | '/vendor/meter-suppliers'
     | '/vendor/notifications'
+    | '/vendor/pay-as-you-go'
     | '/vendor/pos'
     | '/vendor/pos-shift-report'
     | '/vendor/price-management'
@@ -1794,6 +1806,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/loans'
     | '/_authenticated/vendor/meter-suppliers'
     | '/_authenticated/vendor/notifications'
+    | '/_authenticated/vendor/pay-as-you-go'
     | '/_authenticated/vendor/pos'
     | '/_authenticated/vendor/pos-shift-report'
     | '/_authenticated/vendor/price-management'
@@ -2490,6 +2503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/pay-as-you-go': {
+      id: '/_authenticated/vendor/pay-as-you-go'
+      path: '/vendor/pay-as-you-go'
+      fullPath: '/vendor/pay-as-you-go'
+      preLoaderRoute: typeof AuthenticatedVendorPayAsYouGoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vendor/pos': {
       id: '/_authenticated/vendor/pos'
       path: '/vendor/pos'
@@ -3117,6 +3137,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorLoansRoute: typeof AuthenticatedVendorLoansRoute
   AuthenticatedVendorMeterSuppliersRoute: typeof AuthenticatedVendorMeterSuppliersRoute
   AuthenticatedVendorNotificationsRoute: typeof AuthenticatedVendorNotificationsRoute
+  AuthenticatedVendorPayAsYouGoRoute: typeof AuthenticatedVendorPayAsYouGoRoute
   AuthenticatedVendorPosRoute: typeof AuthenticatedVendorPosRoute
   AuthenticatedVendorPosShiftReportRoute: typeof AuthenticatedVendorPosShiftReportRoute
   AuthenticatedVendorPriceManagementRoute: typeof AuthenticatedVendorPriceManagementRoute
@@ -3223,6 +3244,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorMeterSuppliersRoute:
     AuthenticatedVendorMeterSuppliersRoute,
   AuthenticatedVendorNotificationsRoute: AuthenticatedVendorNotificationsRoute,
+  AuthenticatedVendorPayAsYouGoRoute: AuthenticatedVendorPayAsYouGoRoute,
   AuthenticatedVendorPosRoute: AuthenticatedVendorPosRoute,
   AuthenticatedVendorPosShiftReportRoute:
     AuthenticatedVendorPosShiftReportRoute,

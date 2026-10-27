@@ -64,7 +64,7 @@ function Page() {
     setBusy(true);
     try {
       if (file) {
-        const path = `${access.userId ?? (await supabase.auth.getUser()).data.user?.id}/${crypto.randomUUID()}.${file.type.split("/")[1]}`;
+        const path = `${(await supabase.auth.getUser()).data.user?.id}/${crypto.randomUUID()}.${file.type.split("/")[1]}`;
         const { error } = await supabase.storage.from("payg-products").upload(path, file, { contentType: file.type });
         if (error) throw new Error("Image upload failed");
         payload.image_path = path;

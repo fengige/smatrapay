@@ -30,6 +30,7 @@ import {
   MessageSquareHeart,
   ShieldCheck,
   Landmark,
+  SunMedium,
 } from "lucide-react";
 import { dashboardForRoles } from "./portals";
 
