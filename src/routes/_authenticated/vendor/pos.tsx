@@ -1,3 +1,4 @@
+import { formatUnits, truncateUnits } from "@/lib/token-units";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -214,7 +215,7 @@ function VendorPosPage() {
         data: {
           meter_id: meter!.id,
           request_id: (requestIdRef.current ??= crypto.randomUUID()),
-          units: Number(units.toFixed(2)),
+          units: truncateUnits(units),
           amount: Number(value.toFixed(2)),
           method,
           reference: reference.trim() || null,
@@ -396,7 +397,7 @@ function VendorPosPage() {
                   <p className="text-xs text-destructive">{amountError}</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    ≈ {units.toFixed(2)} units · {money(value)}
+                    ≈ {formatUnits(units)} units · {money(value)}
                   </p>
                 )}
                 {mode === "value" && (
@@ -507,7 +508,7 @@ function VendorPosPage() {
               <Receipt className="size-4 text-emerald-600" /> Sale receipt
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {sale.units.toFixed(2)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
+              {formatUnits(sale.units)} units · {money(sale.amount)} · {sale.reference ?? "—"} ·{" "}
               {new Date(sale.created_at).toLocaleString()}
             </p>
             <CommissionBreakdown paid={sale.amount} commission={sale.commission} />
@@ -611,7 +612,7 @@ function VendorPosPage() {
                         <td className="py-2 pr-4">{new Date(t.created_at).toLocaleString()}</td>
                         <td className="py-2 pr-4">{t.meter_number}</td>
                         <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
-                        <td className="py-2 pr-4">{t.units.toFixed(2)}</td>
+                        <td className="py-2 pr-4">{formatUnits(t.units)}</td>
                         <td className="py-2 pr-4">{money(t.amount)}</td>
                         <td className="py-2 pr-4">{t.reference ?? "—"}</td>
                         <td className="py-2 pr-4 capitalize">{t.status}</td>
@@ -774,7 +775,7 @@ function VendorPosPage() {
               {[
                 ["Meter", reprint.meter_number],
                 ["Date", new Date(reprint.created_at).toLocaleString()],
-                ["Units", reprint.units.toFixed(2)],
+                ["Units", formatUnits(reprint.units)],
                 ["Amount", money(reprint.amount)],
                 ...(reprint.commission
                   ? ([
@@ -846,7 +847,7 @@ function VendorPosPage() {
               {[
                 ["Meter", smsTarget.meter_number],
                 ["Token", smsTarget.token],
-                ["Units", smsTarget.units.toFixed(2)],
+                ["Units", formatUnits(smsTarget.units)],
                 ["Amount", money(smsTarget.amount)],
                 ["Date", new Date(smsTarget.created_at).toLocaleString()],
               ].map(([k, v]) => (
@@ -911,7 +912,7 @@ function VendorPosPage() {
               {[
                 ["Meter", meter.meter_number],
                 ["Customer", meter.customer_name ?? "Unassigned"],
-                ["Units", `${units.toFixed(2)}`],
+                ["Units", `${formatUnits(units)}`],
                 ["Amount", money(value)],
                 ["Payment", PAYMENT_METHODS.find((p) => p.id === method)!.label],
                 ["Reference", reference.trim() || "—"],

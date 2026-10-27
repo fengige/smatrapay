@@ -1,3 +1,4 @@
+import { formatUnits } from "@/lib/token-units";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/vending-dashboard")({
 
 const kes = (n: number) =>
   `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const units = (n: number) => `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} units`;
+const units = (n: number) => `${formatUnits(n)} units`;
 
 const PERIODS: [VendingPeriod, string][] = [
   ["7d", "Last 7 days"],
@@ -130,7 +131,7 @@ function VendingDashboardPage() {
                   <tr key={sw.software_id ?? "unassigned"} className="border-t border-border/60">
                     <td className="px-4 py-3 font-medium">{sw.software_name}</td>
                     <td className="px-4 py-3 text-right">{sw.tokens.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">{sw.units.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td className="px-4 py-3 text-right">{formatUnits(sw.units)}</td>
                     <td className="px-4 py-3 text-right">{kes(sw.amount)}</td>
                     <td className={`px-4 py-3 text-right ${sw.failed_attempts > 0 ? "text-destructive" : ""}`}>{sw.failed_attempts.toLocaleString()}</td>
                     <td className="px-4 py-3 text-right">{rate == null ? "—" : `${rate.toFixed(1)}%`}</td>
@@ -179,7 +180,7 @@ function VendingDashboardPage() {
                   <td className="px-4 py-3 font-medium">{m.meter_number}</td>
                   <td className="px-4 py-3">{m.software_name}</td>
                   <td className="px-4 py-3 text-right">{m.tokens.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right">{m.units.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td className="px-4 py-3 text-right">{formatUnits(m.units)}</td>
                   <td className="px-4 py-3 text-right">{kes(m.amount)}</td>
                   <td className={`px-4 py-3 text-right ${m.failed_attempts > 0 ? "text-destructive" : ""}`}>{m.failed_attempts.toLocaleString()}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">

@@ -1,3 +1,4 @@
+import { formatUnits } from "@/lib/token-units";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -14,7 +15,7 @@ const nairobiToday = () => new Date(Date.now() + 3 * 3600_000).toISOString().sli
 const shiftDay = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86400_000).toISOString().slice(0, 10);
 
 const kes = (n: number | null) => (n == null ? "—" : `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-const units = (n: number | null) => (n == null ? "—" : n.toLocaleString(undefined, { maximumFractionDigits: 4 }));
+const units = (n: number | null) => (n == null ? "—" : formatUnits(n));
 const cap = (s: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ") : "—");
 const maskToken = (t: string) => { const d = t.replace(/\D/g, ""); return d.length > 8 ? `${d.slice(0, 4)} •••• •••• ${d.slice(-4)}` : "••••"; };
 
