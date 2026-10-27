@@ -14,7 +14,7 @@ import type { PaygProduct } from "@/lib/payg";
 
 const kes = (cents: number) => `KES ${(cents / 100).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
 
-export function PaygPaymentButton({ product, plan, available = true }: { product: PaygProduct; plan?: PaygPlanView; available?: boolean }) {
+export function PaygPaymentButton({ product, plan, available = true }: { product: PaygProduct; plan?: PaygPlanView | undefined; available?: boolean }) {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [requestId, setRequestId] = useState<string | null>(null);
