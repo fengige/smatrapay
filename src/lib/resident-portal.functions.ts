@@ -17,7 +17,7 @@ export type PurchaseRow = {
  * Everything the signed-in resident may see, resolved server-side from their own
  * active unit assignments. All other queries are filtered to these ids.
  */
-async function residentScope(ctx: { supabase: any; userId: string }) {
+export async function residentScope(ctx: { supabase: any; userId: string }) {
   const { data: isResident } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "resident" });
   if (!isResident) throw new Error("Resident access required");
   const { data: profile, error: profileError } = await ctx.supabase.from("users").select("status").eq("id", ctx.userId).maybeSingle();
