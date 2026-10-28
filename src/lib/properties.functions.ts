@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { COUNTRY_OPTIONS, STATE_MAP, normalizeCountry, normalizeState } from "@/lib/countries";
+import { propertyWriteErrorMessage } from "@/lib/property-errors";
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -352,7 +353,7 @@ export const createProperty = createServerFn({ method: "POST" })
       .insert({ ...data, created_by: userId, updated_by: userId } as never)
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(propertyWriteErrorMessage(error));
     return { id: row.id };
   });
 
@@ -454,7 +455,7 @@ export const updateProperty = createServerFn({ method: "POST" })
       .from("properties")
       .update({ ...patch, updated_by: userId } as never)
       .eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(propertyWriteErrorMessage(error));
     return { ok: true };
   });
 
@@ -1807,7 +1808,7 @@ export const importProperties = createServerFn({ method: "POST" })
         updated_by: userId,
       } as never);
       if (error) {
-        push("failed", error.message);
+        push("failed", propertyWriteErrorMessage(error));
         continue;
       }
       existingNames.add(key(name));
