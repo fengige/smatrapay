@@ -169,6 +169,13 @@
       "when": 1793222828277,
       "tag": "0023_vendor_created_landlords_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793223231339,
+      "tag": "0024_vendor_own_properties_visibility",
+      "breakpoints": true
     }
   ]
 }
