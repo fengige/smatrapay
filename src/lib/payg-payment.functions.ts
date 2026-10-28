@@ -5,18 +5,11 @@ import { residentScope } from "./resident-portal.functions";
 import { paygProgress, paygStartSchema, paygTerms, type PaygPlanView } from "./payg-payment";
 import { capabilityHash, verifyPaygPayment } from "./payg-payment.server";
 import { mpesaConfigFor, normalizeMsisdn, darajaTimestamp, darajaPost, getDarajaToken, stkPassword } from "./mpesa.server";
+import { readResidentPaygPlans } from "./payg-plans.server";
 
 export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<PaygPlanView[]> => {
   const { db } = await residentScope(context as any);
-  const { data: plans, error } = await db.from("payg_plans").select("*").eq("resident_id", context.userId).order("created_at", { ascending: false });
-  if (error) throw new Error("Could not load your plans.");
-  const ids = (plans ?? []).map((p: any) => p.id);
-  const { data: attempts, error: paymentError } = ids.length ? await db.from("payg_payment_attempts").select("id,plan_id,amount_cents,status,receipt,error_message,created_at").eq("resident_id", context.userId).in("plan_id", ids).order("created_at", { ascending: false }) : { data: [], error: null };
-  if (paymentError) throw new Error("Could not load payment progress.");
-  return (plans ?? []).map((p: any) => {
-    const payments = (attempts ?? []).filter((a: any) => a.plan_id === p.id).map(({ plan_id, ...a }: any) => ({ ...a, amount_cents: Number(a.amount_cents) }));
-    return { id: p.id, product_id: p.product_id, product_name: p.product_name, down_payment_cents: Number(p.down_payment_cents), instalment_cents: Number(p.instalment_cents), instalment_count: p.instalment_count, frequency: p.frequency, total_cents: Number(p.total_cents), ...paygProgress(p, payments), payments } as PaygPlanView;
-  });
+  return readResidentPaygPlans(db, context.userId);
 });
 
 export const getPaygPaymentAvailability = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {

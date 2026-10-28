@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add resident-scoped Pay-as-you-go plans and confirmed payment progress to support chat, with instalment starters and regression checks.
+
 - [x] Added resident Pay-as-you-go Buy/review controls and dashboard/catalogue confirmed-progress views; snapshotted plans, serialized payment attempts, provider STK Query verification, scoped reads and dedicated capability-bound callback without token vending. 33 tests passed; preview build OK; authorized Kalyango phone/desktop catalogue and dashboard checks passed; forged callback rejected with 401.
 - [ ] Live Pay-as-you-go charge/confirmation/progress and concurrent database-flow acceptance (blocked: no Kambasco/platform M-Pesa configuration or payment authorization; callback deployment not requested). Current HomePlus Max catalogue price shown as KES 21,750 conflicts with KES 2,800 + 480 × KES 65 = KES 34,000; payment validation rejects inconsistent terms until vendor resolves them.
 
