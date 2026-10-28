@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { residentScope } from "./resident-portal.functions";
-import { paygProgress, paygStartSchema, paygTerms, type PaygPlanView } from "./payg-payment";
+import { paygStartSchema, paygTerms, type PaygPlanView } from "./payg-payment";
 import { capabilityHash, verifyPaygPayment } from "./payg-payment.server";
 import { mpesaConfigFor, normalizeMsisdn, darajaTimestamp, darajaPost, getDarajaToken, stkPassword } from "./mpesa.server";
 import { readResidentPaygPlans } from "./payg-plans.server";
