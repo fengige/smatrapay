@@ -3,7 +3,7 @@ import postgres from "postgres";
 
 // Exercise the installed SELECT policy with controlled identities and a false
 // relationship lookup: STABLE helpers cannot see a just-inserted zone yet.
-const connection = process.env.SUPABASE_DB_URL;
+const connection = process.env["SUPABASE_DB_URL"];
 const sql = connection ? postgres(connection, { max: 1 }) : null;
 
 describe.skipIf(!sql)("zone creation read-back permissions", () => {
@@ -17,7 +17,9 @@ describe.skipIf(!sql)("zone creation read-back permissions", () => {
         AND policyname = 'Vendors can view their zones'
     `;
     expect(rows).toHaveLength(1);
-    policy = rows[0].qual;
+    const installedPolicy = rows[0]?.["qual"];
+    if (typeof installedPolicy !== "string") throw new Error("Zone SELECT policy missing");
+    policy = installedPolicy;
   });
 
   afterAll(async () => { await sql?.end(); });
@@ -32,7 +34,9 @@ describe.skipIf(!sql)("zone creation read-back permissions", () => {
        FROM (SELECT $2::uuid AS vendor_id, 1 AS zone_id) AS zone`,
       ["00000000-0000-0000-0000-000000000001", owner],
     );
-    return rows[0].allowed;
+    const result = rows[0]?.["allowed"];
+    if (typeof result !== "boolean") throw new Error("Zone permission result missing");
+    return result;
   }
 
   it("reads a vendor's new zone before the relationship helper sees it", async () => {
