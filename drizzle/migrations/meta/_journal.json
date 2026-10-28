@@ -162,6 +162,13 @@
       "when": 1793222360193,
       "tag": "0022_zones_direct_owner_read",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793222828277,
+      "tag": "0023_vendor_created_landlords_visibility",
+      "breakpoints": true
     }
   ]
 }
