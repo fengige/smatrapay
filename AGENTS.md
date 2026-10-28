@@ -38,3 +38,4 @@
 - Zone SELECT policies check direct vendor ownership alongside relationship helpers so newly inserted rows are readable during INSERT RETURNING without weakening vendor isolation.
 - Vendor-created landlord visibility uses a caller-bound private RLS helper joining protected roles and users.created_by; keep ordinary reads RLS-bound so unassigned landlords appear without cross-vendor access.
 - Property create/update/import flows share property-errors.ts to translate uniqueness conflicts without disclosing database constraint names or other owners' records; preserve existing uniqueness rules.
+- Property SELECT checks direct vendor creation or explicit vendor ownership independently of unit/meter helpers, allowing new empty properties to read back while retaining existing relationship scope.
