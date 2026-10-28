@@ -155,6 +155,13 @@
       "when": 1793135253459,
       "tag": "0021_payg_plan_payment_bounds",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793222360193,
+      "tag": "0022_zones_direct_owner_read",
+      "breakpoints": true
     }
   ]
 }
