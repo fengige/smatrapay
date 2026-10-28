@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
+import { propertyWriteErrorMessage } from "@/lib/property-errors";
 
 /**
  * Vendor-scoped property management.
@@ -597,7 +598,7 @@ export const createVendorProperty = createServerFn({ method: "POST" })
       } as never)
       .select("id, name")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(propertyWriteErrorMessage(error));
 
     await logVendorAction(
       supabase as never,
@@ -633,7 +634,7 @@ export const updateVendorProperty = createServerFn({ method: "POST" })
       .from("properties")
       .update({ ...patch, updated_by: userId } as never)
       .eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(propertyWriteErrorMessage(error));
 
     const ownerChanged = patch.landlord_id && patch.landlord_id !== existing.landlord_id;
     await logVendorAction(
