@@ -21,6 +21,7 @@ import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authe
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedMeterDashboardRouteImport } from './routes/_authenticated/meter-dashboard'
+import { Route as AuthenticatedPayAsYouGoRouteImport } from './routes/_authenticated/pay-as-you-go'
 import { Route as AuthenticatedPaymentHistoryRouteImport } from './routes/_authenticated/payment-history'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
 import { Route as AuthenticatedPosShiftReportRouteImport } from './routes/_authenticated/pos-shift-report'
@@ -219,6 +220,11 @@ const AuthenticatedMeterDashboardRoute =
     path: '/meter-dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPayAsYouGoRoute = AuthenticatedPayAsYouGoRouteImport.update({
+  id: '/pay-as-you-go',
+  path: '/pay-as-you-go',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPaymentHistoryRoute =
   AuthenticatedPaymentHistoryRouteImport.update({
     id: '/payment-history',
@@ -1026,6 +1032,7 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof AuthenticatedJobsRoute
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/pay-as-you-go': typeof AuthenticatedPayAsYouGoRoute
   '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -1171,6 +1178,7 @@ export interface FileRoutesByTo {
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/pay-as-you-go': typeof AuthenticatedPayAsYouGoRoute
   '/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/pos': typeof AuthenticatedPosRoute
   '/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -1316,6 +1324,7 @@ export interface FileRoutesById {
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
   '/_authenticated/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
+  '/_authenticated/pay-as-you-go': typeof AuthenticatedPayAsYouGoRoute
   '/_authenticated/payment-history': typeof AuthenticatedPaymentHistoryRoute
   '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/pos-shift-report': typeof AuthenticatedPosShiftReportRoute
@@ -1466,6 +1475,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/landlords'
     | '/meter-dashboard'
+    | '/pay-as-you-go'
     | '/payment-history'
     | '/pos'
     | '/pos-shift-report'
@@ -1611,6 +1621,7 @@ export interface FileRouteTypes {
     | '/bank-payments'
     | '/jobs'
     | '/meter-dashboard'
+    | '/pay-as-you-go'
     | '/payment-history'
     | '/pos'
     | '/pos-shift-report'
@@ -1755,6 +1766,7 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs'
     | '/_authenticated/landlords'
     | '/_authenticated/meter-dashboard'
+    | '/_authenticated/pay-as-you-go'
     | '/_authenticated/payment-history'
     | '/_authenticated/pos'
     | '/_authenticated/pos-shift-report'
@@ -1997,6 +2009,13 @@ declare module '@tanstack/react-router' {
       path: '/meter-dashboard'
       fullPath: '/meter-dashboard'
       preLoaderRoute: typeof AuthenticatedMeterDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pay-as-you-go': {
+      id: '/_authenticated/pay-as-you-go'
+      path: '/pay-as-you-go'
+      fullPath: '/pay-as-you-go'
+      preLoaderRoute: typeof AuthenticatedPayAsYouGoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/payment-history': {
@@ -3107,6 +3126,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
   AuthenticatedMeterDashboardRoute: typeof AuthenticatedMeterDashboardRoute
+  AuthenticatedPayAsYouGoRoute: typeof AuthenticatedPayAsYouGoRoute
   AuthenticatedPaymentHistoryRoute: typeof AuthenticatedPaymentHistoryRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedPosShiftReportRoute: typeof AuthenticatedPosShiftReportRoute
@@ -3208,6 +3228,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRouteWithChildren,
   AuthenticatedMeterDashboardRoute: AuthenticatedMeterDashboardRoute,
+  AuthenticatedPayAsYouGoRoute: AuthenticatedPayAsYouGoRoute,
   AuthenticatedPaymentHistoryRoute: AuthenticatedPaymentHistoryRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedPosShiftReportRoute: AuthenticatedPosShiftReportRoute,
