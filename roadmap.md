@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add resident-only Pay-as-you-go applications page with application details, review history, shared payment schedules and confirmed instalment progress; verify isolation and navigation.
+
 - [x] Admin /pay-as-you-go vendor product review, editing, audited soft deletion and resident application approvals; existing products default to pending and vendor edits require reapproval.
 - [x] Resident application form and approval tracking; approval atomically creates snapshotted payment plans. Server/database payment gates require approved products and applications.
 - [x] Pay-as-you-go requires live vendor-owned M-Pesa receiving configuration without platform fallback; preserved provider confirmation, idempotency and dashboard progress. 46 tests passed, including evaluated installed charge predicates; build OK and all three signed-out routes redirect to /auth without page errors.
