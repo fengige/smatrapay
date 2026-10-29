@@ -1340,6 +1340,68 @@ export type Database = {
         }
         Relationships: []
       }
+      payg_applications: {
+        Row: {
+          created_at: string
+          delivery_address: string
+          full_name: string
+          id: string
+          notes: string
+          phone: string
+          product_id: string
+          product_name: string
+          resident_id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          terms: Json
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_address: string
+          full_name: string
+          id?: string
+          notes?: string
+          phone: string
+          product_id: string
+          product_name: string
+          resident_id: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          terms: Json
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_address?: string
+          full_name?: string
+          id?: string
+          notes?: string
+          phone?: string
+          product_id?: string
+          product_name?: string
+          resident_id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          terms?: Json
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payg_applications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "payg_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payg_payment_attempts: {
         Row: {
           amount_cents: number
@@ -1428,6 +1490,7 @@ export type Database = {
       }
       payg_plans: {
         Row: {
+          application_id: string | null
           created_at: string
           down_payment_cents: number
           frequency: string
@@ -1441,6 +1504,7 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          application_id?: string | null
           created_at?: string
           down_payment_cents: number
           frequency: string
@@ -1454,6 +1518,7 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          application_id?: string | null
           created_at?: string
           down_payment_cents?: number
           frequency?: string
@@ -1467,6 +1532,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payg_plans_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "payg_applications"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payg_plans_product_id_fkey"
             columns: ["product_id"]
@@ -1492,7 +1564,9 @@ export type Database = {
       }
       payg_products: {
         Row: {
+          approval_status: string
           created_at: string
+          deleted_at: string | null
           description: string | null
           down_payment: number | null
           id: string
@@ -1503,11 +1577,14 @@ export type Database = {
           is_active: boolean
           name: string
           price: number | null
+          review_note: string | null
           updated_at: string
           vendor_id: string
         }
         Insert: {
+          approval_status?: string
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           down_payment?: number | null
           id?: string
@@ -1518,11 +1595,14 @@ export type Database = {
           is_active?: boolean
           name: string
           price?: number | null
+          review_note?: string | null
           updated_at?: string
           vendor_id: string
         }
         Update: {
+          approval_status?: string
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           down_payment?: number | null
           id?: string
@@ -1533,8 +1613,36 @@ export type Database = {
           is_active?: boolean
           name?: string
           price?: number | null
+          review_note?: string | null
           updated_at?: string
           vendor_id?: string
+        }
+        Relationships: []
+      }
+      payg_review_events: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          entity_id: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          entity_id: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          entity_id?: string
+          id?: string
+          note?: string | null
         }
         Relationships: []
       }
@@ -3716,6 +3824,10 @@ export type Database = {
       resident_evidence_unattached: {
         Args: { p_path: string }
         Returns: boolean
+      }
+      review_payg_application: {
+        Args: { p_id: string; p_note: string; p_status: string }
+        Returns: undefined
       }
       vendor_can_access_zone: {
         Args: { _vendor: string; _zone: number }

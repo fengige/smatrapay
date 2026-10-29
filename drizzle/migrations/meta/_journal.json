@@ -183,6 +183,13 @@
       "when": 1793262144352,
       "tag": "0025_vendor_payg_service_summaries",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793262427186,
+      "tag": "0026_payg_product_and_application_approval",
+      "breakpoints": true
     }
   ]
 }
