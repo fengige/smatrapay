@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Admin vendor Pay-as-you-go product review, editing and deletion; hide unapproved products from residents.
+- [ ] Resident Pay-as-you-go applications with portal approval tracking and approval-required payments.
+- [ ] Vendor-account M-Pesa instalment flow with confirmed dashboard progress; verify configuration and payment authorization blockers.
+
 - [x] Add vendor-owned editable Pay-as-you-go summaries with session-derived writes, database isolation and resident meter-vendor-scoped reads; product behavior preserved.
 - [ ] Signed-in summary save/refresh and vendor A/B/resident page acceptance (blocked: no requester-linked session; authorized preview sign-in required). Installed policy expressions and summary-matching tests verified separately.
 
