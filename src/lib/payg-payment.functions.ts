@@ -6,6 +6,7 @@ import { paygStartSchema, paygTerms, type PaygPlanView } from "./payg-payment";
 import { capabilityHash, verifyPaygPayment } from "./payg-payment.server";
 import { mpesaConfigFor, normalizeMsisdn, darajaTimestamp, darajaPost, getDarajaToken, stkPassword } from "./mpesa.server";
 import { readResidentPaygPlans } from "./payg-plans.server";
+import { isVendorPaygConfig } from "./payg-approval";
 
 export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<PaygPlanView[]> => {
   const { db } = await residentScope(context as any);
@@ -15,7 +16,7 @@ export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware
 export const getPaygPaymentAvailability = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const s = await residentScope(context as any);
   const ids = [...new Set(s.meters.map(m => m.vendor_id).filter(Boolean))] as string[];
-  const results = await Promise.all(ids.map(async id => { const cfg = await mpesaConfigFor(s.db, id); return { vendor_id: id, available: Boolean(cfg && cfg.currency === "KES" && cfg.country === "KE") }; }));
+  const results = await Promise.all(ids.map(async id => { const cfg = await mpesaConfigFor(s.db, id, false); return { vendor_id: id, available: isVendorPaygConfig(cfg, id) }; }));
   return results;
 });
 
@@ -24,21 +25,11 @@ export const startPaygPayment = createServerFn({ method: "POST" }).middleware([r
   const { db } = s;
   const { data: product } = await db.from("payg_products").select("*").eq("id", data.product_id).maybeSingle();
   if (!product || !s.meters.some(m => m.vendor_id === product.vendor_id)) throw new Error("Product is not available to your account.");
-  let { data: plan } = await db.from("payg_plans").select("*").eq("resident_id", context.userId).eq("product_id", product.id).maybeSingle();
-  if (!plan && !product.is_active) throw new Error("This product is no longer offered.");
-  const cfg = await mpesaConfigFor(db, product.vendor_id);
-  if (!cfg) throw new Error("M-Pesa payments are not configured for this vendor yet.");
-  if (cfg.currency !== "KES" || cfg.country !== "KE") throw new Error("This plan requires Kenyan M-Pesa payments.");
-  if (!plan) {
-    const terms = paygTerms(product);
-    const { data: created, error } = await db.from("payg_plans").insert({ resident_id: context.userId, vendor_id: product.vendor_id, product_id: product.id, product_name: product.name, ...terms }).select("*").single();
-    if (error) {
-      const { data: existing } = await db.from("payg_plans").select("*").eq("resident_id", context.userId).eq("product_id", product.id).maybeSingle();
-      if (!existing) throw new Error("Could not create your plan.");
-      plan = existing;
-    } else plan = created;
-  }
-  if (!plan) throw new Error("Could not create your plan.");
+  const { data: plan } = await db.from("payg_plans").select("*").eq("resident_id", context.userId).eq("product_id", product.id).maybeSingle();
+  const { data: application } = plan?.application_id ? await db.from("payg_applications").select("status").eq("id", plan.application_id).eq("resident_id", context.userId).maybeSingle() : { data: null };
+  if (!plan || application?.status !== "approved") throw new Error("Apply for this plan and wait for approval before paying.");
+  const cfg = await mpesaConfigFor(db, product.vendor_id, false);
+  if (!cfg || !isVendorPaygConfig(cfg, product.vendor_id)) throw new Error("A live Kenyan M-Pesa receiving account must be configured for this vendor before payments.");
   const capability = crypto.randomUUID();
   const phone = normalizeMsisdn(data.phone);
   const { data: attempt, error } = await db.rpc("begin_payg_payment", { p_plan: plan.id, p_resident: context.userId, p_request: data.request_id, p_phone: phone, p_config: cfg.id, p_hash: await capabilityHash(capability) });
