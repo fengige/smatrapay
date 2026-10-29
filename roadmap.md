@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add vendor-owned editable Pay-as-you-go summaries, resident relationship-scoped reads, and isolation verification; preserve product behavior.
+
 - [x] Add resident-scoped Pay-as-you-go plans and confirmed payment progress to support chat, with instalment starters; 33 tests passed, build OK and signed-out access denied.
 - [ ] Signed-in instalment chat answer acceptance (blocked: no requester-linked account/session; resident sign-in required). No payments or plan records changed.
 
