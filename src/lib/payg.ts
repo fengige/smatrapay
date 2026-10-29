@@ -21,6 +21,11 @@ export const paygProductSchema = z.object({
     ctx.addIssue({ code: "custom", path: ["down_payment"], message: "Down payment cannot exceed the price" });
   if (v.instalment_amount !== null && !v.instalment_frequency)
     ctx.addIssue({ code: "custom", path: ["instalment_frequency"], message: "Choose how often instalments are paid" });
+  if (v.price !== null && v.down_payment !== null && v.instalment_amount !== null && v.instalment_count !== null) {
+    const total = Math.round(v.down_payment * 100) + Math.round(v.instalment_amount * 100) * v.instalment_count;
+    if (total !== Math.round(v.price * 100))
+      ctx.addIssue({ code: "custom", path: ["price"], message: `Price must equal down payment + instalments (KES ${(total / 100).toLocaleString()})` });
+  }
 });
 
 export type PaygProductInput = z.input<typeof paygProductSchema>;
