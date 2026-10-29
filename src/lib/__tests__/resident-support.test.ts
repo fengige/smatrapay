@@ -12,7 +12,7 @@ function database(planError = false, paymentError = false) {
       eq: vi.fn((column: string, value: unknown) => { filters.push([column, value]); return builder; }),
       in: vi.fn((column: string, value: unknown) => { filters.push([column, value]); return builder; }),
       order: vi.fn(async () => table === "payg_plans"
-        ? { error: planError, data: [{ id: "own-plan", product_id: "product", product_name: "HomePlus Max", down_payment_cents: 280000, instalment_cents: 6500, instalment_count: 480, frequency: "daily", total_cents: 3400000 }] }
+        ? { error: planError, data: [{ id: "own-plan", application_id: "own-app", created_at: "2026-10-28T00:00:00Z", product_id: "product", product_name: "HomePlus Max", down_payment_cents: 280000, instalment_cents: 6500, instalment_count: 480, frequency: "daily", total_cents: 3400000 }] }
         : { error: paymentError, data: [
           { id: "down", plan_id: "own-plan", amount_cents: 280000, status: "completed", receipt: "PRIVATE", error_message: "PRIVATE", created_at: "2026-10-28" },
           { id: "paid", plan_id: "own-plan", amount_cents: 6500, status: "completed", created_at: "2026-10-28" },

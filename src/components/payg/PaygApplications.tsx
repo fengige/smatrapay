@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -51,5 +52,5 @@ export function ResidentPaygApplications() {
   if (q.isPending) return <p role="status">Loading applications…</p>;
   if (q.isError) return <div role="alert">Could not load applications. <Button variant="outline" onClick={() => void q.refetch()}>Try again</Button></div>;
   if (!q.data.length) return null;
-  return <section className="space-y-3"><h2 className="font-semibold">My applications</h2><div className="grid gap-3 sm:grid-cols-2">{q.data.map(a => <article key={a.id} className="rounded-lg border border-border p-4"><h3 className="font-medium">{a.product_name}</h3><p className="text-sm capitalize">{a.status === "pending" ? "Awaiting approval" : a.status}</p><p className="text-xs text-muted-foreground">Submitted {new Date(a.created_at).toLocaleDateString()}</p>{a.review_note && <p className="mt-2 whitespace-pre-wrap text-sm">{a.review_note}</p>}</article>)}</div></section>;
+  return <section className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">My applications</h2><Button asChild variant="outline" className="min-h-11"><Link to="/resident/payg-applications">Status & schedules</Link></Button></div><div className="grid gap-3 sm:grid-cols-2">{q.data.map(a => <article key={a.id} className="rounded-lg border border-border p-4"><h3 className="font-medium">{a.product_name}</h3><p className="text-sm capitalize">{a.status === "pending" ? "Awaiting approval" : a.status}</p><p className="text-xs text-muted-foreground">Submitted {new Date(a.created_at).toLocaleDateString()}</p>{a.review_note && <p className="mt-2 whitespace-pre-wrap text-sm">{a.review_note}</p>}</article>)}</div></section>;
 }

@@ -1,9 +1,9 @@
-import { paygProgress, type PaygPlanView } from "./payg-payment";
+import { paygProgress, paygSchedule, type PaygPlanView } from "./payg-payment";
 
 /** Caller must authorize resident access first; every read remains resident-bound. */
 export async function readResidentPaygPlans(db: any, residentId: string): Promise<PaygPlanView[]> {
   const { data: plans, error } = await db.from("payg_plans")
-    .select("id,product_id,product_name,down_payment_cents,instalment_cents,instalment_count,frequency,total_cents")
+    .select("id,application_id,created_at,product_id,product_name,down_payment_cents,instalment_cents,instalment_count,frequency,total_cents")
     .eq("resident_id", residentId).order("created_at", { ascending: false });
   if (error) throw new Error("Could not load your plans.");
   const ids = (plans ?? []).map((p: any) => p.id);
@@ -15,7 +15,8 @@ export async function readResidentPaygPlans(db: any, residentId: string): Promis
   return (plans ?? []).map((p: any) => {
     const payments = (attempts ?? []).filter((a: any) => a.plan_id === p.id)
       .map(({ plan_id, ...a }: any) => ({ ...a, amount_cents: Number(a.amount_cents) }));
+    const progress = paygProgress(p, payments);
     return { ...p, down_payment_cents: Number(p.down_payment_cents), instalment_cents: Number(p.instalment_cents),
-      total_cents: Number(p.total_cents), ...paygProgress(p, payments), payments };
+      total_cents: Number(p.total_cents), ...progress, schedule: paygSchedule(p, progress.paid_cents), payments };
   });
 }

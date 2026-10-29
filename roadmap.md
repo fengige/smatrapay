@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add /resident/payg-applications linked from resident catalogue/application summaries; own application details, safe review history, shared approval-date schedules and confirmed-only progress. 47 tests passed; preview build OK; signed-out page redirects to /auth with no page errors. No schema or payment changes.
+- [ ] Signed-in resident applications list/details/schedule acceptance (blocked: no requester-linked auth account/session; resident sign-in required). No application or payment records fabricated.
+
 - [x] Admin /pay-as-you-go vendor product review, editing, audited soft deletion and resident application approvals; existing products default to pending and vendor edits require reapproval.
 - [x] Resident application form and approval tracking; approval atomically creates snapshotted payment plans. Server/database payment gates require approved products and applications.
 - [x] Pay-as-you-go requires live vendor-owned M-Pesa receiving configuration without platform fallback; preserved provider confirmation, idempotency and dashboard progress. 46 tests passed, including evaluated installed charge predicates; build OK and all three signed-out routes redirect to /auth without page errors.

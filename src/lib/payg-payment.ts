@@ -37,6 +37,7 @@ export function matchingPaygCallback(attempt: { amount_cents: number; phone: str
 }
 
 export type PaygPlanView = {
+  application_id: string | null; created_at: string; schedule: ReturnType<typeof paygSchedule>;
   id: string; product_id: string; product_name: string; down_payment_cents: number; instalment_cents: number; instalment_count: number; frequency: string; total_cents: number;
   paid_cents: number; remaining_cents: number; instalments_paid: number; next_payment_cents: number; pending: boolean;
   payments: { id: string; amount_cents: number; status: string; receipt: string | null; error_message: string | null; created_at: string }[];
