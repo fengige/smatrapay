@@ -41,4 +41,4 @@
 - Vendor-created landlord visibility uses a caller-bound private RLS helper joining protected roles and users.created_by; keep ordinary reads RLS-bound so unassigned landlords appear without cross-vendor access.
 - Property create/update/import flows share property-errors.ts to translate uniqueness conflicts without disclosing database constraint names or other owners' records; preserve existing uniqueness rules.
 - Property SELECT checks direct vendor creation or explicit vendor ownership independently of unit/meter helpers, allowing new empty properties to read back while retaining existing relationship scope.
-- Owning vendors or admins review PAYG applications via the audited review_payg_application RPC; vendor payment views read attempts only after an RLS plan read proves ownership; schedules derive from approval date, never stored.
+- Vendors/admins review PAYG via audited review_payg_application. Resident details prove own application access before safe history reads; both portals reuse PAYG progress/schedules from approval date and link by application ID.
