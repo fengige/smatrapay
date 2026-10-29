@@ -5,9 +5,9 @@ import { assertVendor } from "./vendor.server";
 import { residentScope } from "./resident-portal.functions";
 import { ownsPaygImage, paygProductSchema, type PaygProduct } from "./payg";
 
-const COLS = "id, vendor_id, name, description, image_path, price, down_payment, instalment_amount, instalment_frequency, instalment_count, is_active";
+const COLS = "id, vendor_id, name, description, image_path, price, down_payment, instalment_amount, instalment_frequency, instalment_count, is_active, approval_status, deleted_at, review_note";
 
-async function withImages(rows: any[]): Promise<PaygProduct[]> {
+export async function withImages(rows: any[]): Promise<PaygProduct[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const paths = rows.map((r) => r.image_path).filter(Boolean);
   const urls = new Map<string, string>();
@@ -28,7 +28,7 @@ export const listVendorPaygProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const vendorId = await assertVendor(context as any);
-    const { data, error } = await (context.supabase as any).from("payg_products").select(COLS).eq("vendor_id", vendorId).order("created_at", { ascending: false });
+    const { data, error } = await (context.supabase as any).from("payg_products").select(COLS).eq("vendor_id", vendorId).is("deleted_at", null).order("created_at", { ascending: false });
     if (error) throw new Error("Could not load products");
     return withImages(data ?? []);
   });
@@ -55,9 +55,8 @@ export const deleteVendorPaygProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const vendorId = await assertVendor(context as any);
     const db = context.supabase as any;
-    const { data: row, error } = await db.from("payg_products").delete().eq("id", data.id).eq("vendor_id", vendorId).select("image_path").maybeSingle();
+    const { data: row, error } = await db.from("payg_products").update({ is_active: false }).eq("id", data.id).eq("vendor_id", vendorId).select("id").maybeSingle();
     if (error || !row) throw new Error("Could not delete the product");
-    if (row.image_path) await db.storage.from("payg-products").remove([row.image_path]);
     return { ok: true };
   });
 
@@ -68,7 +67,7 @@ export const listResidentPaygProducts = createServerFn({ method: "GET" })
     const s = await residentScope(context as any);
     const vendorIds = [...new Set(s.meters.map((m: any) => m.vendor_id).filter((v: any) => v && /^[0-9a-f-]{36}$/i.test(v)))] as string[];
     if (!vendorIds.length) return [];
-    const { data, error } = await s.db.from("payg_products").select(COLS).in("vendor_id", vendorIds).eq("is_active", true).order("created_at", { ascending: false });
+    const { data, error } = await s.db.from("payg_products").select(COLS).in("vendor_id", vendorIds).eq("is_active", true).eq("approval_status", "approved").is("deleted_at", null).order("created_at", { ascending: false });
     if (error) throw new Error("Could not load products");
     const { data: vendors } = await s.db.from("users").select("id, name").in("id", vendorIds);
     const names = new Map((vendors ?? []).map((v: any) => [v.id, v.name]));

@@ -34,4 +34,5 @@ export type PaygProduct = {
   id: string; vendor_id: string; name: string; description: string | null; image_path: string | null; image_url: string | null;
   price: number | null; down_payment: number | null; instalment_amount: number | null;
   instalment_frequency: string | null; instalment_count: number | null; is_active: boolean; vendor_name?: string | null;
+  approval_status?: string; deleted_at?: string | null; review_note?: string | null;
 };
