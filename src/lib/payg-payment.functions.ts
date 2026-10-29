@@ -2,11 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { residentScope } from "./resident-portal.functions";
-import { paygStartSchema, paygTerms, type PaygPlanView } from "./payg-payment";
+import { paygStartSchema, type PaygPlanView } from "./payg-payment";
 import { capabilityHash, verifyPaygPayment } from "./payg-payment.server";
 import { mpesaConfigFor, normalizeMsisdn, darajaTimestamp, darajaPost, getDarajaToken, stkPassword } from "./mpesa.server";
 import { readResidentPaygPlans } from "./payg-plans.server";
-import { isVendorPaygConfig } from "./payg-approval";
+import { canApplyForPayg, isVendorPaygConfig } from "./payg-approval";
 
 export const getResidentPaygPlans = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<PaygPlanView[]> => {
   const { db } = await residentScope(context as any);
@@ -24,7 +24,7 @@ export const startPaygPayment = createServerFn({ method: "POST" }).middleware([r
   const s = await residentScope(context as any);
   const { db } = s;
   const { data: product } = await db.from("payg_products").select("*").eq("id", data.product_id).maybeSingle();
-  if (!product || !s.meters.some(m => m.vendor_id === product.vendor_id)) throw new Error("Product is not available to your account.");
+  if (!product || !canApplyForPayg(product) || !s.meters.some(m => m.vendor_id === product.vendor_id)) throw new Error("Product is not available to your account.");
   const { data: plan } = await db.from("payg_plans").select("*").eq("resident_id", context.userId).eq("product_id", product.id).maybeSingle();
   const { data: application } = plan?.application_id ? await db.from("payg_applications").select("status").eq("id", plan.application_id).eq("resident_id", context.userId).maybeSingle() : { data: null };
   if (!plan || application?.status !== "approved") throw new Error("Apply for this plan and wait for approval before paying.");
