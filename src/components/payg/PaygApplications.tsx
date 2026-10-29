@@ -13,7 +13,7 @@ import { paygApplicationSchema, type PaygApplication } from "@/lib/payg-approval
 import { paygTerms } from "@/lib/payg-payment";
 import type { PaygProduct } from "@/lib/payg";
 
-export function PaygApplyButton({ product, application }: { product: PaygProduct; application?: PaygApplication }) {
+export function PaygApplyButton({ product, application }: { product: PaygProduct; application?: PaygApplication | undefined }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [full_name, setName] = useState("");

@@ -6,7 +6,7 @@ export const paygApplicationSchema = z.object({
   phone: z.string().trim().regex(/^(?:254|0)?[17]\d{8}$/, "Enter a Kenyan phone number"),
   delivery_address: z.string().trim().min(5).max(500),
   notes: z.string().trim().max(1000).default(""),
-  accepted_terms: z.literal(true, { error: "Accept the payment plan before applying" }),
+  accepted_terms: z.literal(true, { message: "Accept the payment plan before applying" }),
 });
 
 export type PaygApplication = {
