@@ -7,7 +7,7 @@ import { DEFAULT_PAYG_SUMMARY, paygSummarySchema, paygVendorIds, resolvePaygSumm
 export const getVendorPaygSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const vendorId = await assertVendor(context);
+    const vendorId = await assertVendor(context as any);
     const { data, error } = await context.supabase.from("payg_service_summaries")
       .select("summary_text").eq("vendor_id", vendorId).maybeSingle();
     if (error) throw new Error("Could not load summary details");
@@ -18,7 +18,7 @@ export const saveVendorPaygSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => paygSummarySchema.parse(data))
   .handler(async ({ data, context }) => {
-    const vendorId = await assertVendor(context);
+    const vendorId = await assertVendor(context as any);
     const { data: saved, error } = await context.supabase.from("payg_service_summaries")
       .upsert({ vendor_id: vendorId, summary_text: data.summary_text }, { onConflict: "vendor_id" })
       .select("summary_text").single();
