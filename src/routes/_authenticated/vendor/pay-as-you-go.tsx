@@ -6,7 +6,8 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
-import { PaygGrid, PaygHowItWorks } from "@/components/payg/PaygCatalog";
+import { PaygGrid } from "@/components/payg/PaygCatalog";
+import { VendorPaygSummary } from "@/components/payg/VendorPaygSummary";
 import { deleteVendorPaygProduct, listVendorPaygProducts, saveVendorPaygProduct } from "@/lib/payg.functions";
 import { paygProductSchema, PAYG_FREQUENCIES, type PaygProduct } from "@/lib/payg";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,7 +96,7 @@ function Page() {
   return (
     <DashboardShell access={access} title="Pay-as-you-go" description={META}>
       <div className="space-y-6">
-        <PaygHowItWorks />
+        <VendorPaygSummary />
         <div className="flex justify-end"><Button onClick={() => open()}><Plus className="mr-1 h-4 w-4" />Add Pay-as-you-go Product</Button></div>
         {q.isLoading ? <p className="text-sm text-muted-foreground">Loading products…</p>
           : q.isError ? <p className="text-sm text-destructive">Could not load products.</p>

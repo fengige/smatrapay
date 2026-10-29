@@ -1,20 +1,15 @@
 import { Package } from "lucide-react";
 import type { ReactNode } from "react";
 import type { PaygProduct } from "@/lib/payg";
+import { DEFAULT_PAYG_SUMMARY } from "@/lib/payg-summary";
 
 const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
-export function PaygHowItWorks() {
+export function PaygHowItWorks({ summary = DEFAULT_PAYG_SUMMARY, vendorName }: { summary?: string; vendorName?: string | null }) {
   return (
     <section className="rounded-xl border border-border bg-card p-5 text-sm text-foreground">
-      <p>Pay-as-you-go plan gives you the flexibility to spread the cost of your Sun King product over a series of small payments.</p>
-      <p className="mt-4 font-semibold">Here’s how it works:</p>
-      <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
-        <li>First, you make a small down payment and can start using your product immediately</li>
-        <li>Then, you pay the balance in small instalments</li>
-        <li>Making payments keeps the product unlocked and ready to use</li>
-        <li>Once payments are complete, enjoy the benefits of solar free of charge!</li>
-      </ol>
+      {vendorName && <h2 className="mb-3 font-semibold">{vendorName}</h2>}
+      <p className="whitespace-pre-wrap break-words">{summary}</p>
     </section>
   );
 }

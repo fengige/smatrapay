@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add vendor-owned editable Pay-as-you-go summaries with session-derived writes, database isolation and resident meter-vendor-scoped reads; product behavior preserved.
+- [ ] Signed-in summary save/refresh and vendor A/B/resident page acceptance (blocked: no requester-linked session; authorized preview sign-in required). Installed policy expressions and summary-matching tests verified separately.
+
 - [x] Add resident-scoped Pay-as-you-go plans and confirmed payment progress to support chat, with instalment starters; 33 tests passed, build OK and signed-out access denied.
 - [ ] Signed-in instalment chat answer acceptance (blocked: no requester-linked account/session; resident sign-in required). No payments or plan records changed.
 
