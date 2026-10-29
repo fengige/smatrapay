@@ -8,6 +8,8 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { PaygGrid } from "@/components/payg/PaygCatalog";
 import { VendorPaygSummary } from "@/components/payg/VendorPaygSummary";
+import { VendorPaygApplications } from "@/components/payg/VendorPaygApplications";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteVendorPaygProduct, listVendorPaygProducts, saveVendorPaygProduct } from "@/lib/payg.functions";
 import { paygProductSchema, PAYG_FREQUENCIES, type PaygProduct } from "@/lib/payg";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,14 +97,18 @@ function Page() {
 
   return (
     <DashboardShell access={access} title="Pay-as-you-go" description={META}>
-      <div className="space-y-6">
+      <Tabs defaultValue="products" className="space-y-6">
+        <TabsList><TabsTrigger value="products">Products</TabsTrigger><TabsTrigger value="applications">Resident Applications</TabsTrigger></TabsList>
+        <TabsContent value="applications"><VendorPaygApplications /></TabsContent>
+        <TabsContent value="products" className="space-y-6">
         <VendorPaygSummary />
         <div className="flex justify-end"><Button onClick={() => open()}><Plus className="mr-1 h-4 w-4" />Add Pay-as-you-go Product</Button></div>
         {q.isLoading ? <p className="text-sm text-muted-foreground">Loading products…</p>
           : q.isError ? <p className="text-sm text-destructive">Could not load products.</p>
           : <PaygGrid products={q.data ?? []} empty="You haven't added any Pay-as-you-go products yet."
               actions={(p) => (<div className="space-y-2"><p className="text-xs capitalize text-muted-foreground">{p.approval_status ?? "pending"}{p.review_note ? ` · ${p.review_note}` : ""}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => open(p)}>Edit</Button><Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(p)}>Withdraw</Button></div></div>)} />}
-      </div>
+        </TabsContent>
+      </Tabs>
       <Dialog open={!!form} onOpenChange={(o) => !o && !busy && setForm(null)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>{form?.id ? "Edit product" : "Add Pay-as-you-go Product"}</DialogTitle></DialogHeader>

@@ -41,3 +41,21 @@ export type PaygPlanView = {
   paid_cents: number; remaining_cents: number; instalments_paid: number; next_payment_cents: number; pending: boolean;
   payments: { id: string; amount_cents: number; status: string; receipt: string | null; error_message: string | null; created_at: string }[];
 };
+const PERIOD_DAYS: Record<string, number> = { daily: 1, weekly: 7 };
+/** Assumed schedule: down payment due at approval, instalment n due n periods later. Only completed payments are allocated, in order. */
+export function paygSchedule(plan: { created_at: string; down_payment_cents: number; instalment_cents: number; instalment_count: number; frequency: string }, paidCents: number, now = new Date()) {
+  const start = new Date(plan.created_at);
+  let left = Math.max(0, paidCents);
+  const rows: { number: number; label: string; due_date: string; amount_cents: number; paid_cents: number; status: "paid" | "partial" | "overdue" | "upcoming" }[] = [];
+  const push = (number: number, label: string, due: Date, amount: number) => {
+    const paid = Math.min(amount, left); left -= paid;
+    rows.push({ number, label, due_date: due.toISOString(), amount_cents: amount, paid_cents: paid, status: paid >= amount ? "paid" : due < now ? "overdue" : paid > 0 ? "partial" : "upcoming" });
+  };
+  if (Number(plan.down_payment_cents) > 0) push(0, "Down payment", start, Number(plan.down_payment_cents));
+  for (let i = 1; i <= plan.instalment_count; i++) {
+    const due = new Date(start);
+    if (plan.frequency === "monthly") due.setUTCMonth(due.getUTCMonth() + i); else due.setUTCDate(due.getUTCDate() + i * (PERIOD_DAYS[plan.frequency] ?? 1));
+    push(i, `Instalment ${i}`, due, Number(plan.instalment_cents));
+  }
+  return rows;
+}
