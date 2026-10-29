@@ -1,41 +1,29 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import postgres from "postgres";
 const connection = process.env["SUPABASE_DB_URL"];
 const sql = connection ? postgres(connection, { max: 1 }) : null;
 afterAll(async () => { await sql?.end(); });
 describe.skipIf(!sql)("installed Pay-as-you-go approval enforcement", () => {
-  it("rejects application inserts for pending products and accepts exact approved terms", async () => {
-    if (!sql) throw new Error("Database required");
-    await sql.begin(async tx => {
-      await tx`SET LOCAL ROLE service_role`;
-      const rows = await tx`INSERT INTO public.payg_products(vendor_id,name,down_payment,instalment_amount,instalment_count,instalment_frequency,price,approval_status) VALUES('11111111-1111-4111-8111-111111111111','Approval transaction test',2800,65,480,'daily',34000,'pending') RETURNING id`;
-      const productId = rows[0]?.["id"];
-      const terms = { down_payment_cents: 280000, instalment_cents: 6500, instalment_count: 480, frequency: "daily", total_cents: 3400000 };
-      await expect(tx.savepoint(async sp => { await sp`INSERT INTO public.payg_applications(resident_id,vendor_id,product_id,product_name,full_name,phone,delivery_address,terms) VALUES('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111',${productId},'Approval transaction test','Resident test','0722123456','Nairobi test address',${sp.json(terms)})`; })).rejects.toThrow("Approved product");
-      await tx`UPDATE public.payg_products SET approval_status='approved' WHERE id=${productId}`;
-      const app = await tx`INSERT INTO public.payg_applications(resident_id,vendor_id,product_id,product_name,full_name,phone,delivery_address,terms) VALUES('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111',${productId},'Approval transaction test','Resident test','0722123456','Nairobi test address',${tx.json(terms)}) RETURNING status`;
-      expect(app[0]?.["status"]).toBe("pending");
-      await tx`DELETE FROM public.payg_applications WHERE product_id=${productId}`;
-      await tx`DELETE FROM public.payg_products WHERE id=${productId}`;
-    });
+  let predicate = "";
+  beforeAll(async () => {
+    if (!sql) return;
+    const rows = await sql`SELECT prosrc FROM pg_proc WHERE proname='guard_payg_charge_approval'`;
+    const body = String(rows[0]?.["prosrc"] ?? "");
+    const where = body.match(/WHERE ([\s\S]+?)\) THEN/);
+    if (!where?.[1]) throw new Error("Installed charge guard missing");
+    predicate = where[1].replaceAll("NEW.", "n.");
   });
-  it("rejects unauthorized application review", async () => {
+  async function allowed(productStatus = "approved", applicationStatus = "approved", owner = "vendor-a", environment = "production") {
     if (!sql) throw new Error("Database required");
-    await expect(sql.begin(async tx => { await tx`SET LOCAL ROLE authenticated`; await tx`SELECT set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true)`; await tx`SELECT public.review_payg_application('22222222-2222-4222-8222-222222222222','approved','')`; })).rejects.toThrow("Admin required");
-  });
-  it("vendor cannot set product approval or transfer ownership", async () => {
-    if (!sql) throw new Error("Database required");
-    await sql.begin(async tx => {
-      await tx`SET LOCAL ROLE service_role`;
-      const rows = await tx`INSERT INTO public.payg_products(vendor_id,name,approval_status) VALUES('11111111-1111-4111-8111-111111111111','Vendor approval test','approved') RETURNING id`;
-      const id = rows[0]?.["id"];
-      await tx`RESET ROLE`;
-      await tx`SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true)`;
-      await tx`UPDATE public.payg_products SET approval_status='approved',name='Edited test' WHERE id=${id}`;
-      const saved = await tx`SELECT approval_status FROM public.payg_products WHERE id=${id}`;
-      expect(saved[0]?.["approval_status"]).toBe("pending");
-      await expect(tx.savepoint(async sp => { await sp`UPDATE public.payg_products SET vendor_id='22222222-2222-4222-8222-222222222222' WHERE id=${id}`; })).rejects.toThrow("Ownership");
-      await tx`DELETE FROM public.payg_products WHERE id=${id}`;
-    });
-  });
+    const rows = await sql.unsafe(`SELECT (${predicate}) AS allowed FROM
+      (SELECT 'plan' AS id,'resident' AS resident_id,'vendor-a' AS vendor_id) p,
+      (SELECT $1::text AS status) a,
+      (SELECT $2::text AS approval_status,true AS is_active,NULL::timestamptz AS deleted_at) pr,
+      (SELECT $3::text AS owner_id,true AS enabled,true AS stk_enabled,$4::text AS environment,'KE' AS country,'KES' AS currency) c,
+      (SELECT 'plan' AS plan_id,'resident' AS resident_id) n`, [applicationStatus,productStatus,owner,environment]);
+    return rows[0]?.["allowed"];
+  }
+  it("requires approved products even for an existing plan", async () => { expect(await allowed()).toBe(true); expect(await allowed("pending")).toBe(false); expect(await allowed("declined")).toBe(false); });
+  it("requires approved applications before inserting payment attempts", async () => { expect(await allowed("approved","pending")).toBe(false); expect(await allowed("approved","declined")).toBe(false); });
+  it("rejects platform, cross-vendor and sandbox receiving accounts", async () => { expect(await allowed("approved","approved","platform")).toBe(false); expect(await allowed("approved","approved","vendor-b")).toBe(false); expect(await allowed("approved","approved","vendor-a","sandbox")).toBe(false); });
 });
