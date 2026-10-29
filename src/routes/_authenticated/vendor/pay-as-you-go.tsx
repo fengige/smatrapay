@@ -71,7 +71,7 @@ function Page() {
         payload.image_path = path;
       }
       await save({ data: payload });
-      toast.success(form.id ? "Product updated" : "Product added");
+      toast.success("Product saved and awaiting admin approval");
       setForm(null);
       qc.invalidateQueries({ queryKey: ["vendor-payg"] });
     } catch (e) {
@@ -101,7 +101,7 @@ function Page() {
         {q.isLoading ? <p className="text-sm text-muted-foreground">Loading products…</p>
           : q.isError ? <p className="text-sm text-destructive">Could not load products.</p>
           : <PaygGrid products={q.data ?? []} empty="You haven't added any Pay-as-you-go products yet."
-              actions={(p) => (<><Button size="sm" variant="outline" onClick={() => open(p)}>Edit</Button><Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(p)}>Delete</Button></>)} />}
+              actions={(p) => (<div className="space-y-2"><p className="text-xs capitalize text-muted-foreground">{p.approval_status ?? "pending"}{p.review_note ? ` · ${p.review_note}` : ""}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => open(p)}>Edit</Button><Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(p)}>Withdraw</Button></div></div>)} />}
       </div>
       <Dialog open={!!form} onOpenChange={(o) => !o && !busy && setForm(null)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto">
@@ -132,7 +132,7 @@ function Page() {
                 </div>
                 {field("instalment_count", "Number of instalments", "number")}
               </div>
-              <label className="flex items-center gap-2 text-sm"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />Visible to residents</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />Offer after admin approval</label>
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setForm(null)} disabled={busy}>Cancel</Button><Button onClick={submit} disabled={busy}>{busy ? "Saving…" : "Save"}</Button></DialogFooter>
