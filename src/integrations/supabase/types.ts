@@ -1538,6 +1538,24 @@ export type Database = {
         }
         Relationships: []
       }
+      payg_service_summaries: {
+        Row: {
+          summary_text: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          summary_text: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          summary_text?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
       payment_account_sidian_settings: {
         Row: {
           account_id: string
@@ -3689,6 +3707,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      resident_can_read_payg_summary: {
+        Args: { p_vendor: string }
         Returns: boolean
       }
       resident_evidence_unattached: {
