@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { checkRoleAccess } from "@/lib/auth.functions";
@@ -33,6 +34,7 @@ function Page() {
   return (
     <DashboardShell access={Route.useLoaderData()} title="Pay-as-you-go" description="Products you can pay for in small instalments.">
       <div className="space-y-6">
+        <Button asChild variant="outline" className="min-h-11"><Link to="/resident/payg-applications">My applications & schedules</Link></Button>
         {summaries.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading summary details…</p>
           : summaries.isError ? <p className="text-sm text-destructive">Could not load summary details. Please try again.</p>
           : summaries.data.length ? summaries.data.map(s => <PaygHowItWorks key={s.vendor_id} summary={s.summary_text} vendorName={s.vendor_name ?? "Pay-as-you-go vendor"} />) : <PaygHowItWorks />}
