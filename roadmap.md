@@ -1,8 +1,9 @@
 # Roadmap
 
-- [ ] Admin vendor Pay-as-you-go product review, editing and deletion; hide unapproved products from residents.
-- [ ] Resident Pay-as-you-go applications with portal approval tracking and approval-required payments.
-- [ ] Vendor-account M-Pesa instalment flow with confirmed dashboard progress; verify configuration and payment authorization blockers.
+- [x] Admin /pay-as-you-go vendor product review, editing, audited soft deletion and resident application approvals; existing products default to pending and vendor edits require reapproval.
+- [x] Resident application form and approval tracking; approval atomically creates snapshotted payment plans. Server/database payment gates require approved products and applications.
+- [x] Pay-as-you-go requires live vendor-owned M-Pesa receiving configuration without platform fallback; preserved provider confirmation, idempotency and dashboard progress. 46 tests passed, including evaluated installed charge predicates; build OK and all three signed-out routes redirect to /auth without page errors.
+- [ ] Signed-in admin review/resident application/payment acceptance (blocked: no requester-linked account; preview sign-in required). Live charges additionally require vendor M-Pesa setup, corrected product totals, published callback changes and explicit payment authorization. Both current vendors' products have no configured live receiving account; HomePlus Max KES 21,750 conflicts with KES 34,000 plan total; TV bundle KES 62,000 conflicts with KES 108,280 plan total. No payment made or product approved automatically.
 
 - [x] Add vendor-owned editable Pay-as-you-go summaries with session-derived writes, database isolation and resident meter-vendor-scoped reads; product behavior preserved.
 - [ ] Signed-in summary save/refresh and vendor A/B/resident page acceptance (blocked: no requester-linked session; authorized preview sign-in required). Installed policy expressions and summary-matching tests verified separately.
