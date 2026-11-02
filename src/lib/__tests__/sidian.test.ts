@@ -17,26 +17,24 @@ const withData = (d: object) => ({ ConfirmationRequest: { ...sample.Confirmation
 describe("Sidian C2B notification", () => {
   it("parses the meter number from Narration, not Account", () => {
     const d = sidianPayload.parse(sample).ConfirmationRequest.data;
-    expect(parseSidianNarration(d.Narration)).toEqual({ expressnumber: "000053", meternumber: "14503254824" });
+    expect(parseSidianNarration(d.Narration)).toEqual({ meternumber: "14503254824" });
     expect(d.Account).toBe("000053");
   });
-  it("preserves leading zeros in express number and meter number", () => {
-    expect(parseSidianNarration("000053#0012345678")).toEqual({ expressnumber: "000053", meternumber: "0012345678" });
+  it("preserves leading zeros in the meter number", () => {
+    expect(parseSidianNarration("0012345678")).toEqual({ meternumber: "0012345678" });
   });
   it("rejects a missing narration", () => {
     expect(parseSidianNarration(null)).toBeNull();
     expect(parseSidianNarration(undefined)).toBeNull();
     expect(parseSidianNarration("")).toBeNull();
   });
-  it("uses a plain narration as the meter number", () => {
-    expect(parseSidianNarration("14503254824")).toEqual({ expressnumber: null, meternumber: "14503254824" });
+  it("rejects malformed narration values", () => {
     expect(parseSidianNarration("bad value!")).toBeNull();
   });
-  it("rejects an empty meter number", () => {
+  it("rejects the legacy expressnumber#meternumber style", () => {
+    expect(parseSidianNarration("000053#14503254824")).toBeNull();
     expect(parseSidianNarration("000053#")).toBeNull();
     expect(parseSidianNarration("000053#  ")).toBeNull();
-  });
-  it("rejects an empty express number and extra delimiters", () => {
     expect(parseSidianNarration("#14503254824")).toBeNull();
     expect(parseSidianNarration("a#b#c")).toBeNull();
   });
