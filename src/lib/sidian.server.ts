@@ -43,17 +43,15 @@ export type SidianPayload = z.infer<typeof sidianPayload>;
 export type SidianAuthConfig = { username: string; password: string; shortcode: string };
 
 /**
- * Sidian's Narration carries the meter number (e.g. "14503254824"). The legacy
- * `expressnumber#meternumber` form is still accepted (meter after `#`).
- * Returns null when missing or malformed; callers must not fall back to Account.
+ * Sidian's Narration carries the meter number directly (e.g. "14503254824").
+ * The legacy `expressnumber#meternumber` form is NOT accepted: a Narration
+ * containing "#" is rejected. Returns null when missing or malformed; callers
+ * must not fall back to Account.
  */
-export function parseSidianNarration(narration: string | null | undefined): { expressnumber: string | null; meternumber: string } | null {
+export function parseSidianNarration(narration: string | null | undefined): { meternumber: string } | null {
   const raw = (narration ?? "").trim();
   if (!raw) return null;
-  const parts = raw.split("#").map((s) => s.trim());
-  if (parts.length === 1) return /^[A-Za-z0-9-]{1,64}$/.test(raw) ? { expressnumber: null, meternumber: raw } : null;
-  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
-  return { expressnumber: parts[0], meternumber: parts[1] };
+  return /^[A-Za-z0-9-]{1,64}$/.test(raw) ? { meternumber: raw } : null;
 }
 
 /** Reads HTTP Basic credentials; never logged. */
