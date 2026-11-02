@@ -7,7 +7,7 @@ const basic = (u: string, p: string) => `Basic ${btoa(`${u}:${p}`)}`;
 const sample = {
   ConfirmationRequest: {
     status: 0,
-    data: { Reference: "REF1", Amount: "100.00", Date: "2026-08-31 16:30:00", BusinessShortCode: "111999", MSISDN: "254711111111", Names: "Test Customer", Account: "000053", Narration: "000053#14503254824" },
+    data: { Reference: "REF1", Amount: "100.00", Date: "2026-08-31 16:30:00", BusinessShortCode: "111999", MSISDN: "254711111111", Names: "Test Customer", Account: "000053", Narration: "14503254824" },
     TransactionType: "C2B_CONFIRMATION",
     TrasactionID: "TX1",
   },
