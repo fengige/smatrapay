@@ -123,7 +123,7 @@ export async function processSidianNotification(p: SidianPayload, parsedMeter: s
     error_message: confirmed
       ? null
       : parsedMeter === null
-        ? "Narration missing or not in expressnumber#meternumber format; no token issued."
+        ? "Narration missing or not a valid meter number; no token issued."
         : `Sidian reported status ${r.status}; no token issued.`,
   };
   const saved = existing

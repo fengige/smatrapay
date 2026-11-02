@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/public/sidian/notification")({
         if (!parsed.success) return ack("1", "Invalid request", 400);
         const d = parsed.data.ConfirmationRequest.data;
 
-        // The meter to vend comes from Narration (expressnumber#meternumber), never Account.
+        // The meter to vend comes from Narration (the meter number itself), never Account.
         const narration = parseSidianNarration(d.Narration);
 
         let resolved;
