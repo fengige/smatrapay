@@ -28,8 +28,9 @@ describe("Sidian C2B notification", () => {
     expect(parseSidianNarration(undefined)).toBeNull();
     expect(parseSidianNarration("")).toBeNull();
   });
-  it("rejects a narration without the # delimiter", () => {
-    expect(parseSidianNarration("00005314503254824")).toBeNull();
+  it("uses a plain narration as the meter number", () => {
+    expect(parseSidianNarration("14503254824")).toEqual({ expressnumber: null, meternumber: "14503254824" });
+    expect(parseSidianNarration("bad value!")).toBeNull();
   });
   it("rejects an empty meter number", () => {
     expect(parseSidianNarration("000053#")).toBeNull();
