@@ -1,6 +1,9 @@
+import { TokenHistoryPagination } from "@/components/TokenHistoryPagination";
+import { Button } from "@/components/ui/button";
+import { tokenHistorySearch } from "@/lib/token-history-pagination";
 import { formatUnits, truncateUnits } from "@/lib/token-units";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,6 +30,7 @@ import {
 } from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/_authenticated/token-management")({
+  validateSearch: tokenHistorySearch,
   head: () => ({
     meta: [
       { title: "Token Management — SmatraPay Admin" },
@@ -83,6 +87,10 @@ function StatusBadge({ status }: { status: IssuedToken["status"] }) {
 
 function TokenManagementPage() {
   const queryClient = useQueryClient();
+  const { page, pageSize } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const changePage = (next: number) => { void navigate({ search: prev => ({ ...prev, page: next }), replace: true }); };
+  const changePageSize = (size: number) => { void navigate({ search: prev => ({ ...prev, page: 1, pageSize: size }), replace: true }); };
   const [query, setQuery] = useState("");
   const [ownerType, setOwnerType] = useState<"all" | "vendor" | "landlord" | "agent">("all");
   const [results, setResults] = useState<TokenMeterMatch[] | null>(null);
@@ -111,7 +119,8 @@ function TokenManagementPage() {
     onSuccess: (rows: any) => {
       const list = rows as TokenMeterMatch[];
       setResults(list);
-      setMeter(list.length === 1 ? list[0]! : null);
+      setMeter(list.length === 1 ? list[0] ?? null : null);
+      changePage(1);
       if (!list.length) toast.info("No meters matched that search");
     },
     onError: (err: Error) => toast.error(err.message || "Search failed"),
@@ -119,12 +128,13 @@ function TokenManagementPage() {
 
   const [historySource, setHistorySource] = useState<"all" | "admin" | "vendor">("all");
   const history = useQuery({
-    queryKey: ["meter-tokens", meter?.id ?? null, historySource],
-    queryFn: async () =>
-      (await runList({
-        data: { meter_id: meter?.id ?? null, source: historySource },
-      } as never)) as IssuedToken[],
+    queryKey: ["meter-tokens", "paged", meter?.id ?? null, historySource, page, pageSize],
+    queryFn: () => runList({ data: { meter_id: meter?.id ?? null, source: historySource, page, page_size: pageSize } }),
   });
+  useEffect(() => {
+    if (history.data && history.data.page !== page) changePage(history.data.page);
+  }, [history.data?.page, page]);
+
 
   const amountNumber = Number(amount);
   const rate = meter?.price_per_unit ?? 0;
@@ -283,7 +293,7 @@ function TokenManagementPage() {
                   <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => setMeter(r)}
+                      onClick={() => { setMeter(r); changePage(1); }}
                       className={`w-full rounded-xl border p-3 text-left text-sm transition ${
                         meter?.id === r.id
                           ? "border-primary bg-primary/5"
@@ -600,7 +610,7 @@ function TokenManagementPage() {
                 <button
                   key={sv}
                   type="button"
-                  onClick={() => setHistorySource(sv)}
+                  onClick={() => { setHistorySource(sv); changePage(1); }}
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${
                     historySource === sv ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                   }`}
@@ -610,9 +620,14 @@ function TokenManagementPage() {
               ))}
             </div>
           </div>
-          {history.isLoading ? (
+          {history.isError ? (
+            <div role="alert" className="mt-3 flex items-center gap-3 text-sm text-destructive">
+              Could not load tokens.
+              <Button variant="outline" size="sm" onClick={() => void history.refetch()}>Retry</Button>
+            </div>
+          ) : history.isLoading ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading tokens…</p>
-          ) : !history.data?.length ? (
+          ) : !history.data?.rows.length ? (
             <p className="mt-3 text-sm text-muted-foreground">No tokens issued yet.</p>
           ) : (
             <div className="mt-4 overflow-x-auto">
@@ -631,7 +646,7 @@ function TokenManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {history.data.map((t) => (
+                  {history.data.rows.map((t) => (
                     <tr key={t.id} className="border-b border-border/60">
                       <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
                       <td className="py-2 pr-4">{t.meter_number}</td>
@@ -680,6 +695,9 @@ function TokenManagementPage() {
               </table>
             </div>
           )}
+          <TokenHistoryPagination page={history.data?.page ?? page} pageSize={pageSize}
+            total={history.isError ? 0 : history.data?.total ?? 0} busy={history.isFetching}
+            onPage={changePage} onPageSize={changePageSize} />
         </section>
       </div>
 

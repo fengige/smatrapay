@@ -1,5 +1,8 @@
+import { TokenHistoryPagination } from "@/components/TokenHistoryPagination";
+import { Button } from "@/components/ui/button";
+import { tokenHistorySearch } from "@/lib/token-history-pagination";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -29,6 +32,7 @@ import {
 } from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/_authenticated/pos")({
+  validateSearch: tokenHistorySearch,
   head: () => ({
     meta: [
       { title: "POS — SmatraPay Admin" },
@@ -69,6 +73,10 @@ function smsBadgeClass(status: SmsDeliveryStatus) {
 
 function PosPage() {
   const queryClient = useQueryClient();
+  const { page, pageSize } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const changePage = (next: number) => { setSelected([]); void navigate({ search: prev => ({ ...prev, page: next }), replace: true }); };
+  const changePageSize = (size: number) => { setSelected([]); void navigate({ search: prev => ({ ...prev, page: 1, pageSize: size }), replace: true }); };
   const [query, setQuery] = useState("");
   const [ownerType, setOwnerType] = useState<"all" | "vendor" | "landlord" | "agent">("all");
   const [results, setResults] = useState<TokenMeterMatch[] | null>(null);
@@ -116,19 +124,24 @@ function PosPage() {
     onSuccess: (rows: unknown) => {
       const list = rows as TokenMeterMatch[];
       setResults(list);
-      setMeter(list.length === 1 ? list[0]! : null);
+      setMeter(list.length === 1 ? list[0] ?? null : null);
+      changePage(1);
+      setSelected([]);
       if (!list.length) toast.info("No meters matched that search");
     },
     onError: (err: Error) => toast.error(err.message || "Search failed"),
   });
 
   const recent = useQuery({
-    queryKey: ["meter-tokens", meter?.id ?? null],
-    queryFn: async () =>
-      (await runList({ data: { meter_id: meter?.id ?? null } } as never)) as IssuedToken[],
+    queryKey: ["meter-tokens", "paged", meter?.id ?? null, page, pageSize],
+    queryFn: () => runList({ data: { meter_id: meter?.id ?? null, page, page_size: pageSize } }),
   });
+  useEffect(() => {
+    if (recent.data && recent.data.page !== page) changePage(recent.data.page);
+  }, [recent.data?.page, page]);
 
-  const recentRows = useMemo(() => (recent.data ?? []).slice(0, 20), [recent.data]);
+
+  const recentRows = useMemo(() => recent.data?.rows ?? [], [recent.data]);
   const recentIds = useMemo(() => recentRows.map((t) => t.id), [recentRows]);
 
   const smsLogs = useQuery({
@@ -316,7 +329,7 @@ function PosPage() {
                   <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => setMeter(r)}
+                      onClick={() => { setMeter(r); changePage(1); setSelected([]); }}
                       className={`w-full rounded-xl border p-3 text-left text-sm transition ${
                         meter?.id === r.id
                           ? "border-primary bg-primary/5"
@@ -609,7 +622,12 @@ function PosPage() {
               </div>
             )}
           </div>
-          {recent.isLoading ? (
+          {recent.isError ? (
+            <div role="alert" className="mt-3 flex items-center gap-3 text-sm text-destructive">
+              Could not load sales.
+              <Button variant="outline" size="sm" onClick={() => void recent.refetch()}>Retry</Button>
+            </div>
+          ) : recent.isLoading ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
           ) : recentRows.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No sales recorded yet.</p>
@@ -708,6 +726,9 @@ function PosPage() {
               </table>
             </div>
           )}
+          <TokenHistoryPagination page={recent.data?.page ?? page} pageSize={pageSize}
+            total={recent.isError ? 0 : recent.data?.total ?? 0} busy={recent.isFetching}
+            onPage={changePage} onPageSize={changePageSize} />
         </section>
 
         {/* Bulk re-send confirmation */}

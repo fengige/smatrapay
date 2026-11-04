@@ -1,3 +1,4 @@
+import { tokenHistoryPageSchema, type TokenHistoryPage } from "@/lib/token-history-pagination";
 import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -238,24 +239,14 @@ export const issueVendorMeterToken = createServerFn({ method: "POST" })
 /** Recent tokens on the vendor's meters, optionally scoped to one meter. */
 export const listVendorMeterTokens = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ meter_id: z.string().uuid().optional().nullable() }).parse(d ?? {}),
-  )
-  .handler(async ({ data, context }): Promise<VendorIssuedToken[]> => {
+  .inputValidator((d: unknown) => tokenHistoryPageSchema.extend({
+    meter_id: z.string().uuid().optional().nullable(),
+    source: z.enum(["all", "admin", "vendor"]).optional(),
+  }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<TokenHistoryPage<VendorIssuedToken>> => {
     const { assertVendor } = await import("@/lib/vendor.server");
     const vendorId = await assertVendor(context as never);
-    const supabase = context.supabase as any;
-
-    const meterIds = await vendorMeterIds(supabase, vendorId);
-    if (!meterIds.length) return [];
-    if (data.meter_id && !meterIds.includes(data.meter_id)) throw new Error("Meter not found");
-
-    const { data: rows, error } = await supabase
-      .from("meter_tokens")
-      .select("*")
-      .in("meter_id", data.meter_id ? [data.meter_id] : meterIds)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) throw new Error(error.message);
-    return serialize(supabase, (rows ?? []) as any[]);
+    const { readTokenHistoryPage } = await import("@/lib/token-history.server");
+    const result = await readTokenHistoryPage(context.supabase, data, vendorId);
+    return { ...result, rows: await serialize(context.supabase, result.rows) };
   });

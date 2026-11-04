@@ -42,3 +42,5 @@
 - Property create/update/import flows share property-errors.ts to translate uniqueness conflicts without disclosing database constraint names or other owners' records; preserve existing uniqueness rules.
 - Property SELECT checks direct vendor creation or explicit vendor ownership independently of unit/meter helpers, allowing new empty properties to read back while retaining existing relationship scope.
 - Vendors/admins review PAYG via audited review_payg_application. Resident details prove own application access before safe history reads; both portals reuse PAYG progress/schedules from approval date and link by application ID.
+
+- POS and token-management history share bounded database pagination with exact filtered counts and stable timestamp/id order; vendor reads join meters by session-derived vendor ownership before counting or paging.

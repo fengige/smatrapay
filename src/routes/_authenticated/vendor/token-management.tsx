@@ -1,6 +1,9 @@
+import { TokenHistoryPagination } from "@/components/TokenHistoryPagination";
+import { Button } from "@/components/ui/button";
+import { tokenHistorySearch } from "@/lib/token-history-pagination";
 import { formatUnits, truncateUnits } from "@/lib/token-units";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,6 +21,7 @@ import {
 } from "@/lib/vendor-tokens.functions";
 
 export const Route = createFileRoute("/_authenticated/vendor/token-management")({
+  validateSearch: tokenHistorySearch,
   head: () => ({
     meta: [
       { title: "Token Management · Vendor · SmatraPay" },
@@ -75,6 +79,10 @@ function StatusBadge({ status }: { status: VendorIssuedToken["status"] }) {
 function VendorTokenManagementPage() {
   const access = Route.useLoaderData();
   const queryClient = useQueryClient();
+  const { page, pageSize } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const changePage = (next: number) => { void navigate({ search: prev => ({ ...prev, page: next }), replace: true }); };
+  const changePageSize = (size: number) => { void navigate({ search: prev => ({ ...prev, page: 1, pageSize: size }), replace: true }); };
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<VendorTokenMeterMatch[] | null>(null);
   const [meter, setMeter] = useState<VendorTokenMeterMatch | null>(null);
@@ -99,17 +107,21 @@ function VendorTokenManagementPage() {
     onSuccess: (rows: any) => {
       const list = rows as VendorTokenMeterMatch[];
       setResults(list);
-      setMeter(list.length === 1 ? list[0]! : null);
+      setMeter(list.length === 1 ? list[0] ?? null : null);
+      changePage(1);
       if (!list.length) toast.info("No meters matched that search");
     },
     onError: (err: Error) => toast.error(err.message || "Search failed"),
   });
 
   const history = useQuery({
-    queryKey: ["vendor-meter-tokens", meter?.id ?? null],
-    queryFn: async () =>
-      (await runList({ data: { meter_id: meter?.id ?? null } } as never)) as VendorIssuedToken[],
+    queryKey: ["vendor-meter-tokens", "paged", meter?.id ?? null, page, pageSize],
+    queryFn: () => runList({ data: { meter_id: meter?.id ?? null, page, page_size: pageSize } }),
   });
+  useEffect(() => {
+    if (history.data && history.data.page !== page) changePage(history.data.page);
+  }, [history.data?.page, page]);
+
 
   const amountNumber = Number(amount);
   const rate = meter?.price_per_unit ?? 0;
@@ -240,7 +252,7 @@ function VendorTokenManagementPage() {
                   <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => setMeter(r)}
+                      onClick={() => { setMeter(r); changePage(1); }}
                       className={`w-full rounded-xl border p-3 text-left text-sm transition ${
                         meter?.id === r.id
                           ? "border-primary bg-primary/5"
@@ -523,9 +535,14 @@ function VendorTokenManagementPage() {
           <h2 className="font-semibold">
             {meter ? `Tokens for ${meter.meter_number}` : "Recently issued tokens"}
           </h2>
-          {history.isLoading ? (
+          {history.isError ? (
+            <div role="alert" className="mt-3 flex items-center gap-3 text-sm text-destructive">
+              Could not load tokens.
+              <Button variant="outline" size="sm" onClick={() => void history.refetch()}>Retry</Button>
+            </div>
+          ) : history.isLoading ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading tokens…</p>
-          ) : !history.data?.length ? (
+          ) : !history.data?.rows.length ? (
             <p className="mt-3 text-sm text-muted-foreground">
               No tokens have been issued on your meters yet.
             </p>
@@ -544,7 +561,7 @@ function VendorTokenManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {history.data.map((t) => (
+                  {history.data.rows.map((t) => (
                     <tr key={t.id} className="border-b border-border/60">
                       <td className="py-2 pr-4 font-mono text-xs">{t.token}</td>
                       <td className="py-2 pr-4">{t.meter_number}</td>
@@ -577,6 +594,9 @@ function VendorTokenManagementPage() {
               </table>
             </div>
           )}
+          <TokenHistoryPagination page={history.data?.page ?? page} pageSize={pageSize}
+            total={history.isError ? 0 : history.data?.total ?? 0} busy={history.isFetching}
+            onPage={changePage} onPageSize={changePageSize} />
         </section>
       </div>
 

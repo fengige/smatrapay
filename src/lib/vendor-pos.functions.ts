@@ -1,3 +1,4 @@
+import { tokenHistoryPageSchema, type TokenHistoryPage } from "@/lib/token-history-pagination";
 import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -178,24 +179,16 @@ export const searchVendorPosMeters = createServerFn({ method: "POST" })
 /** Recent counter sales for the vendor's meters, optionally one meter. */
 export const listVendorPosTokens = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ meter_id: uuid.nullable().optional() }).parse(d ?? {}))
-  .handler(async ({ data, context }): Promise<VendorPosToken[]> => {
+  .inputValidator((d: unknown) => tokenHistoryPageSchema.extend({
+    meter_id: z.string().uuid().optional().nullable(),
+    source: z.enum(["all", "admin", "vendor"]).optional(),
+  }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<TokenHistoryPage<VendorPosToken>> => {
     const { assertVendor } = await import("@/lib/vendor.server");
     const vendorId = await assertVendor(context as never);
-    const supabase = context.supabase as any;
-
-    const meterIds = await vendorMeterIds(supabase, vendorId);
-    if (!meterIds.length) return [];
-    if (data.meter_id && !meterIds.includes(data.meter_id)) throw new Error("Meter not found");
-
-    const { data: rows, error } = await supabase
-      .from("meter_tokens")
-      .select("*")
-      .in("meter_id", data.meter_id ? [data.meter_id] : meterIds)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) throw new Error(error.message);
-    return serialize(supabase, (rows ?? []) as any[]);
+    const { readTokenHistoryPage } = await import("@/lib/token-history.server");
+    const result = await readTokenHistoryPage(context.supabase, data, vendorId);
+    return { ...result, rows: await serialize(context.supabase, result.rows) };
   });
 
 /** Take payment at the counter and vend a credit token for a vendor meter. */
