@@ -49,9 +49,13 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
         // The restricted test role cannot execute authenticated-only RPCs or
         // SET ROLE. Run the deployed function body in a rollback-only temp copy.
         await tx.unsafe("CREATE TEMP TABLE unit_test_scope (id integer) ON COMMIT DROP");
+        await tx.unsafe("CREATE TEMP TABLE properties (LIKE public.properties INCLUDING DEFAULTS) ON COMMIT DROP");
+        await tx.unsafe("CREATE TEMP TABLE units (LIKE public.units INCLUDING DEFAULTS) ON COMMIT DROP");
         const actor = "current_setting('request.jwt.claim.sub')::uuid";
         const testDefinition = definition
           .replace("public.create_vendor_property_unit", "pg_temp.create_vendor_property_unit")
+          .replaceAll("public.properties", "pg_temp.properties")
+          .replaceAll("public.units", "pg_temp.units")
           .replaceAll("auth.uid()", actor)
           .replace("public.has_role(v_actor, 'vendor'::public.app_role)",
             "EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=v_actor AND role='vendor')")
@@ -60,7 +64,7 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
           .replace("SELECT s.property_id FROM private.vendor_scope_property_ids(v_actor) s",
             "SELECT NULL::uuid WHERE false");
         await tx.unsafe(testDefinition);
-        const props = await tx`INSERT INTO public.properties (name, created_by, landlord_id, owner_type, number_of_units)
+        const props = await tx`INSERT INTO pg_temp.properties (name, created_by, landlord_id, owner_type, number_of_units)
           VALUES (${`Unit test ${crypto.randomUUID()}`}, ${foreign ? otherId : vendorId}::uuid,
             ${foreign ? otherId : vendorId}::uuid, 'vendor', 0) RETURNING id`;
         const id = props[0]?.["id"];
@@ -79,7 +83,7 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
     await scenario(async (tx, id) => {
       const payload = { property_id: id, unit_number: "001", building: "North", bedrooms: 2, status: "vacant" };
       const created = await tx`SELECT pg_temp.create_vendor_property_unit(${JSON.stringify(payload)}::jsonb) AS id`;
-      const rows = await tx`SELECT id, property_id, unit_number, bedrooms, created_by FROM public.units WHERE property_id=${id}::uuid`;
+      const rows = await tx`SELECT id, property_id, unit_number, bedrooms, created_by FROM pg_temp.units WHERE property_id=${id}::uuid`;
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ id: created[0]?.["id"], property_id: id, unit_number: "001", bedrooms: 2, created_by: vendorId });
       // This test connection cannot SET ROLE authenticated. Evaluate the installed
@@ -89,12 +93,14 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
       const predicate = policies[0]?.["qual"];
       if (typeof predicate !== "string") throw new Error("Unit visibility policy missing");
       const testPredicate = predicate
+        .replaceAll("public.properties", "pg_temp.properties")
+        .replace("FROM properties", "FROM pg_temp.properties")
         .replaceAll("auth.uid()", "current_setting('request.jwt.claim.sub')::uuid")
         .replace(/(?:public\.)?has_role\(current_setting\('request.jwt.claim.sub'\)::uuid, 'vendor'::(?:public\.)?app_role\)/g,
           "EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=current_setting('request.jwt.claim.sub')::uuid AND role='vendor')");
-      const visibility = await tx.unsafe(`SELECT (${testPredicate}) AS visible FROM public.units WHERE id=$1::uuid`, [rows[0]?.["id"]]);
+      const visibility = await tx.unsafe(`SELECT (${testPredicate}) AS visible FROM pg_temp.units WHERE id=$1::uuid`, [rows[0]?.["id"]]);
       expect(visibility[0]?.["visible"]).toBe(true);
-      const props = await tx`SELECT number_of_units FROM public.properties WHERE id=${id}::uuid`;
+      const props = await tx`SELECT number_of_units FROM pg_temp.properties WHERE id=${id}::uuid`;
       expect(props[0]?.["number_of_units"]).toBe(1);
     });
   });
