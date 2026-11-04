@@ -37,8 +37,8 @@ describe("paged token history", () => {
     const next = await readTokenHistoryPage(db, { page: 2, page_size: 20 });
     expect(first.rows).toHaveLength(20);
     expect(first.total).toBe(45);
-    expect(next.rows[0]?.id).toBe("020");
-    expect(first.rows.some(r => next.rows.some(n => n.id === r.id))).toBe(false);
+    expect(next.rows[0]?.["id"]).toBe("020");
+    expect(first.rows.some(r => next.rows.some(n => n["id"] === r["id"]))).toBe(false);
     expect(ranges).toEqual([[0, 19], [20, 39]]);
   });
   it("scopes both results and count to the authenticated vendor", async () => {
@@ -46,7 +46,7 @@ describe("paged token history", () => {
     const page = await readTokenHistoryPage(db, { page: 2, page_size: 20 }, "vendor-a");
     expect(page.total).toBe(25);
     expect(page.rows).toHaveLength(5);
-    expect(page.rows.every(r => r.meter_id === "meter-a")).toBe(true);
+    expect(page.rows.every(r => r["meter_id"] === "meter-a")).toBe(true);
     expect(page.rows.every(r => !("meters" in r))).toBe(true);
   });
   it("rejects a foreign meter before reading tokens", async () => {
@@ -59,7 +59,7 @@ describe("paged token history", () => {
     const page = await readTokenHistoryPage(db, { page: 2, page_size: 10, source: "vendor" });
     expect(page.total).toBe(23);
     expect(page.rows).toHaveLength(10);
-    expect(page.rows.every(r => r.issued_by === "vendor-a")).toBe(true);
+    expect(page.rows.every(r => r["issued_by"] === "vendor-a")).toBe(true);
   });
   it("preserves admin precedence for users with both roles", async () => {
     const { db } = database(false, true);
