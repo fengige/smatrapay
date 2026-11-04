@@ -204,6 +204,13 @@
       "when": 1793274741680,
       "tag": "0028_vendor_payg_application_review",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793821170908,
+      "tag": "0029_vendor_add_property_unit",
+      "breakpoints": true
     }
   ]
 }

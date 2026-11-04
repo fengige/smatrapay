@@ -9,11 +9,14 @@ import {
   Images,
   Layers,
   MapPin,
+  Plus,
   Users as UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
+import { Button } from "@/components/ui/button";
+import { AddPropertyUnitDialog } from "@/components/vendor/AddPropertyUnitDialog";
 import {
   addVendorPropertyPhoto,
   deleteVendorPropertyPhoto,
@@ -101,6 +104,7 @@ function VendorPropertyDetails() {
 
   const [tab, setTab] = useState<TabId>("units");
   const [editing, setEditing] = useState(false);
+  const [addingUnit, setAddingUnit] = useState(false);
   const [form, setForm] = useState<PropertyFormState>(emptyPropertyForm);
   const [caption, setCaption] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -321,6 +325,11 @@ function VendorPropertyDetails() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-4">
+          {tab === "units" && (
+            <div className="mb-4 flex justify-end">
+              <Button onClick={() => setAddingUnit(true)}><Plus />Add Unit</Button>
+            </div>
+          )}
           {tab === "units" &&
             (data.units.length === 0 ? (
               <EmptyState title="No units" message="This property has no units recorded yet." />
@@ -654,6 +663,10 @@ function VendorPropertyDetails() {
         </div>
       </div>
 
+      {addingUnit && (
+        <AddPropertyUnitDialog propertyId={propertyId} propertyName={property.name}
+          onClose={() => setAddingUnit(false)} />
+      )}
       {editing && (
         <VendorModal wide title="Edit property" onClose={() => setEditing(false)}>
           <PropertyFormFields

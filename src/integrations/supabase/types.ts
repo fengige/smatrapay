@@ -3810,6 +3810,7 @@ export type Database = {
         }
         Returns: Json
       }
+      create_vendor_property_unit: { Args: { p_input: Json }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

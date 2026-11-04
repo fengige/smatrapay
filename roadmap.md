@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add vendor Property Details → Units → Add Unit with shared Unit Management validation, fixed property, authenticated atomic creation/count/audit RPC, own-property unit read policy, listing refresh and success/error feedback. 18 validation/installed ownership/grant/property regression tests passed; build OK; signed-out property route redirects to /auth without page errors. No tables/columns added.
+- [ ] Verify signed-in unit creation and readback under the selected property (blocked: no requesting-user auth account; authorized vendor preview sign-in required). Installed ownership/grant tests passed; no live unit was created.
+
 - [x] Add server-paged POS sales and token history in admin/vendor portals, shared controls, filter resets and isolation tests; 22 regression tests passed and build OK. All four signed-out routes redirect to /auth without page errors; existing meter relationship verified. No database changes.
 - [ ] Signed-in POS/token-history page navigation and vendor A/B browser acceptance (blocked: no auth account matches requester; an authorized admin/vendor preview session is required). Isolation, filtered counts and page navigation verified in focused database-query tests, not live signed-in screens.
 

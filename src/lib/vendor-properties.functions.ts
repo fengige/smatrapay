@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
 import { propertyWriteErrorMessage } from "@/lib/property-errors";
+import { unitInput } from "@/lib/unit-input";
 
 /**
  * Vendor-scoped property management.
@@ -66,6 +67,29 @@ async function assertPropertyInScope(supabase: Client, propertyId: string) {
   if (!data) throw new Error("Access denied");
   return data as any;
 }
+
+export const createVendorPropertyUnit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => unitInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const vendorId = await assertVendor(context as never);
+    await assertPropertyInScope(context.supabase as never, data.property_id);
+    // The RPC rechecks ownership and locks the property; insertion, count and
+    // existing unit audits commit together, without granting broad vendor writes.
+    const { data: id, error } = await context.supabase.rpc("create_vendor_property_unit", {
+      p_input: data,
+    });
+    if (error) {
+      if (error.code === "23505") throw new Error("This unit number already exists in this property");
+      if (error.code === "42501") throw new Error("Access denied");
+      throw new Error("Could not add unit. Please check the details and try again.");
+    }
+    if (!id) throw new Error("Could not add unit. Please try again.");
+    await logVendorAction(context.supabase as never, vendorId, "VENDOR_UNIT_CREATED", {
+      type: "unit", id,
+    }, { property_id: data.property_id });
+    return { id, property_id: data.property_id };
+  });
 
 async function assertZoneInScope(supabase: Client, vendorId: string, zoneId: number | null) {
   if (zoneId == null) return;
