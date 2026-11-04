@@ -8,8 +8,8 @@ export const tokenHistoryPageSchema = z.object({
 export type TokenHistoryPage<T> = { rows: T[]; total: number; page: number; page_size: number };
 
 export function tokenHistorySearch(search: Record<string, unknown>) {
-  const rawPage = Number(search.page);
-  const rawSize = Number(search.pageSize);
+  const rawPage = Number(search["page"]);
+  const rawSize = Number(search["pageSize"]);
   return {
     page: Number.isInteger(rawPage) && rawPage > 0 ? Math.min(rawPage, 1_000_000) : 1,
     pageSize: [10, 20, 50, 100].includes(rawSize) ? rawSize : 20,

@@ -138,6 +138,7 @@ function VendorShiftReportPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/vendor/pos"
+            search={{ page: 1, pageSize: 20 }}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-accent/10"
           >
             <ArrowLeft className="size-4" /> Back to POS

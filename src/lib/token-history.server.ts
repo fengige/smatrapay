@@ -3,9 +3,9 @@ import { tokenHistoryRange } from "./token-history-pagination";
 /** Keep ownership and source filters in the database before count/range. */
 export async function readTokenHistoryPage(
   supabase: any,
-  input: { page: number; page_size: number; meter_id?: string | null; source?: "all" | "admin" | "vendor" },
+  input: { page: number; page_size: number; meter_id?: string | null | undefined; source?: "all" | "admin" | "vendor" | undefined },
   vendorId?: string,
-) {
+): Promise<{ rows: Record<string, any>[]; total: number; page: number; page_size: number }> {
   if (vendorId && input.meter_id) {
     const { data: meter, error } = await supabase.from("meters").select("id")
       .eq("id", input.meter_id).eq("vendor_id", vendorId).maybeSingle();
