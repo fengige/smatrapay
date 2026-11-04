@@ -49,7 +49,17 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
         // The restricted test role cannot execute authenticated-only RPCs or
         // SET ROLE. Run the deployed function body in a rollback-only temp copy.
         await tx.unsafe("CREATE TEMP TABLE unit_test_scope (id integer) ON COMMIT DROP");
-        await tx.unsafe(definition.replace("public.create_vendor_property_unit", "pg_temp.create_vendor_property_unit"));
+        const actor = "current_setting('request.jwt.claim.sub')::uuid";
+        const testDefinition = definition
+          .replace("public.create_vendor_property_unit", "pg_temp.create_vendor_property_unit")
+          .replaceAll("auth.uid()", actor)
+          .replace("public.has_role(v_actor, 'vendor'::public.app_role)",
+            "EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=v_actor AND role='vendor')")
+          // Relationship helper is inaccessible to the sandbox test role; these
+          // fixtures deliberately have no zone or meter relationships.
+          .replace("SELECT s.property_id FROM private.vendor_scope_property_ids(v_actor) s",
+            "SELECT NULL::uuid WHERE false");
+        await tx.unsafe(testDefinition);
         const props = await tx`INSERT INTO public.properties (name, created_by, landlord_id, owner_type, number_of_units)
           VALUES (${`Unit test ${crypto.randomUUID()}`}, ${foreign ? otherId : vendorId}::uuid,
             ${foreign ? otherId : vendorId}::uuid, 'vendor', 0) RETURNING id`;
@@ -78,7 +88,11 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
         AND policyname='Vendors can read units of their own properties'`;
       const predicate = policies[0]?.["qual"];
       if (typeof predicate !== "string") throw new Error("Unit visibility policy missing");
-      const visibility = await tx.unsafe(`SELECT (${predicate}) AS visible FROM public.units WHERE id=$1::uuid`, [rows[0]?.["id"]]);
+      const testPredicate = predicate
+        .replaceAll("auth.uid()", "current_setting('request.jwt.claim.sub')::uuid")
+        .replace(/(?:public\.)?has_role\(current_setting\('request.jwt.claim.sub'\)::uuid, 'vendor'::(?:public\.)?app_role\)/g,
+          "EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=current_setting('request.jwt.claim.sub')::uuid AND role='vendor')");
+      const visibility = await tx.unsafe(`SELECT (${testPredicate}) AS visible FROM public.units WHERE id=$1::uuid`, [rows[0]?.["id"]]);
       expect(visibility[0]?.["visible"]).toBe(true);
       const props = await tx`SELECT number_of_units FROM public.properties WHERE id=${id}::uuid`;
       expect(props[0]?.["number_of_units"]).toBe(1);
