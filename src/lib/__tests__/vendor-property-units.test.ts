@@ -72,6 +72,8 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
         if (typeof id !== "string") throw new Error("Property fixture missing");
         await tx`SELECT set_config('request.jwt.claim.sub', ${vendorId}, true)`;
         await tx`SELECT set_config('request.jwt.claims', ${JSON.stringify({ sub: vendorId, role: "authenticated" })}, true)`;
+        const fixture = await tx`SELECT id, created_by, current_setting('request.jwt.claim.sub') AS actor FROM pg_temp.properties WHERE id=${id}::uuid`;
+        expect(fixture[0]).toMatchObject({ id, created_by: foreign ? otherId : vendorId, actor: vendorId });
         await run(tx, id);
         throw rollback;
       });
