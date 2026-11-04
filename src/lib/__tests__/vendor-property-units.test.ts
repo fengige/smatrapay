@@ -29,12 +29,16 @@ const rollback = new Error("rollback test fixtures");
 describe.skipIf(!sql)("vendor property unit database flow", () => {
   let vendorId = "";
   let otherId = "";
+  let definition = "";
   beforeAll(async () => {
     if (!sql) return;
     const vendors = await sql`SELECT user_id FROM public.user_roles WHERE role='vendor' ORDER BY user_id LIMIT 2`;
     vendorId = vendors[0]?.["user_id"] ?? "";
     otherId = vendors[1]?.["user_id"] ?? "";
     if (!vendorId || !otherId) throw new Error("Two vendors required for isolation tests");
+    const functions = await sql`SELECT pg_get_functiondef('public.create_vendor_property_unit(jsonb)'::regprocedure) AS definition`;
+    definition = functions[0]?.["definition"] ?? "";
+    if (!definition) throw new Error("Installed unit creation function missing");
   });
   afterAll(async () => { await sql?.end(); });
 
@@ -42,6 +46,10 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
     if (!sql) throw new Error("Database connection required");
     try {
       await sql.begin(async (tx) => {
+        // The restricted test role cannot execute authenticated-only RPCs or
+        // SET ROLE. Run the deployed function body in a rollback-only temp copy.
+        await tx.unsafe("CREATE TEMP TABLE unit_test_scope (id integer) ON COMMIT DROP");
+        await tx.unsafe(definition.replace("public.create_vendor_property_unit", "pg_temp.create_vendor_property_unit"));
         const props = await tx`INSERT INTO public.properties (name, created_by, landlord_id, owner_type, number_of_units)
           VALUES (${`Unit test ${crypto.randomUUID()}`}, ${foreign ? otherId : vendorId}::uuid,
             ${foreign ? otherId : vendorId}::uuid, 'vendor', 0) RETURNING id`;
@@ -60,7 +68,7 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
   it("creates and reads back an unmetered unit only under the selected owned property", async () => {
     await scenario(async (tx, id) => {
       const payload = { property_id: id, unit_number: "001", building: "North", bedrooms: 2, status: "vacant" };
-      const created = await tx`SELECT public.create_vendor_property_unit(${JSON.stringify(payload)}::jsonb) AS id`;
+      const created = await tx`SELECT pg_temp.create_vendor_property_unit(${JSON.stringify(payload)}::jsonb) AS id`;
       const rows = await tx`SELECT id, property_id, unit_number, bedrooms, created_by FROM public.units WHERE property_id=${id}::uuid`;
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ id: created[0]?.["id"], property_id: id, unit_number: "001", bedrooms: 2, created_by: vendorId });
@@ -79,15 +87,15 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
 
   it("rejects another vendor's property and rolls back all changes", async () => {
     await expect(scenario(async (tx, id) => {
-      await tx`SELECT public.create_vendor_property_unit(${JSON.stringify({ property_id: id, unit_number: "001" })}::jsonb)`;
+      await tx`SELECT pg_temp.create_vendor_property_unit(${JSON.stringify({ property_id: id, unit_number: "001" })}::jsonb)`;
     }, true)).rejects.toThrow("Access denied");
   });
 
   it("rejects duplicate unit numbers within the same property", async () => {
     await expect(scenario(async (tx, id) => {
       const input = JSON.stringify({ property_id: id, unit_number: "001" });
-      await tx`SELECT public.create_vendor_property_unit(${input}::jsonb)`;
-      await tx`SELECT public.create_vendor_property_unit(${input}::jsonb)`;
+      await tx`SELECT pg_temp.create_vendor_property_unit(${input}::jsonb)`;
+      await tx`SELECT pg_temp.create_vendor_property_unit(${input}::jsonb)`;
     })).rejects.toThrow("already exists");
   });
 
@@ -96,7 +104,7 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
       const unknown = "00000000-0000-0000-0000-000000000099";
       await tx`SELECT set_config('request.jwt.claim.sub', ${unknown}, true)`;
       await tx`SELECT set_config('request.jwt.claims', ${JSON.stringify({ sub: unknown, role: "authenticated" })}, true)`;
-      await tx`SELECT public.create_vendor_property_unit(${JSON.stringify({ property_id: id, unit_number: "001" })}::jsonb)`;
+      await tx`SELECT pg_temp.create_vendor_property_unit(${JSON.stringify({ property_id: id, unit_number: "001" })}::jsonb)`;
     })).rejects.toThrow("Vendor access required");
   });
 });
