@@ -1,3 +1,4 @@
+import { tokenHistoryPageSchema, type TokenHistoryPage } from "@/lib/token-history-pagination";
 import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -414,28 +415,15 @@ export const issueMeterToken = createServerFn({ method: "POST" })
 /** Recent tokens, optionally scoped to one meter. */
 export const listMeterTokens = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        meter_id: z.string().uuid().optional().nullable(),
-        source: z.enum(["all", "admin", "vendor"]).optional(),
-      })
-      .parse(d ?? {}),
-  )
-  .handler(async ({ data, context }): Promise<IssuedToken[]> => {
+  .inputValidator((d: unknown) => tokenHistoryPageSchema.extend({
+    meter_id: z.string().uuid().optional().nullable(),
+    source: z.enum(["all", "admin", "vendor"]).optional(),
+  }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<TokenHistoryPage<IssuedToken>> => {
     await assertAdmin(context as never);
-    const { supabase } = context;
-    let query = supabase
-      .from("meter_tokens")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (data.meter_id) query = query.eq("meter_id", data.meter_id);
-    const { data: rows, error } = await query;
-    if (error) throw new Error(error.message);
-    const serialized = await serialize(supabase, (rows ?? []) as any[]);
-    const source = data.source ?? "all";
-    return source === "all" ? serialized : serialized.filter((t) => t.issued_by_role === source);
+    const { readTokenHistoryPage } = await import("@/lib/token-history.server");
+    const result = await readTokenHistoryPage(context.supabase, data);
+    return { ...result, rows: await serialize(context.supabase, result.rows) };
   });
 
 /** Revoke a previously issued token so it can no longer be used. */
