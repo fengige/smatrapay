@@ -23,7 +23,7 @@ describe("shared Unit Management validation", () => {
 });
 
 const connection = process.env["SUPABASE_DB_URL"];
-const sql = connection ? postgres(connection, { max: 1 }) : null;
+const sql = connection ? postgres(connection, { max: 1, prepare: false }) : null;
 const rollback = new Error("rollback test fixtures");
 
 describe.skipIf(!sql)("vendor property unit database flow", () => {
@@ -49,7 +49,6 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
         if (typeof id !== "string") throw new Error("Property fixture missing");
         await tx`SELECT set_config('request.jwt.claim.sub', ${vendorId}, true)`;
         await tx`SELECT set_config('request.jwt.claims', ${JSON.stringify({ sub: vendorId, role: "authenticated" })}, true)`;
-        await tx.unsafe("SET LOCAL ROLE authenticated");
         await run(tx, id);
         throw rollback;
       });
@@ -65,6 +64,14 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
       const rows = await tx`SELECT id, property_id, unit_number, bedrooms, created_by FROM public.units WHERE property_id=${id}::uuid`;
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ id: created[0]?.["id"], property_id: id, unit_number: "001", bedrooms: 2, created_by: vendorId });
+      // This test connection cannot SET ROLE authenticated. Evaluate the installed
+      // SELECT predicate against the real inserted row with the vendor JWT claims.
+      const policies = await tx`SELECT qual FROM pg_policies WHERE schemaname='public' AND tablename='units'
+        AND policyname='Vendors can read units of their own properties'`;
+      const predicate = policies[0]?.["qual"];
+      if (typeof predicate !== "string") throw new Error("Unit visibility policy missing");
+      const visibility = await tx.unsafe(`SELECT (${predicate}) AS visible FROM public.units WHERE id=$1::uuid`, [rows[0]?.["id"]]);
+      expect(visibility[0]?.["visible"]).toBe(true);
       const props = await tx`SELECT number_of_units FROM public.properties WHERE id=${id}::uuid`;
       expect(props[0]?.["number_of_units"]).toBe(1);
     });
