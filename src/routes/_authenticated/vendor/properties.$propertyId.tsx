@@ -17,6 +17,18 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { Button } from "@/components/ui/button";
 import { AddPropertyUnitDialog } from "@/components/vendor/AddPropertyUnitDialog";
+import { BulkPropertyUnitsDialog } from "@/components/vendor/BulkPropertyUnitsDialog";
+import { Download, Rows3, Upload } from "lucide-react";
+import { unitCsvTemplate } from "@/lib/unit-bulk";
+
+function downloadUnitTemplate() {
+  const blob = new Blob([unitCsvTemplate()], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "units-import-template.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
 import {
   addVendorPropertyPhoto,
   deleteVendorPropertyPhoto,
@@ -105,6 +117,7 @@ function VendorPropertyDetails() {
   const [tab, setTab] = useState<TabId>("units");
   const [editing, setEditing] = useState(false);
   const [addingUnit, setAddingUnit] = useState(false);
+  const [bulkMode, setBulkMode] = useState<"bulk" | "csv" | null>(null);
   const [form, setForm] = useState<PropertyFormState>(emptyPropertyForm);
   const [caption, setCaption] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -327,7 +340,12 @@ function VendorPropertyDetails() {
         <div className="rounded-2xl border border-border bg-card p-4">
           {tab === "units" && (
             <div className="mb-4 flex justify-end">
-              <Button onClick={() => setAddingUnit(true)}><Plus />Add Unit</Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" onClick={downloadUnitTemplate}><Download />Export CSV Template</Button>
+                <Button variant="outline" onClick={() => setBulkMode("csv")}><Upload />Import Units from CSV</Button>
+                <Button variant="outline" onClick={() => setBulkMode("bulk")}><Rows3 />Add Bulk Units</Button>
+                <Button onClick={() => setAddingUnit(true)}><Plus />Add Unit</Button>
+              </div>
             </div>
           )}
           {tab === "units" &&
@@ -666,6 +684,11 @@ function VendorPropertyDetails() {
       {addingUnit && (
         <AddPropertyUnitDialog propertyId={propertyId} propertyName={property.name}
           onClose={() => setAddingUnit(false)} />
+      )}
+      {bulkMode && (
+        <BulkPropertyUnitsDialog mode={bulkMode} propertyId={propertyId} propertyName={property.name}
+          existingUnitNumbers={data.units.map((u: any) => String(u.unit_number ?? ""))}
+          onClose={() => setBulkMode(null)} />
       )}
       {editing && (
         <VendorModal wide title="Edit property" onClose={() => setEditing(false)}>

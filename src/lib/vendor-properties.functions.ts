@@ -91,6 +91,50 @@ export const createVendorPropertyUnit = createServerFn({ method: "POST" })
     return { id, property_id: data.property_id };
   });
 
+const bulkUnitsInput = z.object({
+  property_id: z.string().uuid(),
+  units: z.array(unitInput).min(1).max(200),
+});
+
+/** Bulk/CSV creation: reuses the same ownership-checked RPC per unit and reports per-row results. */
+export const createVendorPropertyUnitsBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkUnitsInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const vendorId = await assertVendor(context as never);
+    await assertPropertyInScope(context.supabase as never, data.property_id);
+    const { data: existingRows, error: exErr } = await context.supabase
+      .from("units").select("unit_number").eq("property_id", data.property_id);
+    if (exErr) throw new Error("Could not check existing units.");
+    const taken = new Set((existingRows ?? []).map((u: any) => String(u.unit_number).trim().toLowerCase()));
+    const results: { index: number; unit_number: string; ok: boolean; error?: string }[] = [];
+    for (const [index, raw] of data.units.entries()) {
+      const unit = { ...raw, property_id: data.property_id };
+      const key = unit.unit_number.trim().toLowerCase();
+      if (taken.has(key)) {
+        results.push({ index, unit_number: unit.unit_number, ok: false, error: "Unit number already exists in this property" });
+        continue;
+      }
+      const { data: id, error } = await context.supabase.rpc("create_vendor_property_unit", { p_input: unit });
+      if (error || !id) {
+        const msg = error?.code === "23505" ? "Unit number already exists in this property"
+          : error?.code === "42501" ? "Access denied" : "Could not add unit";
+        results.push({ index, unit_number: unit.unit_number, ok: false, error: msg });
+        if (error?.code === "42501") break;
+        continue;
+      }
+      taken.add(key);
+      results.push({ index, unit_number: unit.unit_number, ok: true });
+    }
+    const created = results.filter((r) => r.ok).length;
+    if (created) {
+      await logVendorAction(context.supabase as never, vendorId, "VENDOR_UNITS_BULK_CREATED", {
+        type: "property", id: data.property_id,
+      }, { created, failed: results.length - created });
+    }
+    return { created, results };
+  });
+
 async function assertZoneInScope(supabase: Client, vendorId: string, zoneId: number | null) {
   if (zoneId == null) return;
   const zones = await vendorZoneIds(supabase, vendorId);
