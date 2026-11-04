@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { COUNTRY_OPTIONS, STATE_MAP, normalizeCountry, normalizeState } from "@/lib/countries";
 import { propertyWriteErrorMessage } from "@/lib/property-errors";
+import { unitInput } from "@/lib/unit-input";
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -118,20 +119,6 @@ const propertyInput = z.object({
       });
     }
   });
-
-const unitInput = z.object({
-  property_id: uuid,
-  unit_number: z.string().trim().min(1).max(40),
-  building: text(120),
-  unit_type: text(60),
-  bedrooms: z.number().int().min(0).max(50).nullable().optional(),
-  floor: text(30),
-  status: z.enum(["vacant", "occupied", "maintenance", "archived"]).optional(),
-  notes: text(1000),
-  electricity_meter_no: text(60),
-  water_meter_no: text(60),
-  gas_meter_no: text(60),
-});
 
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
