@@ -56,6 +56,7 @@ describe.skipIf(!sql)("vendor property unit database flow", () => {
           .replace("public.create_vendor_property_unit", "pg_temp.create_vendor_property_unit")
           .replaceAll("public.properties", "pg_temp.properties")
           .replaceAll("public.units", "pg_temp.units")
+          .replace("SET search_path TO 'public', 'private'", "SET search_path TO 'pg_temp', 'public', 'private'")
           .replaceAll("auth.uid()", actor)
           .replace("public.has_role(v_actor, 'vendor'::public.app_role)",
             "EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=v_actor AND role='vendor')")
