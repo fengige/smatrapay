@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add server-paged POS sales and token history in admin/vendor portals, shared controls, filter resets and isolation tests; authenticated browser checks depend on an authorized admin/vendor session.
+
 - [x] Add /resident/payg-applications linked from resident catalogue/application summaries; own application details, safe review history, shared approval-date schedules and confirmed-only progress. 47 tests passed; preview build OK; signed-out page redirects to /auth with no page errors. No schema or payment changes.
 - [ ] Signed-in resident applications list/details/schedule acceptance (blocked: no requester-linked auth account/session; resident sign-in required). No application or payment records fabricated.
 
