@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Add vendor Property Details → Units → Add Unit using existing fields/validation, fixed property, server-side scope checks, refreshed listing and regression tests.
+- [ ] Verify signed-in unit creation and readback under the selected property (requires an authorized vendor session).
+
 - [x] Add server-paged POS sales and token history in admin/vendor portals, shared controls, filter resets and isolation tests; 22 regression tests passed and build OK. All four signed-out routes redirect to /auth without page errors; existing meter relationship verified. No database changes.
 - [ ] Signed-in POS/token-history page navigation and vendor A/B browser acceptance (blocked: no auth account matches requester; an authorized admin/vendor preview session is required). Isolation, filtered counts and page navigation verified in focused database-query tests, not live signed-in screens.
 
