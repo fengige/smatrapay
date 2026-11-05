@@ -239,6 +239,13 @@
       "when": 1793906797069,
       "tag": "0033_landlord_linked_property_reporting",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793907152688,
+      "tag": "0034_landlord_linked_meter_bank_correction",
+      "breakpoints": true
     }
   ]
 }
