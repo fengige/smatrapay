@@ -670,28 +670,26 @@ export const createVendorLandlord = createServerFn({ method: "POST" })
       .from("user_roles")
       .upsert({ user_id: id, role: "landlord" }, { onConflict: "user_id,role" });
 
-    if (data.unit_id) {
-      const { error: assignError } = await supabaseAdmin.from("unit_assignments").insert({
-        unit_id: data.unit_id,
-        user_id: id,
-        role: "landlord",
-        start_date: new Date().toISOString().slice(0, 10),
-        created_by: userId,
-        updated_by: userId,
-      });
+    if (requestedPropertyIds.length) {
+      const { error: assignError } = await supabaseAdmin
+        .from("properties")
+        .update({ landlord_id: id, updated_by: userId })
+        .in("id", requestedPropertyIds);
       if (assignError) throw new Error(assignError.message);
     }
 
     await recordLandlordEvent(supabaseAdmin as never, id, userId, "landlord_created", {
       new_status: data.status ?? "active",
-      detail: "Landlord created from the vendor portal",
+      detail: propertyNames.length
+        ? `Landlord created from the vendor portal; assigned properties: ${propertyNames.join(", ")}`
+        : "Landlord created from the vendor portal",
     });
     await logVendorAction(
       supabase as never,
       vendorId,
       "VENDOR_LANDLORD_CREATED",
       { type: "landlord", id },
-      { email: data.email, unit_id: data.unit_id ?? null },
+      { email: data.email, property_ids: requestedPropertyIds },
     );
 
     return { ok: true, id };
