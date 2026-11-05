@@ -258,7 +258,8 @@ export const searchBankPayments = createServerFn({ method: "POST" })
     q = q.order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    const bankOptions = ["NCBA", "SIDIAN"];
+    const { data: banks } = column === "landlord_id" ? { data: [{ bank: "NCBA" }, { bank: "SIDIAN" }] } : await supabase.from("bank_notifications").select("bank").limit(1000);
+    const bankOptions = [...new Set<string>((banks ?? []).map((b: any) => b.bank).filter(Boolean))].sort();
     return { rows: await mapRows(supabase, rows ?? []), total: count ?? 0, bankOptions };
   });
 
@@ -270,7 +271,7 @@ export const exportBankPayments = createServerFn({ method: "POST" })
     const { vendorId, column } = await resolveScope(context as never);
     const supabase = context.supabase as any;
     const all: any[] = [];
-    for (let start = 0; start < 50000; start += 1000) {
+    for (let start = 0; column === "landlord_id" || start < 50000; start += 1000) {
       let { q } = await filtered(supabase, COLS, data, undefined, vendorId, column);
       q = q.order("created_at", { ascending: data.sortDir === "asc" }).order("id").range(start, start + 999);
       const { data: rows, error } = await q;
