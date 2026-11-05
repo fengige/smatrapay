@@ -1,10 +1,72 @@
 import { useQuery } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
+import { Link } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { PortalLayout } from './PortalLayout';
 import { Button } from './ui/button';
 import { getLandlordProperties } from '@/lib/landlord-reporting.functions';
-export function LandlordPropertiesPage(){const fn=useServerFn(getLandlordProperties);const query=useQuery({queryKey:['landlord-properties'],queryFn:()=>fn()});return <PortalLayout roles={['landlord']} title="My Properties" actions={<Button variant="outline" onClick={()=>void query.refetch()}>Refresh</Button>}>
- {query.isLoading?<Loader2 aria-label="Loading properties" className="mx-auto animate-spin"/>:query.isError?<p className="text-destructive">Could not load your properties.</p>:!query.data?.properties.length?<p className="text-muted-foreground">No properties are linked to your account.</p>:query.data.properties.map(p=><section key={p.id} className="mb-8 border-b border-border pb-6"><h2 className="text-lg font-semibold">{p.name}</h2><p className="mb-3 text-sm text-muted-foreground">{p.code} · {p.address_line1} {p.city}{p.vendor_name?` · Managing vendor: ${p.vendor_name}`:''}</p><div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-secondary text-left"><tr>{['Unit Name','Status','Electricity','Water','Gas','Managing Vendor'].map(x=><th className="p-3" key={x}>{x}</th>)}</tr></thead><tbody>{query.data?.units.filter(u=>u.property_id===p.id).map(u=>{const meters=query.data?.meters.filter(m=>m.property_id===p.id&&(m.unit_id===u.id||(!m.unit_id&&[u.electricity_meter_no,u.water_meter_no,u.gas_meter_no].includes(m.meter_number))))??[];return <tr key={u.id} className="border-b border-border"><td className="p-3">{u.unit_number}{u.building&&<span className="block text-muted-foreground">{u.building}</span>}</td><td className="p-3">{u.status}</td>{['Electricity','Water','Gas'].map(type=><td className="p-3" key={type}>{meters.filter(m=>m.type===type).map(m=><div key={m.id}>{m.meter_number}<span className="block text-xs text-muted-foreground">{m.status}{m.vendor_name?` · ${m.vendor_name}`:''}</span></div>)}{!meters.some(m=>m.type===type)&&'—'}</td>)}<td className="p-3">{[...new Set(meters.map(m=>m.vendor_name).filter(Boolean))].join(', ')||p.vendor_name||'—'}</td></tr>;})}</tbody></table></div>{!query.data?.units.some(u=>u.property_id===p.id)&&<p className="py-4 text-sm text-muted-foreground">No assigned units.</p>}</section>)}
- {query.data?.meters.some(m=>!m.property_id)&&<section><h2 className="text-lg font-semibold">Meters awaiting property linkage</h2>{query.data.meters.filter(m=>!m.property_id).map(m=><p className="py-2 text-sm" key={m.id}>{m.meter_number} · {m.type} · {m.vendor_name??'Vendor unavailable'}</p>)}</section>}
- </PortalLayout>;}
+
+export function LandlordPropertiesPage() {
+  const fn = useServerFn(getLandlordProperties);
+  const query = useQuery({ queryKey: ['landlord-properties'], queryFn: () => fn() });
+  const properties = query.data?.properties ?? [];
+  const units = query.data?.units ?? [];
+  const meters = query.data?.meters ?? [];
+
+  return (
+    <PortalLayout
+      roles={['landlord']}
+      title="My Properties"
+      actions={
+        <Button variant="outline" onClick={() => void query.refetch()}>
+          Refresh
+        </Button>
+      }
+    >
+      {query.isLoading ? (
+        <Loader2 aria-label="Loading properties" className="mx-auto animate-spin" />
+      ) : query.isError ? (
+        <p className="text-destructive">Could not load your properties.</p>
+      ) : !properties.length ? (
+        <p className="text-muted-foreground">No properties are linked to your account.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-secondary text-left">
+              <tr>
+                {['Property', 'Code', 'Location', 'Units', 'Meters', 'Managing Vendor', ''].map(
+                  (x) => (
+                    <th className="p-3" key={x}>
+                      {x}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {properties.map((p) => (
+                <tr key={p.id} className="border-b border-border">
+                  <td className="p-3 font-medium">{p.name}</td>
+                  <td className="p-3">{p.code ?? '—'}</td>
+                  <td className="p-3">
+                    {[p.address_line1, p.city].filter(Boolean).join(', ') || '—'}
+                  </td>
+                  <td className="p-3">{units.filter((u) => u.property_id === p.id).length}</td>
+                  <td className="p-3">{meters.filter((m) => m.property_id === p.id).length}</td>
+                  <td className="p-3">{p.vendor_name ?? '—'}</td>
+                  <td className="p-3 text-right">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/landlord/properties/$propertyId" params={{ propertyId: p.id }}>
+                        View details
+                      </Link>
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </PortalLayout>
+  );
+}

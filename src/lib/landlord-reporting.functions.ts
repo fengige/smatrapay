@@ -1,8 +1,18 @@
 import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { landlordFilterSchema,groupLandlordRows,landlordTotals,type LandlordRow } from './landlord-reporting';
 import { landlordScope,readAll } from './landlord-scope.server';
 export const getLandlordProperties=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>landlordScope(context));
+export const getLandlordPropertyDetail=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).inputValidator((d:unknown)=>z.object({propertyId:z.string().uuid()}).parse(d)).handler(async({data,context})=>{
+ const scope=await landlordScope(context);
+ const property=scope.properties.find(p=>p.id===data.propertyId);
+ if(!property)throw new Error('Property not available');
+ const units=scope.units.filter(u=>u.property_id===property.id);
+ const unitIds=new Set(units.map(u=>u.id));
+ const meters=scope.meters.filter(m=>m.property_id===property.id||(m.unit_id&&unitIds.has(m.unit_id)));
+ return {property,units,meters};
+});
 async function dataset(context:any,input:ReturnType<typeof landlordFilterSchema.parse>){
  const scope=await landlordScope(context);
  if(input.property&&!scope.properties.some(p=>p.id===input.property))throw new Error('Property not available');
