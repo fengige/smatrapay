@@ -98,6 +98,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Vending Software", icon: Cpu, to: "/vending-software" },
           { label: "Price Management", icon: BadgeDollarSign, to: "/price-management" },
           { label: "Zone Management", icon: MapPin, to: "/zones" },
+          { label: "Meter Assignments", icon: ArrowLeftRight, to: "/assignments" },
         ],
       },
 
