@@ -91,15 +91,20 @@ export async function processSidianNotification(p: SidianPayload, parsedMeter: s
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
   const r = p.ConfirmationRequest;
-  const amount = parseNcbaAmount(r.data.Amount)!;
+  const amount = parseNcbaAmount(r.data.Amount);
+  if (amount === null) return ack("1", "Invalid amount", 400);
   const confirmed = isSidianPaymentConfirmed(r.status) && parsedMeter !== null;
 
   const { data: existing } = await db
     .from("bank_notifications").select("*").eq("bank", SIDIAN_BANK).eq("trans_id", r.TrasactionID).maybeSingle();
   if (existing?.status === "completed") return ack("0", "Duplicate notification — already processed");
   if (existing?.status === "rejected") return ack("0", "Duplicate notification — already recorded");
-  if (existing?.status === "processing" && Date.now() - new Date(existing.updated_at).getTime() < 120_000)
+  if (existing?.status === "processing")
     return ack("1", "Notification is being processed — retry later", 409);
+  if (existing) {
+    await vendNcbaNotification(existing.id);
+    return ack("0", "Payment already recorded");
+  }
 
   const record = {
     bank: SIDIAN_BANK,
@@ -139,7 +144,7 @@ export async function processSidianNotification(p: SidianPayload, parsedMeter: s
       parsedMeter === null ? "Notification recorded — narration invalid, no token issued" : "Notification recorded — payment not confirmed",
     );
 
-  const result = await vendNcbaNotification(saved.data.id);
+  const result = await vendNcbaNotification(saved.data.id, { initial: true });
   try { await processDueNcbaRetries(3); } catch { /* never affects this payment */ }
   if (result.status === "completed") return ack("0", "Success");
   return ack("0", "Payment recorded — token generation pending");

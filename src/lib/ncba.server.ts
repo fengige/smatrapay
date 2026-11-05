@@ -65,8 +65,12 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
   // 1. Idempotency on TransID (unique column).
   const { data: existing } = await db.from("bank_notifications").select("*").eq("bank", "NCBA").eq("trans_id", p.TransID).maybeSingle();
   if (existing?.status === "completed") return ack("0", "Duplicate notification — already processed");
-  if (existing?.status === "processing" && Date.now() - new Date(existing.updated_at).getTime() < 120_000)
+  if (existing?.status === "processing")
     return ack("1", "Notification is being processed — retry later", 409);
+  if (existing) {
+    await vendNcbaNotification(existing.id);
+    return ack("0", "Payment already recorded");
+  }
 
   const record = {
     trans_id: p.TransID,
@@ -97,7 +101,7 @@ export async function processNcbaNotification(p: NcbaPayload, amount: number) {
     await db.from("bank_notifications").update({ status: "failed", error_code: code, error_message: message, ...extra }).eq("id", rowId);
   };
 
-  const result = await vendNcbaNotification(rowId);
+  const result = await vendNcbaNotification(rowId, { initial: true });
   // Drain a few due queue items on each notification (bounded, no extra traffic needed).
   try { await processDueNcbaRetries(3); } catch { /* queue work never affects this payment */ }
   // A recorded payment is always acknowledged; failures stay queued for retry.
@@ -122,18 +126,23 @@ export function nextQueueState(vendState: string | undefined, autoRetries: numbe
  */
 export async function vendNcbaNotification(
   rowId: string,
-  opts: { manual?: boolean; actorId?: string | null } = {},
+  opts: { manual?: boolean; actorId?: string | null; initial?: boolean; claimedNotification?: any } = {},
 ): Promise<{ status: string; message: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
-  const { data: n } = await db.from("bank_notifications").select("*").eq("id", rowId).maybeSingle();
+  const n = opts.claimedNotification ?? (await db.from("bank_notifications").select("*").eq("id", rowId).maybeSingle()).data;
   if (!n) return { status: "missing", message: "Notification not found" };
   if (n.status === "completed") return { status: "completed", message: null };
-
-  await db
+  if (n.bank === "SIDIAN" && n.payment_status !== "0") return { status: n.status, message: "Bank payment is not confirmed." };
+  if (!opts.claimedNotification) {
+    if (n.status === "processing" && !opts.initial) return { status: "processing", message: "This payment is already being processed." };
+    if (n.status === "needs_review" && !opts.manual) return { status: n.status, message: "Provider reconciliation is required." };
+    const { data: claimed, error } = await db
     .from("bank_notifications")
-    .update({ status: "processing", ...(opts.manual ? { last_retry_by: opts.actorId ?? null, attempts: (n.attempts ?? 0) + 1 } : {}) })
-    .eq("id", rowId);
+    .update({ status: "processing", next_retry_at: null, ...(opts.manual ? { last_retry_by: opts.actorId ?? null, attempts: (n.attempts ?? 0) + 1 } : {}) })
+    .eq("id", rowId).eq("updated_at", n.updated_at).eq("status", n.status).select("id").maybeSingle();
+    if (error || !claimed) return { status: "processing", message: "Payment changed or another retry has started. Refresh before retrying." };
+  }
   const fail = async (status: string, code: string, message: string, extra: Record<string, unknown> = {}) => {
     await db.from("bank_notifications").update({ status, error_code: code, error_message: message, ...extra }).eq("id", rowId);
     return { status, message };
