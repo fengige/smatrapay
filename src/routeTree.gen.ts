@@ -16,6 +16,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as AuthenticatedAssignmentsRouteImport } from './routes/_authenticated/assignments'
 import { Route as AuthenticatedBankPaymentsRouteImport } from './routes/_authenticated/bank-payments'
 import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
@@ -202,6 +203,12 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAssignmentsRoute =
+  AuthenticatedAssignmentsRouteImport.update({
+    id: '/assignments',
+    path: '/assignments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBankPaymentsRoute =
   AuthenticatedBankPaymentsRouteImport.update({
     id: '/bank-payments',
@@ -1097,6 +1104,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/agents': typeof AuthenticatedAgentsRouteWithChildren
+  '/assignments': typeof AuthenticatedAssignmentsRoute
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
   '/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/jobs': typeof AuthenticatedJobsRoute
@@ -1255,6 +1263,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/assignments': typeof AuthenticatedAssignmentsRoute
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
@@ -1409,6 +1418,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/_authenticated/agents': typeof AuthenticatedAgentsRouteWithChildren
+  '/_authenticated/assignments': typeof AuthenticatedAssignmentsRoute
   '/_authenticated/bank-payments': typeof AuthenticatedBankPaymentsRoute
   '/_authenticated/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
@@ -1570,6 +1580,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/agents'
+    | '/assignments'
     | '/bank-payments'
     | '/configurations'
     | '/jobs'
@@ -1728,6 +1739,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/assignments'
     | '/bank-payments'
     | '/jobs'
     | '/meter-dashboard'
@@ -1881,6 +1893,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/_authenticated/agents'
+    | '/_authenticated/assignments'
     | '/_authenticated/bank-payments'
     | '/_authenticated/configurations'
     | '/_authenticated/jobs'
@@ -2104,6 +2117,13 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assignments': {
+      id: '/_authenticated/assignments'
+      path: '/assignments'
+      fullPath: '/assignments'
+      preLoaderRoute: typeof AuthenticatedAssignmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bank-payments': {
@@ -3336,6 +3356,7 @@ const AuthenticatedLandlordPropertiesRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
+  AuthenticatedAssignmentsRoute: typeof AuthenticatedAssignmentsRoute
   AuthenticatedBankPaymentsRoute: typeof AuthenticatedBankPaymentsRoute
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
@@ -3446,6 +3467,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRouteWithChildren,
+  AuthenticatedAssignmentsRoute: AuthenticatedAssignmentsRoute,
   AuthenticatedBankPaymentsRoute: AuthenticatedBankPaymentsRoute,
   AuthenticatedConfigurationsRoute:
     AuthenticatedConfigurationsRouteWithChildren,
