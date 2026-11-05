@@ -232,6 +232,13 @@
       "when": 1793877013148,
       "tag": "0032_landlord_bank_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793906797069,
+      "tag": "0033_landlord_linked_property_reporting",
+      "breakpoints": true
     }
   ]
 }
