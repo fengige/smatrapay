@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { meterCorrectionSchema } from "@/lib/bank-payment-retry";
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -272,10 +273,10 @@ export const exportBankPayments = createServerFn({ method: "POST" })
   });
 
 
-/** Admin retry of one payment. Never re-vends a completed payment (TransID idempotency). */
+/** Scoped retry, optionally correcting and claiming the payment atomically. */
 export const retryNcbaPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), correction: meterCorrectionSchema.optional() }).parse(d))
   .handler(async ({ data, context }) => {
     // Vendors only see (via RLS) and can retry payments for their own meters.
     await resolveScope(context as never);
@@ -284,6 +285,15 @@ export const retryNcbaPayment = createServerFn({ method: "POST" })
     if (row.status === "completed") return { status: "completed", message: "Already completed — no new token generated." };
     if (row.status === "processing") throw new Error("This payment is being processed right now. Try again in a minute.");
     const { vendNcbaNotification } = await import("@/lib/ncba.server");
+    if (data.correction) {
+      const { data: claimed, error } = await (context.supabase as any).rpc("correct_bank_payment_meter_for_retry", {
+        p_id: data.id, p_meter: data.correction.meter_number,
+        p_updated_at: data.correction.expected_updated_at, p_reason: data.correction.correction_reason,
+      });
+      if (error) throw new Error(error.message);
+      if (!claimed) throw new Error("Payment changed. Refresh and try again.");
+      return vendNcbaNotification(data.id, { manual: true, actorId: context.userId, claimedNotification: claimed });
+    }
     return vendNcbaNotification(data.id, { manual: true, actorId: context.userId });
   });
 

@@ -218,6 +218,13 @@
       "when": 1793870715425,
       "tag": "0030_vendor_bank_notifications_read",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793871522993,
+      "tag": "0031_bank_payment_meter_correction",
+      "breakpoints": true
     }
   ]
 }
