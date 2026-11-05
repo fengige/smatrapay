@@ -220,6 +220,61 @@ export const listVendorLandlordUnits = createServerFn({ method: "GET" })
     return { units };
   });
 
+/**
+ * Splits requested property ids into assignable rows and conflicts.
+ * Pure so the assignment rules (in-scope, not already owned) stay testable.
+ */
+export function partitionAssignableProperties(
+  requestedIds: string[],
+  scopedProperties: { id: string; name: string; landlord_id: string | null }[],
+) {
+  const byId = new Map(scopedProperties.map((p) => [p.id, p]));
+  const uniqueIds = [...new Set(requestedIds)];
+  const missing = uniqueIds.filter((id) => !byId.has(id));
+  const taken = uniqueIds
+    .map((id) => byId.get(id))
+    .filter((p): p is { id: string; name: string; landlord_id: string } => Boolean(p?.landlord_id));
+  const assignable = uniqueIds.filter((id) => byId.has(id) && !byId.get(id)?.landlord_id);
+  return { assignable, missing, taken };
+}
+
+export const listVendorLandlordProperties = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    await assertVendor(context as never);
+
+    const { propertyMap, unitMap } = await scopeGeography(supabase as never);
+
+    const landlordIds = [
+      ...new Set(
+        [...propertyMap.values()].map((p: any) => p.landlord_id).filter(Boolean) as string[],
+      ),
+    ];
+    const { data: landlords } = landlordIds.length
+      ? await supabase.from("users").select("id, name, email").in("id", landlordIds)
+      : { data: [] as any[] };
+    const landlordMap = new Map(((landlords ?? []) as any[]).map((u) => [u.id, u]));
+
+    const properties = [...propertyMap.values()].map((p: any) => {
+      const holder = p.landlord_id ? (landlordMap.get(p.landlord_id) as any) : null;
+      return {
+        id: p.id as string,
+        name: p.name as string,
+        code: (p.code ?? null) as string | null,
+        property_type: (p.property_type ?? null) as string | null,
+        address: (p.address ?? null) as string | null,
+        zone_name: (p.zone_name ?? null) as string | null,
+        status: (p.status ?? "active") as string,
+        unit_count: [...unitMap.values()].filter((u: any) => u.property_id === p.id).length,
+        landlord_id: (p.landlord_id ?? null) as string | null,
+        landlord_name: holder ? ((holder.name ?? holder.email ?? null) as string | null) : null,
+      };
+    });
+    properties.sort((a, b) => a.name.localeCompare(b.name));
+    return { properties };
+  });
+
 export const getVendorLandlord = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
