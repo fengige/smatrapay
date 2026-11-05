@@ -7,6 +7,26 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (!data) throw new Error("Admin access required");
 }
 
+/** Admins see everything; vendors are limited to payments for their own meters (also enforced by RLS). */
+async function resolveScope(context: { supabase: any; userId: string }): Promise<{ vendorId: string | null }> {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+  if (isAdmin) return { vendorId: null };
+  const { data: isVendor } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "vendor" });
+  if (isVendor) return { vendorId: context.userId };
+  throw new Error("Access denied");
+}
+
+async function vendorMeterNumbers(supabase: any, vendorId: string): Promise<string[]> {
+  const out: string[] = [];
+  for (let start = 0; start < 20000; start += 1000) {
+    const { data, error } = await supabase.from("meters").select("meter_number").eq("vendor_id", vendorId).range(start, start + 999);
+    if (error) throw new Error(error.message);
+    for (const m of data ?? []) if (m.meter_number) out.push(m.meter_number);
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
 export type NcbaPaymentRow = {
   id: string;
   trans_id: string;
@@ -138,8 +158,12 @@ async function ownerMeterNumbers(supabase: any, f: z.output<typeof bankSearchSch
   return out;
 }
 
-async function filtered(supabase: any, select: string, f: z.output<typeof bankSearchSchema>, opts?: any) {
-  const nums = await ownerMeterNumbers(supabase, f);
+async function filtered(supabase: any, select: string, f: z.output<typeof bankSearchSchema>, opts?: any, vendorId: string | null = null) {
+  let nums = await ownerMeterNumbers(supabase, f);
+  if (vendorId) {
+    const own = await vendorMeterNumbers(supabase, vendorId);
+    nums = nums ? nums.filter((n) => own.includes(n)) : own;
+  }
   let q = supabase.from("bank_notifications").select(select, opts);
   q = applyBankFilters(q, f);
   if (nums) q = q.in("meter_number", nums.length ? nums : ["__none__"]);
@@ -216,10 +240,10 @@ export const searchBankPayments = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     bankSearchSchema.extend({ page: z.number().int().min(1).max(100000).default(1), pageSize: z.number().int().min(10).max(200).default(50) }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const { vendorId } = await resolveScope(context as never);
     const supabase = context.supabase as any;
     const start = (data.page - 1) * data.pageSize;
-    let { q } = await filtered(supabase, COLS, data, { count: "exact" });
+    let { q } = await filtered(supabase, COLS, data, { count: "exact" }, vendorId);
     q = q.order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
@@ -233,11 +257,11 @@ export const exportBankPayments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => bankSearchSchema.parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    const { vendorId } = await resolveScope(context as never);
     const supabase = context.supabase as any;
     const all: any[] = [];
     for (let start = 0; start < 50000; start += 1000) {
-      let { q } = await filtered(supabase, COLS, data);
+      let { q } = await filtered(supabase, COLS, data, undefined, vendorId);
       q = q.order("created_at", { ascending: data.sortDir === "asc" }).order("id").range(start, start + 999);
       const { data: rows, error } = await q;
       if (error) throw new Error(error.message);
@@ -253,7 +277,8 @@ export const retryNcbaPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as never);
+    // Vendors only see (via RLS) and can retry payments for their own meters.
+    await resolveScope(context as never);
     const { data: row } = await (context.supabase as any).from("bank_notifications").select("status").eq("id", data.id).maybeSingle();
     if (!row) throw new Error("Payment not found");
     if (row.status === "completed") return { status: "completed", message: "Already completed — no new token generated." };

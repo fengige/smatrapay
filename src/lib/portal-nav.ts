@@ -126,6 +126,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Token Management", icon: KeyRound, to: "/vendor/token-management" },
           { label: "Token Ledger", icon: Receipt, to: "/vendor/token-ledger" },
           { label: "Vendor Transactions", icon: ArrowLeftRight, to: "/vendor/transactions" },
+          { label: "Bank Payments", icon: Receipt, to: "/vendor/bank-payments" },
         ],
       },
       {
