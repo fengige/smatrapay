@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/landlord/dashboard")({
   head: () => ({ meta: [{ title: "Landlord Dashboard · SmatraPay" }, { name: "description", content: "Your properties, meters, payments, tokens and resident applications." }, { property: "og:title", content: "Landlord Dashboard · SmatraPay" }, { property: "og:description", content: "Your properties, meters, payments, tokens and resident applications." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   loader: ({ context }) => (context as any).queryClient.ensureQueryData(q),
   component: LandlordDashboard,
-  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{error.message === "Access denied" ? "This dashboard is for landlord accounts." : "Could not load this dashboard."}</p>,
+  errorComponent: ({ error }: { error: Error }) => <p className="p-8 text-sm text-destructive">{error.message === "Access denied" ? "This dashboard is for landlord accounts." : "Could not load this dashboard."}</p>,
 });
 
 const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -44,7 +44,7 @@ function Panel({ title, action, children }: { title: string; action?: React.Reac
 const Empty = ({ text }: { text: string }) => <p className="p-6 text-center text-sm text-muted-foreground">{text}</p>;
 
 function LandlordDashboard() {
-  const { data } = useSuspenseQuery(q);
+  const data = useSuspenseQuery(q).data as Awaited<ReturnType<typeof getLandlordDashboard>>;
   const c = data.counts, l = data.last30;
   return (
     <div className="space-y-6 p-4 md:p-6">
