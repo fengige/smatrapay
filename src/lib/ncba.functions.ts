@@ -9,18 +9,21 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 }
 
 /** Admins see everything; vendors are limited to payments for their own meters (also enforced by RLS). */
-async function resolveScope(context: { supabase: any; userId: string }): Promise<{ vendorId: string | null }> {
+type BankScope = { vendorId: string | null; column?: "vendor_id" | "landlord_id" };
+async function resolveScope(context: { supabase: any; userId: string }): Promise<BankScope> {
   const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
   if (isAdmin) return { vendorId: null };
   const { data: isVendor } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "vendor" });
-  if (isVendor) return { vendorId: context.userId };
+  if (isVendor) return { vendorId: context.userId, column: "vendor_id" };
+  const { data: isLandlord } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "landlord" });
+  if (isLandlord) return { vendorId: context.userId, column: "landlord_id" };
   throw new Error("Access denied");
 }
 
-async function vendorMeterNumbers(supabase: any, vendorId: string): Promise<string[]> {
+async function vendorMeterNumbers(supabase: any, vendorId: string, column: "vendor_id" | "landlord_id" = "vendor_id"): Promise<string[]> {
   const out: string[] = [];
   for (let start = 0; start < 20000; start += 1000) {
-    const { data, error } = await supabase.from("meters").select("meter_number").eq("vendor_id", vendorId).range(start, start + 999);
+    const { data, error } = await supabase.from("meters").select("meter_number").eq(column, vendorId).range(start, start + 999);
     if (error) throw new Error(error.message);
     for (const m of data ?? []) if (m.meter_number) out.push(m.meter_number);
     if (!data || data.length < 1000) break;
@@ -159,10 +162,10 @@ async function ownerMeterNumbers(supabase: any, f: z.output<typeof bankSearchSch
   return out;
 }
 
-async function filtered(supabase: any, select: string, f: z.output<typeof bankSearchSchema>, opts?: any, vendorId: string | null = null) {
+async function filtered(supabase: any, select: string, f: z.output<typeof bankSearchSchema>, opts?: any, vendorId: string | null = null, column: "vendor_id" | "landlord_id" = "vendor_id") {
   let nums = await ownerMeterNumbers(supabase, f);
   if (vendorId) {
-    const own = await vendorMeterNumbers(supabase, vendorId);
+    const own = await vendorMeterNumbers(supabase, vendorId, column);
     nums = nums ? nums.filter((n) => own.includes(n)) : own;
   }
   let q = supabase.from("bank_notifications").select(select, opts);
@@ -241,10 +244,10 @@ export const searchBankPayments = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     bankSearchSchema.extend({ page: z.number().int().min(1).max(100000).default(1), pageSize: z.number().int().min(10).max(200).default(50) }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    const { vendorId } = await resolveScope(context as never);
+    const { vendorId, column } = await resolveScope(context as never);
     const supabase = context.supabase as any;
     const start = (data.page - 1) * data.pageSize;
-    let { q } = await filtered(supabase, COLS, data, { count: "exact" }, vendorId);
+    let { q } = await filtered(supabase, COLS, data, { count: "exact" }, vendorId, column);
     q = q.order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
@@ -258,11 +261,11 @@ export const exportBankPayments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => bankSearchSchema.parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    const { vendorId } = await resolveScope(context as never);
+    const { vendorId, column } = await resolveScope(context as never);
     const supabase = context.supabase as any;
     const all: any[] = [];
     for (let start = 0; start < 50000; start += 1000) {
-      let { q } = await filtered(supabase, COLS, data, undefined, vendorId);
+      let { q } = await filtered(supabase, COLS, data, undefined, vendorId, column);
       q = q.order("created_at", { ascending: data.sortDir === "asc" }).order("id").range(start, start + 999);
       const { data: rows, error } = await q;
       if (error) throw new Error(error.message);

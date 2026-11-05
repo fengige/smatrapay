@@ -34,7 +34,7 @@ function toNum(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "vendor" }) {
+export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "vendor" | "landlord" }) {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"problems" | "all" | "completed">("problems");
   const [quick, setQuick] = useState("");
