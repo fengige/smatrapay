@@ -1,15 +1,18 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, Download, Loader2, RefreshCw, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Download, Loader2, Pencil, RefreshCw, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import {
   exportBankPayments, retryNcbaPayment, runDueNcbaRetries, searchBankPayments,
-  type BankSearch, type NcbaPaymentRow,
+  type BankSearch, type BankPaymentExportRow,
 } from "@/lib/ncba.functions";
 import { EXPORT_COLUMNS, exportFilename, toCsv } from "@/lib/bank-payments-export";
+import { canCorrectBankPayment, meterCorrectionSchema } from "@/lib/bank-payment-retry";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   failed: { label: "Failed", cls: "bg-destructive/10 text-destructive" },
@@ -48,7 +51,13 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
   const exportAll = useServerFn(exportBankPayments);
   const retry = useServerFn(retryNcbaPayment);
   const runDue = useServerFn(runDueNcbaRetries);
-  const [confirm, setConfirm] = useState<NcbaPaymentRow | null>(null);
+  const [confirm, setConfirm] = useState<BankPaymentExportRow | null>(null);
+  const [editMeter, setEditMeter] = useState(false);
+  const [correctedMeter, setCorrectedMeter] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
+  const openRetry = (row: BankPaymentExportRow, edit: boolean) => {
+    setConfirm(row); setEditMeter(edit); setCorrectedMeter(row.meter_number ?? ""); setCorrectionReason("");
+  };
 
   useEffect(() => {
     const t = setTimeout(() => { setQ(quick); setPage(1); }, 300);
@@ -73,15 +82,24 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const retryMutation = useMutation({
-    mutationFn: (id: string) => retry({ data: { id } }),
+    mutationFn: (payload: { id: string; correction?: { meter_number: string; correction_reason: string; expected_updated_at: string } }) => retry({ data: payload }),
     onSuccess: (r) => {
       setConfirm(null);
       if (r.status === "completed") toast.success(r.message ?? "Token generated");
       else toast.error(r.message ?? "Retry failed");
       void qc.invalidateQueries({ queryKey: ["bank-payments"] });
     },
-    onError: (e: Error) => toast.error(e.message || "Retry failed"),
+    onError: (e: Error) => { toast.error(e.message || "Retry failed"); void qc.invalidateQueries({ queryKey: ["bank-payments"] }); },
   });
+
+  const submitRetry = () => {
+    if (!confirm) return;
+    if (!editMeter) { retryMutation.mutate({ id: confirm.id }); return; }
+    const parsed = meterCorrectionSchema.safeParse({ meter_number: correctedMeter, correction_reason: correctionReason, expected_updated_at: confirm.updated_at });
+    if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check meter details"); return; }
+    if (parsed.data.meter_number === confirm.meter_number) { toast.error("Enter a different meter number or use Retry"); return; }
+    retryMutation.mutate({ id: confirm.id, correction: parsed.data });
+  };
 
   const dueMutation = useMutation({
     mutationFn: () => runDue(),
@@ -309,10 +327,10 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
                     <td className="px-4 py-3 text-xs text-muted-foreground">{r.attempts} total · {r.auto_retry_count} automatic</td>
                     <td className="px-4 py-3 text-right">
                       {r.status !== "completed" && r.status !== "processing" && (
-                        <button type="button" onClick={() => setConfirm(r)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-                          <RotateCcw className="size-3.5" /> Retry
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          {canCorrectBankPayment(r) && <Button type="button" variant="outline" size="sm" onClick={() => openRetry(r, true)}><Pencil /> Edit meter</Button>}
+                          <Button type="button" size="sm" onClick={() => openRetry(r, false)}><RotateCcw /> Retry</Button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -330,29 +348,29 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
         </div>
       </div>
 
-      {confirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
-          <div role="dialog" aria-modal="true" aria-label="Confirm retry" className="w-full max-w-md rounded-2xl border border-border bg-card p-5">
-            <h2 className="text-base font-bold">Retry token generation?</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {kes(confirm.trans_amount)} for meter {confirm.meter_number ?? confirm.narrative} ({confirm.bank ?? "NCBA"} {confirm.trans_id}). This sends a real token request to the meter's vending software.
-            </p>
+      <Dialog open={!!confirm} onOpenChange={(open) => { if (!open && !retryMutation.isPending) setConfirm(null); }}>
+        {confirm && <DialogContent className="max-w-md">
+            <DialogTitle>{editMeter ? "Edit meter and retry?" : "Retry token generation?"}</DialogTitle>
+            <DialogDescription>
+              {kes(confirm.trans_amount)} · {confirm.bank ?? "NCBA"} {confirm.trans_id} · Current meter: {confirm.meter_number || "—"}. Retrying sends a real token request.
+            </DialogDescription>
+            {editMeter && <div className="space-y-3">
+              <label className="block text-sm font-medium">Meter number<input autoFocus className={`${input} mt-1`} value={correctedMeter} maxLength={64} disabled={retryMutation.isPending} onChange={(e) => setCorrectedMeter(e.target.value)} /></label>
+              <label className="block text-sm font-medium">Correction reason<textarea className="mt-1 min-h-20 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={correctionReason} maxLength={500} disabled={retryMutation.isPending} onChange={(e) => setCorrectionReason(e.target.value)} /></label>
+            </div>}
             {confirm.status === "needs_review" && (
               <p className="mt-2 text-sm font-medium text-destructive">
                 The last attempt timed out. Only retry after confirming with the provider that no token was issued.
               </p>
             )}
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirm(null)} disabled={retryMutation.isPending}
-                className="rounded-lg border border-border px-3.5 py-2 text-sm">Cancel</button>
-              <button type="button" onClick={() => retryMutation.mutate(confirm.id)} disabled={retryMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
-                {retryMutation.isPending && <Loader2 className="size-4 animate-spin" />} Retry now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setConfirm(null)} disabled={retryMutation.isPending}>Cancel</Button>
+              <Button type="button" onClick={submitRetry} disabled={retryMutation.isPending}>
+                {retryMutation.isPending && <Loader2 className="size-4 animate-spin" />} {editMeter ? "Save meter & retry" : "Retry now"}
+              </Button>
+            </DialogFooter>
+        </DialogContent>}
+      </Dialog>
     </PortalLayout>
   );
 }
