@@ -43,6 +43,7 @@ export type NavItem = {
 
 export type NavGroup = {
   heading?: string;
+  expandable?: boolean;
   items: NavItem[];
 };
 
@@ -182,10 +183,19 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       },
     );
   } else if (roles.includes("landlord")) {
-    groups.push({
-      heading: "PAYMENTS",
-      items: [{ label: "Bank Payments", icon: Landmark, to: "/landlord/bank-payments" }],
-    });
+    groups.push(
+      { heading: "Payments", expandable: true, items: [
+        { label: "Recent Tokens", icon: KeyRound, to: "/landlord/recent-tokens" },
+        { label: "Vending Records", icon: ArrowLeftRight, to: "/landlord/vending-records" },
+        { label: "Bank Payments", icon: Landmark, to: "/landlord/bank-payments" },
+      ] },
+      { heading: "Properties", expandable: true, items: [{ label: "My Properties", icon: Home, to: "/landlord/properties" }] },
+      { heading: "Reports & Analysis", expandable: true, items: [
+        { label: "Revenue Report", icon: Receipt, to: "/landlord/revenue-report" },
+        { label: "Consumption Report", icon: Gauge, to: "/landlord/consumption-report" },
+        { label: "All Properties Summary Report", icon: BarChart3, to: "/landlord/properties-summary" },
+      ] },
+    );
   } else if (roles.includes("service_provider")) {
     groups.push({
       heading: "WORK",

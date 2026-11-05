@@ -13,6 +13,7 @@ import { EXPORT_COLUMNS, exportFilename, toCsv } from "@/lib/bank-payments-expor
 import { canCorrectBankPayment, meterCorrectionSchema } from "@/lib/bank-payment-retry";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { getLandlordProperties } from "@/lib/landlord-reporting.functions";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   failed: { label: "Failed", cls: "bg-destructive/10 text-destructive" },
@@ -43,6 +44,9 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
   const [draft, setDraft] = useState<Adv>(EMPTY);
   const [adv, setAdv] = useState<Adv>(EMPTY);
   const [page, setPage] = useState(1);
+  const [property, setProperty] = useState("");
+  const loadLandlordProperties = useServerFn(getLandlordProperties);
+  const landlordProperties = useQuery({ queryKey: ["landlord-properties"], queryFn: () => loadLandlordProperties(), enabled: portal === "landlord" });
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
@@ -69,6 +73,7 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
     bank: adv.bank, transId: adv.transId, meter: adv.meter, mobile: adv.mobile, name: adv.name, rowStatus: adv.rowStatus,
     minAmount: toNum(adv.minAmount), maxAmount: toNum(adv.maxAmount), from: adv.from, to: adv.to,
     ownerName: adv.ownerName, ownerType: (adv.ownerType || "all") as "all",
+    ...(portal === "landlord" ? { property } : {}),
   };
   const activeCount = (Object.keys(EMPTY) as (keyof Adv)[]).filter((k) => adv[k].trim() !== "").length;
 
@@ -182,6 +187,11 @@ export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "ven
         </div>
       }
     >
+      {portal === "landlord" && <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <label className="text-sm">Property<select aria-label="Property" className={input} value={property} onChange={(e) => { setProperty(e.target.value); setPage(1); }}><option value="">All Properties</option>{landlordProperties.data?.properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+        <label className="text-sm">From Date<input aria-label="From Date" className={input} type="date" value={adv.from} onChange={(e) => { setAdv({ ...adv, from: e.target.value }); setPage(1); }} /></label>
+        <label className="text-sm">To Date<input aria-label="To Date" className={input} type="date" value={adv.to} onChange={(e) => { setAdv({ ...adv, to: e.target.value }); setPage(1); }} /></label>
+      </div>}
       <div className="mb-4 flex gap-2">
         {([["problems", "Needs attention"], ["completed", "Completed"], ["all", "All"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => { setFilter(k); setPage(1); }}

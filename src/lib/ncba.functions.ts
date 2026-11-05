@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { meterCorrectionSchema } from "@/lib/bank-payment-retry";
+import { landlordScope } from "@/lib/landlord-scope.server";
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -96,6 +97,7 @@ const bankSearchSchema = z.object({
   sortDir: z.enum(["asc", "desc"]).default("desc"),
   ownerName: z.string().max(100).default(""),
   ownerType: z.enum(["all", "vendor", "landlord", "agent"]).default("all"),
+  property: z.string().uuid().or(z.literal("")).default(""),
 });
 export type BankSearch = z.input<typeof bankSearchSchema>;
 
@@ -165,7 +167,12 @@ async function ownerMeterNumbers(supabase: any, f: z.output<typeof bankSearchSch
 async function filtered(supabase: any, select: string, f: z.output<typeof bankSearchSchema>, opts?: any, vendorId: string | null = null, column: "vendor_id" | "landlord_id" = "vendor_id") {
   let nums = await ownerMeterNumbers(supabase, f);
   if (vendorId) {
-    const own = await vendorMeterNumbers(supabase, vendorId, column);
+    let own: string[];
+    if (column === "landlord_id") {
+      const scope = await landlordScope({ supabase, userId: vendorId });
+      if (f.property && !scope.properties.some(p => p.id === f.property)) throw new Error("Property not available");
+      own = scope.meters.filter(m => !f.property || m.property_id === f.property).map(m => m.meter_number);
+    } else own = await vendorMeterNumbers(supabase, vendorId, column);
     nums = nums ? nums.filter((n) => own.includes(n)) : own;
   }
   let q = supabase.from("bank_notifications").select(select, opts);
@@ -251,8 +258,7 @@ export const searchBankPayments = createServerFn({ method: "POST" })
     q = q.order("created_at", { ascending: data.sortDir === "asc" }).range(start, start + data.pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    const { data: banks } = await supabase.from("bank_notifications").select("bank").limit(1000);
-    const bankOptions = [...new Set<string>((banks ?? []).map((b: any) => b.bank).filter(Boolean))].sort();
+    const bankOptions = ["NCBA", "SIDIAN"];
     return { rows: await mapRows(supabase, rows ?? []), total: count ?? 0, bankOptions };
   });
 

@@ -48,7 +48,13 @@ import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_a
 import { Route as AuthenticatedConfigurationsSmsRouteImport } from './routes/_authenticated/configurations.sms'
 import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './routes/_authenticated/configurations.social-media'
 import { Route as AuthenticatedLandlordBankPaymentsRouteImport } from './routes/_authenticated/landlord/bank-payments'
+import { Route as AuthenticatedLandlordConsumptionReportRouteImport } from './routes/_authenticated/landlord/consumption-report'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
+import { Route as AuthenticatedLandlordPropertiesRouteImport } from './routes/_authenticated/landlord/properties'
+import { Route as AuthenticatedLandlordPropertiesSummaryRouteImport } from './routes/_authenticated/landlord/properties-summary'
+import { Route as AuthenticatedLandlordRecentTokensRouteImport } from './routes/_authenticated/landlord/recent-tokens'
+import { Route as AuthenticatedLandlordRevenueReportRouteImport } from './routes/_authenticated/landlord/revenue-report'
+import { Route as AuthenticatedLandlordVendingRecordsRouteImport } from './routes/_authenticated/landlord/vending-records'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
 import { Route as AuthenticatedMeterSuppliersIndexRouteImport } from './routes/_authenticated/meter-suppliers.index'
@@ -378,10 +384,46 @@ const AuthenticatedLandlordBankPaymentsRoute =
     path: '/landlord/bank-payments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLandlordConsumptionReportRoute =
+  AuthenticatedLandlordConsumptionReportRouteImport.update({
+    id: '/landlord/consumption-report',
+    path: '/landlord/consumption-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLandlordDashboardRoute =
   AuthenticatedLandlordDashboardRouteImport.update({
     id: '/landlord/dashboard',
     path: '/landlord/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordPropertiesRoute =
+  AuthenticatedLandlordPropertiesRouteImport.update({
+    id: '/landlord/properties',
+    path: '/landlord/properties',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordPropertiesSummaryRoute =
+  AuthenticatedLandlordPropertiesSummaryRouteImport.update({
+    id: '/landlord/properties-summary',
+    path: '/landlord/properties-summary',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordRecentTokensRoute =
+  AuthenticatedLandlordRecentTokensRouteImport.update({
+    id: '/landlord/recent-tokens',
+    path: '/landlord/recent-tokens',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordRevenueReportRoute =
+  AuthenticatedLandlordRevenueReportRouteImport.update({
+    id: '/landlord/revenue-report',
+    path: '/landlord/revenue-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordVendingRecordsRoute =
+  AuthenticatedLandlordVendingRecordsRouteImport.update({
+    id: '/landlord/vending-records',
+    path: '/landlord/vending-records',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLandlordsIndexRoute =
@@ -1078,7 +1120,13 @@ export interface FileRoutesByFullPath {
   '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
+  '/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/landlord/properties': typeof AuthenticatedLandlordPropertiesRoute
+  '/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
+  '/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
+  '/landlord/revenue-report': typeof AuthenticatedLandlordRevenueReportRoute
+  '/landlord/vending-records': typeof AuthenticatedLandlordVendingRecordsRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -1223,7 +1271,13 @@ export interface FileRoutesByTo {
   '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
+  '/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/landlord/properties': typeof AuthenticatedLandlordPropertiesRoute
+  '/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
+  '/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
+  '/landlord/revenue-report': typeof AuthenticatedLandlordRevenueReportRoute
+  '/landlord/vending-records': typeof AuthenticatedLandlordVendingRecordsRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
   '/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -1376,7 +1430,13 @@ export interface FileRoutesById {
   '/_authenticated/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
   '/_authenticated/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
+  '/_authenticated/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/_authenticated/landlord/properties': typeof AuthenticatedLandlordPropertiesRoute
+  '/_authenticated/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
+  '/_authenticated/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
+  '/_authenticated/landlord/revenue-report': typeof AuthenticatedLandlordRevenueReportRoute
+  '/_authenticated/landlord/vending-records': typeof AuthenticatedLandlordVendingRecordsRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
   '/_authenticated/meters/$meterId': typeof AuthenticatedMetersMeterIdRoute
@@ -1530,7 +1590,13 @@ export interface FileRouteTypes {
     | '/configurations/sms'
     | '/configurations/social-media'
     | '/landlord/bank-payments'
+    | '/landlord/consumption-report'
     | '/landlord/dashboard'
+    | '/landlord/properties'
+    | '/landlord/properties-summary'
+    | '/landlord/recent-tokens'
+    | '/landlord/revenue-report'
+    | '/landlord/vending-records'
     | '/landlords/new'
     | '/meter-suppliers/$supplierId'
     | '/meters/$meterId'
@@ -1675,7 +1741,13 @@ export interface FileRouteTypes {
     | '/configurations/sms'
     | '/configurations/social-media'
     | '/landlord/bank-payments'
+    | '/landlord/consumption-report'
     | '/landlord/dashboard'
+    | '/landlord/properties'
+    | '/landlord/properties-summary'
+    | '/landlord/recent-tokens'
+    | '/landlord/revenue-report'
+    | '/landlord/vending-records'
     | '/landlords/new'
     | '/meter-suppliers/$supplierId'
     | '/meters/$meterId'
@@ -1827,7 +1899,13 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations/sms'
     | '/_authenticated/configurations/social-media'
     | '/_authenticated/landlord/bank-payments'
+    | '/_authenticated/landlord/consumption-report'
     | '/_authenticated/landlord/dashboard'
+    | '/_authenticated/landlord/properties'
+    | '/_authenticated/landlord/properties-summary'
+    | '/_authenticated/landlord/recent-tokens'
+    | '/_authenticated/landlord/revenue-report'
+    | '/_authenticated/landlord/vending-records'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meter-suppliers/$supplierId'
     | '/_authenticated/meters/$meterId'
@@ -2239,11 +2317,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLandlordBankPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/landlord/consumption-report': {
+      id: '/_authenticated/landlord/consumption-report'
+      path: '/landlord/consumption-report'
+      fullPath: '/landlord/consumption-report'
+      preLoaderRoute: typeof AuthenticatedLandlordConsumptionReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/landlord/dashboard': {
       id: '/_authenticated/landlord/dashboard'
       path: '/landlord/dashboard'
       fullPath: '/landlord/dashboard'
       preLoaderRoute: typeof AuthenticatedLandlordDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/properties': {
+      id: '/_authenticated/landlord/properties'
+      path: '/landlord/properties'
+      fullPath: '/landlord/properties'
+      preLoaderRoute: typeof AuthenticatedLandlordPropertiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/properties-summary': {
+      id: '/_authenticated/landlord/properties-summary'
+      path: '/landlord/properties-summary'
+      fullPath: '/landlord/properties-summary'
+      preLoaderRoute: typeof AuthenticatedLandlordPropertiesSummaryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/recent-tokens': {
+      id: '/_authenticated/landlord/recent-tokens'
+      path: '/landlord/recent-tokens'
+      fullPath: '/landlord/recent-tokens'
+      preLoaderRoute: typeof AuthenticatedLandlordRecentTokensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/revenue-report': {
+      id: '/_authenticated/landlord/revenue-report'
+      path: '/landlord/revenue-report'
+      fullPath: '/landlord/revenue-report'
+      preLoaderRoute: typeof AuthenticatedLandlordRevenueReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/vending-records': {
+      id: '/_authenticated/landlord/vending-records'
+      path: '/landlord/vending-records'
+      fullPath: '/landlord/vending-records'
+      preLoaderRoute: typeof AuthenticatedLandlordVendingRecordsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/landlords/': {
@@ -3204,7 +3324,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
   AuthenticatedLandlordBankPaymentsRoute: typeof AuthenticatedLandlordBankPaymentsRoute
+  AuthenticatedLandlordConsumptionReportRoute: typeof AuthenticatedLandlordConsumptionReportRoute
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
+  AuthenticatedLandlordPropertiesRoute: typeof AuthenticatedLandlordPropertiesRoute
+  AuthenticatedLandlordPropertiesSummaryRoute: typeof AuthenticatedLandlordPropertiesSummaryRoute
+  AuthenticatedLandlordRecentTokensRoute: typeof AuthenticatedLandlordRecentTokensRoute
+  AuthenticatedLandlordRevenueReportRoute: typeof AuthenticatedLandlordRevenueReportRoute
+  AuthenticatedLandlordVendingRecordsRoute: typeof AuthenticatedLandlordVendingRecordsRoute
   AuthenticatedMeterSuppliersSupplierIdRoute: typeof AuthenticatedMeterSuppliersSupplierIdRoute
   AuthenticatedMetersMeterIdRoute: typeof AuthenticatedMetersMeterIdRoute
   AuthenticatedMetersBulkAddRoute: typeof AuthenticatedMetersBulkAddRoute
@@ -3310,7 +3436,18 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,
   AuthenticatedLandlordBankPaymentsRoute:
     AuthenticatedLandlordBankPaymentsRoute,
+  AuthenticatedLandlordConsumptionReportRoute:
+    AuthenticatedLandlordConsumptionReportRoute,
   AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
+  AuthenticatedLandlordPropertiesRoute: AuthenticatedLandlordPropertiesRoute,
+  AuthenticatedLandlordPropertiesSummaryRoute:
+    AuthenticatedLandlordPropertiesSummaryRoute,
+  AuthenticatedLandlordRecentTokensRoute:
+    AuthenticatedLandlordRecentTokensRoute,
+  AuthenticatedLandlordRevenueReportRoute:
+    AuthenticatedLandlordRevenueReportRoute,
+  AuthenticatedLandlordVendingRecordsRoute:
+    AuthenticatedLandlordVendingRecordsRoute,
   AuthenticatedMeterSuppliersSupplierIdRoute:
     AuthenticatedMeterSuppliersSupplierIdRoute,
   AuthenticatedMetersMeterIdRoute: AuthenticatedMetersMeterIdRoute,
