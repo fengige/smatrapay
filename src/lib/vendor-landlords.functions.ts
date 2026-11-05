@@ -578,7 +578,7 @@ export const createVendorLandlord = createServerFn({ method: "POST" })
         first_name: z.string().trim().min(2, { message: "First name is required" }).max(60),
         last_name: z.string().trim().min(1, { message: "Last name is required" }).max(60),
         email: z.string().trim().email({ message: "Enter a valid email address" }).max(255),
-        unit_id: uuid.optional(),
+        property_ids: z.array(uuid).max(50).optional(),
       })
       .parse(data),
   )
@@ -586,7 +586,30 @@ export const createVendorLandlord = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const vendorId = await assertVendor(context as never);
 
-    if (data.unit_id) await assertUnitInScope(supabase as never, data.unit_id);
+    // Every requested property must be readable through the caller's RLS-bound
+    // client (vendor scope) and not already owned by another landlord.
+    const requestedPropertyIds = [...new Set(data.property_ids ?? [])];
+    let propertyNames: string[] = [];
+    if (requestedPropertyIds.length) {
+      const { data: scoped, error: scopeError } = await supabase
+        .from("properties")
+        .select("id, name, landlord_id")
+        .in("id", requestedPropertyIds);
+      if (scopeError) throw new Error(scopeError.message);
+      const { assignable, missing, taken } = partitionAssignableProperties(
+        requestedPropertyIds,
+        (scoped ?? []) as any[],
+      );
+      if (missing.length) throw new Error("Access denied");
+      if (taken.length) {
+        throw new Error(
+          `Already assigned to another landlord: ${taken.map((p) => p.name).join(", ")}`,
+        );
+      }
+      propertyNames = assignable.map(
+        (id) => ((scoped ?? []) as any[]).find((p) => p.id === id)?.name as string,
+      );
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
