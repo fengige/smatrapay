@@ -181,6 +181,11 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         items: [{ label: "My Profile", icon: UserCircle, to: "/vendor/profile" }],
       },
     );
+  } else if (roles.includes("landlord")) {
+    groups.push({
+      heading: "PAYMENTS",
+      items: [{ label: "Bank Payments", icon: Landmark, to: "/landlord/bank-payments" }],
+    });
   } else if (roles.includes("service_provider")) {
     groups.push({
       heading: "WORK",
