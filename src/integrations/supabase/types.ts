@@ -3830,6 +3830,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      landlord_managing_vendors: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
+      landlord_meter_ids: { Args: never; Returns: string[] }
+      landlord_property_ids: { Args: never; Returns: string[] }
+      landlord_unit_ids: { Args: never; Returns: string[] }
       resident_can_read_payg_summary: {
         Args: { p_vendor: string }
         Returns: boolean

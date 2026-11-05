@@ -3,7 +3,8 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listNotifications } from "@/lib/notifications.functions";
-import { Bell, LogOut, Menu, MessageSquare, Search, X } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, MessageSquare, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { navGroupsForRoles } from "@/lib/portal-nav";
@@ -83,6 +84,7 @@ export function PortalLayout({
   const signOut = usePortalSignOut();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const isVendor = roles.includes("vendor") && !roles.includes("admin");
   const isResident = roles.includes("resident") && !isVendor && !roles.includes("admin");
   const profilePath = isVendor ? "/vendor/profile" : isResident ? "/resident/profile" : null;
@@ -135,12 +137,16 @@ export function PortalLayout({
       <nav className="sidebar-scroll min-h-0 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         {groups.map((group, gi) => (
           <div key={group.heading ?? gi} className="space-y-1">
-            {group.heading && (
+            {group.heading && group.expandable ? (
+              <Button variant="ghost" aria-expanded={!collapsedGroups[group.heading]} onClick={() => { const key = group.heading ?? ""; setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] })); }} className={`h-auto min-h-10 w-full justify-between whitespace-normal px-3 py-2 text-left text-xs font-bold text-panel-muted hover:bg-panel-tile hover:text-panel-foreground ${group.items.some(i => i.to === pathname) ? "text-panel-foreground" : ""}`}>
+                {group.heading}<ChevronDown className={`size-4 shrink-0 transition-transform ${collapsedGroups[group.heading] ? "-rotate-90" : ""}`} />
+              </Button>
+            ) : group.heading && (
               <p className="px-3 pb-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-panel-muted">
                 {group.heading}
               </p>
             )}
-            {group.items.map((item) => {
+            {(!group.expandable || !collapsedGroups[group.heading ?? ""]) && group.items.map((item) => {
               const base =
                 "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors";
               if (!item.to) {
@@ -160,6 +166,7 @@ export function PortalLayout({
                 <Link
                   key={item.label + item.to}
                   to={item.to}
+                  aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
                   className={`${base} ${
                     active
