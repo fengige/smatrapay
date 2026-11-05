@@ -225,6 +225,13 @@
       "when": 1793871522993,
       "tag": "0031_bank_payment_meter_correction",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793877013148,
+      "tag": "0032_landlord_bank_payments",
+      "breakpoints": true
     }
   ]
 }
