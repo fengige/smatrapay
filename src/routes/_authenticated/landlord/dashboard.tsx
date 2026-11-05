@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/landlord/dashboard")({
   head: () => ({ meta: [{ title: "Landlord Dashboard · SmatraPay" }, { name: "description", content: "Your properties, meters, payments, tokens and resident applications." }, { property: "og:title", content: "Landlord Dashboard · SmatraPay" }, { property: "og:description", content: "Your properties, meters, payments, tokens and resident applications." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   loader: ({ context }) => (context as any).queryClient.ensureQueryData(q),
   component: LandlordDashboard,
-  errorComponent: ({ error }: { error: Error }) => <p className="p-8 text-sm text-destructive">{error.message === "Access denied" ? "This dashboard is for landlord accounts." : "Could not load this dashboard."}</p>,
+  errorComponent: ({ error }) => <p className="p-8 text-sm text-destructive">{(error as Error).message === "Access denied" ? "This dashboard is for landlord accounts." : "Could not load this dashboard."}</p>,
 });
 
 const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -44,7 +44,7 @@ function Panel({ title, action, children }: { title: string; action?: React.Reac
 const Empty = ({ text }: { text: string }) => <p className="p-6 text-center text-sm text-muted-foreground">{text}</p>;
 
 function LandlordDashboard() {
-  const data = useSuspenseQuery(q).data as Awaited<ReturnType<typeof getLandlordDashboard>>;
+  const data = useSuspenseQuery(q).data as LD;
   const c = data.counts, l = data.last30;
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -105,3 +105,10 @@ function LandlordDashboard() {
     </div>
   );
 }
+
+type Row = Record<string, any>;
+type LD = {
+  counts: { properties: number; units: number; occupiedUnits: number; meters: number; activeMeters: number; residents: number };
+  last30: { tokens: number; tokenAmount: number; tokenUnits: number; payments: number; paymentAmount: number; failedPayments: number };
+  recentTokens: Row[]; recentPayments: Row[]; applications: Row[];
+};
