@@ -91,6 +91,7 @@ import { Route as AuthenticatedVendingSoftwareIndexRouteImport } from './routes/
 import { Route as AuthenticatedVendingSoftwareSoftwareIdRouteImport } from './routes/_authenticated/vending-software.$softwareId'
 import { Route as AuthenticatedVendorActivationRouteImport } from './routes/_authenticated/vendor/activation'
 import { Route as AuthenticatedVendorAssignmentsRouteImport } from './routes/_authenticated/vendor/assignments'
+import { Route as AuthenticatedVendorBankPaymentsRouteImport } from './routes/_authenticated/vendor/bank-payments'
 import { Route as AuthenticatedVendorDashboardRouteImport } from './routes/_authenticated/vendor/dashboard'
 import { Route as AuthenticatedVendorInsuranceRouteImport } from './routes/_authenticated/vendor/insurance'
 import { Route as AuthenticatedVendorJobsRouteImport } from './routes/_authenticated/vendor/jobs'
@@ -631,6 +632,12 @@ const AuthenticatedVendorAssignmentsRoute =
     path: '/vendor/assignments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorBankPaymentsRoute =
+  AuthenticatedVendorBankPaymentsRouteImport.update({
+    id: '/vendor/bank-payments',
+    path: '/vendor/bank-payments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVendorDashboardRoute =
   AuthenticatedVendorDashboardRouteImport.update({
     id: '/vendor/dashboard',
@@ -1098,6 +1105,7 @@ export interface FileRoutesByFullPath {
   '/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
+  '/vendor/bank-payments': typeof AuthenticatedVendorBankPaymentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/insurance': typeof AuthenticatedVendorInsuranceRoute
   '/vendor/jobs': typeof AuthenticatedVendorJobsRoute
@@ -1240,6 +1248,7 @@ export interface FileRoutesByTo {
   '/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   '/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
+  '/vendor/bank-payments': typeof AuthenticatedVendorBankPaymentsRoute
   '/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/vendor/insurance': typeof AuthenticatedVendorInsuranceRoute
   '/vendor/jobs': typeof AuthenticatedVendorJobsRoute
@@ -1392,6 +1401,7 @@ export interface FileRoutesById {
   '/_authenticated/vending-software/$softwareId': typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   '/_authenticated/vendor/activation': typeof AuthenticatedVendorActivationRoute
   '/_authenticated/vendor/assignments': typeof AuthenticatedVendorAssignmentsRoute
+  '/_authenticated/vendor/bank-payments': typeof AuthenticatedVendorBankPaymentsRoute
   '/_authenticated/vendor/dashboard': typeof AuthenticatedVendorDashboardRoute
   '/_authenticated/vendor/insurance': typeof AuthenticatedVendorInsuranceRoute
   '/_authenticated/vendor/jobs': typeof AuthenticatedVendorJobsRoute
@@ -1544,6 +1554,7 @@ export interface FileRouteTypes {
     | '/vending-software/$softwareId'
     | '/vendor/activation'
     | '/vendor/assignments'
+    | '/vendor/bank-payments'
     | '/vendor/dashboard'
     | '/vendor/insurance'
     | '/vendor/jobs'
@@ -1686,6 +1697,7 @@ export interface FileRouteTypes {
     | '/vending-software/$softwareId'
     | '/vendor/activation'
     | '/vendor/assignments'
+    | '/vendor/bank-payments'
     | '/vendor/dashboard'
     | '/vendor/insurance'
     | '/vendor/jobs'
@@ -1837,6 +1849,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vending-software/$softwareId'
     | '/_authenticated/vendor/activation'
     | '/_authenticated/vendor/assignments'
+    | '/_authenticated/vendor/bank-payments'
     | '/_authenticated/vendor/dashboard'
     | '/_authenticated/vendor/insurance'
     | '/_authenticated/vendor/jobs'
@@ -2512,6 +2525,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor/assignments'
       fullPath: '/vendor/assignments'
       preLoaderRoute: typeof AuthenticatedVendorAssignmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendor/bank-payments': {
+      id: '/_authenticated/vendor/bank-payments'
+      path: '/vendor/bank-payments'
+      fullPath: '/vendor/bank-payments'
+      preLoaderRoute: typeof AuthenticatedVendorBankPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendor/dashboard': {
@@ -3193,6 +3213,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendingSoftwareSoftwareIdRoute: typeof AuthenticatedVendingSoftwareSoftwareIdRoute
   AuthenticatedVendorActivationRoute: typeof AuthenticatedVendorActivationRoute
   AuthenticatedVendorAssignmentsRoute: typeof AuthenticatedVendorAssignmentsRoute
+  AuthenticatedVendorBankPaymentsRoute: typeof AuthenticatedVendorBankPaymentsRoute
   AuthenticatedVendorDashboardRoute: typeof AuthenticatedVendorDashboardRoute
   AuthenticatedVendorInsuranceRoute: typeof AuthenticatedVendorInsuranceRoute
   AuthenticatedVendorJobsRoute: typeof AuthenticatedVendorJobsRoute
@@ -3302,6 +3323,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedVendingSoftwareSoftwareIdRoute,
   AuthenticatedVendorActivationRoute: AuthenticatedVendorActivationRoute,
   AuthenticatedVendorAssignmentsRoute: AuthenticatedVendorAssignmentsRoute,
+  AuthenticatedVendorBankPaymentsRoute: AuthenticatedVendorBankPaymentsRoute,
   AuthenticatedVendorDashboardRoute: AuthenticatedVendorDashboardRoute,
   AuthenticatedVendorInsuranceRoute: AuthenticatedVendorInsuranceRoute,
   AuthenticatedVendorJobsRoute: AuthenticatedVendorJobsRoute,
