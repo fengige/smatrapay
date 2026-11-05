@@ -211,6 +211,13 @@
       "when": 1793821170908,
       "tag": "0029_vendor_add_property_unit",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793870715425,
+      "tag": "0030_vendor_bank_notifications_read",
+      "breakpoints": true
     }
   ]
 }
