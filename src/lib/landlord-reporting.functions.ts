@@ -6,7 +6,7 @@ export const getLandlordProperties=createServerFn({method:'GET'}).middleware([re
 async function dataset(context:any,input:ReturnType<typeof landlordFilterSchema.parse>){
  const scope=await landlordScope(context);
  if(input.property&&!scope.properties.some(p=>p.id===input.property))throw new Error('Property not available');
- const meters=scope.meters.filter(m=>(!input.property||m.property_id===input.property)&&(!input.type||m.type===input.type));
+ const meters=scope.meters.filter(m=>(input.kind!=='summary'||m.property_id)&&(!input.property||m.property_id===input.property)&&(!input.type||m.type===input.type));
  const byId=new Map(meters.map(m=>[m.id,m]));
  const ids=meters.length?meters.map(m=>m.id):['00000000-0000-0000-0000-000000000000'];
  const build=()=>{let q=context.supabase.from('transaction_records').select('record_id,token_id,meter_id,meter_number,trans_id,txn_at,amount_paid,tokenizable_amount,commission_amount,vat_on_commission_amount,units,token_status,payment_status,token,bank,vending_software,error_message,action').in('meter_id',ids).eq('action','credit').gte('txn_at',`${input.from}T00:00:00+03:00`).lte('txn_at',`${input.to}T23:59:59.999+03:00`);

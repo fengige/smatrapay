@@ -1,0 +1,1 @@
+- Landlord reporting uses caller-bound property/unit/meter helpers and RLS across vendors; shared transaction filters and integer-decimal aggregation drive lists, reports and exports without duplicate records or client-supplied owner identity.
