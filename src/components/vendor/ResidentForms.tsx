@@ -387,3 +387,111 @@ export function UnitPicker({
     </div>
   );
 }
+
+export type AssignableProperty = {
+  id: string;
+  name: string;
+  code: string | null;
+  property_type: string | null;
+  address: string | null;
+  zone_name: string | null;
+  status: string;
+  unit_count: number;
+  landlord_id: string | null;
+  landlord_name: string | null;
+};
+
+/** Multi-select property picker — a landlord can be assigned several properties. */
+export function PropertyPicker({
+  properties,
+  values,
+  onChange,
+}: {
+  properties: AssignableProperty[];
+  values: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [zone, setZone] = useState("all");
+
+  const zones = [...new Set(properties.map((p) => p.zone_name).filter(Boolean) as string[])];
+  const visible = properties.filter((p) => zone === "all" || p.zone_name === zone);
+
+  const toggle = (id: string) =>
+    onChange(values.includes(id) ? values.filter((v) => v !== id) : [...values, id]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-muted-foreground">Properties</p>
+        <span className="text-xs text-muted-foreground">
+          {values.length} selected — a landlord can be assigned more than one property
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={zone}
+          onChange={(e) => setZone(e.target.value)}
+          aria-label="Filter properties by zone"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        >
+          <option value="all">All zones</option>
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {z}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="max-h-64 overflow-y-auto rounded-xl border border-border">
+        {visible.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">No properties available in your scope.</p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2"></th>
+                <th className="px-3 py-2">Property</th>
+                <th className="px-3 py-2">Zone</th>
+                <th className="px-3 py-2">Units</th>
+                <th className="px-3 py-2">Current landlord</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((p) => {
+                const taken = Boolean(p.landlord_id);
+                const checked = values.includes(p.id);
+                return (
+                  <tr
+                    key={p.id}
+                    className={`border-t border-border/70 ${checked ? "bg-primary/5" : ""} ${taken ? "opacity-60" : ""}`}
+                  >
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={taken}
+                        onChange={() => toggle(p.id)}
+                        aria-label={`Select property ${p.name}`}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="font-medium">{p.name}</span>
+                      {p.address && (
+                        <span className="block text-xs text-muted-foreground">{p.address}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.zone_name ?? "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.unit_count}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {p.landlord_name ?? "Unassigned"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
