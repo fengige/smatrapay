@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add meter correction before bank-payment retry in admin/vendor pages, with ownership checks, atomic retry claim, audit and tests.
+
 - [x] Add vendor Property Details → Units → Add Unit with shared Unit Management validation, fixed property, authenticated atomic creation/count/audit RPC, own-property unit read policy, listing refresh and success/error feedback. 18 validation/installed ownership/grant/property regression tests passed; build OK; signed-out property route redirects to /auth without page errors. No tables/columns added.
 - [ ] Verify signed-in unit creation and readback under the selected property (blocked: no requesting-user auth account; authorized vendor preview sign-in required). Installed ownership/grant tests passed; no live unit was created.
 

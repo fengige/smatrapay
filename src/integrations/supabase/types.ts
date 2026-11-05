@@ -120,6 +120,7 @@ export type Database = {
           ft_ref: string | null
           id: string
           last_retry_by: string | null
+          meter_corrections: Json
           meter_id: string | null
           meter_number: string | null
           mobile: string | null
@@ -150,6 +151,7 @@ export type Database = {
           ft_ref?: string | null
           id?: string
           last_retry_by?: string | null
+          meter_corrections?: Json
           meter_id?: string | null
           meter_number?: string | null
           mobile?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           ft_ref?: string | null
           id?: string
           last_retry_by?: string | null
+          meter_corrections?: Json
           meter_id?: string | null
           meter_number?: string | null
           mobile?: string | null
@@ -3796,6 +3799,15 @@ export type Database = {
       consume_resident_auth_limit: {
         Args: { p_key: string; p_limit: number; p_window: number }
         Returns: boolean
+      }
+      correct_bank_payment_meter_for_retry: {
+        Args: {
+          p_id: string
+          p_meter: string
+          p_reason: string
+          p_updated_at: string
+        }
+        Returns: Json
       }
       create_resident_service_request: {
         Args: {
