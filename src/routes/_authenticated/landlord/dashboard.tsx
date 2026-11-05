@@ -106,7 +106,7 @@ function LandlordDashboard() {
   );
 }
 
-type Row = Record<string, any>;
+type Row = { id: string; at: string; status: string; meter?: string; bank?: string; amount: number; units?: number | null; error?: string | null; name?: string | null; product?: string | null };
 type LD = {
   counts: { properties: number; units: number; occupiedUnits: number; meters: number; activeMeters: number; residents: number };
   last30: { tokens: number; tokenAmount: number; tokenUnits: number; payments: number; paymentAmount: number; failedPayments: number };
