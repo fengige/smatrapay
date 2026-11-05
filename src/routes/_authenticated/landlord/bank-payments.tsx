@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { BankPaymentsPage } from "@/components/BankPaymentsPage";
+import { checkRoleAccess } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/_authenticated/landlord/bank-payments")({
+  loader: async () => { const access = await checkRoleAccess({ data: { role: "landlord" } }); if (!access.allowed) throw new Error("Landlord access required"); return access; },
+  errorComponent: () => <p role="alert" className="p-8">Landlord access is required to view this page.</p>,
   head: () => ({
     meta: [
       { title: "Bank Payments | SmatraPay Landlord" },

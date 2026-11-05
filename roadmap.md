@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Landlord portal: expandable Payments, Properties, Reports & Analysis; scoped recent tokens/vending/bank filters; cross-vendor linked properties/units/meters; reconciled daily/monthly reports with PDF/Excel exports; isolation and calculation tests plus authenticated acceptance.
+- [x] Landlord portal: expandable Payments, Properties, Reports & Analysis; scoped recent tokens/vending/bank filters; cross-vendor linked properties/units/meters; reconciled daily/monthly reports with PDF/Excel exports. 37 focused tests passed, including installed ownership/grants and actual file generation; build OK. Available vendor session was denied landlord access without page errors. No live payment/retry or publishing performed.
+- [ ] Landlord signed-in property/filter/pagination/report/download and mobile acceptance (blocked: available session is vendor-only, requester has no matching auth account, landlord test-account question skipped). No landlord identity was selected or access altered for testing.
 
 - [x] Add Edit meter / Save meter & retry to admin/vendor bank payments with source/target ownership checks, safe-state and confirmed-payment gates, row-locked audited correction, compare-and-set vending claims and duplicate-callback preservation. Migration 0031 adds correction history/RPC; 45 focused tests passed, installed anonymous RPC denial verified, build OK.
 - [ ] Signed-in meter correction/save/retry/readback acceptance (blocked: no requester-matching auth account/session; authorized admin/vendor preview sign-in required). No real payment was redirected or token generated during testing.

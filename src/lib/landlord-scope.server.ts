@@ -5,8 +5,7 @@ export async function landlordScope(context:{supabase:any;userId:string}){
 }
 
 async function readLandlordScope(db:any){
- const [{data:pids,error:pe},{data:uids,error:ue},{data:mids,error:me},{data:vendors,error:ve}]=await Promise.all([db.rpc('landlord_property_ids'),db.rpc('landlord_unit_ids'),db.rpc('landlord_meter_ids'),db.rpc('landlord_managing_vendors')]);
- if(pe||ue||me||ve)throw new Error('Could not load landlord scope');
+ const [pids,uids,mids,vendors]=await Promise.all([readAll(()=>db.rpc('landlord_property_ids')),readAll(()=>db.rpc('landlord_unit_ids')),readAll(()=>db.rpc('landlord_meter_ids')),readAll(()=>db.rpc('landlord_managing_vendors'))]);
  const ids=(a:any[])=>a?.length?a:['00000000-0000-0000-0000-000000000000'];
  const [properties,units,meters]=await Promise.all([
  readAll(()=>db.from('properties').select('id,name,code,city,address_line1,created_by').in('id',ids(pids)).order('id')),
