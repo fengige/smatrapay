@@ -123,6 +123,7 @@ import { Route as AuthenticatedVendorsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedZonesIndexRouteImport } from './routes/_authenticated/zones.index'
 import { Route as AuthenticatedAgentsIdIndexRouteImport } from './routes/_authenticated/agents.$id.index'
 import { Route as AuthenticatedAgentsIdEditRouteImport } from './routes/_authenticated/agents.$id.edit'
+import { Route as AuthenticatedLandlordPropertiesPropertyIdRouteImport } from './routes/_authenticated/landlord/properties.$propertyId'
 import { Route as AuthenticatedLandlordsIdIndexRouteImport } from './routes/_authenticated/landlords.$id.index'
 import { Route as AuthenticatedLandlordsIdEditRouteImport } from './routes/_authenticated/landlords.$id.edit'
 import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_authenticated/properties.$id.index'
@@ -827,6 +828,12 @@ const AuthenticatedAgentsIdEditRoute =
     path: '/$id/edit',
     getParentRoute: () => AuthenticatedAgentsRoute,
   } as any)
+const AuthenticatedLandlordPropertiesPropertyIdRoute =
+  AuthenticatedLandlordPropertiesPropertyIdRouteImport.update({
+    id: '/$propertyId',
+    path: '/$propertyId',
+    getParentRoute: () => AuthenticatedLandlordPropertiesRoute,
+  } as any)
 const AuthenticatedLandlordsIdIndexRoute =
   AuthenticatedLandlordsIdIndexRouteImport.update({
     id: '/$id/',
@@ -1122,7 +1129,7 @@ export interface FileRoutesByFullPath {
   '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
-  '/landlord/properties': typeof AuthenticatedLandlordPropertiesRoute
+  '/landlord/properties': typeof AuthenticatedLandlordPropertiesRouteWithChildren
   '/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
   '/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
   '/landlord/revenue-report': typeof AuthenticatedLandlordRevenueReportRoute
@@ -1196,6 +1203,7 @@ export interface FileRoutesByFullPath {
   '/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/zones/': typeof AuthenticatedZonesIndexRoute
   '/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
+  '/landlord/properties/$propertyId': typeof AuthenticatedLandlordPropertiesPropertyIdRoute
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
@@ -1273,7 +1281,7 @@ export interface FileRoutesByTo {
   '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
-  '/landlord/properties': typeof AuthenticatedLandlordPropertiesRoute
+  '/landlord/properties': typeof AuthenticatedLandlordPropertiesRouteWithChildren
   '/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
   '/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
   '/landlord/revenue-report': typeof AuthenticatedLandlordRevenueReportRoute
@@ -1346,6 +1354,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsIndexRoute
   '/zones': typeof AuthenticatedZonesIndexRoute
   '/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
+  '/landlord/properties/$propertyId': typeof AuthenticatedLandlordPropertiesPropertyIdRoute
   '/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
@@ -1432,7 +1441,7 @@ export interface FileRoutesById {
   '/_authenticated/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/_authenticated/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
-  '/_authenticated/landlord/properties': typeof AuthenticatedLandlordPropertiesRoute
+  '/_authenticated/landlord/properties': typeof AuthenticatedLandlordPropertiesRouteWithChildren
   '/_authenticated/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
   '/_authenticated/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
   '/_authenticated/landlord/revenue-report': typeof AuthenticatedLandlordRevenueReportRoute
@@ -1506,6 +1515,7 @@ export interface FileRoutesById {
   '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/_authenticated/zones/': typeof AuthenticatedZonesIndexRoute
   '/_authenticated/agents/$id/edit': typeof AuthenticatedAgentsIdEditRoute
+  '/_authenticated/landlord/properties/$propertyId': typeof AuthenticatedLandlordPropertiesPropertyIdRoute
   '/_authenticated/landlords/$id/edit': typeof AuthenticatedLandlordsIdEditRoute
   '/_authenticated/properties/$id/edit': typeof AuthenticatedPropertiesIdEditRoute
   '/_authenticated/residents/$id/edit': typeof AuthenticatedResidentsIdEditRoute
@@ -1666,6 +1676,7 @@ export interface FileRouteTypes {
     | '/vendors/'
     | '/zones/'
     | '/agents/$id/edit'
+    | '/landlord/properties/$propertyId'
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
@@ -1816,6 +1827,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/zones'
     | '/agents/$id/edit'
+    | '/landlord/properties/$propertyId'
     | '/landlords/$id/edit'
     | '/properties/$id/edit'
     | '/residents/$id/edit'
@@ -1975,6 +1987,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors/'
     | '/_authenticated/zones/'
     | '/_authenticated/agents/$id/edit'
+    | '/_authenticated/landlord/properties/$propertyId'
     | '/_authenticated/landlords/$id/edit'
     | '/_authenticated/properties/$id/edit'
     | '/_authenticated/residents/$id/edit'
@@ -2842,6 +2855,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsIdEditRouteImport
       parentRoute: typeof AuthenticatedAgentsRoute
     }
+    '/_authenticated/landlord/properties/$propertyId': {
+      id: '/_authenticated/landlord/properties/$propertyId'
+      path: '/$propertyId'
+      fullPath: '/landlord/properties/$propertyId'
+      preLoaderRoute: typeof AuthenticatedLandlordPropertiesPropertyIdRouteImport
+      parentRoute: typeof AuthenticatedLandlordPropertiesRoute
+    }
     '/_authenticated/landlords/$id/': {
       id: '/_authenticated/landlords/$id/'
       path: '/$id'
@@ -3299,6 +3319,21 @@ const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
 const AuthenticatedVendorsRouteWithChildren =
   AuthenticatedVendorsRoute._addFileChildren(AuthenticatedVendorsRouteChildren)
 
+interface AuthenticatedLandlordPropertiesRouteChildren {
+  AuthenticatedLandlordPropertiesPropertyIdRoute: typeof AuthenticatedLandlordPropertiesPropertyIdRoute
+}
+
+const AuthenticatedLandlordPropertiesRouteChildren: AuthenticatedLandlordPropertiesRouteChildren =
+  {
+    AuthenticatedLandlordPropertiesPropertyIdRoute:
+      AuthenticatedLandlordPropertiesPropertyIdRoute,
+  }
+
+const AuthenticatedLandlordPropertiesRouteWithChildren =
+  AuthenticatedLandlordPropertiesRoute._addFileChildren(
+    AuthenticatedLandlordPropertiesRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedBankPaymentsRoute: typeof AuthenticatedBankPaymentsRoute
@@ -3326,7 +3361,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLandlordBankPaymentsRoute: typeof AuthenticatedLandlordBankPaymentsRoute
   AuthenticatedLandlordConsumptionReportRoute: typeof AuthenticatedLandlordConsumptionReportRoute
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
-  AuthenticatedLandlordPropertiesRoute: typeof AuthenticatedLandlordPropertiesRoute
+  AuthenticatedLandlordPropertiesRoute: typeof AuthenticatedLandlordPropertiesRouteWithChildren
   AuthenticatedLandlordPropertiesSummaryRoute: typeof AuthenticatedLandlordPropertiesSummaryRoute
   AuthenticatedLandlordRecentTokensRoute: typeof AuthenticatedLandlordRecentTokensRoute
   AuthenticatedLandlordRevenueReportRoute: typeof AuthenticatedLandlordRevenueReportRoute
@@ -3439,7 +3474,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLandlordConsumptionReportRoute:
     AuthenticatedLandlordConsumptionReportRoute,
   AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
-  AuthenticatedLandlordPropertiesRoute: AuthenticatedLandlordPropertiesRoute,
+  AuthenticatedLandlordPropertiesRoute:
+    AuthenticatedLandlordPropertiesRouteWithChildren,
   AuthenticatedLandlordPropertiesSummaryRoute:
     AuthenticatedLandlordPropertiesSummaryRoute,
   AuthenticatedLandlordRecentTokensRoute:
