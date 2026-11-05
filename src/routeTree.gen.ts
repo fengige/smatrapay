@@ -47,6 +47,7 @@ import { Route as AuthenticatedConfigurationsGoogleMapRouteImport } from './rout
 import { Route as AuthenticatedConfigurationsMailRouteImport } from './routes/_authenticated/configurations.mail'
 import { Route as AuthenticatedConfigurationsSmsRouteImport } from './routes/_authenticated/configurations.sms'
 import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './routes/_authenticated/configurations.social-media'
+import { Route as AuthenticatedLandlordBankPaymentsRouteImport } from './routes/_authenticated/landlord/bank-payments'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
 import { Route as AuthenticatedLandlordsIndexRouteImport } from './routes/_authenticated/landlords.index'
 import { Route as AuthenticatedLandlordsNewRouteImport } from './routes/_authenticated/landlords.new'
@@ -370,6 +371,12 @@ const AuthenticatedConfigurationsSocialMediaRoute =
     id: '/social-media',
     path: '/social-media',
     getParentRoute: () => AuthenticatedConfigurationsRoute,
+  } as any)
+const AuthenticatedLandlordBankPaymentsRoute =
+  AuthenticatedLandlordBankPaymentsRouteImport.update({
+    id: '/landlord/bank-payments',
+    path: '/landlord/bank-payments',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLandlordDashboardRoute =
   AuthenticatedLandlordDashboardRouteImport.update({
@@ -1070,6 +1077,7 @@ export interface FileRoutesByFullPath {
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
+  '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
@@ -1214,6 +1222,7 @@ export interface FileRoutesByTo {
   '/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
+  '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
@@ -1366,6 +1375,7 @@ export interface FileRoutesById {
   '/_authenticated/configurations/mail': typeof AuthenticatedConfigurationsMailRoute
   '/_authenticated/configurations/sms': typeof AuthenticatedConfigurationsSmsRoute
   '/_authenticated/configurations/social-media': typeof AuthenticatedConfigurationsSocialMediaRoute
+  '/_authenticated/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
   '/_authenticated/landlords/new': typeof AuthenticatedLandlordsNewRoute
   '/_authenticated/meter-suppliers/$supplierId': typeof AuthenticatedMeterSuppliersSupplierIdRoute
@@ -1519,6 +1529,7 @@ export interface FileRouteTypes {
     | '/configurations/mail'
     | '/configurations/sms'
     | '/configurations/social-media'
+    | '/landlord/bank-payments'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meter-suppliers/$supplierId'
@@ -1663,6 +1674,7 @@ export interface FileRouteTypes {
     | '/configurations/mail'
     | '/configurations/sms'
     | '/configurations/social-media'
+    | '/landlord/bank-payments'
     | '/landlord/dashboard'
     | '/landlords/new'
     | '/meter-suppliers/$supplierId'
@@ -1814,6 +1826,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configurations/mail'
     | '/_authenticated/configurations/sms'
     | '/_authenticated/configurations/social-media'
+    | '/_authenticated/landlord/bank-payments'
     | '/_authenticated/landlord/dashboard'
     | '/_authenticated/landlords/new'
     | '/_authenticated/meter-suppliers/$supplierId'
@@ -2218,6 +2231,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/configurations/social-media'
       preLoaderRoute: typeof AuthenticatedConfigurationsSocialMediaRouteImport
       parentRoute: typeof AuthenticatedConfigurationsRoute
+    }
+    '/_authenticated/landlord/bank-payments': {
+      id: '/_authenticated/landlord/bank-payments'
+      path: '/landlord/bank-payments'
+      fullPath: '/landlord/bank-payments'
+      preLoaderRoute: typeof AuthenticatedLandlordBankPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/landlord/dashboard': {
       id: '/_authenticated/landlord/dashboard'
@@ -3183,6 +3203,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
+  AuthenticatedLandlordBankPaymentsRoute: typeof AuthenticatedLandlordBankPaymentsRoute
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
   AuthenticatedMeterSuppliersSupplierIdRoute: typeof AuthenticatedMeterSuppliersSupplierIdRoute
   AuthenticatedMetersMeterIdRoute: typeof AuthenticatedMetersMeterIdRoute
@@ -3287,6 +3308,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,
+  AuthenticatedLandlordBankPaymentsRoute:
+    AuthenticatedLandlordBankPaymentsRoute,
   AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
   AuthenticatedMeterSuppliersSupplierIdRoute:
     AuthenticatedMeterSuppliersSupplierIdRoute,
