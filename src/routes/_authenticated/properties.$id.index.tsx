@@ -47,7 +47,7 @@ import {
   endAssignment,
   getAddressAuditLogs,
   getProperty,
-  importAssignments,
+  importPropertyUnits,
   listAssignableUsers,
   upsertUnit,
   listGeography,
@@ -55,6 +55,8 @@ import {
 import { PropertyAuditViewer } from "@/components/properties/PropertyAuditViewer";
 import { PortalLayout } from "@/components/PortalLayout";
 import { AddressEditDialog } from "@/components/AddressEditDialog";
+import { ADMIN_UNIT_CSV_TEMPLATE, parseAdminUnitCsv } from "@/lib/admin-unit-csv";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({
@@ -316,7 +318,7 @@ function PropertyDetailPage() {
   const createAssignment = useServerFn(assignUnit);
   const closeAssignment = useServerFn(endAssignment);
   const removeAssignment = useServerFn(deleteAssignment);
-  const runImport = useServerFn(importAssignments);
+  const runImport = useServerFn(importPropertyUnits);
   const removeProperty = useServerFn(deleteProperty);
 
   const fetchGeography = useServerFn(listGeography);
@@ -2180,7 +2182,7 @@ function PropertyDetailPage() {
       )}
 
       {importOpen && (
-        <Modal title="Bulk import unit assignments" onClose={() => setImportOpen(false)}>
+        <Modal title="Bulk import units" onClose={() => setImportOpen(false)}>
           <ImportForm
             propertyId={id}
             run={(payload) => runImport({ data: payload } as never) as Promise<ImportResult>}
@@ -2366,47 +2368,6 @@ type ImportResult = {
   results: { line: number; ok: boolean; message: string }[];
 };
 
-const IMPORT_TEMPLATE =
-  "unit_number,building,role,identifier,start_date,end_date,notes\n" +
-  "A-101,Block A,resident,jane@example.com,2026-01-01,,Moved in\n" +
-  "A-101,Block A,landlord,+254700000000,2025-06-01,2025-12-31,Prior owner\n";
-
-function parseCsv(text: string) {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = "";
-  let quoted = false;
-  for (let i = 0; i < text.length; i += 1) {
-    const char = text[i];
-    if (quoted) {
-      if (char === '"' && text[i + 1] === '"') {
-        cell += '"';
-        i += 1;
-      } else if (char === '"') {
-        quoted = false;
-      } else {
-        cell += char;
-      }
-      continue;
-    }
-    if (char === '"') quoted = true;
-    else if (char === ",") {
-      row.push(cell);
-      cell = "";
-    } else if (char === "\n") {
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = "";
-    } else if (char !== "\r") cell += char;
-  }
-  if (cell.length || row.length) {
-    row.push(cell);
-    rows.push(row);
-  }
-  return rows.filter((r) => r.some((c) => c.trim().length));
-}
-
 function ImportForm({
   propertyId,
   run,
@@ -2422,30 +2383,17 @@ function ImportForm({
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const readFile = async (file: File) => {
-    const text = await file.text();
-    const table = parseCsv(text);
-    if (table.length < 2) {
-      toast.error("The CSV needs a header row and at least one data row");
-      return;
-    }
-    const header = table[0]!.map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-    const required = ["unit_number", "role", "identifier", "start_date"];
-    const missing = required.filter((key) => !header.includes(key));
-    if (missing.length) {
-      toast.error(`Missing column(s): ${missing.join(", ")}`);
-      return;
-    }
-    const parsed = table.slice(1).map((line) => {
-      const record: Record<string, string | null> = {};
-      header.forEach((key, index) => {
-        const value = (line[index] ?? "").trim();
-        record[key] = value === "" ? null : value;
-      });
-      return record;
-    });
-    setRows(parsed);
-    setFileName(file.name);
+    setRows([]);
+    setFileName("");
     setResult(null);
+    try {
+      const parsed = parseAdminUnitCsv(await file.text());
+      if (parsed.length > 500) throw new Error("Import up to 500 units per file");
+      setRows(parsed);
+      setFileName(file.name);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not read CSV");
+    }
   };
 
   const submit = async (dryRun: boolean) => {
@@ -2460,8 +2408,10 @@ function ImportForm({
       if (dryRun) {
         toast.success(`Validated ${res.valid} row(s), ${res.failed} with issues`);
       } else {
-        toast.success(`Imported ${res.imported} assignment(s), ${res.failed} skipped`);
+        if (res.failed) toast.warning(`Imported ${res.imported} unit(s), ${res.failed} skipped`);
+        else toast.success(`Imported ${res.imported} unit(s)`);
         await onImported();
+        setRows([]);
       }
     } catch (err) {
       toast.error((err as Error).message || "Import failed");
@@ -2471,11 +2421,11 @@ function ImportForm({
   };
 
   const downloadTemplate = () => {
-    const blob = new Blob([IMPORT_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([ADMIN_UNIT_CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "smatrapay-unit-assignments-template.csv";
+    link.download = "smatrapay-units-template.csv";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -2483,21 +2433,23 @@ function ImportForm({
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        Columns: <span className="font-semibold">unit_number, building, role, identifier,
-        start_date, end_date, notes</span>. Identifier matches a user by email, phone or ID. Dates
-        use YYYY-MM-DD. Overlapping periods for the same unit and role are rejected.
+        Columns: <span className="font-semibold">UnitName, UnitType, Floor, Electricity meter,
+        Water meter, Gas meter, Status, Notes</span>. UnitName is required; all other columns
+        are optional. Blank Status defaults to active.
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={downloadTemplate}
           className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-accent/10"
         >
           <Download className="size-3.5" /> Template
-        </button>
+        </Button>
         <input
           type="file"
           accept=".csv,text/csv"
+          aria-label="Units CSV file"
+          disabled={busy}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) void readFile(file);
@@ -2511,22 +2463,22 @@ function ImportForm({
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
           type="button"
           disabled={busy || !rows.length}
           onClick={() => void submit(true)}
           className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-accent/10 disabled:opacity-60"
         >
           {busy && <Loader2 className="size-4 animate-spin" />} Validate only
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           disabled={busy || !rows.length}
           onClick={() => void submit(false)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
           {busy && <Loader2 className="size-4 animate-spin" />} Import
-        </button>
+        </Button>
       </div>
       {result && (
         <div className="max-h-60 overflow-auto rounded-xl border border-border">
