@@ -14,6 +14,7 @@ import { canCorrectBankPayment, meterCorrectionSchema } from "@/lib/bank-payment
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { getLandlordProperties } from "@/lib/landlord-reporting.functions";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   failed: { label: "Failed", cls: "bg-destructive/10 text-destructive" },
@@ -37,6 +38,7 @@ function toNum(s: string): number | null {
 
 export function BankPaymentsPage({ portal = "admin" }: { portal?: "admin" | "vendor" | "landlord" }) {
   const qc = useQueryClient();
+  useRealtimeRefresh('landlord-bank-payments', ['properties', 'units', 'meters', 'unit_assignments', 'bank_notifications'], [['landlord-properties'], ['landlord-property'], ['bank-payments', 'landlord']], portal === 'landlord');
   const [filter, setFilter] = useState<"problems" | "all" | "completed">("problems");
   const [quick, setQuick] = useState("");
   const [q, setQ] = useState("");
