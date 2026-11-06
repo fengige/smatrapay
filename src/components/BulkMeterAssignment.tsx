@@ -37,7 +37,7 @@ export function BulkMeterAssignment({ portal }: { portal: "admin" | "vendor" }) 
       const result = await importFn({ data: { portal, propertyId: propertyId || null, csv: text, confirm: save } });
       setRows(result.rows); setConfirmed(result.confirmed); setAccepted(false);
       if (save) {
-        await Promise.all(["admin-assignments", "vendor-scope", "vendor-units", "meters", "vendor-property", "property-detail", "landlord-properties", "landlord-property-detail"].map(key => queryClient.invalidateQueries({ queryKey: [key] })));
+        await Promise.all(["admin-assignments", "vendor-scope", "vendor-units", "meters", "vendor-property", "property-detail", "landlord-properties", "landlord-property"].map(key => queryClient.invalidateQueries({ queryKey: [key] })));
         toast.success("Import finished; review the row results");
       }
     } catch (e) { setError(e instanceof Error ? e.message : "Import failed; refresh and retry safely"); }
@@ -53,8 +53,8 @@ export function BulkMeterAssignment({ portal }: { portal: "admin" | "vendor" }) 
       <Button onClick={() => { setOpen(true); setCsv(""); clear(); }}><Upload />Import CSV</Button>
     </div>
     <Dialog open={open} onOpenChange={value => { if (!busy) setOpen(value); }}>
-      <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
-        <DialogHeader><DialogTitle>Bulk Meter Assignment</DialogTitle><DialogDescription>
+      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto [&>*]:min-w-0">
+        <DialogHeader><DialogTitle className="break-words">Bulk Meter Assignment</DialogTitle><DialogDescription>
           {portal === "admin" ? "All administrator-permitted records, or one selected property." : "Only your authorized meters, residents, units and properties."} Existing records only; assignments elsewhere are not moved.
         </DialogDescription></DialogHeader>
         <div className="space-y-3">
@@ -84,7 +84,7 @@ export function BulkMeterAssignment({ portal }: { portal: "admin" | "vendor" }) 
             {!confirmed && ready > 0 && <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={accepted} disabled={busy} onChange={e => setAccepted(e.target.checked)} />I confirm these {ready} assignments. Skipped and failed rows will not be saved.</label>}
           </>}
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Close</Button>
           {csv && <Button variant="outline" disabled={busy} onClick={() => { clear(); void validate(csv); }}>Revalidate</Button>}
           {!confirmed && <Button disabled={busy || !accepted || !ready} onClick={() => validate(csv, true)}><Upload />Confirm assignments</Button>}
