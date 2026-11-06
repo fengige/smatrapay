@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Vendor Bulk Resident Import: CSV name/email/unit/property, scoped preview and confirmation, duplicate protection, audited creation/assignment, row results and error download.
+
 - [x] Bulk meter assignment in admin/vendor portals: exact five-column scoped template, existing-reference validation, preview/confirmation, locked audited assignments, duplicate/retry skips, totals and error CSV. 36 focused tests passed including installed scope/grants; signed-in admin template/invalid preview/error download and mobile verified, no page errors, build OK.
 - [ ] Bulk assignment successful save/readback and vendor signed-in acceptance (blocked: available session is admin-only and no eligible real example was returned; no live records fabricated or assignments changed during verification).
 
