@@ -49,7 +49,7 @@ export function AssignmentFilters({
         <option value="all">All Meter Types</option>
         {METER_TYPE_OPTIONS.map((t) => (
           <option key={t} value={t}>
-            {t[0].toUpperCase() + t.slice(1)}
+            {t.charAt(0).toUpperCase() + t.slice(1)}
           </option>
         ))}
       </select>
