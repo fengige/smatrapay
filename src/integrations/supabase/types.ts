@@ -3908,7 +3908,7 @@ export type Database = {
         | "cancelled"
       sms_delivery_status: "queued" | "sent" | "failed"
       supplier_status: "Active" | "Inactive" | "Suspended"
-      unit_status: "vacant" | "occupied" | "maintenance" | "archived"
+      unit_status: "vacant" | "occupied" | "maintenance" | "archived" | "active"
       user_status: "active" | "inactive" | "suspended" | "pending"
     }
     CompositeTypes: {
@@ -4086,7 +4086,7 @@ export const Constants = {
       ],
       sms_delivery_status: ["queued", "sent", "failed"],
       supplier_status: ["Active", "Inactive", "Suspended"],
-      unit_status: ["vacant", "occupied", "maintenance", "archived"],
+      unit_status: ["vacant", "occupied", "maintenance", "archived", "active"],
       user_status: ["active", "inactive", "suspended", "pending"],
     },
   },
