@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { COUNTRY_OPTIONS, STATE_MAP, normalizeCountry, normalizeState } from "@/lib/countries";
 import { propertyWriteErrorMessage } from "@/lib/property-errors";
 import { unitInput } from "@/lib/unit-input";
+import { adminUnitImportRow } from "@/lib/admin-unit-csv";
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -511,6 +512,15 @@ export const getAddressAuditLogs = createServerFn({ method: "GET" })
     return { logs: typedLogs, actors };
   });
 
+async function insertPropertyUnit(supabase: any, patch: Record<string, unknown>, userId: string) {
+  const { data: row, error } = await supabase.from("units")
+    .insert({ ...patch, created_by: userId, updated_by: userId })
+    .select("id").single();
+  if (error) throw new Error(propertyWriteErrorMessage(error));
+  await adjustPropertyUnitCount(supabase, patch["property_id"] as string, 1, userId);
+  return { id: row.id };
+}
+
 export const upsertUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => unitInput.extend({ id: uuid.optional() }).parse(data))
@@ -526,14 +536,48 @@ export const upsertUnit = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { id };
     }
-    const { data: row, error } = await supabase
-      .from("units")
-      .insert({ ...patch, created_by: userId, updated_by: userId } as never)
-      .select("id")
-      .single();
+    return insertPropertyUnit(supabase, patch, userId);
+  });
+
+export const importPropertyUnits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({
+    property_id: uuid, dryRun: z.boolean().optional(), rows: z.array(z.unknown()).min(1).max(500),
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabase, userId } = context;
+    const { error: propertyError } = await supabase.from("properties").select("id").eq("id", data.property_id).single();
+    if (propertyError) throw new Error("Property not found");
+    const { data: existing, error } = await supabase.from("units").select("unit_number").eq("property_id", data.property_id);
     if (error) throw new Error(error.message);
-    await adjustPropertyUnitCount(supabase, patch.property_id, 1, userId);
-    return { id: row.id };
+    const names = new Set((existing ?? []).map((u) => u.unit_number.trim().toLowerCase()));
+    const results: { line: number; ok: boolean; message: string }[] = [];
+    let imported = 0;
+    for (const [index, raw] of data.rows.entries()) {
+      const parsed = adminUnitImportRow.safeParse({ ...(raw && typeof raw === "object" ? raw : {}), property_id: data.property_id });
+      if (!parsed.success) {
+        results.push({ line: index + 1, ok: false, message: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") });
+        continue;
+      }
+      const name = parsed.data.unit_number.toLowerCase();
+      if (names.has(name)) {
+        results.push({ line: index + 1, ok: false, message: "UnitName already exists in this property or CSV" });
+        continue;
+      }
+      names.add(name);
+      try {
+        if (!data.dryRun) {
+          await insertPropertyUnit(supabase, parsed.data, userId);
+          imported += 1;
+        }
+        results.push({ line: index + 1, ok: true, message: `${parsed.data.unit_number} (${parsed.data.status})` });
+      } catch (err) {
+        results.push({ line: index + 1, ok: false, message: err instanceof Error ? err.message : "Unit import failed" });
+      }
+    }
+    const valid = results.filter((r) => r.ok).length;
+    return { dryRun: Boolean(data.dryRun), imported, valid, failed: results.length - valid, results };
   });
 
 const bulkInput = z.object({
