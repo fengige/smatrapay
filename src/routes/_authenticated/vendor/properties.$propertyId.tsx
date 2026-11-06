@@ -356,13 +356,15 @@ function VendorPropertyDetails() {
                 <table className="w-full min-w-[900px] text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2 text-left">Unit</th>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Floor</th>
-                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">UnitName</th>
                       <th className="px-3 py-2 text-left">Resident</th>
-                      <th className="px-3 py-2 text-left">Owner</th>
-                      <th className="px-3 py-2 text-left">Meters</th>
+                      <th className="px-3 py-2 text-left">UnitType</th>
+                      <th className="px-3 py-2 text-left">Floor</th>
+                      <th className="px-3 py-2 text-left">Electricity meter</th>
+                      <th className="px-3 py-2 text-left">Water meter</th>
+                      <th className="px-3 py-2 text-left">Gas meter</th>
+                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">Notes</th>
                       <th className="px-3 py-2 text-left">Created</th>
                     </tr>
                   </thead>
