@@ -50,7 +50,7 @@ export const importAssignmentCsv = createServerFn({ method: "POST" })
       if (row.status !== "ready" || !row.target) continue;
       const t = row.target;
       const { data: result, error: saveError } = await context.supabase.rpc("import_meter_unit_assignment", {
-        p_portal: data.portal, p_meter: t.meter, p_unit: t.unit, p_property: t.property, p_resident: t.resident, p_type: t.type,
+        p_portal: data.portal, p_meter: t.meter, p_unit: t.unit, p_property: t.property, p_resident: t.resident as string, p_type: t.type,
       });
       if (saveError) {
         row.status = "failed";

@@ -5,7 +5,7 @@ export const ASSIGNMENT_COLUMNS = ["Meter", "Type", "Resident", "Unit", "Propert
 export const ASSIGNMENT_LIMIT = 200;
 export type CsvValues = Record<(typeof ASSIGNMENT_COLUMNS)[number], string>;
 export type CsvRow = { row: number; values: CsvValues; error?: string };
-export type AssignmentRow = CsvRow & { status: "ready" | "skipped" | "failed" | "successful"; reason: string; target?: { meter: string; unit: string; property: string; resident: string; type: string } };
+export type AssignmentRow = CsvRow & { status: "ready" | "skipped" | "failed" | "successful"; reason: string; target?: { meter: string; unit: string; property: string; resident: string | null; type: string } };
 export type References = {
   properties: { id: string; name: string; code: string | null; status: string }[];
   units: { id: string; number: string; propertyId: string; status: string; electricity: string | null; water: string | null; gas: string | null }[];
@@ -44,7 +44,7 @@ export function validateAssignments(rows: CsvRow[], refs: References, propertyId
   return rows.map(row => {
     const fail = (reason: string): AssignmentRow => ({ ...row, status: "failed", reason });
     if (row.error) return fail(row.error);
-    for (const col of ASSIGNMENT_COLUMNS) if (!row.values[col]) return fail(`${col} is required`);
+    for (const col of ASSIGNMENT_COLUMNS) if (col !== "Resident" && !row.values[col]) return fail(`${col} is required`);
     const v = row.values;
     if (!["electricity", "water", "gas"].includes(norm(v.Type))) return fail("Type must be Electricity, Water or Gas");
     const meter = find(refs.meters, v.Meter, m => [m.number]);
@@ -57,13 +57,14 @@ export function validateAssignments(rows: CsvRow[], refs: References, propertyId
     if (!property || (propertyId && property.id !== propertyId)) return fail("Property not found, ambiguous or outside selected scope; use its ID");
     const unit = find(refs.units.filter(u => u.propertyId === property.id), v.Unit, u => [u.number]);
     if (!unit) return fail("Unit not found or ambiguous in this property; use its ID");
-    const resident = find(refs.residents, v.Resident, r => [r.email, r.name]);
-    if (!resident) return fail("Resident not found, ambiguous or outside your scope; use email or ID");
-    if (!refs.residents.some(r => r.id === resident.id && r.unitId === unit.id)) return fail("Resident is not currently assigned to this unit/property");
-    if (norm(meter.status) !== "active" || norm(resident.status) !== "active" || property.status === "archived" || ["archived", "maintenance"].includes(unit.status)) return fail("Meter, resident, unit or property is not eligible/active");
+    // Resident is optional: blank assigns the meter to the unit only.
+    const resident = v.Resident ? find(refs.residents, v.Resident, r => [r.email, r.name]) : null;
+    if (v.Resident && !resident) return fail("Resident not found, ambiguous or outside your scope; use email or ID, or leave Resident blank");
+    if (resident && !refs.residents.some(r => r.id === resident.id && r.unitId === unit.id)) return fail("Resident is not currently assigned to this unit/property");
+    if (norm(meter.status) !== "active" || (resident && norm(resident.status) !== "active") || property.status === "archived" || ["archived", "maintenance"].includes(unit.status)) return fail("Meter, resident, unit or property is not eligible/active");
     const recorded = unit[norm(v.Type) as "electricity" | "water" | "gas"];
     if (recorded && norm(recorded) !== norm(meter.number)) return fail("Unit has a different meter number recorded for this type");
-    const target = { meter: meter.id, unit: unit.id, property: property.id, resident: resident.id, type: meter.type };
+    const target = { meter: meter.id, unit: unit.id, property: property.id, resident: resident?.id ?? null, type: meter.type };
     if (meter.unitId === unit.id) return { ...row, target, status: "skipped", reason: "Already assigned to this unit" };
     if (meter.unitId) return fail("Meter already assigned elsewhere; use Change assignment");
     if (refs.occupied.some(m => m.unitId === unit.id && norm(m.type) === norm(meter.type))) return fail("Unit already has a meter of this type");
