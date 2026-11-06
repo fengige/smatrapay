@@ -3787,6 +3787,17 @@ export type Database = {
         Returns: Json
       }
       bulk_add_meters: { Args: { p_payload: Json }; Returns: Json }
+      complete_vendor_resident_import: {
+        Args: {
+          p_actor: string
+          p_email: string
+          p_name: string
+          p_property: string
+          p_resident: string
+          p_unit: string
+        }
+        Returns: undefined
+      }
       confirm_payg_payment: {
         Args: {
           p_attempt: string
