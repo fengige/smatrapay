@@ -1,3 +1,4 @@
 - Landlord reporting uses caller-bound property/unit/meter helpers and RLS across vendors; shared transaction filters and integer-decimal aggregation drive lists, reports and exports without duplicate records or client-supplied owner identity.
 - Landlord property/details and bank-payment pages reuse the lifecycle-managed realtime refresh hook and published source tables; changes invalidate scoped server reads rather than copying ownership or payment records.
 - Bulk meter CSV uses shared reference validation and caller-authorized locked assignment RPCs to retain meter/unit relationships and audit triggers; preview and save revalidate scope rather than trusting client-resolved targets.
+- Vendor resident lists use caller-bound eligible-ID RPCs and paged RLS profile reads; list visibility does not grant additional account management authority, and privileged history is actor-scoped.

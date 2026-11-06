@@ -87,12 +87,11 @@ async function scopeUnits(supabase: Client) {
   return { unitMap, propertyMap, zoneMap };
 }
 
-/** Throws unless the resident is visible to the caller's RLS scope. */
+/** Keep existing management authority separate from newly expanded list visibility. */
 async function assertResidentInScope(supabase: Client, residentId: string) {
   const { data, error } = await supabase
-    .from("users")
-    .select("id")
-    .eq("id", residentId)
+    .rpc("vendor_resident_management_ids")
+    .eq("user_id", residentId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Access denied");
@@ -374,12 +373,14 @@ export const getVendorResident = createServerFn({ method: "GET" })
         .from("user_audit_logs")
         .select("id, action, changes, actor_id, created_at")
         .eq("user_id", data.id)
+        .eq("actor_id", vendorId)
         .order("created_at", { ascending: false })
         .limit(200),
       supabaseAdmin
         .from("assignment_audit_logs")
         .select("id, action, changes, actor_id, created_at, old_unit_id, new_unit_id")
         .eq("user_id", data.id)
+        .eq("actor_id", vendorId)
         .order("created_at", { ascending: false })
         .limit(200),
     ]);
