@@ -3830,6 +3830,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_meter_unit_assignment: {
+        Args: {
+          p_meter: string
+          p_portal: string
+          p_property: string
+          p_resident: string
+          p_type: string
+          p_unit: string
+        }
+        Returns: Json
+      }
       landlord_managing_vendors: {
         Args: never
         Returns: {
