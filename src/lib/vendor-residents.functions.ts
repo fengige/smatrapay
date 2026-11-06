@@ -4,6 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
 import { residentUsername, trustedRecoveryUrl } from "./resident-password";
 import { getRequestHeader } from "@tanstack/react-start/server";
+import { readVendorResidentListIds } from "./vendor-resident-list.server";
+import { readAll } from "./landlord-scope.server";
 
 /**
  * Vendor-scoped resident management.
@@ -85,12 +87,11 @@ async function scopeUnits(supabase: Client) {
   return { unitMap, propertyMap, zoneMap };
 }
 
-/** Throws unless the resident is visible to the caller's RLS scope. */
+/** Keep existing management authority separate from newly expanded list visibility. */
 async function assertResidentInScope(supabase: Client, residentId: string) {
   const { data, error } = await supabase
-    .from("users")
-    .select("id")
-    .eq("id", residentId)
+    .rpc("vendor_resident_management_ids")
+    .eq("user_id", residentId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Access denied");
@@ -124,23 +125,22 @@ export const listVendorResidents = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase } = context;
     const vendorId = await assertVendor(context as never);
+    const eligibleIds = await readVendorResidentListIds(supabase as never);
+    const eligible = new Set(eligibleIds);
 
-    const { data: assignments, error } = await supabase
+    const assignments = await readAll(() => supabase
       .from("unit_assignments")
       .select("id, unit_id, user_id, start_date, end_date, role")
       .eq("role", "resident")
-      .order("start_date", { ascending: false });
-    if (error) throw new Error(error.message);
+      .order("start_date", { ascending: false }).order("id"));
 
-    const active = ((assignments ?? []) as any[]).filter((a) => !a.end_date);
-    const residentIds = [...new Set(active.map((a) => a.user_id))];
-
-    const { data: users } = residentIds.length
-      ? await supabase
-          .from("users")
-          .select("id, name, email, username, phone, status, profile_image, created_at, id_number, address")
-          .in("id", residentIds)
-      : { data: [] as any[] };
+    const active = assignments.filter((a) => !a.end_date && eligible.has(a.user_id));
+    const users: any[] = [];
+    for (let start = 0; start < eligibleIds.length; start += 500) {
+      users.push(...await readAll(() => supabase.from("users")
+        .select("id, name, email, username, phone, status, profile_image, created_at, id_number, address")
+        .in("id", eligibleIds.slice(start, start + 500)).order("id")));
+    }
 
     const { unitMap } = await scopeUnits(supabase as never);
 
@@ -186,9 +186,7 @@ export const listVendorResidents = createServerFn({ method: "GET" })
 
     // Residents in scope with no active unit assignment (e.g. just created).
     const seen = new Set(rows.map((r) => r.id));
-    const { data: scopeUsers } = await supabase
-      .from("users")
-      .select("id, name, email, username, phone, status, profile_image, created_at, id_number, address");
+    const scopeUsers = users;
     for (const u of ((scopeUsers ?? []) as any[]).filter((u) => !seen.has(u.id))) {
       rows.push({
         id: u.id,
@@ -216,18 +214,8 @@ export const listVendorResidents = createServerFn({ method: "GET" })
       });
     }
 
-    // Only users that actually hold the resident role belong in this list.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const candidateIds = [...new Set(rows.map((r) => r.id))];
-    const { data: roleRows } = candidateIds.length
-      ? await supabaseAdmin
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "resident")
-          .in("user_id", candidateIds)
-      : { data: [] as any[] };
-    const residentRoleIds = new Set(((roleRows ?? []) as any[]).map((r) => r.user_id));
-    const filtered = rows.filter((r) => residentRoleIds.has(r.id));
+    // The caller-bound RPC already verified resident roles and the requested relationship.
+    const filtered = rows.filter((r) => eligible.has(r.id));
 
     filtered.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
     const { residentAvatarUrls } = await import("./resident-avatar.server");
@@ -385,12 +373,14 @@ export const getVendorResident = createServerFn({ method: "GET" })
         .from("user_audit_logs")
         .select("id, action, changes, actor_id, created_at")
         .eq("user_id", data.id)
+        .eq("actor_id", vendorId)
         .order("created_at", { ascending: false })
         .limit(200),
       supabaseAdmin
         .from("assignment_audit_logs")
         .select("id, action, changes, actor_id, created_at, old_unit_id, new_unit_id")
         .eq("user_id", data.id)
+        .eq("actor_id", vendorId)
         .order("created_at", { ascending: false })
         .limit(200),
     ]);
