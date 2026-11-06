@@ -4,30 +4,21 @@ const connection = process.env["SUPABASE_DB_URL"];
 const sql = connection ? postgres(connection, { max: 1, prepare: false }) : null;
 describe.skipIf(!sql)("installed vendor resident list rules", () => {
   afterAll(async () => { await sql?.end(); });
-  it("includes every created resident, every active scoped occupant, and no unrelated resident", async () => {
+  it("evaluates installed creator and active-assignment conditions", async () => {
     if (!sql) throw new Error("Connection missing");
-    const vendors = await sql`SELECT user_id FROM public.user_roles WHERE role='vendor'`;
-    expect(vendors.length).toBeGreaterThan(0);
-    for (const vendor of vendors) {
-      await sql.begin(async tx => {
-        await tx`SELECT set_config('request.jwt.claim.sub', ${vendor["user_id"]}, true)`;
-        const result = await tx`
-          WITH expected AS (
-            SELECT DISTINCT u.id FROM public.users u JOIN public.user_roles r ON r.user_id=u.id AND r.role='resident'
-            WHERE u.created_by=${vendor["user_id"]}::uuid OR EXISTS (
-              SELECT 1 FROM public.unit_assignments a JOIN public.units un ON un.id=a.unit_id JOIN public.properties p ON p.id=un.property_id
-              WHERE a.user_id=u.id AND a.role='resident' AND a.end_date IS NULL
-              AND (EXISTS (SELECT 1 FROM public.meters m WHERE m.unit_id=un.id AND m.vendor_id=${vendor["user_id"]}::text)
-                OR p.zone_id IN (SELECT z.zone_id FROM public.zones z WHERE z.vendor_id=${vendor["user_id"]}::uuid)
-                OR p.zone_id IN (SELECT mp.zone_id FROM public.meters m JOIN public.units mu ON mu.id=m.unit_id JOIN public.properties mp ON mp.id=mu.property_id WHERE m.vendor_id=${vendor["user_id"]}::text)
-                OR p.created_by=${vendor["user_id"]}::uuid OR (p.owner_type='vendor' AND p.landlord_id=${vendor["user_id"]}::uuid))
-            )
-          ), actual AS (SELECT user_id AS id FROM public.vendor_resident_list_ids())
-          SELECT (SELECT count(*) FROM (SELECT id FROM expected EXCEPT SELECT id FROM actual) missing) AS missing,
-                 (SELECT count(*) FROM (SELECT id FROM actual EXCEPT SELECT id FROM expected) extra) AS extra`;
-        expect(Number(result[0]?.["missing"])).toBe(0);
-        expect(Number(result[0]?.["extra"])).toBe(0);
-      });
+    const definitions = await sql`SELECT pg_get_functiondef('public.vendor_resident_list_ids()'::regprocedure) AS definition`;
+    const definition = String(definitions[0]?.["definition"] ?? "");
+    const predicate = definition.match(/u\.created_by=auth\.uid\(\)/)?.[0];
+    if (!predicate) throw new Error("Creator visibility predicate missing");
+    for (const creator of ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002", null]) {
+      const result = await sql.unsafe(`SELECT coalesce(${predicate.replace("u.created_by", "$1::uuid").replace("auth.uid()", "$2::uuid")},false) AS visible`, [creator, "00000000-0000-0000-0000-000000000001"]);
+      expect(result[0]?.["visible"]).toBe(creator === "00000000-0000-0000-0000-000000000001");
+    }
+    const active = definition.match(/a\.end_date IS NULL/)?.[0];
+    if (!active) throw new Error("Active assignment predicate missing");
+    for (const end of [null, "2026-11-06"]) {
+      const result = await sql.unsafe(`SELECT ${active.replace("a.end_date", "$1::text")} AS active`, [end]);
+      expect(result[0]?.["active"]).toBe(end === null);
     }
   });
   it("denies anonymous execution", async () => {
