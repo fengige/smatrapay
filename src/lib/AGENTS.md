@@ -2,3 +2,4 @@
 - Landlord property/details and bank-payment pages reuse the lifecycle-managed realtime refresh hook and published source tables; changes invalidate scoped server reads rather than copying ownership or payment records.
 - Bulk meter CSV uses shared reference validation and caller-authorized locked assignment RPCs to retain meter/unit relationships and audit triggers; preview and save revalidate scope rather than trusting client-resolved targets.
 - Vendor resident lists use caller-bound eligible-ID RPCs and paged RLS profile reads; list visibility does not grant additional account management authority, and privileged history is actor-scoped.
+- Vendor resident CSV import resolves scoped references before provider account creation, then uses a service-only locked completion transaction for profile/role/assignment/audit; retries skip matching vendor-created accounts and failed completions compensate new accounts.

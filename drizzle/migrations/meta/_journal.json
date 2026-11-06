@@ -302,6 +302,20 @@
       "when": 1793973627941,
       "tag": "0042_preserve_vendor_resident_management_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793973995679,
+      "tag": "0043_vendor_resident_csv_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793974095264,
+      "tag": "0044_resident_import_profile_creator",
+      "breakpoints": true
     }
   ]
 }

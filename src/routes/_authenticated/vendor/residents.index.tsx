@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
+import { BulkResidentImport } from "@/components/vendor/BulkResidentImport";
 import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vendor/VendorUI";
 import { VendorModal } from "@/components/vendor/VendorModal";
 import {
@@ -381,6 +382,7 @@ function VendorResidentsPage() {
     >
       <div className="space-y-5 pb-6">
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <BulkResidentImport />
           <button
             type="button"
             onClick={exportCsv}
