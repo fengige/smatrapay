@@ -17,7 +17,10 @@ describe.skipIf(!sql)("installed vendor resident list rules", () => {
             WHERE u.created_by=${vendor["user_id"]}::uuid OR EXISTS (
               SELECT 1 FROM public.unit_assignments a JOIN public.units un ON un.id=a.unit_id JOIN public.properties p ON p.id=un.property_id
               WHERE a.user_id=u.id AND a.role='resident' AND a.end_date IS NULL
-              AND (un.id IN (SELECT unit_id FROM private.vendor_scope_unit_ids(${vendor["user_id"]}::uuid)) OR p.created_by=${vendor["user_id"]}::uuid OR (p.owner_type='vendor' AND p.landlord_id=${vendor["user_id"]}::uuid))
+              AND (EXISTS (SELECT 1 FROM public.meters m WHERE m.unit_id=un.id AND m.vendor_id=${vendor["user_id"]}::text)
+                OR p.zone_id IN (SELECT z.zone_id FROM public.zones z WHERE z.vendor_id=${vendor["user_id"]}::uuid)
+                OR p.zone_id IN (SELECT mp.zone_id FROM public.meters m JOIN public.units mu ON mu.id=m.unit_id JOIN public.properties mp ON mp.id=mu.property_id WHERE m.vendor_id=${vendor["user_id"]}::text)
+                OR p.created_by=${vendor["user_id"]}::uuid OR (p.owner_type='vendor' AND p.landlord_id=${vendor["user_id"]}::uuid))
             )
           ), actual AS (SELECT user_id AS id FROM public.vendor_resident_list_ids())
           SELECT (SELECT count(*) FROM (SELECT id FROM expected EXCEPT SELECT id FROM actual) missing) AS missing,
