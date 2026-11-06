@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { AssignmentFilters } from "@/components/AssignmentFilters";
+import { DEFAULT_ASSIGNMENT_FILTER, matchesAssignmentFilter, scopedPropertyOptions } from "@/lib/assignment-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -56,6 +58,7 @@ function VendorAssignments() {
 
   const [q, setQ] = useState("");
   const [state, setState] = useState("all");
+  const [filter, setFilter] = useState(DEFAULT_ASSIGNMENT_FILTER);
   const [page, setPage] = useState(1);
   const [dialog, setDialog] = useState<{ meterId: string; meterNumber: string; unitId: string | null } | null>(
     null,
@@ -95,12 +98,14 @@ function VendorAssignments() {
     return meters.filter((m) => {
       if (state === "assigned" && !m.unit_id) return false;
       if (state === "unassigned" && m.unit_id) return false;
+      if (!matchesAssignmentFilter(m, filter)) return false;
       if (!needle) return true;
       return [m.meter_number, m.resident_name, m.property_name, m.unit_label].some((v) =>
         (v ?? "").toLowerCase().includes(needle),
       );
     });
-  }, [meters, q, state]);
+  }, [meters, q, state, filter]);
+  const propertyOptions = useMemo(() => scopedPropertyOptions(meters), [meters]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -147,6 +152,17 @@ function VendorAssignments() {
               <option value="assigned">Assigned</option>
               <option value="unassigned">Unassigned</option>
             </select>
+            <AssignmentFilters
+              value={filter}
+              properties={propertyOptions}
+              onChange={(next) => {
+                setFilter(next);
+                setPage(1);
+              }}
+            />
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {rows.length} of {meters.length} meters
+            </span>
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-border bg-card">
