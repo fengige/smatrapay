@@ -3877,6 +3877,12 @@ export type Database = {
           user_id: string
         }[]
       }
+      vendor_resident_management_ids: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
       vendor_zone_ids: {
         Args: { _vendor: string }
         Returns: {
