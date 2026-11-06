@@ -5,9 +5,11 @@ import { Loader2 } from 'lucide-react';
 import { PortalLayout } from './PortalLayout';
 import { Button } from './ui/button';
 import { getLandlordProperties } from '@/lib/landlord-reporting.functions';
+import { useRealtimeRefresh } from '@/hooks/use-realtime-refresh';
 
 export function LandlordPropertiesPage() {
   const fn = useServerFn(getLandlordProperties);
+  useRealtimeRefresh('landlord-properties', ['properties', 'units', 'meters', 'unit_assignments'], [['landlord-properties'], ['landlord-property'], ['bank-payments', 'landlord']]);
   const query = useQuery({ queryKey: ['landlord-properties'], queryFn: () => fn() });
   const properties = query.data?.properties ?? [];
   const units = query.data?.units ?? [];

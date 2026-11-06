@@ -22,6 +22,7 @@ import {
   titleCase,
 } from './vendor/VendorUI';
 import { getLandlordPropertyDetail } from '@/lib/landlord-reporting.functions';
+import { useRealtimeRefresh } from '@/hooks/use-realtime-refresh';
 
 const TABS = [
   { id: 'units', label: 'Units', icon: Layers },
@@ -40,6 +41,7 @@ const mapsKey = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY'
 
 export function LandlordPropertyDetailPage({ propertyId }: { propertyId: string }) {
   const fn = useServerFn(getLandlordPropertyDetail);
+  useRealtimeRefresh('landlord-property-detail', ['properties', 'units', 'meters', 'unit_assignments'], [['landlord-properties'], ['landlord-property', propertyId], ['bank-payments', 'landlord']]);
   const { data, isLoading, error } = useQuery({
     queryKey: ['landlord-property', propertyId],
     queryFn: () => fn({ data: { propertyId } }),

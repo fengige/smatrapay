@@ -253,6 +253,13 @@
       "when": 1793951626318,
       "tag": "0035_allow_active_unit_import_status",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793951831784,
+      "tag": "0036_landlord_property_live_updates",
+      "breakpoints": true
     }
   ]
 }
