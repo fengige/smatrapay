@@ -578,6 +578,7 @@ export const getVendorProperty = createServerFn({ method: "GET" })
           floor: (u.floor ?? null) as string | null,
           building: (u.building ?? null) as string | null,
           bedrooms: (u.bedrooms ?? null) as number | null,
+          notes: (u.notes ?? null) as string | null,
           status: (u.status ?? "vacant") as string,
           resident_id: (current?.user_id ?? null) as string | null,
           resident_name: (current ? (peopleMap.get(current.user_id)?.name ?? null) : null) as
