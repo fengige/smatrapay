@@ -3871,6 +3871,12 @@ export type Database = {
         Args: { _vendor: string; _zone: number }
         Returns: boolean
       }
+      vendor_resident_list_ids: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
       vendor_zone_ids: {
         Args: { _vendor: string }
         Returns: {

@@ -288,6 +288,13 @@
       "when": 1793972783408,
       "tag": "0040_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793973586061,
+      "tag": "0041_vendor_resident_list_scope",
+      "breakpoints": true
     }
   ]
 }
