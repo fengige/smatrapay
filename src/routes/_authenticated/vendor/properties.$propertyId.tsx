@@ -356,56 +356,65 @@ function VendorPropertyDetails() {
                 <table className="w-full min-w-[900px] text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2 text-left">Unit</th>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Floor</th>
-                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">UnitName</th>
                       <th className="px-3 py-2 text-left">Resident</th>
-                      <th className="px-3 py-2 text-left">Owner</th>
-                      <th className="px-3 py-2 text-left">Meters</th>
+                      <th className="px-3 py-2 text-left">UnitType</th>
+                      <th className="px-3 py-2 text-left">Floor</th>
+                      <th className="px-3 py-2 text-left">Electricity meter</th>
+                      <th className="px-3 py-2 text-left">Water meter</th>
+                      <th className="px-3 py-2 text-left">Gas meter</th>
+                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">Notes</th>
                       <th className="px-3 py-2 text-left">Created</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.units.map((u) => (
-                      <tr key={u.id} className="border-b border-border/60">
-                        <td className="px-3 py-2 font-bold text-foreground">{u.unit_number}</td>
-                        <td className="px-3 py-2">{u.unit_type ?? "—"}</td>
-                        <td className="px-3 py-2">{u.floor ?? "—"}</td>
-                        <td className="px-3 py-2">
-                          <StatusBadge value={u.status} />
-                        </td>
-                        <td className="px-3 py-2">
-                          {u.resident_id ? (
-                            <Link
-                              to="/vendor/residents/$residentId"
-                              params={{ residentId: u.resident_id }}
-                              className="hover:underline"
-                            >
-                              {u.resident_name ?? "View resident"}
-                            </Link>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="px-3 py-2">{u.owner_name ?? "—"}</td>
-                        <td className="px-3 py-2">
-                          {u.meters.length === 0
-                            ? "—"
-                            : u.meters.map((m) => (
-                                <Link
-                                  key={m.id}
-                                  to="/vendor/meters/$meterId"
-                                  params={{ meterId: m.id }}
-                                  className="mr-2 hover:underline"
-                                >
-                                  {m.meter_number}
-                                </Link>
-                              ))}
-                        </td>
-                        <td className="px-3 py-2">{formatDate(u.created_at)}</td>
-                      </tr>
-                    ))}
+                    {data.units.map((u) => {
+                      const meterCell = (type: string) => {
+                        const meter = u.meters.find((m) => m.type === type);
+                        return meter ? (
+                          <Link
+                            to="/vendor/meters/$meterId"
+                            params={{ meterId: meter.id }}
+                            className="hover:underline"
+                          >
+                            {meter.meter_number}
+                          </Link>
+                        ) : (
+                          "—"
+                        );
+                      };
+                      return (
+                        <tr key={u.id} className="border-b border-border/60">
+                          <td className="px-3 py-2 font-bold text-foreground">{u.unit_number}</td>
+                          <td className="px-3 py-2">
+                            {u.resident_id ? (
+                              <Link
+                                to="/vendor/residents/$residentId"
+                                params={{ residentId: u.resident_id }}
+                                className="hover:underline"
+                              >
+                                {u.resident_name ?? "View resident"}
+                              </Link>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="px-3 py-2">{u.unit_type ?? "—"}</td>
+                          <td className="px-3 py-2">{u.floor ?? "—"}</td>
+                          <td className="px-3 py-2">{meterCell("electricity")}</td>
+                          <td className="px-3 py-2">{meterCell("water")}</td>
+                          <td className="px-3 py-2">{meterCell("gas")}</td>
+                          <td className="px-3 py-2">
+                            <StatusBadge value={u.status} />
+                          </td>
+                          <td className="max-w-[220px] truncate px-3 py-2" title={u.notes ?? undefined}>
+                            {u.notes ?? "—"}
+                          </td>
+                          <td className="px-3 py-2">{formatDate(u.created_at)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
