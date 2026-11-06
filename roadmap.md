@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Automatically refresh landlord My Properties/details and Bank Payments on vendor unit/meter changes; preserve relationship scope and verify live refresh.
+
 - [x] Administrator property Units CSV import now uses unit/meter fields, mandatory UnitName and active Status default. 22 tests passed; signed-in admin dialog and server validation verified (valid name defaults active; missing name rejected), no page errors, build OK. No live units imported during checks.
 
 - [x] Landlord portal: expandable Payments, Properties, Reports & Analysis; scoped recent tokens/vending/bank filters; cross-vendor linked properties/units/meters; reconciled daily/monthly reports with PDF/Excel exports. 37 focused tests passed, including installed ownership/grants and actual file generation; build OK. Available vendor session was denied landlord access without page errors. No live payment/retry or publishing performed.
