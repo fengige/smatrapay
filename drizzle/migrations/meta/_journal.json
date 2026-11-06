@@ -274,6 +274,13 @@
       "when": 1793957980703,
       "tag": "0038_bulk_meter_assignment_scoped_references",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793958173401,
+      "tag": "0039_bulk_meter_assignment_null_guard",
+      "breakpoints": true
     }
   ]
 }
