@@ -95,7 +95,7 @@ function VendorAssignments() {
       if (state === "assigned" && !m.unit_id) return false;
       if (state === "unassigned" && m.unit_id) return false;
       if (!needle) return true;
-      return [m.meter_number, m.resident_name, m.zone_name, m.unit_label].some((v) =>
+      return [m.meter_number, m.resident_name, m.property_name, m.unit_label].some((v) =>
         (v ?? "").toLowerCase().includes(needle),
       );
     });
@@ -127,7 +127,7 @@ function VendorAssignments() {
                   setQ(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Search meter, resident or zone"
+                placeholder="Search meter, resident, unit or property"
                 aria-label="Search assignments"
                 className="min-w-0 flex-1 bg-transparent outline-none"
               />
@@ -155,7 +155,7 @@ function VendorAssignments() {
                   <th className="px-3 py-2">Type</th>
                   <th className="px-3 py-2">Resident</th>
                   <th className="px-3 py-2">Unit</th>
-                  <th className="px-3 py-2">Zone</th>
+                  <th className="px-3 py-2">Property</th>
                   <th className="px-3 py-2">Assignment</th>
                   <th className="px-3 py-2">Installation</th>
                   <th className="px-3 py-2">Added</th>
@@ -169,7 +169,7 @@ function VendorAssignments() {
                     <td className="px-3 py-2">{titleCase(m.type)}</td>
                     <td className="px-3 py-2">{m.resident_name ?? "—"}</td>
                     <td className="px-3 py-2">{m.unit_label ?? "—"}</td>
-                    <td className="px-3 py-2">{m.zone_name ?? "—"}</td>
+                    <td className="px-3 py-2">{m.property_name ?? "—"}</td>
                     <td className="px-3 py-2">
                       <StatusBadge value={m.unit_id ? "assigned" : "unassigned"} />
                     </td>
