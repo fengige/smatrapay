@@ -14,10 +14,10 @@ describe.skipIf(!sql)("installed vendor resident list rules", () => {
         const result = await tx`
           WITH expected AS (
             SELECT DISTINCT u.id FROM public.users u JOIN public.user_roles r ON r.user_id=u.id AND r.role='resident'
-            WHERE u.created_by=auth.uid() OR EXISTS (
+            WHERE u.created_by=${vendor["user_id"]}::uuid OR EXISTS (
               SELECT 1 FROM public.unit_assignments a JOIN public.units un ON un.id=a.unit_id JOIN public.properties p ON p.id=un.property_id
               WHERE a.user_id=u.id AND a.role='resident' AND a.end_date IS NULL
-              AND (un.id IN (SELECT unit_id FROM private.vendor_scope_unit_ids(auth.uid())) OR p.created_by=auth.uid() OR (p.owner_type='vendor' AND p.landlord_id=auth.uid()))
+              AND (un.id IN (SELECT unit_id FROM private.vendor_scope_unit_ids(${vendor["user_id"]}::uuid)) OR p.created_by=${vendor["user_id"]}::uuid OR (p.owner_type='vendor' AND p.landlord_id=${vendor["user_id"]}::uuid))
             )
           ), actual AS (SELECT user_id AS id FROM public.vendor_resident_list_ids())
           SELECT (SELECT count(*) FROM (SELECT id FROM expected EXCEPT SELECT id FROM actual) missing) AS missing,
