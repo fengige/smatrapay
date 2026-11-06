@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Bulk meter assignment in admin/vendor portals: scoped reference validation, template, preview/confirmation, audited retry-safe assignments and error CSV; verify tests and signed-in flow.
+- [x] Bulk meter assignment in admin/vendor portals: exact five-column scoped template, existing-reference validation, preview/confirmation, locked audited assignments, duplicate/retry skips, totals and error CSV. 36 focused tests passed including installed scope/grants; signed-in admin template/invalid preview/error download and mobile verified, no page errors, build OK.
+- [ ] Bulk assignment successful save/readback and vendor signed-in acceptance (blocked: available session is admin-only and no eligible real example was returned; no live records fabricated or assignments changed during verification).
 
 - [x] Automatic refresh added to landlord My Properties/details and Bank Payments for units/meters/property/assignment/payment changes; source tables published with existing RLS unchanged. 27 refresh/scope tests passed, publication verified, build OK; available admin session correctly denied landlord pages with no page errors.
 - [ ] Verify vendor creation → open landlord page updates end-to-end (blocked: available session has no landlord role; authorized landlord session required). No units, meters or payments fabricated for testing.

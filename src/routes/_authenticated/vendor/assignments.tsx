@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Search } from "lucide-react";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
+import { BulkMeterAssignment } from "@/components/BulkMeterAssignment";
 import { assignVendorMeter, listVendorUnits, unassignVendorMeter } from "@/lib/vendor.functions";
 import {
   EmptyState,
@@ -110,6 +111,7 @@ function VendorAssignments() {
       title="Meter assignments"
       description="Meter-to-unit and meter-to-resident assignments inside your zones."
     >
+      <div className="mb-4"><BulkMeterAssignment portal="vendor" /></div>
       {error ? (
         <ErrorBlock message={(error as Error).message} />
       ) : isLoading ? (

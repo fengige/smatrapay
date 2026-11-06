@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import { PortalLayout } from "@/components/PortalLayout";
+import { BulkMeterAssignment } from "@/components/BulkMeterAssignment";
 import {
   bulkAssignMeters,
   bulkUnassignMeters,
@@ -146,6 +147,7 @@ function AdminAssignments() {
       title="Meter Assignments"
       description="Meter-to-unit assignments across every vendor, property and zone."
     >
+      <div className="mb-4"><BulkMeterAssignment portal="admin" /></div>
       {error ? (
         <ErrorBlock message={(error as Error).message} />
       ) : isLoading ? (
