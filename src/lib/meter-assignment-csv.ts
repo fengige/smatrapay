@@ -44,7 +44,7 @@ export function validateAssignments(rows: CsvRow[], refs: References, propertyId
   return rows.map(row => {
     const fail = (reason: string): AssignmentRow => ({ ...row, status: "failed", reason });
     if (row.error) return fail(row.error);
-    for (const col of ASSIGNMENT_COLUMNS) if (col !== "Resident" && !row.values[col]) return fail(`${col} is required`);
+    for (const col of ASSIGNMENT_COLUMNS) if (col !== "Resident" && col !== "Property" && !row.values[col]) return fail(`${col} is required`);
     const v = row.values;
     if (!["electricity", "water", "gas"].includes(norm(v.Type))) return fail("Type must be Electricity, Water or Gas");
     const meter = find(refs.meters, v.Meter, m => [m.number]);
@@ -53,10 +53,14 @@ export function validateAssignments(rows: CsvRow[], refs: References, propertyId
     if (first !== undefined) return { ...row, status: "skipped", reason: `Duplicate meter (row ${first})` };
     seen.set(meter.id, row.row);
     if (norm(meter.type) !== norm(v.Type)) return fail("Type does not match the meter's actual type");
-    const property = find(refs.properties, v.Property, p => [p.code, p.name]);
-    if (!property || (propertyId && property.id !== propertyId)) return fail("Property not found, ambiguous or outside selected scope; use its ID");
-    const unit = find(refs.units.filter(u => u.propertyId === property.id), v.Unit, u => [u.number]);
-    if (!unit) return fail("Unit not found or ambiguous in this property; use its ID");
+    // Property is optional: blank resolves the property from the unit.
+    let property = v.Property ? find(refs.properties, v.Property, p => [p.code, p.name]) : undefined;
+    if (v.Property && (!property || (propertyId && property.id !== propertyId))) return fail("Property not found, ambiguous or outside selected scope; use its ID or leave Property blank");
+    const scopeId = property?.id ?? propertyId;
+    const unit = find(refs.units.filter(u => !scopeId || u.propertyId === scopeId), v.Unit, u => [u.number]);
+    if (!unit) return fail(property ? "Unit not found or ambiguous in this property; use its ID" : "Unit not found or ambiguous; use its ID or add Property");
+    property = property ?? refs.properties.find(p => p.id === unit.propertyId);
+    if (!property) return fail("Property for this unit is outside your scope");
     // Resident is optional: blank assigns the meter to the unit only.
     const resident = v.Resident ? find(refs.residents, v.Resident, r => [r.email, r.name]) : null;
     if (v.Resident && !resident) return fail("Resident not found, ambiguous or outside your scope; use email or ID, or leave Resident blank");

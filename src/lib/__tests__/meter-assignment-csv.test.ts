@@ -15,7 +15,8 @@ describe("bulk meter assignment references", () => {
   });
   it("resolves existing names/identifiers without creating records", () => { expect(validate()[0]?.target).toEqual({ meter: "m", unit: "u", property: "p", resident: "r", type: "Water" }); });
   it("allows a blank Resident and assigns to the unit only", () => { const r = validate(refs, [{ ...row, values: { ...row.values, Resident: "" } }])[0]; expect(r?.status).toBe("ready"); expect(r?.target?.resident).toBeNull(); });
-  it("requires Meter, Type, Unit and Property", () => { for (const field of Object.keys(row.values).filter(f => f !== "Resident")) expect(validate(refs, [{ ...row, values: { ...row.values, [field]: "" } }])[0]?.status).toBe("failed"); });
+  it("allows a blank Property and resolves it from the unit", () => { const r = validate(refs, [{ ...row, values: { ...row.values, Property: "" } }])[0]; expect(r?.status).toBe("ready"); expect(r?.target?.property).toBe("p"); });
+  it("requires Meter, Type and Unit", () => { for (const field of ["Meter", "Type", "Unit"]) expect(validate(refs, [{ ...row, values: { ...row.values, [field]: "" } }])[0]?.status).toBe("failed"); });
   it("matches actual Electricity Water Gas types only", () => { for (const type of ["Electricity", "Water", "Gas"]) expect(validate({ ...refs, meters: [{ ...refs.meters[0], id: "m", number: "00123", unitId: null, status: "active", type }] }, [{ ...row, values: { ...row.values, Type: type } }])[0]?.status).toBe("ready"); expect(validate(refs, [{ ...row, values: { ...row.values, Type: "Electricity" } }])[0]?.status).toBe("failed"); });
   it("rejects foreign meter references", () => { expect(validate({ ...refs, meters: [] })[0]?.status).toBe("failed"); });
   it("rejects references outside selected property scope", () => { expect(validate(refs, [row], "foreign")[0]?.status).toBe("failed"); });
