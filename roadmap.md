@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Automatically refresh landlord My Properties/details and Bank Payments on vendor unit/meter changes; preserve relationship scope and verify live refresh.
+- [x] Automatic refresh added to landlord My Properties/details and Bank Payments for units/meters/property/assignment/payment changes; source tables published with existing RLS unchanged. 27 refresh/scope tests passed, publication verified, build OK; available admin session correctly denied landlord pages with no page errors.
+- [ ] Verify vendor creation → open landlord page updates end-to-end (blocked: available session has no landlord role; authorized landlord session required). No units, meters or payments fabricated for testing.
 
 - [x] Administrator property Units CSV import now uses unit/meter fields, mandatory UnitName and active Status default. 22 tests passed; signed-in admin dialog and server validation verified (valid name defaults active; missing name rejected), no page errors, build OK. No live units imported during checks.
 

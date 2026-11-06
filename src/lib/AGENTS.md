@@ -1,1 +1,2 @@
 - Landlord reporting uses caller-bound property/unit/meter helpers and RLS across vendors; shared transaction filters and integer-decimal aggregation drive lists, reports and exports without duplicate records or client-supplied owner identity.
+- Landlord property/details and bank-payment pages reuse the lifecycle-managed realtime refresh hook and published source tables; changes invalidate scoped server reads rather than copying ownership or payment records.
