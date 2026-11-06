@@ -3851,6 +3851,10 @@ export type Database = {
       landlord_meter_ids: { Args: never; Returns: string[] }
       landlord_property_ids: { Args: never; Returns: string[] }
       landlord_unit_ids: { Args: never; Returns: string[] }
+      meter_assignment_csv_references: {
+        Args: { p_portal: string }
+        Returns: Json
+      }
       resident_can_read_payg_summary: {
         Args: { p_vendor: string }
         Returns: boolean
