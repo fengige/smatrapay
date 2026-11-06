@@ -12,9 +12,9 @@ export const importVendorResidents = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ rows: z.array(z.object({ name: z.string().max(180), email: z.string().max(255), unit: z.string().max(200), property: z.string().max(200) })).min(1).max(200), confirm: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const actor = await assertVendor(context as never);
-    const properties = await readAll<any>((from, to) => context.supabase.from("properties").select("id,name,status").order("id").range(from,to));
-    const units = await readAll<any>((from,to) => context.supabase.from("units").select("id,unit_number,property_id,status").order("id").range(from,to));
-    const assignments = await readAll<any>((from,to) => context.supabase.from("unit_assignments").select("unit_id,end_date").eq("role","resident").order("id").range(from,to));
+    const properties = await readAll(() => context.supabase.from("properties").select("id,name,status").order("id"));
+    const units = await readAll(() => context.supabase.from("units").select("id,unit_number,property_id,status").order("id"));
+    const assignments = await readAll(() => context.supabase.from("unit_assignments").select("unit_id,end_date").eq("role","resident").order("id"));
     const today = new Date().toISOString().slice(0,10);
     const occupied = new Set(assignments.filter(a => !a.end_date || a.end_date >= today).map(a => a.unit_id));
     const propertyMap = new Map(properties.filter(p => p.status !== "archived").map(p => [p.id,p]));
