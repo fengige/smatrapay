@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Update administrator property Units CSV import to unit fields with mandatory UnitName, optional meter/details fields and active Status default; validate and verify.
+
 - [x] Landlord portal: expandable Payments, Properties, Reports & Analysis; scoped recent tokens/vending/bank filters; cross-vendor linked properties/units/meters; reconciled daily/monthly reports with PDF/Excel exports. 37 focused tests passed, including installed ownership/grants and actual file generation; build OK. Available vendor session was denied landlord access without page errors. No live payment/retry or publishing performed.
 - [ ] Landlord signed-in property/filter/pagination/report/download and mobile acceptance (blocked: available session is vendor-only, requester has no matching auth account, landlord test-account question skipped). No landlord identity was selected or access altered for testing.
 
