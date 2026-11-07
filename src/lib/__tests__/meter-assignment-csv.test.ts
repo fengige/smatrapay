@@ -9,6 +9,17 @@ const refs: References = {
 const row: CsvRow = { row: 2, values: { Meter: "00123", Type: "Water", Resident: "mary@example.test", Unit: "001", Property: "001" } };
 const validate = (r = refs, rows = [row], property: string | null = null) => validateAssignments(rows, r, property);
 describe("bulk meter assignment references", () => {
+  it("accepts 5000 rows for both administrator and vendor imports", () => {
+    const csv = "Meter,Type,Resident,Unit,Property\n" + Array.from({ length: 5000 }, (_, i) => `M${i},Water,,U${i},`).join("\n");
+    for (const portal of ["admin", "vendor"] as const) {
+      const input = assignmentRequest.parse({ portal, propertyId: null, csv });
+      expect(parseAssignmentCsv(input.csv)).toHaveLength(5000);
+    }
+  });
+  it("rejects 5001 rows", () => {
+    const csv = "Meter,Type,Resident,Unit,Property\n" + Array.from({ length: 5001 }, (_, i) => `M${i},Water,,U${i},`).join("\n");
+    expect(() => parseAssignmentCsv(csv)).toThrow("Maximum 5000 rows per import");
+  });
   it("requires the exact five columns in order and preserves leading zeros", () => {
     expect(parseAssignmentCsv("Meter,Type,Resident,Unit,Property\r\n00123,Water,mary@example.test,001,001")[0]?.values.Meter).toBe("00123");
     expect(() => parseAssignmentCsv("Type,Meter,Resident,Unit,Property\nWater,00123,r,u,p")).toThrow();

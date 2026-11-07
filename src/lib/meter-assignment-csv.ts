@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseCsv } from "@/lib/unit-bulk";
 
 export const ASSIGNMENT_COLUMNS = ["Meter", "Type", "Resident", "Unit", "Property"] as const;
-export const ASSIGNMENT_LIMIT = 200;
+export const ASSIGNMENT_LIMIT = 5000;
 export type CsvValues = Record<(typeof ASSIGNMENT_COLUMNS)[number], string>;
 export type CsvRow = { row: number; values: CsvValues; error?: string };
 export type AssignmentRow = CsvRow & { status: "ready" | "skipped" | "failed" | "successful"; reason: string; target?: { meter: string; unit: string; property: string; resident: string | null; type: string } };
