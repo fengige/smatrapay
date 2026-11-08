@@ -9,6 +9,7 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { listVendorPriceRequests, setVendorMeterPrices } from "@/lib/vendor-admin.functions";
+import { submitVendorPriceBatches } from "@/lib/vendor-price-batches";
 import {
   EmptyState,
   ErrorBlock,
@@ -94,14 +95,20 @@ function VendorPriceManagement() {
     if (!selected.length) return setFailure("Select at least one meter.");
     if (!Number.isFinite(numeric) || numeric < 0) return setFailure("Enter a valid amount.");
     setBusy(true);
+    let completed = 0;
     try {
-      const result = await applyPrices({
+      const result = await submitVendorPriceBatches(selected, (ids) => applyPrices({
         data: {
-          ids: selected,
+          ids,
           mode: mode as never,
           value: numeric,
           ...(note.trim() ? { note: note.trim() } : {}),
         },
+      }), (ids, total) => {
+        completed += ids.length;
+        const finished = new Set(ids);
+        setSelected((previous) => previous.filter((id) => !finished.has(id)));
+        setMessage(`${completed} of ${selected.length} meters processed: ${total.submitted} sent for approval, ${total.unchanged} unchanged.`);
       });
       setMessage(
         `${result.submitted} price change(s) sent for admin approval, ${result.unchanged} unchanged.`,
@@ -109,13 +116,17 @@ function VendorPriceManagement() {
       setSelected([]);
       setValue("");
       setNote("");
-      await queryClient.invalidateQueries({ queryKey: ["vendor-scope"] });
-      await queryClient.invalidateQueries({ queryKey: ["vendor-price-meters"] });
-      await queryClient.invalidateQueries({ queryKey: ["vendor-price-requests"] });
     } catch (e) {
-      setFailure(e instanceof Error ? e.message : "Could not submit price changes.");
+      setFailure(`${e instanceof Error ? e.message : "Could not submit price changes."}${completed ? " Completed meters were deselected; retry the remaining selection." : ""}`);
     } finally {
       setBusy(false);
+      if (completed) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["vendor-scope"] }),
+          queryClient.invalidateQueries({ queryKey: ["vendor-price-meters"] }),
+          queryClient.invalidateQueries({ queryKey: ["vendor-price-requests"] }),
+        ]);
+      }
     }
   }
 
@@ -183,9 +194,9 @@ function VendorPriceManagement() {
                   className="mt-1 block w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                 />
               </label>
-              <button className="btn-primary px-4 py-2 text-sm" disabled={busy} onClick={submit}>
+              <Button disabled={busy} onClick={submit}>
                 {busy ? "Submitting…" : `Request for ${selected.length} meter(s)`}
-              </button>
+              </Button>
             </div>
             {message && <p className="mt-3 text-sm text-emerald-600">{message}</p>}
             {failure && <p className="mt-3 text-sm text-destructive">{failure}</p>}
@@ -266,6 +277,7 @@ function VendorPriceManagement() {
                     <input
                       type="checkbox"
                       aria-label="Select all meters"
+                      disabled={busy}
                       checked={allSelected}
                       onChange={(e) =>
                         setSelected(e.target.checked ? rows.map((m) => m.id) : [])
@@ -287,6 +299,7 @@ function VendorPriceManagement() {
                       <input
                         type="checkbox"
                         aria-label={`Select meter ${m.meter_number}`}
+                        disabled={busy}
                         checked={selected.includes(m.id)}
                         onChange={(e) =>
                           setSelected((prev) =>
