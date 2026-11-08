@@ -30,7 +30,7 @@ describe("complete portal price meter scope", () => {
     expect(rows.filter(r => r.type === "Electricity").length).toBe(1667);
     expect(rows.filter(r => r.type === "Water").length).toBe(1667);
     expect(rows.filter(r => r.type === "Gas").length).toBe(1666);
-    expect(requests).toEqual([["meters", "vendor_id", "own"]]);
+    expect(requests).toEqual(Array.from({ length: 11 }, () => ["meters", "vendor_id", "own"]));
   });
   it("includes landlord-linked meters across vendors and excludes foreign meters", async () => {
     const meters = Array.from({ length: 1201 }, (_, id) => ({ id: String(id), vendor_id: id % 2 ? "a" : "b", type: "Water" }));
@@ -45,7 +45,9 @@ describe("complete portal price meter scope", () => {
     expect((await readPriceMeters(db, "vendor", "own")).length).toBe(1);
     meters.push({ id: "new", vendor_id: "own" });
     expect((await readPriceMeters(db, "vendor", "own")).length).toBe(2);
-    meters[0].vendor_id = "other";
+    const first = meters[0];
+    if (!first) throw new Error("Missing test meter");
+    first.vendor_id = "other";
     expect((await readPriceMeters(db, "vendor", "own")).length).toBe(1);
   });
   it("denies callers without the required portal role", async () => {
