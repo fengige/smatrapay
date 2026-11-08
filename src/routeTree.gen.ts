@@ -51,6 +51,7 @@ import { Route as AuthenticatedConfigurationsSocialMediaRouteImport } from './ro
 import { Route as AuthenticatedLandlordBankPaymentsRouteImport } from './routes/_authenticated/landlord/bank-payments'
 import { Route as AuthenticatedLandlordConsumptionReportRouteImport } from './routes/_authenticated/landlord/consumption-report'
 import { Route as AuthenticatedLandlordDashboardRouteImport } from './routes/_authenticated/landlord/dashboard'
+import { Route as AuthenticatedLandlordPriceManagementRouteImport } from './routes/_authenticated/landlord/price-management'
 import { Route as AuthenticatedLandlordPropertiesRouteImport } from './routes/_authenticated/landlord/properties'
 import { Route as AuthenticatedLandlordPropertiesSummaryRouteImport } from './routes/_authenticated/landlord/properties-summary'
 import { Route as AuthenticatedLandlordRecentTokensRouteImport } from './routes/_authenticated/landlord/recent-tokens'
@@ -402,6 +403,12 @@ const AuthenticatedLandlordDashboardRoute =
   AuthenticatedLandlordDashboardRouteImport.update({
     id: '/landlord/dashboard',
     path: '/landlord/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLandlordPriceManagementRoute =
+  AuthenticatedLandlordPriceManagementRouteImport.update({
+    id: '/landlord/price-management',
+    path: '/landlord/price-management',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLandlordPropertiesRoute =
@@ -1137,6 +1144,7 @@ export interface FileRoutesByFullPath {
   '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/landlord/price-management': typeof AuthenticatedLandlordPriceManagementRoute
   '/landlord/properties': typeof AuthenticatedLandlordPropertiesRouteWithChildren
   '/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
   '/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
@@ -1290,6 +1298,7 @@ export interface FileRoutesByTo {
   '/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/landlord/price-management': typeof AuthenticatedLandlordPriceManagementRoute
   '/landlord/properties': typeof AuthenticatedLandlordPropertiesRouteWithChildren
   '/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
   '/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
@@ -1451,6 +1460,7 @@ export interface FileRoutesById {
   '/_authenticated/landlord/bank-payments': typeof AuthenticatedLandlordBankPaymentsRoute
   '/_authenticated/landlord/consumption-report': typeof AuthenticatedLandlordConsumptionReportRoute
   '/_authenticated/landlord/dashboard': typeof AuthenticatedLandlordDashboardRoute
+  '/_authenticated/landlord/price-management': typeof AuthenticatedLandlordPriceManagementRoute
   '/_authenticated/landlord/properties': typeof AuthenticatedLandlordPropertiesRouteWithChildren
   '/_authenticated/landlord/properties-summary': typeof AuthenticatedLandlordPropertiesSummaryRoute
   '/_authenticated/landlord/recent-tokens': typeof AuthenticatedLandlordRecentTokensRoute
@@ -1613,6 +1623,7 @@ export interface FileRouteTypes {
     | '/landlord/bank-payments'
     | '/landlord/consumption-report'
     | '/landlord/dashboard'
+    | '/landlord/price-management'
     | '/landlord/properties'
     | '/landlord/properties-summary'
     | '/landlord/recent-tokens'
@@ -1766,6 +1777,7 @@ export interface FileRouteTypes {
     | '/landlord/bank-payments'
     | '/landlord/consumption-report'
     | '/landlord/dashboard'
+    | '/landlord/price-management'
     | '/landlord/properties'
     | '/landlord/properties-summary'
     | '/landlord/recent-tokens'
@@ -1926,6 +1938,7 @@ export interface FileRouteTypes {
     | '/_authenticated/landlord/bank-payments'
     | '/_authenticated/landlord/consumption-report'
     | '/_authenticated/landlord/dashboard'
+    | '/_authenticated/landlord/price-management'
     | '/_authenticated/landlord/properties'
     | '/_authenticated/landlord/properties-summary'
     | '/_authenticated/landlord/recent-tokens'
@@ -2362,6 +2375,13 @@ declare module '@tanstack/react-router' {
       path: '/landlord/dashboard'
       fullPath: '/landlord/dashboard'
       preLoaderRoute: typeof AuthenticatedLandlordDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/landlord/price-management': {
+      id: '/_authenticated/landlord/price-management'
+      path: '/landlord/price-management'
+      fullPath: '/landlord/price-management'
+      preLoaderRoute: typeof AuthenticatedLandlordPriceManagementRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/landlord/properties': {
@@ -3382,6 +3402,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLandlordBankPaymentsRoute: typeof AuthenticatedLandlordBankPaymentsRoute
   AuthenticatedLandlordConsumptionReportRoute: typeof AuthenticatedLandlordConsumptionReportRoute
   AuthenticatedLandlordDashboardRoute: typeof AuthenticatedLandlordDashboardRoute
+  AuthenticatedLandlordPriceManagementRoute: typeof AuthenticatedLandlordPriceManagementRoute
   AuthenticatedLandlordPropertiesRoute: typeof AuthenticatedLandlordPropertiesRouteWithChildren
   AuthenticatedLandlordPropertiesSummaryRoute: typeof AuthenticatedLandlordPropertiesSummaryRoute
   AuthenticatedLandlordRecentTokensRoute: typeof AuthenticatedLandlordRecentTokensRoute
@@ -3496,6 +3517,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLandlordConsumptionReportRoute:
     AuthenticatedLandlordConsumptionReportRoute,
   AuthenticatedLandlordDashboardRoute: AuthenticatedLandlordDashboardRoute,
+  AuthenticatedLandlordPriceManagementRoute:
+    AuthenticatedLandlordPriceManagementRoute,
   AuthenticatedLandlordPropertiesRoute:
     AuthenticatedLandlordPropertiesRouteWithChildren,
   AuthenticatedLandlordPropertiesSummaryRoute:
