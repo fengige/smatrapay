@@ -6,10 +6,11 @@ const kes = (n: number) =>
 /** Amount paid → commission → VAT on commission → net amount put on the token. */
 export function CommissionBreakdown({ paid, commission }: { paid: number; commission: CommissionInfo | null }) {
   if (!commission) return null;
+  const ownerPays = commission.commission_payer === "owner";
   const rows: [string, string, boolean?][] = [
     ["Amount paid", kes(paid)],
-    [`Commission (${commission.commission_percentage.toFixed(2)}%)`, `− ${kes(commission.commission_amount)}`],
-    [`VAT on commission (${commission.vat_on_commission_percentage.toFixed(2)}%)`, `− ${kes(commission.vat_on_commission_amount)}`],
+    [`Commission (${commission.commission_percentage.toFixed(2)}%)${ownerPays ? " · Owner" : ""}`, `${ownerPays ? "" : "− "}${kes(commission.commission_amount)}`],
+    [`VAT on commission (${commission.vat_on_commission_percentage.toFixed(2)}%)${ownerPays ? " · Owner" : ""}`, `${ownerPays ? "" : "− "}${kes(commission.vat_on_commission_amount)}`],
     ["Net amount (token value)", kes(commission.net_amount), true],
   ];
   return (
