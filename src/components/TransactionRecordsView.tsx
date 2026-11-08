@@ -130,20 +130,20 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
       const name = criteria.from === criteria.to ? `transaction-records-${criteria.from}.${kind}` : `transaction-records-${criteria.from}_to_${criteria.to}.${kind}`;
       if (kind === "csv") {
         const esc = (v: unknown) => { const x = v == null ? "" : String(v); const safe = /^[=+\-@]/.test(x) && !/^-?\d/.test(x) ? `'${x}` : x; return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe; };
-        const csv = [EXPORT_COLS.map(([h]) => esc(h)).join(","), ...all.map((r) => EXPORT_COLS.map(([, f]) => esc(f(r))).join(","))].join("\r\n");
+        const csv = [exportColumns.map(([h]) => esc(h)).join(","), ...all.map((r) => exportColumns.map(([, f]) => esc(f(r))).join(","))].join("\r\n");
         const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })); a.download = name; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       } else if (kind === "xlsx") {
         const { default: writeXlsxFile } = await import("write-excel-file/browser");
-        const header = EXPORT_COLS.map(([h]) => ({ value: h, fontWeight: "bold" as const }));
-        const body = all.map((r) => EXPORT_COLS.map(([, f]) => { const v = f(r); return v == null ? null : typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) }; }));
+        const header = exportColumns.map(([h]) => ({ value: h, fontWeight: "bold" as const }));
+        const body = all.map((r) => exportColumns.map(([, f]) => { const v = f(r); return v == null ? null : typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) }; }));
         await writeXlsxFile([header, ...body] as never).toFile(name);
       } else {
         const { jsPDF } = await import("jspdf");
         const { default: autoTable } = await import("jspdf-autotable");
         const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a3" });
         doc.setFontSize(14); doc.text(`Transaction Records ${criteria.from}${criteria.to !== criteria.from ? ` to ${criteria.to}` : ""} (${all.length})`, 30, 30);
-        autoTable(doc, { startY: 42, styles: { fontSize: 6, cellPadding: 2 }, head: [EXPORT_COLS.map(([h]) => h)], body: all.map((r) => EXPORT_COLS.map(([, f]) => { const v = f(r); return v == null ? "—" : String(v); })) });
+        autoTable(doc, { startY: 42, styles: { fontSize: 6, cellPadding: 2 }, head: [exportColumns.map(([h]) => h)], body: all.map((r) => exportColumns.map(([, f]) => { const v = f(r); return v == null ? "—" : String(v); })) });
         doc.save(name);
       }
       toast.success(`Exported ${all.length} transaction${all.length === 1 ? "" : "s"} to ${name}`);
