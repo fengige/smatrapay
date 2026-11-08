@@ -15,13 +15,13 @@ import {
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
+import { CommissionSettingsCard } from "@/components/CommissionSettingsCard";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { matchesPriceProperty, matchesPriceVendor, priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
 import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
   bulkSetMeterPrice,
-  bulkSetMeterCommission,
   getCommissionSettings,
   listPriceAuditLogs,
   listPriceChangeRequests,
@@ -82,9 +82,6 @@ function PriceManagementPage() {
   const [mode, setMode] = useState<PriceMode>("set");
   const [value, setValue] = useState("");
   const [confirming, setConfirming] = useState(false);
-  const [commValue, setCommValue] = useState("");
-  const [vatValue, setVatValue] = useState("");
-  const applyCommission = useServerFn(bulkSetMeterCommission);
   const fetchDefaults = useServerFn(getCommissionSettings);
   const { data: defaults } = useQuery({ queryKey: ["commission-settings"], queryFn: () => fetchDefaults() });
 
@@ -226,41 +223,6 @@ function PriceManagementPage() {
     },
   });
 
-  const pctError = (v: string) => {
-    if (!v.trim()) return null;
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "Enter a number";
-    if (n < 0) return "Cannot be negative";
-    if (n > 100) return "Cannot be more than 100%";
-    return null;
-  };
-  const commErr = pctError(commValue);
-  const vatErr = pctError(vatValue);
-  const commReady = !!selectedRows.length && (commValue.trim() || vatValue.trim()) && !commErr && !vatErr;
-  const commissionMutation = useMutation({
-    mutationFn: async () => {
-      let updated = 0;
-      await runPriceBatches(selectedRows.map(m => m.id), ids => applyCommission({
-        data: {
-          ids,
-          ...(commValue.trim() ? { commission_percentage: Number(commValue) } : {}),
-          ...(vatValue.trim() ? { vat_on_commission_percentage: Number(vatValue) } : {}),
-        },
-      }), (result, ids) => {
-        updated += result.updated;
-        setSelected(current => { const next = { ...current }; for (const id of ids) delete next[id]; return next; });
-      });
-      return { updated };
-    },
-    onSuccess: async (res) => {
-      await queryClient.invalidateQueries({ queryKey: ["meters"] });
-      setCommValue("");
-      setVatValue("");
-      toast.success(`Commission & VAT updated on ${res.updated} meter${res.updated === 1 ? "" : "s"}`);
-    },
-    onError: (e: Error) => toast.error(e.message || "Could not update Commission & VAT"),
-    onSettled: () => { void queryClient.invalidateQueries({ queryKey: ["meters"] }); },
-  });
   const pct = (own: number | null, def: number | undefined) =>
     own !== null ? `${own.toFixed(2)}%` : def !== undefined ? `${def.toFixed(2)}% (default)` : "—";
 
@@ -654,44 +616,7 @@ function PriceManagementPage() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 rounded-2xl border border-border bg-card p-4 md:grid-cols-[auto_auto_1fr_auto] md:items-start">
-        {([
-          ["meter-commission", "Commission (%)", commValue, setCommValue, commErr],
-          ["meter-vat", "VAT on Commission (%)", vatValue, setVatValue, vatErr],
-        ] as const).map(([id, label, v, setV, err]) => (
-          <div key={id}>
-            <label htmlFor={id} className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</label>
-            <input
-              id={id}
-              type="number"
-              inputMode="decimal"
-              min="0"
-              max="100"
-              step="0.01"
-              value={v}
-              onChange={(e) => setV(e.target.value)}
-              placeholder="e.g. 5.00"
-              aria-invalid={Boolean(err)}
-              className={`h-11 w-40 rounded-xl border bg-background px-3 text-sm ${err ? "border-destructive" : "border-border"}`}
-            />
-            {err && <p className="mt-1 text-xs text-destructive">{err}</p>}
-          </div>
-        ))}
-        <p className="text-sm text-muted-foreground md:pt-6">
-          {selectedRows.length === 0
-            ? "Select meters below to configure their Commission and VAT."
-            : `${selectedRows.length} meter(s) selected — leave a box empty to keep its current value.`}
-        </p>
-        <button
-          type="button"
-          disabled={!commReady || commissionMutation.isPending}
-          onClick={() => commissionMutation.mutate()}
-          className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 md:mt-5"
-        >
-          {commissionMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <BadgeDollarSign className="size-4" />}
-          Apply Commission &amp; VAT to {selectedRows.length || 0}
-        </button>
-      </div>
+      <CommissionSettingsCard />
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">

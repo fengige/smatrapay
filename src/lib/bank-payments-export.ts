@@ -15,6 +15,8 @@ export const EXPORT_COLUMNS: { header: string; value: (r: BankPaymentExportRow) 
   { header: "BusinessShortCode", value: (r) => r.business_short_code },
   { header: "Bank Reference", value: (r) => r.bank_reference ?? r.bill_ref_number },
   { header: "Status", value: (r) => r.status },
+  { header: "Commission Payer", value: (r) => r.commission_payer },
+  { header: "Owner Commission Liability (KES)", value: (r) => r.commission_payer === "owner" ? Math.round((Number(r.commission_amount ?? 0) + Number(r.vat_on_commission_amount ?? 0)) * 100) / 100 : 0 },
   { header: "Commission %", value: (r) => r.commission_percentage },
   { header: "Commission (KES)", value: (r) => r.commission_amount },
   { header: "VAT on Commission %", value: (r) => r.vat_on_commission_percentage },

@@ -1,0 +1,7 @@
+ALTER TABLE public.vending_commission_terms ADD COLUMN vend_state text NOT NULL DEFAULT 'ready' CHECK(vend_state IN('ready','processing','failed','review','completed'));
+GRANT UPDATE(vend_state) ON public.vending_commission_terms TO service_role;
+DO $$ DECLARE definition text; BEGIN
+ SELECT pg_get_viewdef('public.transaction_records'::regclass,true) INTO definition;
+ definition := regexp_replace(definition,';\s*$','');
+ EXECUTE 'CREATE OR REPLACE VIEW public.transaction_records WITH(security_invoker=true) AS SELECT q.record_id,q.token_id,q.bank_notification_id,q.txn_at,q.bank,q.trans_id,q.meter_id,q.meter_number,coalesce(t.commission_owner_id,q.owner_id) owner_id,coalesce(t.commission_owner_type,q.owner_type) owner_type,coalesce(t.commission_owner_name,q.owner_name) owner_name,q.amount_paid,q.commission_amount,q.vat_on_commission_amount,q.tokenizable_amount,q.units,coalesce(t.applied_price_per_unit,q.tariff)::numeric(15,2) tariff,q.vending_software,q.token,q.action,q.token_status,q.payment_status,q.sms_status,q.mobile,q.sms_at,q.provider_reference,q.error_message,t.commission_payer,t.commission_percentage,t.vat_on_commission_percentage,CASE WHEN t.commission_payer=''owner'' THEN coalesce(t.commission_amount,0)+coalesce(t.vat_on_commission_amount,0) ELSE 0 END owner_commission_liability FROM ('||definition||') q LEFT JOIN public.meter_tokens t ON t.id=q.token_id';
+END $$;

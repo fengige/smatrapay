@@ -48,7 +48,9 @@ export async function sendTokenReceiptSms(
     .eq("id", tok.meter_id)
     .maybeSingle();
 
-  const owner = meter ? resolveMeterOwner(meter) : null;
+  const owner = tok.commission_owner_id && tok.commission_owner_type
+    ? { id: tok.commission_owner_id, type: tok.commission_owner_type as OwnerType }
+    : meter ? resolveMeterOwner(meter) : null;
   let ownerName: string | null = null;
   if (owner) {
     const { data: u } = await supabase.from("users").select("name, email").eq("id", owner.id).maybeSingle();
@@ -108,6 +110,7 @@ export async function sendTokenReceiptSms(
   const text =
     `SmatraPay token for meter ${meter.meter_number}: ${tok.token}. ` +
     `Units ${formatUnits(tok.units)}, KES ${Number(tok.amount ?? 0).toFixed(2)}.` +
+    (tok.net_amount != null ? ` Token KES ${Number(tok.net_amount).toFixed(2)}. Commission (${tok.commission_payer === "owner" ? "Owner" : "Resident"}) KES ${Number(tok.commission_amount ?? 0).toFixed(2)}, VAT KES ${Number(tok.vat_on_commission_amount ?? 0).toFixed(2)}.` : "") +
     (tok.reference ? ` Ref ${tok.reference}.` : "") +
     ` ${when}`;
   const refId = `rcpt-${crypto.randomUUID()}`;

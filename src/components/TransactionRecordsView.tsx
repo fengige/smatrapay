@@ -65,6 +65,12 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
   const vendorExport = useServerFn(exportVendorTransactions);
   const list = vendor ? vendorList : adminList;
   const exportAll = vendor ? vendorExport : adminExport;
+  const exportColumns = vendor ? EXPORT_COLS : [...EXPORT_COLS,
+    ["Commission Payer", (r: TxnRecord) => cap(r.commission_payer ?? null)],
+    ["Commission (%)", (r: TxnRecord) => r.commission_percentage ?? null],
+    ["VAT on Commission (%)", (r: TxnRecord) => r.vat_on_commission_percentage ?? null],
+    ["Owner Commission Liability", (r: TxnRecord) => r.owner_commission_liability ?? null],
+  ] as typeof EXPORT_COLS;
   const retry = useServerFn(retryNcbaPayment);
   const adminResend = useServerFn(resendTokenSms);
   const vendorResend = useServerFn(vendorResendTokenSms);
@@ -124,20 +130,20 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
       const name = criteria.from === criteria.to ? `transaction-records-${criteria.from}.${kind}` : `transaction-records-${criteria.from}_to_${criteria.to}.${kind}`;
       if (kind === "csv") {
         const esc = (v: unknown) => { const x = v == null ? "" : String(v); const safe = /^[=+\-@]/.test(x) && !/^-?\d/.test(x) ? `'${x}` : x; return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe; };
-        const csv = [EXPORT_COLS.map(([h]) => esc(h)).join(","), ...all.map((r) => EXPORT_COLS.map(([, f]) => esc(f(r))).join(","))].join("\r\n");
+        const csv = [exportColumns.map(([h]) => esc(h)).join(","), ...all.map((r) => exportColumns.map(([, f]) => esc(f(r))).join(","))].join("\r\n");
         const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })); a.download = name; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       } else if (kind === "xlsx") {
         const { default: writeXlsxFile } = await import("write-excel-file/browser");
-        const header = EXPORT_COLS.map(([h]) => ({ value: h, fontWeight: "bold" as const }));
-        const body = all.map((r) => EXPORT_COLS.map(([, f]) => { const v = f(r); return v == null ? null : typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) }; }));
+        const header = exportColumns.map(([h]) => ({ value: h, fontWeight: "bold" as const }));
+        const body = all.map((r) => exportColumns.map(([, f]) => { const v = f(r); return v == null ? null : typeof v === "number" ? { type: Number, value: v } : { type: String, value: String(v) }; }));
         await writeXlsxFile([header, ...body] as never).toFile(name);
       } else {
         const { jsPDF } = await import("jspdf");
         const { default: autoTable } = await import("jspdf-autotable");
         const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a3" });
         doc.setFontSize(14); doc.text(`Transaction Records ${criteria.from}${criteria.to !== criteria.from ? ` to ${criteria.to}` : ""} (${all.length})`, 30, 30);
-        autoTable(doc, { startY: 42, styles: { fontSize: 6, cellPadding: 2 }, head: [EXPORT_COLS.map(([h]) => h)], body: all.map((r) => EXPORT_COLS.map(([, f]) => { const v = f(r); return v == null ? "—" : String(v); })) });
+        autoTable(doc, { startY: 42, styles: { fontSize: 6, cellPadding: 2 }, head: [exportColumns.map(([h]) => h)], body: all.map((r) => exportColumns.map(([, f]) => { const v = f(r); return v == null ? "—" : String(v); })) });
         doc.save(name);
       }
       toast.success(`Exported ${all.length} transaction${all.length === 1 ? "" : "s"} to ${name}`);
@@ -166,6 +172,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
     ["Total Transactions", s.total.toLocaleString()], ["Successful", s.successful.toLocaleString()], ["Failed", s.failed.toLocaleString()],
     ["Total Amount Paid", kes(s.amount_paid)], ["Total Commission", kes(s.commission)], ["Total VAT on Commission", kes(s.vat)],
     ["Total Units", units(s.units)], ["Tokens Generated", s.tokens.toLocaleString()],
+    ...(!vendor ? [["Token Purchase Amount", kes(s.token_value)], ["Owner Commission Liability", kes(s.owner_liability)]] as [string, string][] : []),
   ] : [];
 
   return (
@@ -272,7 +279,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
                   <td className="px-3 py-2">{r.owner_name || "—"}</td>
                   <td className="px-3 py-2">{r.owner_type ? cap(r.owner_type) : "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{kes(r.amount_paid)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{kes(r.commission_amount)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{kes(r.commission_amount)}{!vendor && r.commission_payer && <span className="block text-muted-foreground">{cap(r.commission_payer)} pays</span>}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{kes(r.vat_on_commission_amount)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{kes(r.tokenizable_amount)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{units(r.units)}</td>
@@ -325,7 +332,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
             {([
               ["Transaction Information", [["Transaction ID", detail.record_id], ["Bank", detail.bank ?? "—"], ["Bank Reference / TransID", detail.trans_id ?? "—"], ["Transaction Date", new Date(detail.txn_at).toLocaleString()], ["Payment Status", detail.payment_status === "received" ? "Payment Received" : cap(detail.payment_status)]]],
               ["Meter Information", [["Meter Number", detail.meter_number ?? "—"], ["Meter Owner", detail.owner_name ?? "—"], ["Owner Type", cap(detail.owner_type)], ["Vending Software", detail.vending_software ?? "—"]]],
-              ["Payment Information", [["Amount Paid", kes(detail.amount_paid)], ["Commission", kes(detail.commission_amount)], ["VAT on Commission", kes(detail.vat_on_commission_amount)], ["Tokenizable Amount", kes(detail.tokenizable_amount)]]],
+              ["Payment Information", [["Amount Paid", kes(detail.amount_paid)], ["Commission", kes(detail.commission_amount)], ["VAT on Commission", kes(detail.vat_on_commission_amount)], ["Tokenizable Amount", kes(detail.tokenizable_amount)], ...(!vendor ? [["Commission Payer", cap(detail.commission_payer ?? null)], ["Commission (%)", String(detail.commission_percentage ?? "—")], ["VAT on Commission (%)", String(detail.vat_on_commission_percentage ?? "—")], ["Owner Commission Liability", kes(detail.owner_commission_liability ?? null)]] : [])]],
               ["Token Information", [["Action", cap(detail.action)], ["Units", units(detail.units)], ["Tariff", detail.tariff == null ? "—" : `${kes(detail.tariff)}/unit`], ["Token", detail.token ? maskToken(detail.token) : "—"], ["Token Status", tokenLabel(detail)], ["Provider Transaction Reference", detail.provider_reference ?? "—"], ...(detail.error_message && detail.token_status !== "generated" ? [["Failure Reason", detail.error_message] as [string, string]] : [])]],
               ["SMS Information", [["Recipient Mobile Number", detail.mobile ?? "—"], ["SMS Status", cap(detail.sms_status)], ["SMS Provider", "Meter owner's SMS configuration"], ["SMS Sent Date/Time", detail.sms_at ? new Date(detail.sms_at).toLocaleString() : "—"]]],
             ] as [string, [string, string][]][]).map(([h, items]) => (

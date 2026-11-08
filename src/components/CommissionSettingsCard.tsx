@@ -5,6 +5,8 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { getCommissionSettings, saveCommissionSettings } from "@/lib/prices.functions";
+import { Button } from "@/components/ui/button";
+import type { CommissionPayer } from "@/lib/commission";
 
 type Key = "commission_percentage" | "vat_on_commission_percentage";
 const LABELS: Record<Key, string> = {
@@ -28,9 +30,11 @@ export function CommissionSettingsCard() {
   const { data, isLoading, isError } = useQuery({ queryKey: ["commission-settings"], queryFn: () => load() });
   const [form, setForm] = useState<Record<Key, string>>({ commission_percentage: "", vat_on_commission_percentage: "" });
   const [touched, setTouched] = useState(false);
+  const [payer, setPayer] = useState<CommissionPayer | "">("");
 
   const reset = () => {
     if (!data) return;
+    setPayer(data.commission_payer);
     setForm({
       commission_percentage: data.commission_percentage.toFixed(2),
       vat_on_commission_percentage: data.vat_on_commission_percentage.toFixed(2),
@@ -42,17 +46,20 @@ export function CommissionSettingsCard() {
   const errors = { commission_percentage: check(form.commission_percentage), vat_on_commission_percentage: check(form.vat_on_commission_percentage) };
   const dirty =
     !!data &&
-    (Number(form.commission_percentage) !== data.commission_percentage ||
+    (payer !== data.commission_payer || Number(form.commission_percentage) !== data.commission_percentage ||
       Number(form.vat_on_commission_percentage) !== data.vat_on_commission_percentage);
 
   const mutation = useMutation({
     mutationFn: () =>
-      save({
+      {
+        if (!payer) throw new Error("Choose who pays commission");
+        return save({
         data: {
+          commission_payer: payer,
           commission_percentage: Number(form.commission_percentage),
           vat_on_commission_percentage: Number(form.vat_on_commission_percentage),
         },
-      }),
+      }); },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["commission-settings"] });
       toast.success("Commission settings saved");
@@ -61,13 +68,8 @@ export function CommissionSettingsCard() {
   });
 
   return (
-    <section className="mb-4 rounded-2xl border border-border bg-card p-5">
-      <h2 className="text-sm font-bold text-foreground">Commission &amp; VAT on Commission</h2>
-      <p className="text-xs text-muted-foreground">
-        Percentages available to commission and VAT calculations. Current: Commission{" "}
-        {data ? `${data.commission_percentage.toFixed(2)}%` : "—"} · VAT on Commission{" "}
-        {data ? `${data.vat_on_commission_percentage.toFixed(2)}%` : "—"}
-      </p>
+    <section className="my-4 border-y border-border py-5">
+      <h2 className="text-sm font-bold text-foreground">Commission Configuration</h2>
 
       {isLoading ? (
         <div className="mt-4 h-20 animate-pulse rounded-xl bg-secondary/40" />
@@ -80,14 +82,25 @@ export function CommissionSettingsCard() {
           onSubmit={(e) => {
             e.preventDefault();
             setTouched(true);
-            if (errors.commission_percentage || errors.vat_on_commission_percentage) {
+            if (!payer || errors.commission_percentage || errors.vat_on_commission_percentage) {
               toast.error("Fix the highlighted fields before saving");
               return;
             }
             mutation.mutate();
           }}
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <label htmlFor="commission-payer" className="text-sm font-medium">Who Pays Commission?</label>
+              <select id="commission-payer" required value={payer} disabled={mutation.isPending}
+                onChange={e => setPayer(e.target.value as CommissionPayer)}
+                className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
+                <option value="" disabled>Select payer</option>
+                <option value="owner">Owner</option>
+                <option value="resident">Resident</option>
+              </select>
+              {touched && !payer && <p className="text-xs text-destructive">Choose a payer</p>}
+            </div>
             {(Object.keys(LABELS) as Key[]).map((k) => {
               const err = touched || form[k] !== "" ? errors[k] : null;
               return (
@@ -121,22 +134,22 @@ export function CommissionSettingsCard() {
               {data?.updated_at ? `Last updated ${new Date(data.updated_at).toLocaleString()}${data.updated_by_name ? ` by ${data.updated_by_name}` : ""}` : ""}
             </p>
             <div className="flex gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={reset}
                 disabled={mutation.isPending || !dirty}
                 className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={mutation.isPending || !dirty}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
                 {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 {mutation.isPending ? "Saving…" : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
           {!!data?.history.length && (
@@ -145,7 +158,7 @@ export function CommissionSettingsCard() {
               <ul className="mt-2 space-y-1">
                 {data.history.map((h) => (
                   <li key={h.id} className="text-foreground">
-                    {new Date(h.created_at).toLocaleString()} — {LABELS[h.field]}: {h.previous_value?.toFixed(2) ?? "—"}% → {h.new_value?.toFixed(2) ?? "—"}% by {h.changed_by_name ?? "System"}
+                    {new Date(h.created_at).toLocaleString()} — {h.field === "commission_payer" ? `Who Pays Commission?: ${h.previous_payer ?? "—"} → ${h.new_payer ?? "—"}` : `${LABELS[h.field]}: ${h.previous_value?.toFixed(2) ?? "—"}% → ${h.new_value?.toFixed(2) ?? "—"}%`} by {h.changed_by_name ?? "System"}
                   </li>
                 ))}
               </ul>

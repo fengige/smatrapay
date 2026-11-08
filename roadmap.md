@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Commission payer: administrator configuration, authoritative resident/owner vending calculations, immutable transaction terms, atomic owner liabilities/balances, transaction/bank exports and receipt reconciliation; provider claims prevent concurrent duplicate vending. No refund flow exists; token revocation does not erase liability.
+- [x] Commission payer regression tests: Owner full-payment and Resident deductions, CALIN/Icon payloads, stored terms, retry preservation and reporting totals; no real charges made.
+- [ ] Commission payer authenticated live acceptance (blocked: no requester-linked administrator account/session; provider-confirmed live purchases need explicit payment authorization). Signed-out pricing redirects to auth without browser errors; production publication not performed.
+
 - [x] Administrator pricing total now uses the complete system registry independently of every filter; list matches remain separate, assignment changes trigger refresh and failures do not display zero totals. 15 tests passed; build OK. Pricing rules and Vendor/Landlord portals unchanged.
 - [ ] Signed-in system-wide total and live creation/import/assignment refresh acceptance (blocked: no requester-matching auth account/session available). No live meters, assignments or prices changed.
 

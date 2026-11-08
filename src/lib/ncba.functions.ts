@@ -183,6 +183,7 @@ async function filtered(supabase: any, select: string, f: z.output<typeof bankSe
 }
 
 export type BankPaymentExportRow = NcbaPaymentRow & {
+  commission_payer: "owner" | "resident" | null;
   payer_name: string | null;
   business_short_code: string | null;
   trans_type: string | null;
@@ -203,7 +204,7 @@ async function mapRows(supabase: any, rows: any[]): Promise<BankPaymentExportRow
   const tokens = new Map<string, any>();
   for (let i = 0; i < tokenIds.length; i += 200) {
     const { data: t } = await supabase.from("meter_tokens")
-      .select("id, token, commission_percentage, commission_amount, vat_on_commission_percentage, vat_on_commission_amount, net_amount")
+      .select("id, token, commission_percentage, commission_amount, vat_on_commission_percentage, vat_on_commission_amount, net_amount, commission_payer, commission_owner_name, commission_owner_type")
       .in("id", tokenIds.slice(i, i + 200));
     for (const x of t ?? []) tokens.set(x.id, x);
   }
@@ -237,8 +238,9 @@ async function mapRows(supabase: any, rows: any[]): Promise<BankPaymentExportRow
       commission_percentage: n(t?.commission_percentage), commission_amount: n(t?.commission_amount),
       vat_on_commission_percentage: n(t?.vat_on_commission_percentage), vat_on_commission_amount: n(t?.vat_on_commission_amount),
       net_amount: n(t?.net_amount),
-      owner_name: (() => { const o = r.meter_number ? ownerByNum.get(r.meter_number) : null; return o ? (nameById.get(o.id) ?? null) : null; })(),
-      owner_type: (() => { const o = r.meter_number ? ownerByNum.get(r.meter_number) : null; return o ? typeLabel[o.type] : null; })(),
+      commission_payer: t?.commission_payer ?? null,
+      owner_name: t?.commission_owner_name ?? (() => { const o = r.meter_number ? ownerByNum.get(r.meter_number) : null; return o ? (nameById.get(o.id) ?? null) : null; })(),
+      owner_type: t?.commission_owner_type ? typeLabel[t.commission_owner_type as OwnerType] : (() => { const o = r.meter_number ? ownerByNum.get(r.meter_number) : null; return o ? typeLabel[o.type] : null; })(),
     };
   });
 }
