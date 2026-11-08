@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Make administrator pricing total independent of all filters using the complete authorized registry; preserve list filters, pricing rules and other portals; verify large system-wide and refresh reads.
+
 - [x] Add All properties/specific-property filters to administrator, vendor and landlord pricing using property IDs; combine with search/type filters, preserve full account totals and isolation. 15 focused tests passed; build OK.
 - [ ] Signed-in property-filter acceptance across all three pricing portals (blocked: no requester-matching account/session available). No prices or approvals changed during verification.
 
