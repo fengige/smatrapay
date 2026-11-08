@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { matchesPriceProperty, priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
+import { matchesPriceProperty, matchesPriceVendor, priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
 import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
@@ -75,6 +75,7 @@ function PriceManagementPage() {
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
+  const [vendorFilter, setVendorFilter] = useState("all");
   const [userType, setUserType] = useState<"all" | "landlord" | "agent" | "vendor">("all");
   const [userFilter, setUserFilter] = useState("all");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -137,7 +138,7 @@ function PriceManagementPage() {
   });
 
   const meters = data?.meters ?? [];
-  const ownerMeters = useMemo(() => priceOwnerMeters(meters, userType, userFilter), [meters, userType, userFilter]);
+  const ownerMeters = useMemo(() => priceOwnerMeters(meters, userType, userFilter).filter(m => matchesPriceVendor(m, vendorFilter)), [meters, userType, userFilter, vendorFilter]);
   const suppliers = data?.suppliers ?? [];
   const properties = useMemo(() => {
     const map = new Map<string, string>();
@@ -553,6 +554,15 @@ function PriceManagementPage() {
                 {p.name}
               </option>
             ))}
+          </select>
+          <select
+            value={vendorFilter}
+            onChange={(e) => { setVendorFilter(e.target.value); setSelected({}); }}
+            aria-label="Filter by vendor"
+            className="h-11 max-w-full rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="all">All vendors</option>
+            {(data?.vendors ?? []).map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
           <select
             value={userType}

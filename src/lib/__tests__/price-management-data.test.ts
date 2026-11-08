@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesPriceProperty, priceOwnerMeters, pricePropertyOptions, runPriceBatches } from "../price-management-data";
+import { matchesPriceProperty, matchesPriceVendor, priceOwnerMeters, pricePropertyOptions, runPriceBatches } from "../price-management-data";
 import { readPricingRequests, readPricingRelated, readPricingMeterRegistry } from "../price-management-read.server";
 
 function database(rows: any[]) {
@@ -17,6 +17,17 @@ function database(rows: any[]) {
 }
 
 describe("complete pricing and approvals", () => {
+  it("includes all vendors by default and combines a specific vendor with property filtering", () => {
+    const meters = [
+      { vendor_id: "a", property_id: "p1" },
+      { vendor_id: "a", property_id: "p2" },
+      { vendor_id: "b", property_id: "p1" },
+    ];
+    expect(meters.filter(m => matchesPriceVendor(m, "all")).length).toBe(3);
+    expect(meters.filter(m => matchesPriceVendor(m, "a")).length).toBe(2);
+    expect(meters.filter(m => matchesPriceVendor(m, "a") && matchesPriceProperty(m, "p1"))).toEqual([meters[0]]);
+    expect(meters.filter(m => matchesPriceVendor(m, "missing"))).toEqual([]);
+  });
   it("includes all properties by default and filters specific properties by ID, not duplicate names", () => {
     const meters = [
       { property_id: "a", property_name: "Same name", type: "water" },
