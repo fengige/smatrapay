@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Administrator pricing total now uses the complete system registry independently of every filter; list matches remain separate, assignment changes trigger refresh and failures do not display zero totals. 15 tests passed; build OK. Pricing rules and Vendor/Landlord portals unchanged.
+- [ ] Signed-in system-wide total and live creation/import/assignment refresh acceptance (blocked: no requester-matching auth account/session available). No live meters, assignments or prices changed.
+
 - [x] Add All properties/specific-property filters to administrator, vendor and landlord pricing using property IDs; combine with search/type filters, preserve full account totals and isolation. 15 focused tests passed; build OK.
 - [ ] Signed-in property-filter acceptance across all three pricing portals (blocked: no requester-matching account/session available). No prices or approvals changed during verification.
 

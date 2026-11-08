@@ -88,12 +88,12 @@ function PriceManagementPage() {
   const fetchDefaults = useServerFn(getCommissionSettings);
   const { data: defaults } = useQuery({ queryKey: ["commission-settings"], queryFn: () => fetchDefaults() });
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, error: metersError, refetch } = useQuery({
     queryKey: ["meters"],
     queryFn: () => fetchMeters(),
     refetchInterval: 30_000,
   });
-  useRealtimeRefresh("admin-pricing", ["meters", "units", "properties", "meter_price_change_requests"], [["meters"], ["price-change-requests"]]);
+  useRealtimeRefresh("admin-pricing", ["meters", "units", "properties", "unit_assignments", "meter_price_change_requests"], [["meters"], ["price-change-requests"]]);
 
   const { data: priceLogs = [], isLoading: logsLoading } = useQuery({
     queryKey: ["price-audit"],
@@ -472,11 +472,13 @@ function PriceManagementPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Meters</span>
+            <span className="text-sm text-muted-foreground">Total system meters</span>
             <Gauge className="size-4 text-primary" />
           </div>
-          <div className="mt-2 text-2xl font-bold">{ownerMeters.length}</div>
-          <p className="mt-1 text-xs text-muted-foreground">{rows.length} matching filters</p>
+          <div className="mt-2 text-2xl font-bold">{isLoading || metersError ? "—" : meters.length}</div>
+          <p className={`mt-1 text-xs ${metersError ? "text-destructive" : "text-muted-foreground"}`}>
+            {metersError ? "Could not refresh meter totals. Please refresh." : isLoading ? "Loading meters…" : `${rows.length} matching filters`}
+          </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
