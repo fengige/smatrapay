@@ -30,3 +30,7 @@ export function pricePropertyOptions(meters: { property_id: string | null; prope
 export function matchesPriceProperty(meter: { property_id: string | null }, property: string) {
   return property === "all" || (meter.property_id ?? "none") === property;
 }
+
+export function matchesPriceVendor(meter: { vendor_id: string }, vendor: string) {
+  return vendor === "all" || meter.vendor_id === vendor;
+}
