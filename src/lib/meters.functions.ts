@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { readAll } from "./landlord-scope.server";
+import { readPricingRelated } from "./price-management-read.server";
 
 const uuid = z.string().uuid();
 
@@ -148,11 +150,10 @@ export const listMeters = createServerFn({ method: "GET" })
     await assertAdmin(context as never);
     const { supabase } = context;
 
-    const { data: rows, error } = await supabase
+    const rows = await readAll(() => supabase
       .from("meters")
       .select(METER_COLUMNS)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+      .order("created_at", { ascending: false }).order("id"));
 
     const referencedIds = [
       ...new Set(
@@ -168,24 +169,19 @@ export const listMeters = createServerFn({ method: "GET" })
 
     let personRows: any[] = [];
     if (referencedIds.length) {
-      const { data: l, error: lErr } = await supabase
-        .from("users")
-        .select("id, name, email")
-        .in("id", referencedIds);
-      if (lErr) throw new Error(lErr.message);
-      personRows = l ?? [];
+      personRows = await readPricingRelated(supabase, "users", "id, name, email", referencedIds);
     }
     const personById = new Map(personRows.map((l) => [l.id, l]));
 
     // Landlord / agent options for the meter dialog.
     const loadOptions = async (role: "landlord" | "agent" | "vendor", fallback: string) => {
-      const { data: roleRows } = await supabase
+      const roleRows = await readAll(() => supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", role);
+        .eq("role", role).order("user_id"));
       const ids = [...new Set((roleRows ?? []).map((r: any) => r.user_id as string))];
       if (!ids.length) return [] as { id: string; name: string }[];
-      const { data: opts } = await supabase.from("users").select("id, name, email").in("id", ids);
+      const opts = await readPricingRelated(supabase, "users", "id, name, email", ids);
       const list = (opts ?? []).map((u: any) => ({
         id: u.id as string,
         name: (u.name as string) || (u.email as string) || fallback,
@@ -201,11 +197,11 @@ export const listMeters = createServerFn({ method: "GET" })
     ]);
 
     // Active supplier options for the meter dialog.
-    const { data: supplierRows } = await supabase
+    const supplierRows = await readAll(() => supabase
       .from("meter_suppliers")
       .select("id, company_name")
       .eq("status", "Active")
-      .order("company_name", { ascending: true });
+      .order("company_name", { ascending: true }).order("id"));
     const supplierOptions = (supplierRows ?? []).map((s: any) => ({
       id: s.id as string,
       name: (s.company_name as string) ?? "",
@@ -213,11 +209,11 @@ export const listMeters = createServerFn({ method: "GET" })
     const supplierById = new Map(supplierOptions.map((s) => [s.id, s]));
 
     // Active vending software options for the meter dialog.
-    const { data: vsRows } = await supabase
+    const vsRows = await readAll(() => supabase
       .from("vending_software")
       .select("vending_software_id, name")
       .eq("status", "active")
-      .order("name", { ascending: true });
+      .order("name", { ascending: true }).order("vending_software_id"));
     const vendingSoftwareOptions = (vsRows ?? []).map((v: any) => ({
       id: v.vending_software_id as string,
       name: (v.name as string) ?? "",
@@ -225,10 +221,10 @@ export const listMeters = createServerFn({ method: "GET" })
     const vendingSoftwareById = new Map(vendingSoftwareOptions.map((v) => [v.id, v]));
 
     // Unit options (with property names) for optionally linking a meter to a unit.
-    const { data: unitRows } = await supabase
+    const unitRows = await readAll(() => supabase
       .from("units")
-      .select("id, unit_number, property_id, properties(name)")
-      .order("unit_number", { ascending: true });
+      .select("id, unit_number, property_id, properties(name,landlord_id)")
+      .order("unit_number", { ascending: true }).order("id"));
     const unitOptions = (unitRows ?? []).map((u: any) => ({
       id: u.id as string,
       unit_number: (u.unit_number as string) ?? "",
@@ -256,8 +252,8 @@ export const listMeters = createServerFn({ method: "GET" })
         vending_software_name: r.vending_software_id
           ? (vendingSoftwareById.get(r.vending_software_id)?.name ?? null)
           : null,
-        landlord_id: r.landlord_id ?? null,
-        landlord_name: displayName(r.landlord_id ?? null),
+        landlord_id: r.landlord_id ?? unitRows.find(u => u.id === r.unit_id)?.properties?.landlord_id ?? null,
+        landlord_name: displayName(r.landlord_id ?? unitRows.find(u => u.id === r.unit_id)?.properties?.landlord_id ?? null),
         agent_id: r.agent_id ?? null,
         agent_name: displayName(r.agent_id ?? null),
         owner_id: ownerId,
