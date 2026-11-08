@@ -69,7 +69,9 @@ describe("complete pricing and approvals", () => {
     expect((await readPricingMeterRegistry(db, "id,vendor_id")).length).toBe(1);
     source.push(...Array.from({ length: 1200 }, (_, i) => ({ id: `import-${i}`, vendor_id: "b" })));
     expect((await readPricingMeterRegistry(db, "id,vendor_id")).length).toBe(1201);
-    source[0].vendor_id = "b";
+    const first = source[0];
+    if (!first) throw new Error("Missing initial meter");
+    first.vendor_id = "b";
     const updated = await readPricingMeterRegistry(db, "id,vendor_id");
     expect(updated.length).toBe(1201);
     expect(updated.find(m => m.id === "first")?.vendor_id).toBe("b");
