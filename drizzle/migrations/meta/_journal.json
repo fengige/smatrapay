@@ -323,6 +323,13 @@
       "when": 1794172299438,
       "tag": "0045_commission_payer_terms_and_liabilities",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1794172406230,
+      "tag": "0046_commission_transaction_reporting_and_vend_claims",
+      "breakpoints": true
     }
   ]
 }

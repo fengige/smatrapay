@@ -30,6 +30,10 @@ const schema = z.object({
 export type TxnSearch = z.input<typeof schema>;
 
 export type TxnRecord = {
+  commission_payer?: "owner" | "resident" | null;
+  commission_percentage?: number | null;
+  vat_on_commission_percentage?: number | null;
+  owner_commission_liability?: number | null;
   record_id: string;
   token_id: string | null;
   bank_notification_id: string | null;
@@ -57,7 +61,7 @@ export type TxnRecord = {
   error_message: string | null;
 };
 
-const COLS = "record_id, token_id, bank_notification_id, txn_at, bank, trans_id, meter_number, owner_name, owner_type, amount_paid, commission_amount, vat_on_commission_amount, tokenizable_amount, units, tariff, vending_software, token, action, token_status, payment_status, sms_status, mobile, sms_at, provider_reference, error_message";
+const COLS = "record_id, token_id, bank_notification_id, txn_at, bank, trans_id, meter_number, owner_name, owner_type, amount_paid, commission_amount, vat_on_commission_amount, tokenizable_amount, units, tariff, vending_software, token, action, token_status, payment_status, sms_status, mobile, sms_at, provider_reference, error_message, commission_payer, commission_percentage, vat_on_commission_percentage, owner_commission_liability";
 
 const clean = (s: string) => s.replace(/[%,()*\\]/g, " ").trim();
 
@@ -92,6 +96,8 @@ function mapRow(r: any): TxnRecord {
     amount_paid: num(r.amount_paid), commission_amount: num(r.commission_amount),
     vat_on_commission_amount: num(r.vat_on_commission_amount), tokenizable_amount: num(r.tokenizable_amount),
     units: num(r.units), tariff: num(r.tariff),
+    commission_percentage: num(r.commission_percentage), vat_on_commission_percentage: num(r.vat_on_commission_percentage),
+    owner_commission_liability: num(r.owner_commission_liability),
   };
 }
 

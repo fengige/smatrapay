@@ -3342,6 +3342,7 @@ export type Database = {
           vat_on_commission_amount: number
           vat_on_commission_percentage: number
           vend_by_unit: boolean
+          vend_state: string
         }
         Insert: {
           commission_amount: number
@@ -3361,6 +3362,7 @@ export type Database = {
           vat_on_commission_amount: number
           vat_on_commission_percentage: number
           vend_by_unit: boolean
+          vend_state?: string
         }
         Update: {
           commission_amount?: number
@@ -3380,6 +3382,7 @@ export type Database = {
           vat_on_commission_amount?: number
           vat_on_commission_percentage?: number
           vend_by_unit?: boolean
+          vend_state?: string
         }
         Relationships: [
           {
@@ -3889,10 +3892,13 @@ export type Database = {
           bank: string | null
           bank_notification_id: string | null
           commission_amount: number | null
+          commission_payer: string | null
+          commission_percentage: number | null
           error_message: string | null
           meter_id: string | null
           meter_number: string | null
           mobile: string | null
+          owner_commission_liability: number | null
           owner_id: string | null
           owner_name: string | null
           owner_type: string | null
@@ -3910,6 +3916,7 @@ export type Database = {
           txn_at: string | null
           units: number | null
           vat_on_commission_amount: number | null
+          vat_on_commission_percentage: number | null
           vending_software: string | null
         }
         Relationships: []
