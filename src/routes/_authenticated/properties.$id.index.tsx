@@ -865,7 +865,7 @@ function PropertyDetailPage() {
     null;
 
   const stats = [
-    { label: "Units", value: configuredUnitCount ?? "—", icon: Layers },
+    { label: "Units", value: actualUnitCount, icon: Layers },
     { label: "Current residents", value: residentsCurrent.length, icon: UsersIcon },
     { label: "Past assignments", value: previous.length, icon: UserCog },
   ];
