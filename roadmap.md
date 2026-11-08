@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Align administrator/vendor property-list Units totals with complete property-detail unit reads; verify pagination beyond the default row limit.
+
 - [x] Vendor Bulk Resident Import: CSV name/email/unit/property, scoped preview and confirmation, duplicate protection, locked audited creation/assignment, row results and error download. 13 tests passed; installed service-only completion guards verified; build OK.
 - [ ] Vendor resident import signed-in preview/save/readback acceptance (blocked: injected account has no vendor access and requester has no mintable account). No live residents created or emails sent during checks.
 
