@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { listPortalPriceMeters } from "@/lib/price-meter-scope.functions";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { listVendorPriceRequests, setVendorMeterPrices } from "@/lib/vendor-admin.functions";
@@ -14,7 +17,6 @@ import {
   StatCard,
   StatusBadge,
   titleCase,
-  useVendorScope,
 } from "@/components/vendor/VendorUI";
 
 export const Route = createFileRoute("/_authenticated/vendor/price-management")({
@@ -43,7 +45,13 @@ const MODES = [
 
 function VendorPriceManagement() {
   const access = Route.useLoaderData();
-  const { data, isLoading, error } = useVendorScope();
+  const fetchMeters = useServerFn(listPortalPriceMeters);
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["vendor-price-meters"],
+    queryFn: () => fetchMeters({ data: { portal: "vendor" } }),
+    refetchInterval: 30_000,
+  });
+  useRealtimeRefresh("vendor-price-meters", ["meters", "units", "properties", "unit_assignments"], [["vendor-price-meters"]]);
   const queryClient = useQueryClient();
   const applyPrices = useServerFn(setVendorMeterPrices);
   const fetchRequests = useServerFn(listVendorPriceRequests);
@@ -66,7 +74,7 @@ function VendorPriceManagement() {
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return meters.filter((m) => {
-      if (type !== "all" && m.type !== type) return false;
+      if (type !== "all" && m.type.toLowerCase() !== type) return false;
       if (!needle) return true;
       return [m.meter_number, m.serial_number, m.resident_name, m.zone_name].some((v) =>
         (v ?? "").toLowerCase().includes(needle),
@@ -102,6 +110,7 @@ function VendorPriceManagement() {
       setValue("");
       setNote("");
       await queryClient.invalidateQueries({ queryKey: ["vendor-scope"] });
+      await queryClient.invalidateQueries({ queryKey: ["vendor-price-meters"] });
       await queryClient.invalidateQueries({ queryKey: ["vendor-price-requests"] });
     } catch (e) {
       setFailure(e instanceof Error ? e.message : "Could not submit price changes.");
@@ -223,6 +232,9 @@ function VendorPriceManagement() {
 
 
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+              <RefreshCw className={isFetching ? "animate-spin" : ""} /> Refresh
+            </Button>
             <label className="flex min-w-56 flex-1 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm">
               <Search className="size-4 text-muted-foreground" />
               <input
