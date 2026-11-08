@@ -247,7 +247,7 @@ export async function vendMeterToken(
     commission_owner_name: terms?.owner_name ?? null,
     applied_price_per_unit: terms?.price_per_unit ?? null,
   };
-  if (terms?.commission_payer === "owner") insert.net_amount = Number(terms.net_amount);
+  if (terms?.commission_payer === "owner") insert["net_amount"] = Number(terms.net_amount);
 
   const { data: row, error } = await supabase
     .from("meter_tokens")
