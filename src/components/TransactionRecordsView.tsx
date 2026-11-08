@@ -172,6 +172,7 @@ export function TransactionRecordsView({ vendor = false }: { vendor?: boolean })
     ["Total Transactions", s.total.toLocaleString()], ["Successful", s.successful.toLocaleString()], ["Failed", s.failed.toLocaleString()],
     ["Total Amount Paid", kes(s.amount_paid)], ["Total Commission", kes(s.commission)], ["Total VAT on Commission", kes(s.vat)],
     ["Total Units", units(s.units)], ["Tokens Generated", s.tokens.toLocaleString()],
+    ...(!vendor ? [["Token Purchase Amount", kes(s.token_value)], ["Owner Commission Liability", kes(s.owner_liability)]] as [string, string][] : []),
   ] : [];
 
   return (

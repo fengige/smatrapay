@@ -102,18 +102,21 @@ function mapRow(r: any): TxnRecord {
 }
 
 /** Sum stored decimal values as integer cents / ten-thousandths to avoid float drift. */
-export function summarize(rows: { amount_paid: any; commission_amount: any; vat_on_commission_amount: any; units: any; token_status: string; token_id: string | null }[]) {
+export function summarize(rows: { amount_paid: any; commission_amount: any; vat_on_commission_amount: any; units: any; token_status: string; token_id: string | null; owner_commission_liability?: any; tokenizable_amount?: any }[]) {
   let paid = 0, comm = 0, vat = 0, units = 0, ok = 0, failed = 0, tokens = 0;
+  let ownerLiability = 0, tokenValue = 0;
   for (const r of rows) {
     paid += Math.round(Number(r.amount_paid ?? 0) * 100);
     comm += Math.round(Number(r.commission_amount ?? 0) * 100);
     vat += Math.round(Number(r.vat_on_commission_amount ?? 0) * 100);
+    ownerLiability += Math.round(Number(r.owner_commission_liability ?? 0) * 100);
+    tokenValue += Math.round(Number(r.tokenizable_amount ?? 0) * 100);
     units += Math.round(Number(r.units ?? 0) * 10000);
     if (r.token_status === "generated") ok += 1;
     if (r.token_status === "failed") failed += 1;
     if (r.token_id) tokens += 1;
   }
-  return { total: rows.length, successful: ok, failed, amount_paid: paid / 100, commission: comm / 100, vat: vat / 100, units: units / 10000, tokens };
+  return { total: rows.length, successful: ok, failed, amount_paid: paid / 100, commission: comm / 100, vat: vat / 100, units: units / 10000, tokens, owner_liability: ownerLiability / 100, token_value: tokenValue / 100 };
 }
 
 const listInput = (d: unknown) => schema.extend({
@@ -131,7 +134,7 @@ async function runList(supabase: any, data: ReturnType<typeof listInput>, meterI
   // Summary over the whole filtered set, computed server-side from minimal columns.
   const agg: any[] = [];
   for (let s = 0; s < 100000; s += 1000) {
-    const { data: part, error: e2 } = await build(supabase, "record_id, token_id, amount_paid, commission_amount, vat_on_commission_amount, units, token_status, bank, vending_software", data, undefined, meterIds)
+    const { data: part, error: e2 } = await build(supabase, "record_id, token_id, amount_paid, commission_amount, vat_on_commission_amount, units, token_status, bank, vending_software, owner_commission_liability, tokenizable_amount", data, undefined, meterIds)
       .order("record_id").range(s, s + 999);
     if (e2) throw new Error(e2.message);
     agg.push(...(part ?? []));
