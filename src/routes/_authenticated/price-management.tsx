@@ -166,7 +166,7 @@ function PriceManagementPage() {
       if (supplierFilter !== "all" && (m.supplier_id ?? "none") !== supplierFilter) return false;
       if (!matchesPriceProperty(m, propertyFilter)) return false;
       if (!needle) return true;
-      return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.unit_label ?? "", m.property_name ?? ""]
+      return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.owner_name ?? "", m.owner_role ?? "", m.unit_label ?? "", m.property_name ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(needle);
@@ -707,6 +707,7 @@ function PriceManagementPage() {
                   />
                 </th>
                 <th className="px-4 py-3">Meter</th>
+                <th className="px-4 py-3">Owner</th>
                 <th className="px-4 py-3">Utility</th>
                 <th className="px-4 py-3">Supplier</th>
                 <th className="px-4 py-3">Unit</th>
@@ -719,14 +720,14 @@ function PriceManagementPage() {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
                     <Loader2 className="mx-auto size-5 animate-spin" />
                   </td>
                 </tr>
               )}
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
                     No meters match these filters.
                   </td>
                 </tr>
@@ -750,6 +751,10 @@ function PriceManagementPage() {
                     <td className="px-4 py-3">
                       <span className="block font-semibold">{m.meter_number}</span>
                       <span className="block text-xs text-muted-foreground">{m.serial_number}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="block font-medium">{m.owner_name ?? "—"}</span>
+                      <span className="block text-xs capitalize text-muted-foreground">{m.owner_role ?? "Unassigned"}</span>
                     </td>
                     <td className="px-4 py-3 capitalize">{m.type}</td>
                     <td className="px-4 py-3">{m.supplier_name ?? "—"}</td>
