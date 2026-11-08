@@ -19,11 +19,11 @@ function Page() {
   const access = Route.useLoaderData();
   const fetchHome = useServerFn(getResidentHome);
   const q = useQuery({ queryKey: ["resident-home"], queryFn: () => fetchHome(), enabled: access.allowed });
-  const [f, setF] = useState({ property: "", unit: "", type: "", supplier: "", status: "" });
+  const [f, setF] = useState({ property: "", unit: "", type: "", status: "" });
   const meters = (q.data?.meters ?? []).filter((m) =>
     (!f.property || m.property_name === f.property) && (!f.unit || m.unit_number === f.unit) &&
-    (!f.type || m.type === f.type) && (!f.supplier || m.supplier === f.supplier) && (!f.status || m.status === f.status));
-  const opts = (k: "property_name" | "unit_number" | "type" | "supplier" | "status") => [...new Set((q.data?.meters ?? []).map((m) => m[k]))];
+    (!f.type || m.type === f.type) && (!f.status || m.status === f.status));
+  const opts = (k: "property_name" | "unit_number" | "type" | "status") => [...new Set((q.data?.meters ?? []).map((m) => m[k]))];
 
   return (
     <DashboardShell access={access} title="My Properties & Meters" description="Homes and meters linked to your account.">
@@ -51,7 +51,7 @@ function Page() {
           </Card>
           <Card title="My meters">
             <div className="mb-4 grid gap-2 sm:grid-cols-5">
-              {([["property", "property_name", "All properties"], ["unit", "unit_number", "All units"], ["type", "type", "All types"], ["supplier", "supplier", "All suppliers"], ["status", "status", "All statuses"]] as const).map(([k, col, all]) => (
+              {([["property", "property_name", "All properties"], ["unit", "unit_number", "All units"], ["type", "type", "All types"], ["status", "status", "All statuses"]] as const).map(([k, col, all]) => (
                 <select key={k} className={field} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={all}>
                   <option value="">{all}</option>
                   {opts(col).map((o) => <option key={String(o)} value={String(o)}>{String(o)}</option>)}
@@ -60,11 +60,11 @@ function Page() {
             </div>
             {meters.length === 0 ? <Empty>No meters match.</Empty> : (
               <>
-              <ul className="divide-y divide-border lg:hidden">{meters.map((m) => <li key={m.id} className="space-y-3 py-4"><div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><div className="min-w-0"><p className="text-sm font-semibold">{m.type}</p><p className="mt-1 font-mono text-sm">{m.meter_number}</p></div><Badge status={m.status}>{m.status}</Badge></div><p className="text-sm text-muted-foreground">{m.property_name} · Unit {m.unit_number}<br />{m.supplier} · {m.owner}</p><p className="text-xs text-muted-foreground">Last purchase: {when(m.last_purchase_at)}</p>{m.status === "active" && <Button asChild><Link to="/resident/buy-tokens" search={{ meter: m.id, purchase: undefined }}>Buy tokens</Link></Button>}</li>)}</ul>
+              <ul className="divide-y divide-border lg:hidden">{meters.map((m) => <li key={m.id} className="space-y-3 py-4"><div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3"><div className="min-w-0"><p className="text-sm font-semibold">{m.type}</p><p className="mt-1 font-mono text-sm">{m.meter_number}</p></div><Badge status={m.status}>{m.status}</Badge></div><p className="text-sm text-muted-foreground">{m.property_name} · Unit {m.unit_number}<br />{m.owner}</p><p className="text-xs text-muted-foreground">Last purchase: {when(m.last_purchase_at)}</p>{m.status === "active" && <Button asChild><Link to="/resident/buy-tokens" search={{ meter: m.id, purchase: undefined }}>Buy tokens</Link></Button>}</li>)}</ul>
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs uppercase text-muted-foreground">
-                    <tr><th className="py-2 pr-4">Meter</th><th className="pr-4">Type</th><th className="pr-4">Home</th><th className="pr-4">Supplier</th><th className="pr-4">Managed by</th><th className="pr-4">Status</th><th className="pr-4">Last purchase</th><th /></tr>
+                    <tr><th className="py-2 pr-4">Meter</th><th className="pr-4">Type</th><th className="pr-4">Home</th><th className="pr-4">Managed by</th><th className="pr-4">Status</th><th className="pr-4">Last purchase</th><th /></tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {meters.map((m) => (
@@ -72,7 +72,6 @@ function Page() {
                         <td className="py-3 pr-4 font-mono">{m.meter_number}</td>
                         <td className="pr-4">{m.type}</td>
                         <td className="pr-4">{m.property_name} · {m.unit_number}</td>
-                        <td className="pr-4">{m.supplier}</td>
                         <td className="pr-4">{m.owner}{m.owner_type ? ` (${m.owner_type})` : ""}</td>
                         <td className="pr-4"><Badge status={m.status}>{m.status}</Badge></td>
                         <td className="pr-4">{when(m.last_purchase_at)}</td>

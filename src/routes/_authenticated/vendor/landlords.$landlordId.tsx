@@ -600,7 +600,6 @@ function VendorLandlordDetailPage() {
                       <th className="px-4 py-3 font-semibold">Type</th>
                       <th className="px-4 py-3 font-semibold">Property / Unit</th>
                       <th className="px-4 py-3 font-semibold">Zone</th>
-                      <th className="px-4 py-3 font-semibold">Supplier</th>
                       <th className="px-4 py-3 font-semibold">Installation</th>
                       <th className="px-4 py-3 font-semibold">Current reading</th>
                       <th className="px-4 py-3 font-semibold">Credit</th>
@@ -629,7 +628,6 @@ function VendorLandlordDetailPage() {
                             {[m.property_name, m.unit_number].filter(Boolean).join(" · ") || "—"}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">{m.zone_name ?? "—"}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{m.supplier_name ?? "—"}</td>
                           <td className="px-4 py-3">
                             <Badge value={m.installation_status} />
                           </td>

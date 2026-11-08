@@ -55,7 +55,6 @@ type SortKey =
   | "meter_number"
   | "serial_number"
   | "type"
-  | "supplier_name"
   | "zone_name"
   | "resident_name"
   | "status"
@@ -97,7 +96,7 @@ function VendorMetersPage() {
       if (install !== "all" && m.installation_status !== install) return false;
       if (zone !== "all" && String(m.zone_id ?? "") !== zone) return false;
       if (!needle) return true;
-      return [m.meter_number, m.serial_number, m.resident_name, m.supplier_name, m.zone_name].some(
+      return [m.meter_number, m.serial_number, m.resident_name, m.zone_name].some(
         (v) => (v ?? "").toLowerCase().includes(needle),
       );
     });
@@ -148,15 +147,9 @@ function VendorMetersPage() {
         "Meter",
         "Serial",
         "Type",
-        "Supplier",
         "Zone",
         "Resident",
         "Price per unit",
-        "SGC",
-        "KRN",
-        "TI",
-        "EA",
-        "KEN",
         "Status",
         "Installation",
         "Added",
@@ -165,15 +158,9 @@ function VendorMetersPage() {
         m.meter_number,
         m.serial_number,
         m.type,
-        m.supplier_name ?? "",
         m.zone_name ?? "",
         m.resident_name ?? "",
         m.price_per_unit ?? "",
-        m.sgc ?? "",
-        m.krn ?? "",
-        m.ti ?? "",
-        m.ea ?? "",
-        m.ken ?? "",
         m.status,
         installationLabel(m.installation_status),
         formatDate(m.created_at),
@@ -314,14 +301,8 @@ function VendorMetersPage() {
                       <SortHeader label="Meter" sortBy="meter_number" />
                       <SortHeader label="Serial" sortBy="serial_number" />
                       <SortHeader label="Type" sortBy="type" />
-                      <SortHeader label="Supplier" sortBy="supplier_name" />
                       <SortHeader label="Zone" sortBy="zone_name" />
                       <SortHeader label="Resident" sortBy="resident_name" />
-                      <th className="px-3 py-2">SGC</th>
-                      <th className="px-3 py-2">KRN</th>
-                      <th className="px-3 py-2">TI</th>
-                      <th className="px-3 py-2">EA</th>
-                      <th className="px-3 py-2">KEN</th>
                       <SortHeader label="Status" sortBy="status" />
                       <SortHeader label="Installation" sortBy="installation_status" />
                       <SortHeader label="Added" sortBy="created_at" />
@@ -334,14 +315,8 @@ function VendorMetersPage() {
                         <td className="px-3 py-2 font-semibold">{m.meter_number}</td>
                         <td className="px-3 py-2">{m.serial_number}</td>
                         <td className="px-3 py-2">{titleCase(m.type)}</td>
-                        <td className="px-3 py-2">{m.supplier_name ?? "—"}</td>
                         <td className="px-3 py-2">{m.zone_name ?? "—"}</td>
                         <td className="px-3 py-2">{m.resident_name ?? "—"}</td>
-                        <td className="px-3 py-2">{m.sgc ?? "—"}</td>
-                        <td className="px-3 py-2">{m.krn ?? "—"}</td>
-                        <td className="px-3 py-2">{m.ti ?? "—"}</td>
-                        <td className="px-3 py-2">{m.ea ?? "—"}</td>
-                        <td className="px-3 py-2">{m.ken ?? "—"}</td>
                         <td className="px-3 py-2">
                           <StatusBadge value={m.status} />
                         </td>
