@@ -184,7 +184,13 @@ export async function vendMeterToken(
       actor_id: p.actorId,
     };
 
-    const { outcome, log } = await integration.execute(
+    if (terms) {
+      const { data: claim, error: claimError } = await supabaseAdmin.from("vending_commission_terms")
+        .update({ vend_state: "processing" }).eq("id", terms.id).in("vend_state", ["ready", "failed"]).select("id").maybeSingle();
+      if (claimError || !claim) throw Object.assign(new Error("This purchase is already processing or needs provider reconciliation before retrying."), { vendState: "review" });
+    }
+    let execution;
+    try { execution = await integration.execute(
       {
         action: p.action,
         meter_number: meter.meter_number,
@@ -194,10 +200,15 @@ export async function vendMeterToken(
         price_per_unit: Number(terms?.price_per_unit ?? meter.price_per_unit ?? 0),
       },
       credentials,
-    );
+    ); } catch {
+      if (terms) await supabaseAdmin.from("vending_commission_terms").update({ vend_state: "review" }).eq("id", terms.id);
+      throw Object.assign(new Error("The vending response was not confirmed. Reconcile this payment before retrying."), { vendState: "review" });
+    }
+    const { outcome, log } = execution;
     if (log) await writeLog(supabaseAdmin, logBase, log);
 
     if (outcome.ok === false) {
+      if (terms) await supabaseAdmin.from("vending_commission_terms").update({ vend_state: outcome.state === "review" ? "review" : "failed" }).eq("id", terms.id);
       // A rejected or unconfirmed call never becomes a successful token.
       throw Object.assign(new Error(outcome.message), { vendState: outcome.state, vendCode: outcome.error_code });
     }
@@ -303,6 +314,8 @@ export async function vendMeterToken(
       },
     );
   }
+
+  if (terms) await supabaseAdmin.from("vending_commission_terms").update({ vend_state: "completed" }).eq("id", terms.id);
 
   providerState = "successful";
   return {

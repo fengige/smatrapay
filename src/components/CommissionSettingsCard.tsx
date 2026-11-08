@@ -51,13 +51,15 @@ export function CommissionSettingsCard() {
 
   const mutation = useMutation({
     mutationFn: () =>
-      save({
+      {
+        if (!payer) throw new Error("Choose who pays commission");
+        return save({
         data: {
           commission_payer: payer,
           commission_percentage: Number(form.commission_percentage),
           vat_on_commission_percentage: Number(form.vat_on_commission_percentage),
         },
-      }),
+      }); },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["commission-settings"] });
       toast.success("Commission settings saved");
