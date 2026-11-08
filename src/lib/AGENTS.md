@@ -3,3 +3,4 @@
 - Bulk meter CSV uses shared reference validation and caller-authorized locked assignment RPCs to retain meter/unit relationships and audit triggers; preview and save revalidate scope rather than trusting client-resolved targets.
 - Vendor resident lists use caller-bound eligible-ID RPCs and paged RLS profile reads; list visibility does not grant additional account management authority, and privileged history is actor-scoped.
 - Vendor resident CSV import resolves scoped references before provider account creation, then uses a service-only locked completion transaction for profile/role/assignment/audit; retries skip matching vendor-created accounts and failed completions compensate new accounts.
+- Admin/vendor property lists and details count actual RLS-visible unit records through complete, stably ordered paginated reads, never planned totals or a capped single request.

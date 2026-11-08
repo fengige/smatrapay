@@ -5,6 +5,7 @@ import { COUNTRY_OPTIONS, STATE_MAP, normalizeCountry, normalizeState } from "@/
 import { propertyWriteErrorMessage } from "@/lib/property-errors";
 import { unitInput } from "@/lib/unit-input";
 import { adminUnitImportRow } from "@/lib/admin-unit-csv";
+import { readAll } from "@/lib/landlord-scope.server";
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -142,8 +143,7 @@ export const listProperties = createServerFn({ method: "GET" })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const { data: units, error: unitsError } = await supabase.from("units").select("*");
-    if (unitsError) throw new Error(unitsError.message);
+    const units = await readAll(() => supabase.from("units").select("*").order("id"));
 
     const { data: assignments, error: aErr } = await supabase
       .from("unit_assignments")
@@ -191,12 +191,12 @@ export const getProperty = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!property) throw new Error("Property not found");
 
-    const { data: units, error: unitsError } = await supabase
+    const units = await readAll(() => supabase
       .from("units")
       .select("*")
       .eq("property_id", data.id)
-      .order("unit_number", { ascending: true });
-    if (unitsError) throw new Error(unitsError.message);
+      .order("unit_number", { ascending: true })
+      .order("id"));
 
     const unitIds = (units ?? []).map((u) => u.id);
     let assignments: any[] = [];

@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
 import { propertyWriteErrorMessage } from "@/lib/property-errors";
 import { unitInput } from "@/lib/unit-input";
+import { readAll } from "@/lib/landlord-scope.server";
 
 /**
  * Vendor-scoped property management.
@@ -202,10 +203,10 @@ export const listVendorProperties = createServerFn({ method: "GET" })
       : { data: [] as any[] };
     const ownerMap = new Map(((owners ?? []) as any[]).map((o) => [o.id, o]));
 
-    const { data: units } = ids.length
-      ? await supabase.from("units").select("id, property_id, status").in("property_id", ids)
-      : { data: [] as any[] };
-    const unitRows = (units ?? []) as any[];
+    const unitRows = ids.length
+      ? await readAll(() => supabase.from("units").select("id, property_id, status")
+          .in("property_id", ids).order("id"))
+      : [];
 
     const { data: photos } = ids.length
       ? await supabase
@@ -368,12 +369,12 @@ export const getVendorProperty = createServerFn({ method: "GET" })
       };
     }
 
-    const { data: units } = await supabase
+    const unitRows = await readAll(() => supabase
       .from("units")
       .select("*")
       .eq("property_id", data.id)
-      .order("unit_number");
-    const unitRows = (units ?? []) as any[];
+      .order("unit_number")
+      .order("id"));
     const unitIds = unitRows.map((u) => u.id as string);
 
     const { data: assignments } = unitIds.length
