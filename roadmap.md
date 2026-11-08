@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Handle vendor price selections over 1,000 meters with bounded requests, progress and remaining-selection retries; preserve ownership checks and admin approval.
+
 - [x] Correct vendor pricing meter totals using complete authorized records; add the missing read-only landlord pricing page with cross-vendor landlord scope, automatic/manual refresh and count regression tests. 16 tests passed; build OK; pricing mutations and admin behavior unchanged.
 - [ ] Signed-in vendor/landlord pricing counts and creation/import/assignment refresh acceptance (blocked: no requester-matching account/session can be minted). Both signed-out pages redirect to auth without browser errors; no live meter records changed.
 
