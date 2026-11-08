@@ -371,20 +371,13 @@ export const listVendorPriceRequests = createServerFn({ method: "GET" })
     const vendorId = await assertVendor(context as never);
     const supabase = context.supabase as any;
 
-    const { data: rows, error } = await supabase
-      .from("meter_price_change_requests")
-      .select("id, created_at, reviewed_at, meter_id, current_price, requested_price, status, note, review_note")
-      .eq("vendor_id", vendorId)
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    const list = (rows ?? []) as any[];
+    const { readPricingRequests, readPricingRelated } = await import("./price-management-read.server");
+    const list = await readPricingRequests(supabase, vendorId);
 
     const meterIds = [...new Set(list.map((r) => r.meter_id))];
     let meters: any[] = [];
     if (meterIds.length) {
-      const { data: m } = await supabase.from("meters").select("id, meter_number").in("id", meterIds);
-      meters = m ?? [];
+      meters = await readPricingRelated(supabase, "meters", "id, meter_number", meterIds);
     }
     const byId = new Map(meters.map((m) => [m.id as string, m.meter_number as string]));
 

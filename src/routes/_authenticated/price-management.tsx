@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import { priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
 import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
@@ -71,7 +73,7 @@ function PriceManagementPage() {
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("active");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [userType, setUserType] = useState<"all" | "landlord" | "agent" | "vendor">("all");
   const [userFilter, setUserFilter] = useState("all");
@@ -88,7 +90,9 @@ function PriceManagementPage() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["meters"],
     queryFn: () => fetchMeters(),
+    refetchInterval: 30_000,
   });
+  useRealtimeRefresh("admin-pricing", ["meters", "units", "properties", "meter_price_change_requests"], [["meters"], ["price-change-requests"]]);
 
   const { data: priceLogs = [], isLoading: logsLoading } = useQuery({
     queryKey: ["price-audit"],
@@ -97,16 +101,23 @@ function PriceManagementPage() {
 
   const fetchPriceRequests = useServerFn(listPriceChangeRequests);
   const reviewRequests = useServerFn(reviewPriceChangeRequests);
-  const { data: priceRequests = [] } = useQuery({
+  const { data: priceRequests = [], isLoading: requestsLoading, error: requestsError } = useQuery({
     queryKey: ["price-change-requests"],
     queryFn: () => fetchPriceRequests(),
+    refetchInterval: 30_000,
   });
   const pendingRequests = priceRequests.filter((r) => r.status === "pending");
   const reviewedRequests = priceRequests.filter((r) => r.status !== "pending").slice(0, 10);
 
   const reviewMutation = useMutation({
-    mutationFn: (vars: { ids: string[]; decision: "approved" | "rejected" }) =>
-      reviewRequests({ data: vars }),
+    mutationFn: async (vars: { ids: string[]; decision: "approved" | "rejected" }) => {
+      const total = { applied: 0, rejected: 0 };
+      await runPriceBatches(vars.ids, ids => reviewRequests({ data: { ...vars, ids } }), result => {
+        total.applied += result.applied;
+        total.rejected += result.rejected;
+      });
+      return total;
+    },
     onSuccess: (res, vars) => {
       toast.success(
         vars.decision === "approved"
@@ -118,9 +129,15 @@ function PriceManagementPage() {
       void queryClient.invalidateQueries({ queryKey: ["price-audit"] });
     },
     onError: (e: Error) => toast.error(e.message || "Could not review the request"),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["price-change-requests"] });
+      void queryClient.invalidateQueries({ queryKey: ["meters"] });
+      void queryClient.invalidateQueries({ queryKey: ["price-audit"] });
+    },
   });
 
   const meters = data?.meters ?? [];
+  const ownerMeters = useMemo(() => priceOwnerMeters(meters, userType, userFilter), [meters, userType, userFilter]);
   const suppliers = data?.suppliers ?? [];
   const properties = useMemo(() => {
     const map = new Map<string, string>();
@@ -142,28 +159,18 @@ function PriceManagementPage() {
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return meters.filter((m) => {
+    return ownerMeters.filter((m) => {
       if (typeFilter !== "all" && m.type !== typeFilter) return false;
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (supplierFilter !== "all" && (m.supplier_id ?? "none") !== supplierFilter) return false;
       if (propertyFilter !== "all" && (m.property_id ?? "none") !== propertyFilter) return false;
-      if (userType !== "all") {
-        const assigned =
-          userType === "landlord"
-            ? m.landlord_id
-            : userType === "agent"
-              ? m.agent_id
-              : m.vendor_id || null;
-        if (!assigned) return false;
-        if (userFilter !== "all" && assigned !== userFilter) return false;
-      }
       if (!needle) return true;
       return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.unit_label ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(needle);
     });
-  }, [meters, q, typeFilter, statusFilter, supplierFilter, propertyFilter, userType, userFilter]);
+  }, [ownerMeters, q, typeFilter, statusFilter, supplierFilter, propertyFilter, userType, userFilter]);
 
   const selectedRows = rows.filter((m) => selected[m.id]);
   const numericValue = Number(value);
@@ -182,16 +189,23 @@ function PriceManagementPage() {
   const negative = preview.some((p) => p.to < 0);
   const changing = preview.filter((p) => p.to !== p.from).length;
 
-  const avgPrice = meters.length
-    ? meters.reduce((sum, m) => sum + m.price_per_unit, 0) / meters.length
+  const avgPrice = ownerMeters.length
+    ? ownerMeters.reduce((sum, m) => sum + m.price_per_unit, 0) / ownerMeters.length
     : 0;
-  const unpriced = meters.filter((m) => m.price_per_unit <= 0).length;
+  const unpriced = ownerMeters.filter((m) => m.price_per_unit <= 0).length;
 
   const mutation = useMutation({
-    mutationFn: () =>
-      applyPrices({
-        data: { ids: selectedRows.map((m) => m.id), mode, value: numericValue },
-      } as never),
+    mutationFn: async () => {
+      const total = { updated: 0, unchanged: 0 };
+      await runPriceBatches(selectedRows.map(m => m.id), ids => applyPrices({
+        data: { ids, mode, value: numericValue },
+      }), (result, ids) => {
+        total.updated += result.updated;
+        total.unchanged += result.unchanged;
+        setSelected(current => { const next = { ...current }; for (const id of ids) delete next[id]; return next; });
+      });
+      return total;
+    },
     onSuccess: async (res: any) => {
       await queryClient.invalidateQueries({ queryKey: ["meters"] });
       await queryClient.invalidateQueries({ queryKey: ["price-audit"] });
@@ -205,6 +219,10 @@ function PriceManagementPage() {
       );
     },
     onError: (e: Error) => toast.error(e.message || "Could not update prices"),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meters"] });
+      void queryClient.invalidateQueries({ queryKey: ["price-audit"] });
+    },
   });
 
   const pctError = (v: string) => {
@@ -219,14 +237,20 @@ function PriceManagementPage() {
   const vatErr = pctError(vatValue);
   const commReady = !!selectedRows.length && (commValue.trim() || vatValue.trim()) && !commErr && !vatErr;
   const commissionMutation = useMutation({
-    mutationFn: () =>
-      applyCommission({
+    mutationFn: async () => {
+      let updated = 0;
+      await runPriceBatches(selectedRows.map(m => m.id), ids => applyCommission({
         data: {
-          ids: selectedRows.map((m) => m.id),
+          ids,
           ...(commValue.trim() ? { commission_percentage: Number(commValue) } : {}),
           ...(vatValue.trim() ? { vat_on_commission_percentage: Number(vatValue) } : {}),
         },
-      }),
+      }), (result, ids) => {
+        updated += result.updated;
+        setSelected(current => { const next = { ...current }; for (const id of ids) delete next[id]; return next; });
+      });
+      return { updated };
+    },
     onSuccess: async (res) => {
       await queryClient.invalidateQueries({ queryKey: ["meters"] });
       setCommValue("");
@@ -234,6 +258,7 @@ function PriceManagementPage() {
       toast.success(`Commission & VAT updated on ${res.updated} meter${res.updated === 1 ? "" : "s"}`);
     },
     onError: (e: Error) => toast.error(e.message || "Could not update Commission & VAT"),
+    onSettled: () => { void queryClient.invalidateQueries({ queryKey: ["meters"] }); },
   });
   const pct = (own: number | null, def: number | undefined) =>
     own !== null ? `${own.toFixed(2)}%` : def !== undefined ? `${def.toFixed(2)}% (default)` : "—";
@@ -321,7 +346,7 @@ function PriceManagementPage() {
         </button>
         <button
           type="button"
-          onClick={() => refetch()}
+          onClick={() => { void refetch(); void queryClient.invalidateQueries({ queryKey: ["price-change-requests"] }); }}
           aria-label="Refresh meters"
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
         >
@@ -370,7 +395,11 @@ function PriceManagementPage() {
           )}
         </div>
 
-        {pendingRequests.length === 0 ? (
+        {requestsError ? (
+          <p className="mt-4 text-sm text-destructive">Could not load price requests. Please refresh.</p>
+        ) : requestsLoading ? (
+          <p className="mt-4 text-sm text-muted-foreground">Loading price requests…</p>
+        ) : pendingRequests.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">No requests waiting for approval.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
@@ -445,7 +474,8 @@ function PriceManagementPage() {
             <span className="text-sm text-muted-foreground">Meters</span>
             <Gauge className="size-4 text-primary" />
           </div>
-          <div className="mt-2 text-2xl font-bold">{meters.length}</div>
+          <div className="mt-2 text-2xl font-bold">{ownerMeters.length}</div>
+          <p className="mt-1 text-xs text-muted-foreground">{rows.length} matching filters</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">

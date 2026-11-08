@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { readPricingRelated, readPricingRequests } from "./price-management-read.server";
 
 const uuid = z.string().uuid();
 
@@ -169,7 +170,7 @@ export const listPriceAuditLogs = createServerFn({ method: "GET" })
         to,
       };
 
-      if (sameBatch) last!.meters.push(entry);
+      if (sameBatch && last) last.meters.push(entry);
       else
         batches.push({
           id: row.id as string,
@@ -205,28 +206,18 @@ export const listPriceChangeRequests = createServerFn({ method: "GET" })
     await assertAdmin(context as never);
     const { supabase } = context as any;
 
-    const { data: rows, error } = await supabase
-      .from("meter_price_change_requests")
-      .select(
-        "id, created_at, reviewed_at, meter_id, vendor_id, current_price, requested_price, status, note, review_note",
-      )
-      .order("created_at", { ascending: false })
-      .limit(300);
-    if (error) throw new Error(error.message);
-    const list = (rows ?? []) as any[];
+    const list = await readPricingRequests(supabase);
 
     const meterIds = [...new Set(list.map((r) => r.meter_id))];
     const vendorIds = [...new Set(list.map((r) => r.vendor_id))];
 
     let meters: any[] = [];
     if (meterIds.length) {
-      const { data } = await supabase.from("meters").select("id, meter_number, type").in("id", meterIds);
-      meters = data ?? [];
+      meters = await readPricingRelated(supabase, "meters", "id, meter_number, type", meterIds);
     }
     let vendors: any[] = [];
     if (vendorIds.length) {
-      const { data } = await supabase.from("users").select("id, name, email").in("id", vendorIds);
-      vendors = data ?? [];
+      vendors = await readPricingRelated(supabase, "users", "id, name, email", vendorIds);
     }
     const meterById = new Map(meters.map((m) => [m.id as string, m]));
     const vendorById = new Map(vendors.map((v) => [v.id as string, v]));

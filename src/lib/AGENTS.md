@@ -5,3 +5,4 @@
 - Vendor resident CSV import resolves scoped references before provider account creation, then uses a service-only locked completion transaction for profile/role/assignment/audit; retries skip matching vendor-created accounts and failed completions compensate new accounts.
 - Admin/vendor property lists and details count actual RLS-visible unit records through complete, stably ordered paginated reads, never planned totals or a capped single request.
 - Portal pricing lists and totals share complete caller-authorized meter reads (vendor ownership or landlord meter helpers); landlord pricing is read-only so existing pricing-write permissions remain unchanged.
+- Administrator pricing and approval lists use stable complete RLS reads and bounded relationship queries; large actions use authorized batches so totals and decisions are not capped by individual request limits.
