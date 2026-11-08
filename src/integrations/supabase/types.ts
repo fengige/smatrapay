@@ -862,8 +862,14 @@ export type Database = {
         Row: {
           action: Database["public"]["Enums"]["meter_token_action"]
           amount: number
+          applied_price_per_unit: number | null
           commission_amount: number | null
+          commission_owner_id: string | null
+          commission_owner_name: string | null
+          commission_owner_type: string | null
+          commission_payer: string
           commission_percentage: number | null
+          commission_terms_id: string | null
           created_at: string
           customer_phone: string | null
           expires_at: string
@@ -893,8 +899,14 @@ export type Database = {
         Insert: {
           action?: Database["public"]["Enums"]["meter_token_action"]
           amount?: number
+          applied_price_per_unit?: number | null
           commission_amount?: number | null
+          commission_owner_id?: string | null
+          commission_owner_name?: string | null
+          commission_owner_type?: string | null
+          commission_payer?: string
           commission_percentage?: number | null
+          commission_terms_id?: string | null
           created_at?: string
           customer_phone?: string | null
           expires_at?: string
@@ -924,8 +936,14 @@ export type Database = {
         Update: {
           action?: Database["public"]["Enums"]["meter_token_action"]
           amount?: number
+          applied_price_per_unit?: number | null
           commission_amount?: number | null
+          commission_owner_id?: string | null
+          commission_owner_name?: string | null
+          commission_owner_type?: string | null
+          commission_payer?: string
           commission_percentage?: number | null
+          commission_terms_id?: string | null
           created_at?: string
           customer_phone?: string | null
           expires_at?: string
@@ -953,6 +971,13 @@ export type Database = {
           vending_software_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "meter_tokens_commission_terms_id_fkey"
+            columns: ["commission_terms_id"]
+            isOneToOne: false
+            referencedRelation: "vending_commission_terms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meter_tokens_meter_id_fkey"
             columns: ["meter_id"]
@@ -1342,6 +1367,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      owner_commission_liabilities: {
+        Row: {
+          basis_amount: number
+          commission_amount: number
+          created_at: string
+          owner_id: string
+          owner_type: string
+          token_id: string
+          vat_on_commission_amount: number
+        }
+        Insert: {
+          basis_amount: number
+          commission_amount: number
+          created_at?: string
+          owner_id: string
+          owner_type: string
+          token_id: string
+          vat_on_commission_amount: number
+        }
+        Update: {
+          basis_amount?: number
+          commission_amount?: number
+          created_at?: string
+          owner_id?: string
+          owner_type?: string
+          token_id?: string
+          vat_on_commission_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_commission_liabilities_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: true
+            referencedRelation: "meter_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payg_applications: {
         Row: {
@@ -2032,6 +2095,7 @@ export type Database = {
       }
       pricing_settings: {
         Row: {
+          commission_payer: string
           commission_percentage: number
           id: boolean
           updated_at: string
@@ -2039,6 +2103,7 @@ export type Database = {
           vat_on_commission_percentage: number
         }
         Insert: {
+          commission_payer?: string
           commission_percentage?: number
           id?: boolean
           updated_at?: string
@@ -2046,6 +2111,7 @@ export type Database = {
           vat_on_commission_percentage?: number
         }
         Update: {
+          commission_payer?: string
           commission_percentage?: number
           id?: boolean
           updated_at?: string
@@ -2060,7 +2126,9 @@ export type Database = {
           created_at: string
           field: string
           id: string
+          new_payer: string | null
           new_value: number | null
+          previous_payer: string | null
           previous_value: number | null
         }
         Insert: {
@@ -2068,7 +2136,9 @@ export type Database = {
           created_at?: string
           field: string
           id?: string
+          new_payer?: string | null
           new_value?: number | null
+          previous_payer?: string | null
           previous_value?: number | null
         }
         Update: {
@@ -2076,7 +2146,9 @@ export type Database = {
           created_at?: string
           field?: string
           id?: string
+          new_payer?: string | null
           new_value?: number | null
+          previous_payer?: string | null
           previous_value?: number | null
         }
         Relationships: []
@@ -3251,6 +3323,74 @@ export type Database = {
         }
         Relationships: []
       }
+      vending_commission_terms: {
+        Row: {
+          commission_amount: number
+          commission_payer: string
+          commission_percentage: number
+          created_at: string
+          gross_amount: number
+          id: string
+          meter_id: string
+          net_amount: number
+          owner_id: string | null
+          owner_name: string | null
+          owner_type: string | null
+          price_per_unit: number
+          request_key: string
+          token_units: number
+          vat_on_commission_amount: number
+          vat_on_commission_percentage: number
+          vend_by_unit: boolean
+        }
+        Insert: {
+          commission_amount: number
+          commission_payer: string
+          commission_percentage: number
+          created_at?: string
+          gross_amount: number
+          id?: string
+          meter_id: string
+          net_amount: number
+          owner_id?: string | null
+          owner_name?: string | null
+          owner_type?: string | null
+          price_per_unit: number
+          request_key: string
+          token_units: number
+          vat_on_commission_amount: number
+          vat_on_commission_percentage: number
+          vend_by_unit: boolean
+        }
+        Update: {
+          commission_amount?: number
+          commission_payer?: string
+          commission_percentage?: number
+          created_at?: string
+          gross_amount?: number
+          id?: string
+          meter_id?: string
+          net_amount?: number
+          owner_id?: string | null
+          owner_name?: string | null
+          owner_type?: string | null
+          price_per_unit?: number
+          request_key?: string
+          token_units?: number
+          vat_on_commission_amount?: number
+          vat_on_commission_percentage?: number
+          vend_by_unit?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vending_commission_terms_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vending_integration_logs: {
         Row: {
           actor_id: string | null
@@ -3732,6 +3872,16 @@ export type Database = {
       }
     }
     Views: {
+      owner_commission_balances: {
+        Row: {
+          commission_liability: number | null
+          owner_id: string | null
+          owner_type: string | null
+          total_liability: number | null
+          vat_liability: number | null
+        }
+        Relationships: []
+      }
       transaction_records: {
         Row: {
           action: string | null
