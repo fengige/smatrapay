@@ -478,7 +478,6 @@ function VendorResidentDetail() {
                       <Info label="Property" value={m.property_name ?? "—"} />
                       <Info label="Unit" value={m.unit_number ?? "—"} />
                       <Info label="Zone" value={m.zone_name ?? "—"} />
-                      <Info label="Supplier" value={m.supplier_name ?? "—"} />
                       <Info label="Meter status" value={<StatusBadge value={m.status} />} />
                       <Info label="Installation" value={installationLabel(m.installation_status)} />
                       <Info label="Installation date" value={formatDate(m.installation_date)} />
