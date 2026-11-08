@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { priceOwnerMeters, runPriceBatches } from "../price-management-data";
+import { matchesPriceProperty, priceOwnerMeters, pricePropertyOptions, runPriceBatches } from "../price-management-data";
 import { readPricingRequests, readPricingRelated, readPricingMeterRegistry } from "../price-management-read.server";
 
 function database(rows: any[]) {
@@ -17,6 +17,19 @@ function database(rows: any[]) {
 }
 
 describe("complete pricing and approvals", () => {
+  it("includes all properties by default and filters specific properties by ID, not duplicate names", () => {
+    const meters = [
+      { property_id: "a", property_name: "Same name", type: "water" },
+      { property_id: "b", property_name: "Same name", type: "gas" },
+      { property_id: "a", property_name: "Same name", type: "gas" },
+      { property_id: null, property_name: null, type: "water" },
+    ];
+    expect(meters.filter(m => matchesPriceProperty(m, "all")).length).toBe(4);
+    expect(meters.filter(m => matchesPriceProperty(m, "a")).length).toBe(2);
+    expect(meters.filter(m => matchesPriceProperty(m, "a") && m.type === "gas").length).toBe(1);
+    expect(meters.filter(m => matchesPriceProperty(m, "none")).length).toBe(1);
+    expect(pricePropertyOptions(meters)).toEqual([{ id: "a", name: "Same name" }, { id: "b", name: "Same name" }]);
+  });
   it("loads all 5,000 administrator meters including inactive and unassigned meters", async () => {
     const rows = Array.from({ length: 5000 }, (_, i) => ({ id: String(i), status: i % 2 ? "active" : "inactive", unit_id: null }));
     const result = await readPricingMeterRegistry(database(rows), "id,status,unit_id");

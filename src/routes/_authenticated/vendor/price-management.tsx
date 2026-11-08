@@ -10,6 +10,7 @@ import { checkRoleAccess } from "@/lib/auth.functions";
 import { DashboardShell } from "@/components/DashboardShell";
 import { listVendorPriceRequests, setVendorMeterPrices } from "@/lib/vendor-admin.functions";
 import { submitVendorPriceBatches } from "@/lib/vendor-price-batches";
+import { matchesPriceProperty, pricePropertyOptions } from "@/lib/price-management-data";
 import {
   EmptyState,
   ErrorBlock,
@@ -63,6 +64,7 @@ function VendorPriceManagement() {
 
   const [q, setQ] = useState("");
   const [type, setType] = useState("all");
+  const [property, setProperty] = useState("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [mode, setMode] = useState<string>("set");
   const [value, setValue] = useState("");
@@ -72,16 +74,18 @@ function VendorPriceManagement() {
   const [failure, setFailure] = useState<string | null>(null);
 
   const meters = data?.meters ?? [];
+  const properties = useMemo(() => pricePropertyOptions(meters), [meters]);
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return meters.filter((m) => {
+      if (!matchesPriceProperty(m, property)) return false;
       if (type !== "all" && m.type.toLowerCase() !== type) return false;
       if (!needle) return true;
-      return [m.meter_number, m.serial_number, m.resident_name, m.zone_name].some((v) =>
+      return [m.meter_number, m.serial_number, m.resident_name, m.zone_name, m.property_name].some((v) =>
         (v ?? "").toLowerCase().includes(needle),
       );
     });
-  }, [meters, q, type]);
+  }, [meters, q, type, property]);
 
   const allSelected = rows.length > 0 && rows.every((m) => selected.includes(m.id));
   const avgPrice = meters.length
@@ -251,7 +255,7 @@ function VendorPriceManagement() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search meter, serial, resident or zone"
+                placeholder="Search meter, serial, resident, zone or property"
                 aria-label="Search meters"
                 className="min-w-0 flex-1 bg-transparent outline-none"
               />
@@ -267,8 +271,20 @@ function VendorPriceManagement() {
               <option value="water">Water</option>
               <option value="gas">Gas</option>
             </select>
+            <select
+              value={property}
+              onChange={(e) => { setProperty(e.target.value); setSelected([]); }}
+              aria-label="Filter by property"
+              disabled={busy}
+              className="max-w-full rounded-md border border-border bg-card px-4 py-2 text-sm"
+            >
+              <option value="all">All properties</option>
+              <option value="none">No property / unassigned</option>
+              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
           </div>
 
+          <p className="text-sm text-muted-foreground">{rows.length} of {meters.length} meters</p>
           <div className="overflow-x-auto rounded-2xl border border-border bg-card">
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-muted-foreground">

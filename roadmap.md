@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add All properties/specific-property filters to administrator, vendor and landlord pricing; preserve complete account totals, search/type filters and ownership isolation.
+
 - [x] Correct administrator pricing meter/owner totals and complete approval lists/actions using stable complete reads, property-linked landlord ownership, bounded large actions and refresh; 18 regression tests passed and build OK. Existing pricing permissions preserved; no live prices changed.
 - [ ] Signed-in administrator pricing count/filter and approval acceptance (blocked: no auth account matches the requester; preview sign-in required). Signed-out access redirects to auth with no page errors; no live approval performed.
 

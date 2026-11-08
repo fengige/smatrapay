@@ -3,7 +3,7 @@ import { readAll } from "./landlord-scope.server";
 export type PriceMeter = {
   id: string; meter_number: string; serial_number: string; type: string;
   status: string; price_per_unit: number; unit_label: string | null;
-  property_name: string | null; zone_name: string | null; resident_name: string | null;
+  property_id: string | null; property_name: string | null; zone_name: string | null; resident_name: string | null;
 };
 
 async function related(db: any, table: string, columns: string, ids: string[]) {
@@ -55,7 +55,7 @@ export async function readPriceMeters(db: any, portal: "vendor" | "landlord", us
     const resident = userMap.get(assignment?.user_id);
     return { id: m.id, meter_number: m.meter_number, serial_number: m.serial_number,
       type: m.type, status: m.status, price_per_unit: Number(m.price_per_unit ?? 0),
-      unit_label: unit ? `Unit ${unit.unit_number}` : null, property_name: property?.name ?? null,
+      unit_label: unit ? `Unit ${unit.unit_number}` : null, property_id: property?.id ?? null, property_name: property?.name ?? null,
       zone_name: zoneMap.get(property?.zone_id) ?? null, resident_name: resident?.name ?? resident?.email ?? null };
   });
 }

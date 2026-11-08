@@ -9,6 +9,7 @@ import { EmptyState, ErrorBlock, LoadingBlock, StatCard, StatusBadge, titleCase 
 import { listPortalPriceMeters } from "@/lib/price-meter-scope.functions";
 import { checkRoleAccess } from "@/lib/auth.functions";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import { matchesPriceProperty, pricePropertyOptions } from "@/lib/price-management-data";
 
 export const Route = createFileRoute("/_authenticated/landlord/price-management")({
   head: () => ({ meta: [
@@ -36,8 +37,10 @@ function LandlordPriceManagement() {
   useRealtimeRefresh("landlord-price-meters", ["meters", "units", "properties", "unit_assignments"], [["landlord-price-meters"]]);
   const [search, setSearch] = useState("");
   const [type, setType] = useState("all");
+  const [property, setProperty] = useState("all");
   const meters = data?.meters ?? [];
-  const rows = meters.filter(m => (type === "all" || m.type.toLowerCase() === type) &&
+  const properties = pricePropertyOptions(meters);
+  const rows = meters.filter(m => matchesPriceProperty(m, property) && (type === "all" || m.type.toLowerCase() === type) &&
     [m.meter_number, m.serial_number, m.unit_label, m.property_name, m.resident_name]
       .some(v => (v ?? "").toLowerCase().includes(search.trim().toLowerCase())));
   return <PortalLayout roles={["landlord"]} title="Price Management" actions={
@@ -54,6 +57,11 @@ function LandlordPriceManagement() {
         <input aria-label="Search meters" placeholder="Search meter, unit, property or resident" value={search} onChange={e => setSearch(e.target.value)} className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm" />
         <select aria-label="Filter by meter type" value={type} onChange={e => setType(e.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
           <option value="all">All types</option><option value="electricity">Electricity</option><option value="water">Water</option><option value="gas">Gas</option>
+        </select>
+        <select aria-label="Filter by property" value={property} onChange={e => setProperty(e.target.value)} className="max-w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">All properties</option>
+          <option value="none">No property / unassigned</option>
+          {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
       <p className="text-sm text-muted-foreground">{rows.length} of {meters.length} meters</p>
