@@ -190,7 +190,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         { label: "Vending Records", icon: ArrowLeftRight, to: "/landlord/vending-records" },
         { label: "Bank Payments", icon: Landmark, to: "/landlord/bank-payments" },
       ] },
-      { heading: "Properties", expandable: true, items: [{ label: "My Properties", icon: Home, to: "/landlord/properties" }] },
+      { heading: "Properties", expandable: true, items: [{ label: "My Properties", icon: Home, to: "/landlord/properties" }, { label: "Price Management", icon: BadgeDollarSign, to: "/landlord/price-management" }] },
       { heading: "Reports & Analysis", expandable: true, items: [
         { label: "Revenue Report", icon: Receipt, to: "/landlord/revenue-report" },
         { label: "Consumption Report", icon: Gauge, to: "/landlord/consumption-report" },
