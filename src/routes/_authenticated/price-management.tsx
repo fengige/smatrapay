@@ -556,6 +556,15 @@ function PriceManagementPage() {
             ))}
           </select>
           <select
+            value={vendorFilter}
+            onChange={(e) => { setVendorFilter(e.target.value); setSelected({}); }}
+            aria-label="Filter by vendor"
+            className="h-11 max-w-full rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="all">All vendors</option>
+            {(data?.vendors ?? []).map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          <select
             value={userType}
             onChange={(e) => {
               setUserType(e.target.value as typeof userType);
