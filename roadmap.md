@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Commission payer: administrator configuration, authoritative resident/owner vending calculations, immutable transaction terms, owner liabilities, reporting/receipt reconciliation and callback/retry coverage.
+- [ ] Commission payer regression tests and authorized page/vending verification (never charge real money during checks).
+
 - [x] Administrator pricing total now uses the complete system registry independently of every filter; list matches remain separate, assignment changes trigger refresh and failures do not display zero totals. 15 tests passed; build OK. Pricing rules and Vendor/Landlord portals unchanged.
 - [ ] Signed-in system-wide total and live creation/import/assignment refresh acceptance (blocked: no requester-matching auth account/session available). No live meters, assignments or prices changed.
 
