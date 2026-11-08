@@ -314,7 +314,7 @@ function VendorPosPage() {
                       <span className="font-medium">{r.meter_number}</span>
                       <span className="block text-xs text-muted-foreground">
                         {r.customer_name ?? "Unassigned"} · {r.property_name ?? "No property"}{" "}
-                        {r.unit_label ?? ""} · {r.vending_software_name ?? "No vending software"}
+                        {r.unit_label ?? ""}
                       </span>
                     </button>
                   </li>
@@ -347,7 +347,6 @@ function VendorPosPage() {
                 {[
                   ["Serial", meter.serial_number],
                   ["Utility", meter.type],
-                  ["Vending software", meter.vending_software_name ?? "—"],
                   ["Rate", `${meter.price_per_unit.toFixed(2)} / unit`],
                   ["Commission", `${meter.commission_percentage.toFixed(2)}%${meter.commission_is_default ? " (default)" : ""}`],
                   ["VAT on commission", `${meter.vat_on_commission_percentage.toFixed(2)}%${meter.commission_is_default ? " (default)" : ""}`],
