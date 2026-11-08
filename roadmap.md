@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Correct administrator pricing meter/owner totals and complete approval lists/actions, preserving authorized scope and existing pricing rules; add large-list regression tests.
+
 - [x] Handle vendor price selections over 1,000 meters with bounded requests, progress and remaining-selection retries; preserve ownership checks and admin approval.
 
 - [x] Correct vendor pricing meter totals using complete authorized records; add the missing read-only landlord pricing page with cross-vendor landlord scope, automatic/manual refresh and count regression tests. 16 tests passed; build OK; pricing mutations and admin behavior unchanged.
