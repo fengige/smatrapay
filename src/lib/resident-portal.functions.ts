@@ -124,9 +124,8 @@ export const quoteTokenPurchase = createServerFn({ method: "POST" })
     if (!m) throw new Error("Meter not found");
     const err = validatePurchaseAmount(data.amount);
     if (err) throw new Error(err);
-    const { data: d } = await s.db.from("pricing_settings").select("commission_percentage, vat_on_commission_percentage").maybeSingle();
-    const { deductCommission } = await import("./commission");
-    const b = deductCommission(data.amount, Number(m.commission_percentage ?? d?.commission_percentage ?? 0), Number(m.vat_on_commission_percentage ?? d?.vat_on_commission_percentage ?? 0));
+    const { currentCommissionTerms } = await import("./vending/commission-terms.server");
+    const b = await currentCommissionTerms(s.db, m, data.amount);
     const price = Number(m.price_per_unit ?? 0);
     return { ...b, estimated_units: price > 0 ? unitsFromAmount(b.net_amount, price) : null, total_to_pay: data.amount };
   });
@@ -166,7 +165,11 @@ export const startTokenPurchase = createServerFn({ method: "POST" })
 
     const { normalizeMsisdn, getDarajaToken, darajaPost, darajaTimestamp, stkPassword } = await import("./mpesa.server");
     const msisdn = normalizeMsisdn(data.phone);
+    const purchaseId = crypto.randomUUID();
+    const { prepareCommissionTerms } = await import("./vending/commission-terms.server");
+    await prepareCommissionTerms(db, m, `${m.id}:credit:resident:${purchaseId}`, data.amount);
     const { data: purchase, error } = await db.from("resident_token_purchases").insert({
+      id: purchaseId,
       resident_id: context.userId, meter_id: m.id, amount: data.amount, phone: msisdn,
       request_id: `${context.userId}:${data.request_id}`, status: "initiated",
     }).select("id").single();
@@ -216,7 +219,7 @@ export const getTokenPurchase = createServerFn({ method: "POST" })
     if (!p) throw new Error("Purchase not found");
     let token: any = null;
     if (tokenVisible(p.status) && p.token_id) {
-      const { data: t } = await s.db.from("meter_tokens").select("token, units, net_amount, commission_amount, vat_on_commission_amount, amount").eq("id", p.token_id).maybeSingle();
+      const { data: t } = await s.db.from("meter_tokens").select("token, units, net_amount, commission_amount, vat_on_commission_amount, amount, commission_payer").eq("id", p.token_id).maybeSingle();
       token = t;
     }
     const meter = s.meters.find((m) => m.id === p.meter_id);

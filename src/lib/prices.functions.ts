@@ -309,18 +309,22 @@ export const percentField = z
   .max(100, "Percentage cannot be more than 100%");
 
 export const commissionInput = z.object({
+  commission_payer: z.enum(["owner", "resident"]),
   commission_percentage: percentField,
   vat_on_commission_percentage: percentField,
 });
 
 export type CommissionSettings = {
+  commission_payer: "owner" | "resident";
   commission_percentage: number;
   vat_on_commission_percentage: number;
   updated_at: string | null;
   updated_by_name: string | null;
   history: {
     id: string;
-    field: "commission_percentage" | "vat_on_commission_percentage";
+    field: "commission_percentage" | "vat_on_commission_percentage" | "commission_payer";
+    previous_payer: string | null;
+    new_payer: string | null;
     previous_value: number | null;
     new_value: number | null;
     changed_by_name: string | null;
@@ -342,12 +346,12 @@ export const getCommissionSettings = createServerFn({ method: "GET" })
     const supabase = context.supabase as any;
     const { data: row, error } = await supabase
       .from("pricing_settings")
-      .select("commission_percentage, vat_on_commission_percentage, updated_at, updated_by")
+      .select("commission_payer, commission_percentage, vat_on_commission_percentage, updated_at, updated_by")
       .maybeSingle();
     if (error) throw new Error(error.message);
     const { data: hist } = await supabase
       .from("pricing_settings_history")
-      .select("id, field, previous_value, new_value, changed_by, created_at")
+      .select("id, field, previous_value, new_value, previous_payer, new_payer, changed_by, created_at")
       .order("created_at", { ascending: false })
       .limit(50);
     const ids = [...new Set([row?.updated_by, ...(hist ?? []).map((h: any) => h.changed_by)].filter(Boolean))];
@@ -357,6 +361,7 @@ export const getCommissionSettings = createServerFn({ method: "GET" })
       for (const u of users ?? []) names.set(u.id, u.name || u.email);
     }
     return {
+      commission_payer: row?.commission_payer ?? "resident",
       commission_percentage: Number(row?.commission_percentage ?? 0),
       vat_on_commission_percentage: Number(row?.vat_on_commission_percentage ?? 0),
       updated_at: row?.updated_at ?? null,
@@ -364,6 +369,8 @@ export const getCommissionSettings = createServerFn({ method: "GET" })
       history: (hist ?? []).map((h: any) => ({
         id: h.id,
         field: h.field,
+        previous_payer: h.previous_payer ?? null,
+        new_payer: h.new_payer ?? null,
         previous_value: h.previous_value === null ? null : Number(h.previous_value),
         new_value: h.new_value === null ? null : Number(h.new_value),
         changed_by_name: h.changed_by ? (names.get(h.changed_by) ?? null) : null,
@@ -381,6 +388,7 @@ export const saveCommissionSettings = createServerFn({ method: "POST" })
       .from("pricing_settings")
       .upsert({
         id: true,
+        commission_payer: data.commission_payer,
         commission_percentage: round2(data.commission_percentage),
         vat_on_commission_percentage: round2(data.vat_on_commission_percentage),
       });

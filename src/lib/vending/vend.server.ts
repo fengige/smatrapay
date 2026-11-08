@@ -1,5 +1,6 @@
 import { getVendingIntegration } from "./registry.server";
-import { truncateUnits, unitsFromAmount, formatUnits } from "@/lib/token-units";
+import { truncateUnits } from "@/lib/token-units";
+import { prepareCommissionTerms } from "./commission-terms.server";
 import type { VendingAction, VendingCallLog, VendingCredentials } from "./types";
 
 /**
@@ -81,7 +82,7 @@ export async function vendMeterToken(
   // 1. Validate the meter (through the caller's RLS-scoped client).
   const { data: meter, error: meterErr } = await supabase
     .from("meters")
-    .select("id, meter_number, status, supplier_id, vending_software_id, price_per_unit, commission_percentage, vat_on_commission_percentage")
+    .select("id, meter_number, status, supplier_id, vending_software_id, price_per_unit, commission_percentage, vat_on_commission_percentage, landlord_id, agent_id, vendor_id")
     .eq("id", p.meterId)
     .maybeSingle();
   if (meterErr) throw new Error(meterErr.message);
@@ -118,30 +119,18 @@ export async function vendMeterToken(
     .maybeSingle();
   if (!software) throw new Error(NO_SOFTWARE_MESSAGE);
 
-  // 3b. Commission + VAT on commission are deducted from the payment before
-  // the token is generated. Rates: the meter's own values, else the defaults.
+  // Snapshot before the provider call; callbacks/retries reuse the original payer/rates.
   let breakdown: import("@/lib/commission").CommissionBreakdown | null = null;
+  let terms: any = null;
   let tokenAmount = p.amount;
   let tokenUnits = p.action === "credit" ? truncateUnits(p.units) : p.units;
   if (p.action === "credit") {
-    const { deductCommission, grossUpForUnits } = await import("@/lib/commission");
-    const { data: defaults } = await supabaseAdmin
-      .from("pricing_settings")
-      .select("commission_percentage, vat_on_commission_percentage")
-      .maybeSingle();
-    const m = meter as any;
-    const cPct = Number(m.commission_percentage ?? (defaults as any)?.commission_percentage ?? 0);
-    const vPct = Number(m.vat_on_commission_percentage ?? (defaults as any)?.vat_on_commission_percentage ?? 0);
-    const price = Number(m.price_per_unit ?? 0);
-    if (p.vendByUnit) {
-      breakdown = grossUpForUnits(Math.round(tokenUnits * price * 100) / 100, cPct, vPct);
-    } else {
-      breakdown = deductCommission(p.amount, cPct, vPct);
-      if (breakdown.net_amount <= 0)
-        throw new Error("The amount is too small to cover the commission and VAT. Enter a larger amount.");
-      tokenAmount = breakdown.net_amount;
-      tokenUnits = price > 0 ? unitsFromAmount(tokenAmount, price) : tokenUnits;
-    }
+    terms = await prepareCommissionTerms(supabaseAdmin, meter,
+      idempotencyKey ?? `manual:${crypto.randomUUID()}`, p.amount, !!p.vendByUnit, p.units);
+    breakdown = terms;
+    // Preserve resident by-units integration behavior; owner always sends full value.
+    if (!p.vendByUnit || terms.commission_payer === "owner") tokenAmount = Number(terms.net_amount);
+    tokenUnits = Number(terms.token_units);
   }
 
   const integration = getVendingIntegration((software as any).code ?? (software as any).name);
@@ -202,7 +191,7 @@ export async function vendMeterToken(
         amount: tokenAmount,
         units: tokenUnits,
         vend_by_unit: !!p.vendByUnit,
-        price_per_unit: Number((meter as any).price_per_unit ?? 0),
+        price_per_unit: Number(terms?.price_per_unit ?? meter.price_per_unit ?? 0),
       },
       credentials,
     );
@@ -251,7 +240,14 @@ export async function vendMeterToken(
     provider_metadata: metadata,
     idempotency_key: idempotencyKey,
     ...(p.extra ?? {}),
+    commission_terms_id: terms?.id ?? null,
+    commission_payer: terms?.commission_payer ?? "resident",
+    commission_owner_id: terms?.owner_id ?? null,
+    commission_owner_type: terms?.owner_type ?? null,
+    commission_owner_name: terms?.owner_name ?? null,
+    applied_price_per_unit: terms?.price_per_unit ?? null,
   };
+  if (terms?.commission_payer === "owner") insert.net_amount = Number(terms.net_amount);
 
   const { data: row, error } = await supabase
     .from("meter_tokens")
