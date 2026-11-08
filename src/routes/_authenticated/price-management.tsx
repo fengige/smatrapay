@@ -164,16 +164,6 @@ function PriceManagementPage() {
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (supplierFilter !== "all" && (m.supplier_id ?? "none") !== supplierFilter) return false;
       if (propertyFilter !== "all" && (m.property_id ?? "none") !== propertyFilter) return false;
-      if (userType !== "all") {
-        const assigned =
-          userType === "landlord"
-            ? m.landlord_id
-            : userType === "agent"
-              ? m.agent_id
-              : m.vendor_id || null;
-        if (!assigned) return false;
-        if (userFilter !== "all" && assigned !== userFilter) return false;
-      }
       if (!needle) return true;
       return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.unit_label ?? ""]
         .join(" ")

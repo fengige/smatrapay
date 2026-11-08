@@ -1,5 +1,10 @@
 import { readAll } from "./landlord-scope.server";
 
+export async function readPricingMeterRegistry(db: any, columns: string) {
+  return readAll(() => db.from("meters").select(columns)
+    .order("created_at", { ascending: false }).order("id"));
+}
+
 export async function readPricingRelated(db: any, table: string, columns: string, ids: string[]) {
   const rows: any[] = [];
   const unique = [...new Set(ids.filter(Boolean))];

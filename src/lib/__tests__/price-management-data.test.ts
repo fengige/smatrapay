@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { priceOwnerMeters, runPriceBatches } from "../price-management-data";
-import { readPricingRequests, readPricingRelated } from "../price-management-read.server";
+import { readPricingRequests, readPricingRelated, readPricingMeterRegistry } from "../price-management-read.server";
 
 function database(rows: any[]) {
   const calls: number[] = [];
@@ -17,6 +17,12 @@ function database(rows: any[]) {
 }
 
 describe("complete pricing and approvals", () => {
+  it("loads all 5,000 administrator meters including inactive and unassigned meters", async () => {
+    const rows = Array.from({ length: 5000 }, (_, i) => ({ id: String(i), status: i % 2 ? "active" : "inactive", unit_id: null }));
+    const result = await readPricingMeterRegistry(database(rows), "id,status,unit_id");
+    expect(result.length).toBe(5000);
+    expect(result.filter(r => r.status === "inactive").length).toBe(2500);
+  });
   it("returns all 5,000 approval requests instead of only 300 or 1,000", async () => {
     const rows = Array.from({ length: 5000 }, (_, i) => ({ id: String(i), status: "pending", vendor_id: "own" }));
     expect((await readPricingRequests(database(rows))).length).toBe(5000);
@@ -36,7 +42,7 @@ describe("complete pricing and approvals", () => {
   it("counts all owner meters including inactive and cross-vendor landlord meters", () => {
     const rows = [
       { vendor_id: "a", landlord_id: "l", agent_id: null, status: "active" },
-      { vendor_id: "b", landlord_id: "l", agent_id: null, status: "inactive" },
+      { vendor_id: "b", landlord_id: null, property_landlord_id: "l", agent_id: null, status: "inactive" },
       { vendor_id: "a", landlord_id: "other", agent_id: null, status: "active" },
     ];
     expect(priceOwnerMeters(rows, "landlord", "l").length).toBe(2);

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { readAll } from "./landlord-scope.server";
-import { readPricingRelated } from "./price-management-read.server";
+import { readPricingRelated, readPricingMeterRegistry } from "./price-management-read.server";
 
 const uuid = z.string().uuid();
 
@@ -34,6 +34,7 @@ export type MeterRow = {
   unit_label: string | null;
   property_id: string | null;
   property_name: string | null;
+  property_landlord_id?: string | null;
   meter_number: string;
   serial_number: string;
   type: MeterType | string;
@@ -150,10 +151,7 @@ export const listMeters = createServerFn({ method: "GET" })
     await assertAdmin(context as never);
     const { supabase } = context;
 
-    const rows = await readAll(() => supabase
-      .from("meters")
-      .select(METER_COLUMNS)
-      .order("created_at", { ascending: false }).order("id"));
+    const rows = await readPricingMeterRegistry(supabase, METER_COLUMNS);
 
     const referencedIds = [
       ...new Set(
@@ -230,6 +228,7 @@ export const listMeters = createServerFn({ method: "GET" })
       unit_number: (u.unit_number as string) ?? "",
       property_id: (u.property_id as string) ?? null,
       property_name: (u.properties?.name as string) ?? null,
+      landlord_id: u.properties?.landlord_id ?? null,
       label: `${u.properties?.name ? `${u.properties.name} · ` : ""}Unit ${u.unit_number}`,
     }));
     const unitById = new Map(unitOptions.map((u) => [u.id, u]));
@@ -252,8 +251,8 @@ export const listMeters = createServerFn({ method: "GET" })
         vending_software_name: r.vending_software_id
           ? (vendingSoftwareById.get(r.vending_software_id)?.name ?? null)
           : null,
-        landlord_id: r.landlord_id ?? unitRows.find(u => u.id === r.unit_id)?.properties?.landlord_id ?? null,
-        landlord_name: displayName(r.landlord_id ?? unitRows.find(u => u.id === r.unit_id)?.properties?.landlord_id ?? null),
+        landlord_id: r.landlord_id ?? null,
+        landlord_name: displayName(r.landlord_id ?? null),
         agent_id: r.agent_id ?? null,
         agent_name: displayName(r.agent_id ?? null),
         owner_id: ownerId,
@@ -263,6 +262,7 @@ export const listMeters = createServerFn({ method: "GET" })
         unit_label: r.unit_id ? (unitById.get(r.unit_id)?.label ?? null) : null,
         property_id: r.unit_id ? (unitById.get(r.unit_id)?.property_id ?? null) : null,
         property_name: r.unit_id ? (unitById.get(r.unit_id)?.property_name ?? null) : null,
+        property_landlord_id: r.unit_id ? (unitById.get(r.unit_id)?.landlord_id ?? null) : null,
         meter_number: r.meter_number ?? "",
         serial_number: r.serial_number ?? "",
         type: (r.type ?? "").toLowerCase(),
