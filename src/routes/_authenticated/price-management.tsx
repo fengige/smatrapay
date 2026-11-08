@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
+import { matchesPriceProperty, priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
 import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
@@ -163,9 +163,9 @@ function PriceManagementPage() {
       if (typeFilter !== "all" && m.type !== typeFilter) return false;
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (supplierFilter !== "all" && (m.supplier_id ?? "none") !== supplierFilter) return false;
-      if (propertyFilter !== "all" && (m.property_id ?? "none") !== propertyFilter) return false;
+      if (!matchesPriceProperty(m, propertyFilter)) return false;
       if (!needle) return true;
-      return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.unit_label ?? ""]
+      return [m.meter_number, m.serial_number, m.supplier_name ?? "", m.landlord_name ?? "", m.unit_label ?? "", m.property_name ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(needle);
