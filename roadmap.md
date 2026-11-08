@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Correct vendor pricing meter totals using complete authorized records; add the missing read-only landlord pricing page with cross-vendor landlord scope, refresh and count regression tests. Preserve pricing mutations and admin behavior.
+
 - [x] Align administrator/vendor property-list Units totals with complete property-detail unit reads; 16 focused tests passed including 5,000-unit counts and failed-page handling. Admin detail Units now shows actual records, not planned count; build OK.
 - [ ] Signed-in administrator/vendor property list-to-detail count verification (blocked: no requester-matching account/session could be minted). No property or unit data changed.
 
