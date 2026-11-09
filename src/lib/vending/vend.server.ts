@@ -100,7 +100,9 @@ export async function vendMeterToken(
       .select("*")
       .eq("idempotency_key", idempotencyKey)
       .maybeSingle();
-    if (existing)
+    if (existing) {
+      if (p.action === "credit" && existing.commission_terms_id)
+        await prepareCommissionTerms(supabaseAdmin, meter, idempotencyKey, p.amount, !!p.vendByUnit, p.units);
       return {
         row: existing,
         reused: true,
@@ -108,6 +110,7 @@ export async function vendMeterToken(
         providerReference: existing.provider_reference ?? null,
         vendingSoftwareName: null,
       };
+    }
   }
 
   // 3. The vending software comes from the meter record only.
