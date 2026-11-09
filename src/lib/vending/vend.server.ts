@@ -239,8 +239,8 @@ export async function vendMeterToken(
   // Save the confirmed token before recording it; retries must never vend again.
   if (terms && !terms.confirmed_vend_result) {
     const { error: resultError } = await supabaseAdmin.from("vending_commission_terms")
-      .update({ confirmed_vend_result: { token, units, net_amount: netAmount, provider,
-        provider_reference: providerReference, metadata } }).eq("id", terms.id);
+      .update({ confirmed_vend_result: JSON.parse(JSON.stringify({ token, units, net_amount: netAmount, provider,
+        provider_reference: providerReference, metadata })) }).eq("id", terms.id);
     if (resultError) throw Object.assign(new Error("Token confirmed but recording needs reconciliation. Do not purchase again."), { vendState: "review" });
   }
 

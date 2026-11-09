@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Recheck commission payer safeguards: reject changed retry inputs, recover confirmed provider results without another vend, preserve reporting attribution, and rerun regression checks.
+- [x] Rechecked commission payer safeguards: changed retry amounts/units rejected, confirmed provider tokens recover without another vend, immutable snapshots enforced; 88 regression tests passed. Signed-in/live payment acceptance remains blocked by unavailable requester account and payment authorization.
 
 - [x] Commission payer: administrator configuration, authoritative resident/owner vending calculations, immutable transaction terms, atomic owner liabilities/balances, transaction/bank exports and receipt reconciliation; provider claims prevent concurrent duplicate vending. No refund flow exists; token revocation does not erase liability.
 - [x] Commission payer regression tests: Owner full-payment and Resident deductions, CALIN/Icon payloads, stored terms, retry preservation and reporting totals; no real charges made.
