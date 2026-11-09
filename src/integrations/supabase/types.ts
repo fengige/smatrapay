@@ -3328,6 +3328,7 @@ export type Database = {
           commission_amount: number
           commission_payer: string
           commission_percentage: number
+          confirmed_vend_result: Json | null
           created_at: string
           gross_amount: number
           id: string
@@ -3348,6 +3349,7 @@ export type Database = {
           commission_amount: number
           commission_payer: string
           commission_percentage: number
+          confirmed_vend_result?: Json | null
           created_at?: string
           gross_amount: number
           id?: string
@@ -3368,6 +3370,7 @@ export type Database = {
           commission_amount?: number
           commission_payer?: string
           commission_percentage?: number
+          confirmed_vend_result?: Json | null
           created_at?: string
           gross_amount?: number
           id?: string

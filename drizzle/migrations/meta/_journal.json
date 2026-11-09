@@ -330,6 +330,13 @@
       "when": 1794172406230,
       "tag": "0046_commission_transaction_reporting_and_vend_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794201070597,
+      "tag": "0047_commission_confirmed_vend_recovery",
+      "breakpoints": true
     }
   ]
 }
