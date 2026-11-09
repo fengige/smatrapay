@@ -143,7 +143,15 @@ export async function vendMeterToken(
   let metadata: Record<string, unknown> | null = null;
   let providerState = "successful";
 
-  if (integration) {
+  if (terms?.confirmed_vend_result) {
+    const saved = terms.confirmed_vend_result;
+    token = saved.token;
+    units = saved.units;
+    netAmount = saved.net_amount;
+    provider = saved.provider;
+    providerReference = saved.provider_reference;
+    metadata = saved.metadata;
+  } else if (integration) {
     // 4. Use the API settings configured on the meter's vending software.
     const { data: resolved, error: settingsErr } = await supabaseAdmin
       .from("vending_software_api_settings")
@@ -223,6 +231,14 @@ export async function vendMeterToken(
       // Handled locally by SmatraPay — no remote operation exists.
       metadata = { local: true, reason: outcome.reason, software: integration.code };
     }
+  }
+
+  // Save the confirmed token before recording it; retries must never vend again.
+  if (terms && !terms.confirmed_vend_result) {
+    const { error: resultError } = await supabaseAdmin.from("vending_commission_terms")
+      .update({ confirmed_vend_result: { token, units, net_amount: netAmount, provider,
+        provider_reference: providerReference, metadata } }).eq("id", terms.id);
+    if (resultError) throw Object.assign(new Error("Token confirmed but recording needs reconciliation. Do not purchase again."), { vendState: "review" });
   }
 
   // 5. Persist the token transaction.

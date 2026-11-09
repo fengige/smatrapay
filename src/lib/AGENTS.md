@@ -7,3 +7,4 @@
 - Portal pricing lists and totals share complete caller-authorized meter reads (vendor ownership or landlord meter helpers); landlord pricing is read-only so existing pricing-write permissions remain unchanged.
 - Administrator pricing and approval lists use stable complete RLS reads and bounded relationship queries; large actions use authorized batches so totals and decisions are not capped by individual request limits.
 - Vending uses immutable server-prepared commission terms per purchase; token insertion atomically posts one owner liability, keeping retries and reports independent of later settings or owner assignments. Revocation is not a refund.
+- Persist confirmed provider results before token insertion and reuse them on retries; reject changed purchase amounts or units under the same terms key to prevent duplicate vending and mismatched charges.
