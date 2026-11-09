@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { unitsFromAmount } from "@/lib/token-units";
 
-const state = vi.hoisted(() => ({ payer: "resident", code: "ICON", terms: null as any, token: null as any, calls: [] as any[] }));
+const state = vi.hoisted(() => ({ payer: "resident", code: "ICON", terms: null as any, token: null as any, calls: [] as any[], failInsert: false }));
 const meter = { id: "meter", meter_number: "0012345", status: "active", vending_software_id: "software", supplier_id: null, price_per_unit: 10, commission_percentage: 5, vat_on_commission_percentage: 16, landlord_id: "owner", agent_id: null, vendor_id: null };
 const db = {
   from(table: string) {
@@ -20,10 +20,11 @@ const db = {
         if (table === "vending_software_api_settings") data = { api_pos_purchase: "https://provider.example.test/credit", api_company_name: "test", api_user_name: "test", api_password: "test", api_taas_id: "test", api_taas_password: "test" };
         if (table === "vending_commission_terms") {
           if (operation === "insert") state.terms = { id: "terms", ...payload };
-          if (operation === "update" && state.terms) state.terms.vend_state = payload.vend_state;
+          if (operation === "update" && state.terms) Object.assign(state.terms, payload);
           data = !filter || state.terms?.request_key === filter ? state.terms : null;
         }
         if (table === "meter_tokens") {
+          if (operation === "insert" && state.failInsert) return Promise.resolve(resolve({ data: null, error: { message: "Temporary record failure" } }));
           if (operation === "insert") state.token = { id: "token", ...payload };
           data = state.token;
         }
@@ -37,7 +38,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: db }));
 import { vendMeterToken } from "../vend.server";
 
 beforeEach(() => {
-  state.payer = "resident"; state.code = "ICON"; state.terms = null; state.token = null; state.calls = [];
+  state.payer = "resident"; state.code = "ICON"; state.terms = null; state.token = null; state.calls = []; state.failInsert = false;
   vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
     const body = JSON.parse(init.body); state.calls.push(body);
     return new Response(JSON.stringify(state.code === "ICON"
@@ -48,6 +49,27 @@ beforeEach(() => {
 const params = { meterId: "meter", action: "credit" as const, amount: 1000, units: 0, expiresInDays: 30, actorId: null, requestId: "payment" };
 
 describe("payer through real provider adapters and transaction persistence", () => {
+  it.each(["CALIN", "ICON"])("%s records confirmed token on retry without vending or charging twice", async code => {
+    state.code = code; state.payer = "owner"; state.failInsert = true;
+    await expect(vendMeterToken(db, params)).rejects.toThrow("Temporary record failure");
+    expect(state.terms.confirmed_vend_result.token).toBe("1234-5678-1234-5678-1234");
+    state.failInsert = false; state.payer = "resident";
+    const { row } = await vendMeterToken(db, params);
+    expect(state.calls).toHaveLength(1);
+    expect([row.net_amount, row.commission_amount, row.vat_on_commission_amount]).toEqual([1000, 50, 8]);
+    expect(row.token).toBe(state.terms.confirmed_vend_result.token);
+  });
+  it("rejects changed amount under an already completed purchase key", async () => {
+    await vendMeterToken(db, params);
+    await expect(vendMeterToken(db, { ...params, amount: 2000 })).rejects.toThrow("Purchase amount or units changed");
+    expect(state.calls).toHaveLength(1);
+  });
+  it("rejects changed fixed units under a retry key", async () => {
+    state.payer = "owner";
+    await vendMeterToken(db, { ...params, vendByUnit: true, units: 100 });
+    await expect(vendMeterToken(db, { ...params, vendByUnit: true, units: 200 })).rejects.toThrow("Purchase amount or units changed");
+    expect(state.calls).toHaveLength(1);
+  });
   it.each(["CALIN", "ICON"])("%s sends 942 for Resident and persists exact deductions", async code => {
     state.code = code;
     const { row } = await vendMeterToken(db, params);

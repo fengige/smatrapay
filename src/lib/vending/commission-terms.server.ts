@@ -31,19 +31,23 @@ export async function currentCommissionTerms(db: any, meter: any, amount: number
 
 /** Durable, immutable, service-only snapshot. Conflict reads retain the first attempt's terms. */
 export async function prepareCommissionTerms(db: any, meter: any, key: string, amount: number, byUnits = false, units = 0) {
+  const validate = (snapshot: any) => {
+    if (snapshot.meter_id !== meter.id || snapshot.vend_by_unit !== byUnits)
+      throw new Error("Purchase terms belong to a different meter or purchase mode");
+    if (byUnits ? Number(snapshot.token_units) !== truncateUnits(units)
+      : Number(snapshot.gross_amount) !== Math.round((amount + Number.EPSILON) * 100) / 100)
+      throw new Error("Purchase amount or units changed; start a new purchase");
+    return snapshot;
+  };
   const { data: existing, error: readError } = await db.from("vending_commission_terms").select("*").eq("request_key", key).maybeSingle();
   if (readError) throw new Error("Could not load purchase commission terms");
-  if (existing) {
-    if (existing.meter_id !== meter.id || existing.vend_by_unit !== byUnits)
-      throw new Error("Purchase terms belong to a different meter or purchase mode");
-    return existing;
-  }
+  if (existing) return validate(existing);
   const terms = await currentCommissionTerms(db, meter, amount, byUnits, units);
   const { data, error } = await db.from("vending_commission_terms").insert({ ...terms, request_key: key }).select("*").single();
   if (!error && data) return data;
   if (error?.code === "23505") {
     const { data: first } = await db.from("vending_commission_terms").select("*").eq("request_key", key).maybeSingle();
-    if (first?.meter_id === meter.id && first.vend_by_unit === byUnits) return first;
+    if (first) return validate(first);
   }
   throw new Error("Could not preserve purchase commission terms");
 }
