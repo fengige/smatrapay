@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { getCommissionSettings, saveCommissionSettings } from "@/lib/prices.functions";
 import { Button } from "@/components/ui/button";
 import type { CommissionPayer } from "@/lib/commission";
+import { commissionSettingsKey, commissionRefreshInterval, refreshAdminPricing } from "@/lib/admin-pricing-refresh";
 
 type Key = "commission_percentage" | "vat_on_commission_percentage";
 const LABELS: Record<Key, string> = {
@@ -27,10 +28,11 @@ export function CommissionSettingsCard() {
   const qc = useQueryClient();
   const load = useServerFn(getCommissionSettings);
   const save = useServerFn(saveCommissionSettings);
-  const { data, isLoading, isError } = useQuery({ queryKey: ["commission-settings"], queryFn: () => load() });
+  const { data, isLoading, isError } = useQuery({ queryKey: commissionSettingsKey, queryFn: () => load(), refetchInterval: commissionRefreshInterval, refetchOnWindowFocus: "always" });
   const [form, setForm] = useState<Record<Key, string>>({ commission_percentage: "", vat_on_commission_percentage: "" });
   const [touched, setTouched] = useState(false);
   const [payer, setPayer] = useState<CommissionPayer | "">("");
+  const [editing, setEditing] = useState(false);
 
   const reset = () => {
     if (!data) return;
@@ -40,8 +42,9 @@ export function CommissionSettingsCard() {
       vat_on_commission_percentage: data.vat_on_commission_percentage.toFixed(2),
     });
     setTouched(false);
+    setEditing(false);
   };
-  useEffect(reset, [data]);
+  useEffect(() => { if (!editing) reset(); }, [data, editing]);
 
   const errors = { commission_percentage: check(form.commission_percentage), vat_on_commission_percentage: check(form.vat_on_commission_percentage) };
   const dirty =
@@ -61,8 +64,13 @@ export function CommissionSettingsCard() {
         },
       }); },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["commission-settings"] });
-      toast.success("Commission settings saved");
+      try {
+        await refreshAdminPricing(qc);
+        setEditing(false);
+        toast.success("Commission settings saved");
+      } catch {
+        toast.warning("Settings saved, but could not refresh the latest values. Please try Refresh.");
+      }
     },
     onError: (e: Error) => toast.error(e.message || "Could not save commission settings"),
   });
@@ -73,7 +81,7 @@ export function CommissionSettingsCard() {
 
       {isLoading ? (
         <div className="mt-4 h-20 animate-pulse rounded-xl bg-secondary/40" />
-      ) : isError ? (
+      ) : isError && !data ? (
         <p className="mt-4 text-sm text-destructive">Could not load commission settings.</p>
       ) : (
         <form
@@ -89,11 +97,12 @@ export function CommissionSettingsCard() {
             mutation.mutate();
           }}
         >
+          {isError && <p role="alert" className="mb-3 text-sm text-destructive">Could not refresh commission settings. Showing the last loaded values.</p>}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
               <label htmlFor="commission-payer" className="text-sm font-medium">Who Pays Commission?</label>
               <select id="commission-payer" required value={payer} disabled={mutation.isPending}
-                onChange={e => setPayer(e.target.value as CommissionPayer)}
+                onChange={e => { setEditing(true); setPayer(e.target.value as CommissionPayer); }}
                 className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
                 <option value="" disabled>Select payer</option>
                 <option value="owner">Owner</option>
@@ -116,7 +125,7 @@ export function CommissionSettingsCard() {
                       max={100}
                       value={form[k]}
                       disabled={mutation.isPending}
-                      onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))}
+                      onChange={(e) => { setEditing(true); setForm((f) => ({ ...f, [k]: e.target.value })); }}
                       aria-invalid={Boolean(err)}
                       className={`h-11 w-full rounded-xl border bg-background px-3 pr-8 text-sm ${err ? "border-destructive" : "border-border"}`}
                     />
