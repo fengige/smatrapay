@@ -351,6 +351,13 @@
       "when": 1794344956226,
       "tag": "0049_owner_commission_configuration",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794345141765,
+      "tag": "0050_owner_commission_explicit_privileges",
+      "breakpoints": true
     }
   ]
 }
