@@ -16,6 +16,9 @@ import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import { CommissionSettingsCard } from "@/components/CommissionSettingsCard";
+import { OwnerCommissionSettingsCard } from "@/components/OwnerCommissionSettingsCard";
+import { listOwnerCommissionSettings } from "@/lib/owner-commission.functions";
+import { commissionForOwner, ownerCommissionKey } from "@/lib/owner-commission";
 import { Button } from "@/components/ui/button";
 import { refreshAdminPricing } from "@/lib/admin-pricing-refresh";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
@@ -68,6 +71,9 @@ const money = (n: number) =>
 function PriceManagementPage() {
   const queryClient = useQueryClient();
   const fetchMeters = useServerFn(listMeters);
+  const fetchOwnerCommission = useServerFn(listOwnerCommissionSettings);
+  const ownerCommissionQuery = useQuery({ queryKey: ownerCommissionKey, queryFn: () => fetchOwnerCommission(), refetchInterval: 30_000, refetchOnWindowFocus: "always" });
+  useRealtimeRefresh("admin-owner-commission", ["owner_commission_settings"], [ownerCommissionKey]);
   const applyPrices = useServerFn(bulkSetMeterPrice);
   const fetchPriceLogs = useServerFn(listPriceAuditLogs);
 
@@ -134,6 +140,16 @@ function PriceManagementPage() {
   });
 
   const meters = data?.meters ?? [];
+  const commissionOwners = useMemo(() => {
+    const owners = new Map<string, string>();
+    for (const group of [data?.landlords, data?.agents, data?.vendors]) {
+      for (const owner of group ?? []) owners.set(owner.id, owner.name);
+    }
+    for (const meter of meters) {
+      if (meter.owner_id) owners.set(meter.owner_id, meter.owner_name ?? owners.get(meter.owner_id) ?? "Unnamed owner");
+    }
+    return [...owners].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [data]);
   const ownerMeters = useMemo(() => priceOwnerMeters(meters, userType, userFilter).filter(m => matchesPriceVendor(m, vendorFilter)), [meters, userType, userFilter, vendorFilter]);
   const suppliers = data?.suppliers ?? [];
   const properties = useMemo(() => {
@@ -615,7 +631,9 @@ function PriceManagementPage() {
         </div>
       </div>
 
-      <CommissionSettingsCard />
+      <OwnerCommissionSettingsCard owners={commissionOwners} />
+      <details className="my-4"><summary className="cursor-pointer text-sm font-medium text-muted-foreground">System-wide Commission Configuration</summary><CommissionSettingsCard /></details>
+      {ownerCommissionQuery.isError && <p role="alert" className="mt-3 text-sm text-destructive">Could not refresh owner commission values. Please try Refresh.</p>}
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
@@ -658,6 +676,8 @@ function PriceManagementPage() {
                 </tr>
               )}
               {rows.map((m) => {
+                const ownerCommission = commissionForOwner(m.owner_id, ownerCommissionQuery.data ?? []);
+                const missingCommission = ownerCommissionQuery.isPending ? "Loading…" : ownerCommissionQuery.isError ? "Unavailable" : "Not configured";
                 const next = valueValid && selected[m.id]
                   ? applyPriceMode(m.price_per_unit, mode, numericValue)
                   : null;
@@ -702,10 +722,9 @@ function PriceManagementPage() {
                         </span>
                       )}
                     </td>
-                    {/* No persisted owner configuration exists yet. Never label global or meter overrides as owner settings. */}
-                    <td className="px-4 py-3 text-right text-muted-foreground">Not configured</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">Not configured</td>
-                    <td className="px-4 py-3 text-muted-foreground">Not configured</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">{ownerCommission ? `${ownerCommission.commission_percentage.toFixed(2)}%` : missingCommission}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">{ownerCommission ? `${ownerCommission.vat_on_commission_percentage.toFixed(2)}%` : missingCommission}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{ownerCommission ? ownerCommission.commission_payer === "owner" ? "Owner" : "Resident" : missingCommission}</td>
                   </tr>
                 );
               })}

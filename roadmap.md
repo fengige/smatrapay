@@ -1,14 +1,15 @@
 # Roadmap
 
-- [ ] Administrator owner commission save/readback: introduce explicitly owner-scoped persisted configuration, map table rows by actual owner, refresh after successful saves, and verify owner isolation without changing vending calculations (awaiting plan approval).
+- [x] Administrator owner commission save/readback: owner-scoped persisted configuration, actual-owner table mapping, successful-save query refresh, periodic/focus/realtime synchronization, and atomic history; 47 regression tests passed, preview build OK, vending calculations unchanged.
+- [ ] Signed-in owner commission save/table readback and mobile acceptance (blocked: requester has no mintable administrator account; administrator preview sign-in required). No real owner configurations were fabricated or changed during checks.
 
 - [x] Administrator property Units tab: show currently assigned electricity/water/gas meter numbers from the meter relationship; preserve search, sorting, exports and other portals.
 - [ ] Signed-in Units tab assignment readback (blocked: no requester-linked administrator account/session; preview sign-in required).
 
 - [x] Fix administrator pricing refresh test build errors: preserve defined meter rows during updates; both affected tests passed and preview build OK.
 
-- [x] Administrator pricing table: added WHO PAYS COMMISSION beside commission/VAT; all three explicitly show Not configured because no owner configuration exists, without substituting shared settings or changing calculations.
-- [ ] Populate owner-specific commission/VAT/payer and verify distinct owners (blocked: identify the missing owner configuration source; existing form only saves shared system-wide settings).
+- [x] Administrator pricing table: WHO PAYS COMMISSION beside commission/VAT reads saved owner-account-specific settings; absent configuration explicitly shows Not configured without substituting global defaults or per-meter overrides.
+- [x] Populate owner-specific commission/VAT/payer and verify distinct owners in focused query/mapping tests; separate owner configuration form preserves system-wide settings and current vending calculations.
 - [x] Administrator commission save synchronization: refetch persisted settings and meter data after successful saves and during page refresh; preserve drafts, validation, errors and audits, with periodic/focus refresh.
 
 - [x] Rechecked commission payer safeguards: changed retry amounts/units rejected, confirmed provider tokens recover without another vend, immutable snapshots enforced; 88 regression tests passed. Signed-in/live payment acceptance remains blocked by unavailable requester account and payment authorization.
