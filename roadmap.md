@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Administrator owner commission save/readback: introduce explicitly owner-scoped persisted configuration, map table rows by actual owner, refresh after successful saves, and verify owner isolation without changing vending calculations (awaiting plan approval).
+
 - [x] Administrator property Units tab: show currently assigned electricity/water/gas meter numbers from the meter relationship; preserve search, sorting, exports and other portals.
 - [ ] Signed-in Units tab assignment readback (blocked: no requester-linked administrator account/session; preview sign-in required).
 
