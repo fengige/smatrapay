@@ -13,7 +13,7 @@ describe("administrator persisted commission refresh", () => {
     const stopMeters = registry.subscribe(() => {});
     await Promise.all([settings.refetch(), registry.refetch()]);
     saved = { commission_payer: "owner", commission_percentage: 8, vat_on_commission_percentage: 12 };
-    meters = [{ id: "a", owner_id: "first", commission_percentage: 4 }, meters[1]];
+    meters = meters.map((meter) => meter.id === "a" ? { ...meter, commission_percentage: 4 } : meter);
     await refreshAdminPricing(client);
     expect(client.getQueryData(commissionSettingsKey)).toEqual(saved);
     expect(client.getQueryData(["meters"])).toEqual([{ id: "a", owner_id: "first", commission_percentage: 4 }, { id: "b", owner_id: "second", commission_percentage: 7 }]);
