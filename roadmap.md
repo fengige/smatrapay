@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Administrator pricing table owner-specific commission/VAT/payer (blocked: existing configuration is system-wide with per-meter rate overrides, not per-owner settings; need the location of the Owner Commission Configuration before mapping rows without changing pricing behavior).
+- [ ] Administrator pricing table: add WHO PAYS COMMISSION beside commission/VAT, source all three values from the actual owner's saved configuration, show Not configured when missing, and refresh affected rows after save (blocked: only shared settings and per-meter overrides exist; identify the owner configuration source without changing pricing calculations).
+- [ ] Administrator commission save synchronization: refetch persisted settings and meter data after successful saves and during page refresh; preserve drafts, validation, errors and audits.
 
 - [x] Rechecked commission payer safeguards: changed retry amounts/units rejected, confirmed provider tokens recover without another vend, immutable snapshots enforced; 88 regression tests passed. Signed-in/live payment acceptance remains blocked by unavailable requester account and payment authorization.
 
