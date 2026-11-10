@@ -1406,6 +1406,76 @@ export type Database = {
           },
         ]
       }
+      owner_commission_settings: {
+        Row: {
+          commission_payer: string
+          commission_percentage: number
+          owner_id: string
+          updated_at: string
+          updated_by: string | null
+          vat_on_commission_percentage: number
+        }
+        Insert: {
+          commission_payer: string
+          commission_percentage: number
+          owner_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vat_on_commission_percentage: number
+        }
+        Update: {
+          commission_payer?: string
+          commission_percentage?: number
+          owner_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vat_on_commission_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_commission_settings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_commission_settings_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_configuration: Json
+          owner_id: string
+          previous_configuration: Json | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_configuration: Json
+          owner_id: string
+          previous_configuration?: Json | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_configuration?: Json
+          owner_id?: string
+          previous_configuration?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_commission_settings_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payg_applications: {
         Row: {
           created_at: string
