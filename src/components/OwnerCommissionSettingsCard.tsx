@@ -95,7 +95,7 @@ function OwnerCommissionForm({ ownerId, configuration, onSaving }: { ownerId: st
       {!!history.data?.length && <details className="mt-4 text-xs"><summary className="cursor-pointer text-muted-foreground">Change history ({history.data.length})</summary><ul className="mt-2 space-y-1">{history.data.map(entry => {
         const before = entry.previous_configuration as Record<string, unknown> | null;
         const after = entry.new_configuration as Record<string, unknown>;
-        const describe = (value: Record<string, unknown> | null) => value ? `${value.commission_payer === "owner" ? "Owner" : "Resident"} · ${Number(value.commission_percentage).toFixed(2)}% · VAT ${Number(value.vat_on_commission_percentage).toFixed(2)}%` : "Not configured";
+        const describe = (value: Record<string, unknown> | null) => value ? `${value['commission_payer'] === "owner" ? "Owner" : "Resident"} · ${Number(value['commission_percentage']).toFixed(2)}% · VAT ${Number(value['vat_on_commission_percentage']).toFixed(2)}%` : "Not configured";
         return <li key={entry.id}>{new Date(entry.created_at).toLocaleString()} — {describe(before)} → {describe(after)}</li>;
       })}</ul></details>}
     </form>

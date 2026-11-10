@@ -30,7 +30,7 @@ export const saveOwnerCommissionSettings = createServerFn({ method: "POST" })
       vat_on_commission_percentage: Math.round((data.vat_on_commission_percentage + Number.EPSILON) * 100) / 100,
     }).select("*").single();
     if (error || !saved) throw new Error("Could not save owner commission settings");
-    return saved;
+    return { ...saved, ...ownerCommissionInput.parse(saved) };
   });
 
 export const getOwnerCommissionHistory = createServerFn({ method: "GET" })
