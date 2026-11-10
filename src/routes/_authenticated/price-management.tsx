@@ -73,7 +73,7 @@ function PriceManagementPage() {
   const fetchMeters = useServerFn(listMeters);
   const fetchOwnerCommission = useServerFn(listOwnerCommissionSettings);
   const ownerCommissionQuery = useQuery({ queryKey: ownerCommissionKey, queryFn: () => fetchOwnerCommission(), refetchInterval: 30_000, refetchOnWindowFocus: "always" });
-  useRealtimeRefresh("admin-owner-commission", ["owner_commission_settings"], [ownerCommissionKey]);
+  useRealtimeRefresh("admin-owner-commission", ["owner_commission_settings", "owner_property_commission_settings"], [ownerCommissionKey]);
   const applyPrices = useServerFn(bulkSetMeterPrice);
   const fetchPriceLogs = useServerFn(listPriceAuditLogs);
 
@@ -150,6 +150,16 @@ function PriceManagementPage() {
     }
     return [...owners].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [data]);
+  const commissionOwnerProperties = useMemo(() => {
+    const byOwner = new Map<string, Map<string, string>>();
+    for (const meter of meters) {
+      if (!meter.owner_id || !meter.property_id) continue;
+      const list = byOwner.get(meter.owner_id) ?? new Map<string, string>();
+      list.set(meter.property_id, meter.property_name ?? "Unnamed property");
+      byOwner.set(meter.owner_id, list);
+    }
+    return Object.fromEntries([...byOwner].map(([owner, list]) => [owner, [...list].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))]));
+  }, [meters]);
   const ownerMeters = useMemo(() => priceOwnerMeters(meters, userType, userFilter).filter(m => matchesPriceVendor(m, vendorFilter)), [meters, userType, userFilter, vendorFilter]);
   const suppliers = data?.suppliers ?? [];
   const properties = useMemo(() => {
@@ -631,7 +641,7 @@ function PriceManagementPage() {
         </div>
       </div>
 
-      <OwnerCommissionSettingsCard owners={commissionOwners} />
+      <OwnerCommissionSettingsCard owners={commissionOwners} ownerProperties={commissionOwnerProperties} />
       <details className="my-4"><summary className="cursor-pointer text-sm font-medium text-muted-foreground">System-wide Commission Configuration</summary><CommissionSettingsCard /></details>
       {ownerCommissionQuery.isError && <p role="alert" className="mt-3 text-sm text-destructive">Could not refresh owner commission values. Please try Refresh.</p>}
 
@@ -676,7 +686,7 @@ function PriceManagementPage() {
                 </tr>
               )}
               {rows.map((m) => {
-                const ownerCommission = commissionForOwner(m.owner_id, ownerCommissionQuery.data ?? []);
+                const ownerCommission = commissionForOwner(m.owner_id, ownerCommissionQuery.data ?? [], m.property_id ?? null);
                 const missingCommission = ownerCommissionQuery.isPending ? "Loading…" : ownerCommissionQuery.isError ? "Unavailable" : "Not configured";
                 const next = valueValid && selected[m.id]
                   ? applyPriceMode(m.price_per_unit, mode, numericValue)
