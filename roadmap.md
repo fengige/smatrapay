@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Administrator pricing table owner-specific commission/VAT/payer (blocked: existing configuration is system-wide with per-meter rate overrides, not per-owner settings; need the location of the Owner Commission Configuration before mapping rows without changing pricing behavior).
+
 - [x] Rechecked commission payer safeguards: changed retry amounts/units rejected, confirmed provider tokens recover without another vend, immutable snapshots enforced; 88 regression tests passed. Signed-in/live payment acceptance remains blocked by unavailable requester account and payment authorization.
 
 - [x] Commission payer: administrator configuration, authoritative resident/owner vending calculations, immutable transaction terms, atomic owner liabilities/balances, transaction/bank exports and receipt reconciliation; provider claims prevent concurrent duplicate vending. No refund flow exists; token revocation does not erase liability.
