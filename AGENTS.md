@@ -44,3 +44,4 @@
 - Vendors/admins review PAYG via audited review_payg_application. Resident details prove own application access before safe history reads; both portals reuse PAYG progress/schedules from approval date and link by application ID.
 
 - Token history: bounded ranges/counts, timestamp/id order, session-owned vendor joins prevent foreign reads.
+- Owner commission configuration has an all-properties row (owner_commission_settings) plus optional per-property overrides (owner_property_commission_settings); pricing rows resolve property override first, then all-properties, so owners can vary rates per property without affecting others.
