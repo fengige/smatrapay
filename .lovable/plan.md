@@ -3,7 +3,7 @@
 ## Existing configuration mismatch
 The current Commission Configuration form saves **one system-wide configuration**. Meter records can override commission and VAT percentages, but there is no persisted owner-specific configuration or owner-specific payer. The administrator table also currently has no Who Pays Commission column. The requested column must never fall back to that shared payer.
 
-Independent owner saves cannot be implemented safely as a refresh-only fix: changing the existing shared form would affect other owners. Uploaded images are available and will be checked for the referenced form before implementation.
+Independent owner saves cannot be implemented safely as a refresh-only fix: changing the existing shared form would affect other owners. The available uploaded screenshots do not show the referenced pricing table or Owner Commission Configuration form.
 
 ## Proposed scope
 1. Keep the existing form, validation, pricing calculations and audit history intact.
