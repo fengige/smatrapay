@@ -16,13 +16,14 @@ import { toast } from "sonner";
 
 import { PortalLayout } from "@/components/PortalLayout";
 import { CommissionSettingsCard } from "@/components/CommissionSettingsCard";
+import { Button } from "@/components/ui/button";
+import { refreshAdminPricing } from "@/lib/admin-pricing-refresh";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { matchesPriceProperty, matchesPriceVendor, priceOwnerMeters, runPriceBatches } from "@/lib/price-management-data";
 import { listMeters } from "@/lib/meters.functions";
 import {
   applyPriceMode,
   bulkSetMeterPrice,
-  getCommissionSettings,
   listPriceAuditLogs,
   listPriceChangeRequests,
   reviewPriceChangeRequests,
@@ -82,10 +83,8 @@ function PriceManagementPage() {
   const [mode, setMode] = useState<PriceMode>("set");
   const [value, setValue] = useState("");
   const [confirming, setConfirming] = useState(false);
-  const fetchDefaults = useServerFn(getCommissionSettings);
-  const { data: defaults } = useQuery({ queryKey: ["commission-settings"], queryFn: () => fetchDefaults() });
 
-  const { data, isLoading, isFetching, error: metersError, refetch } = useQuery({
+  const { data, isLoading, isFetching, error: metersError } = useQuery({
     queryKey: ["meters"],
     queryFn: () => fetchMeters(),
     refetchInterval: 30_000,
@@ -223,9 +222,6 @@ function PriceManagementPage() {
     },
   });
 
-  const pct = (own: number | null, def: number | undefined) =>
-    own !== null ? `${own.toFixed(2)}%` : def !== undefined ? `${def.toFixed(2)}% (default)` : "—";
-
   const exportCsv = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines: string[] = [];
@@ -300,21 +296,24 @@ function PriceManagementPage() {
       description="Bulk meter price per unit configuration"
       actions={
         <div className="flex flex-wrap items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={exportCsv}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
         >
           <Download className="size-4" /> Export CSV
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          onClick={() => { void refetch(); void queryClient.invalidateQueries({ queryKey: ["price-change-requests"] }); }}
+          onClick={() => {
+            void refreshAdminPricing(queryClient).catch(() => toast.error("Could not refresh pricing settings. Please try again."));
+            void queryClient.invalidateQueries({ queryKey: ["price-change-requests"] });
+          }}
           aria-label="Refresh meters"
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
         >
           <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
-        </button>
+        </Button>
         </div>
       }
     >
@@ -640,19 +639,20 @@ function PriceManagementPage() {
                 <th className="px-4 py-3 text-right">New price</th>
                 <th className="px-4 py-3 text-right">Commission</th>
                 <th className="px-4 py-3 text-right">VAT on Comm.</th>
+                <th className="px-4 py-3">Who Pays Commission</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
                     <Loader2 className="mx-auto size-5 animate-spin" />
                   </td>
                 </tr>
               )}
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
                     No meters match these filters.
                   </td>
                 </tr>
@@ -702,8 +702,10 @@ function PriceManagementPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">{pct(m.commission_percentage, defaults?.commission_percentage)}</td>
-                    <td className="px-4 py-3 text-right">{pct(m.vat_on_commission_percentage, defaults?.vat_on_commission_percentage)}</td>
+                    {/* No persisted owner configuration exists yet. Never label global or meter overrides as owner settings. */}
+                    <td className="px-4 py-3 text-right text-muted-foreground">Not configured</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">Not configured</td>
+                    <td className="px-4 py-3 text-muted-foreground">Not configured</td>
                   </tr>
                 );
               })}
