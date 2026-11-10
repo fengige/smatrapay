@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Administrator pricing table: verify the owner configuration source, display matching commission/VAT/payer, refresh after changes, and test different owners without altering calculations or other portals.
+
 - [x] Rechecked commission payer safeguards: changed retry amounts/units rejected, confirmed provider tokens recover without another vend, immutable snapshots enforced; 88 regression tests passed. Signed-in/live payment acceptance remains blocked by unavailable requester account and payment authorization.
 
 - [x] Commission payer: administrator configuration, authoritative resident/owner vending calculations, immutable transaction terms, atomic owner liabilities/balances, transaction/bank exports and receipt reconciliation; provider claims prevent concurrent duplicate vending. No refund flow exists; token revocation does not erase liability.
