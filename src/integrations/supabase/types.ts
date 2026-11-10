@@ -1449,6 +1449,7 @@ export type Database = {
           new_configuration: Json
           owner_id: string
           previous_configuration: Json | null
+          property_id: string | null
         }
         Insert: {
           changed_by?: string | null
@@ -1457,6 +1458,7 @@ export type Database = {
           new_configuration: Json
           owner_id: string
           previous_configuration?: Json | null
+          property_id?: string | null
         }
         Update: {
           changed_by?: string | null
@@ -1465,6 +1467,7 @@ export type Database = {
           new_configuration?: Json
           owner_id?: string
           previous_configuration?: Json | null
+          property_id?: string | null
         }
         Relationships: [
           {
@@ -1472,6 +1475,51 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_property_commission_settings: {
+        Row: {
+          commission_payer: string
+          commission_percentage: number
+          owner_id: string
+          property_id: string
+          updated_at: string
+          updated_by: string | null
+          vat_on_commission_percentage: number
+        }
+        Insert: {
+          commission_payer: string
+          commission_percentage: number
+          owner_id: string
+          property_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vat_on_commission_percentage: number
+        }
+        Update: {
+          commission_payer?: string
+          commission_percentage?: number
+          owner_id?: string
+          property_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vat_on_commission_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_property_commission_settings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_property_commission_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
