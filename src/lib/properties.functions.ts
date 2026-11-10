@@ -193,7 +193,7 @@ export const getProperty = createServerFn({ method: "GET" })
 
     const units = await readAll(() => supabase
       .from("units")
-      .select("*")
+      .select("*, assigned_meters:meters!meters_unit_id_fkey(unit_id, meter_number, type)")
       .eq("property_id", data.id)
       .order("unit_number", { ascending: true })
       .order("id"));

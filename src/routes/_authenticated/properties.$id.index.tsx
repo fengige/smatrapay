@@ -56,6 +56,7 @@ import { PropertyAuditViewer } from "@/components/properties/PropertyAuditViewer
 import { PortalLayout } from "@/components/PortalLayout";
 import { AddressEditDialog } from "@/components/AddressEditDialog";
 import { ADMIN_UNIT_CSV_TEMPLATE, parseAdminUnitCsv } from "@/lib/admin-unit-csv";
+import { withAssignedMeterNumbers } from "@/lib/admin-unit-meters";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
@@ -409,7 +410,10 @@ function PropertyDetailPage() {
       ? property["owner_type"]
       : "landlord";
   const ownerLabel = ownerType === "landlord" ? "Landlord" : ownerType === "agent" ? "Agent" : "Vendor";
-  const units = useMemo(() => (data?.units ?? []) as unknown as Unit[], [data]);
+  const units = useMemo(() => {
+    const rows = data?.units ?? [];
+    return withAssignedMeterNumbers(rows, rows.flatMap((unit) => unit.assigned_meters)) as unknown as Unit[];
+  }, [data]);
   const assignments = useMemo(() => (data?.assignments ?? []) as unknown as Assignment[], [data]);
   const people = useMemo(() => (data?.people ?? []) as unknown as Person[], [data]);
   const directory = useMemo(
