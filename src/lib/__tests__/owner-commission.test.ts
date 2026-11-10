@@ -68,3 +68,22 @@ describe("owner commission persisted pricing source", () => {
     expect(ownerCommissionInput.parse({ owner_id: first, commission_payer: "resident", commission_percentage: 0, vat_on_commission_percentage: 100 })).toMatchObject({ commission_percentage: 0, vat_on_commission_percentage: 100 });
   });
 });
+describe("owner commission property scope", () => {
+  const owner = "33333333-3333-4333-8333-333333333333";
+  const propA = "44444444-4444-4444-8444-444444444444";
+  const propB = "55555555-5555-4555-8555-555555555555";
+  const base = { owner_id: owner, updated_at: "2026-11-10T21:00:00Z", updated_by: null };
+  const all: OwnerCommission = { ...base, property_id: null, commission_payer: "resident", commission_percentage: 10, vat_on_commission_percentage: 16 };
+  const specific: OwnerCommission = { ...base, property_id: propA, commission_payer: "owner", commission_percentage: 5, vat_on_commission_percentage: 8 };
+
+  it("uses the property-specific configuration for meters in that property", () => {
+    expect(commissionForOwner(owner, [all, specific], propA)).toBe(specific);
+  });
+  it("falls back to the all-properties configuration for other properties", () => {
+    expect(commissionForOwner(owner, [all, specific], propB)).toBe(all);
+    expect(commissionForOwner(owner, [all, specific], null)).toBe(all);
+  });
+  it("shows not configured when only another property is configured", () => {
+    expect(commissionForOwner(owner, [specific], propB)).toBeNull();
+  });
+});

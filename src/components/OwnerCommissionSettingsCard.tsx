@@ -4,12 +4,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { commissionForOwner, ownerCommissionInput, ownerCommissionKey, type OwnerCommission } from "@/lib/owner-commission";
+import { commissionForScope, ownerCommissionInput, ownerCommissionKey, type OwnerCommission } from "@/lib/owner-commission";
 import { getOwnerCommissionHistory, listOwnerCommissionSettings, saveOwnerCommissionSettings } from "@/lib/owner-commission.functions";
 import { commissionRefreshInterval, refreshOwnerCommission } from "@/lib/admin-pricing-refresh";
 
-export function OwnerCommissionSettingsCard({ owners }: { owners: { id: string; name: string }[] }) {
+type Option = { id: string; name: string };
+
+export function OwnerCommissionSettingsCard({ owners, ownerProperties }: { owners: Option[]; ownerProperties: Record<string, Option[]> }) {
   const [ownerId, setOwnerId] = useState("");
+  const [propertyId, setPropertyId] = useState("all");
+  const properties = ownerId ? ownerProperties[ownerId] ?? [] : [];
+  const scopedProperty = propertyId === "all" ? null : propertyId;
   const [saving, setSaving] = useState(false);
   const load = useServerFn(listOwnerCommissionSettings);
   const query = useQuery({ queryKey: ownerCommissionKey, queryFn: () => load(), refetchInterval: commissionRefreshInterval, refetchOnWindowFocus: "always" });
@@ -17,18 +22,26 @@ export function OwnerCommissionSettingsCard({ owners }: { owners: { id: string; 
     <section className="my-4 border-y border-border py-5">
       <h2 className="text-sm font-bold">Owner Commission Configuration</h2>
       <label htmlFor="commission-owner" className="mt-4 block text-sm font-medium">Owner account</label>
-      <select id="commission-owner" value={ownerId} disabled={saving} onChange={event => setOwnerId(event.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
+      <select id="commission-owner" value={ownerId} disabled={saving} onChange={event => { setOwnerId(event.target.value); setPropertyId("all"); }} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
         <option value="">Select owner</option>
         {owners.map(owner => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
       </select>
+      {ownerId && <>
+        <label htmlFor="commission-property" className="mt-4 block text-sm font-medium">Property</label>
+        <select id="commission-property" value={propertyId} disabled={saving} onChange={event => setPropertyId(event.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
+          <option value="all">All properties</option>
+          {properties.map(property => <option key={property.id} value={property.id}>{property.name}</option>)}
+        </select>
+        <p className="mt-1 text-xs text-muted-foreground">{scopedProperty ? "Applies only to this owner's meters in the selected property, overriding the All properties setting." : "Applies to all of this owner's meters unless a property has its own setting."}</p>
+      </>}
       {query.isError && <p role="alert" className="mt-3 text-sm text-destructive">Could not refresh owner settings. Please try Refresh.</p>}
       {ownerId && (query.isPending ? <Loader2 className="mt-4 size-5 animate-spin" /> : query.data &&
-        <OwnerCommissionForm key={ownerId} ownerId={ownerId} configuration={commissionForOwner(ownerId, query.data)} onSaving={setSaving} />)}
+        <OwnerCommissionForm key={`${ownerId}:${propertyId}`} ownerId={ownerId} propertyId={scopedProperty} configuration={commissionForScope(ownerId, scopedProperty, query.data)} onSaving={setSaving} />)}
     </section>
   );
 }
 
-function OwnerCommissionForm({ ownerId, configuration, onSaving }: { ownerId: string; configuration: OwnerCommission | null; onSaving: (saving: boolean) => void }) {
+function OwnerCommissionForm({ ownerId, propertyId, configuration, onSaving }: { ownerId: string; propertyId: string | null; configuration: OwnerCommission | null; onSaving: (saving: boolean) => void }) {
   const qc = useQueryClient();
   const save = useServerFn(saveOwnerCommissionSettings);
   const loadHistory = useServerFn(getOwnerCommissionHistory);
@@ -44,8 +57,8 @@ function OwnerCommissionForm({ ownerId, configuration, onSaving }: { ownerId: st
     setEditing(false); setSubmitted(false);
   };
   useEffect(() => { if (!editing) reset(); }, [configuration, editing]);
-  const history = useQuery({ queryKey: [...ownerCommissionKey, "history", ownerId], queryFn: () => loadHistory({ data: { owner_id: ownerId } }), refetchInterval: commissionRefreshInterval, refetchOnWindowFocus: "always" });
-  const input = { owner_id: ownerId, commission_payer: payer, commission_percentage: Number(commission), vat_on_commission_percentage: Number(vat) };
+  const history = useQuery({ queryKey: [...ownerCommissionKey, "history", ownerId, propertyId], queryFn: () => loadHistory({ data: { owner_id: ownerId, property_id: propertyId } }), refetchInterval: commissionRefreshInterval, refetchOnWindowFocus: "always" });
+  const input = { owner_id: ownerId, property_id: propertyId, commission_payer: payer, commission_percentage: Number(commission), vat_on_commission_percentage: Number(vat) };
   const valid = payer !== "" && commission.trim() !== "" && vat.trim() !== "" && ownerCommissionInput.safeParse(input).success;
   const dirty = !configuration || payer !== configuration.commission_payer || Number(commission) !== configuration.commission_percentage || Number(vat) !== configuration.vat_on_commission_percentage;
   const mutation = useMutation({

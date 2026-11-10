@@ -8,3 +8,4 @@
 - Administrator pricing and approval lists use stable complete RLS reads and bounded relationship queries; large actions use authorized batches so totals and decisions are not capped by individual request limits.
 - Vending uses immutable server-prepared commission terms per purchase; token insertion atomically posts one owner liability, keeping retries and reports independent of later settings or owner assignments. Revocation is not a refund.
 - Persist confirmed provider results before token insertion and reuse them on retries; reject changed purchase amounts or units under the same terms key to prevent duplicate vending and mismatched charges.
+- Owner commission configuration has an all-properties row (owner_commission_settings) plus optional per-property overrides (owner_property_commission_settings); pricing rows resolve property override first, then all-properties, so owners can vary rates per property without affecting others.
