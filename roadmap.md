@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Fix administrator pricing refresh test build errors and run the affected tests.
+- [x] Fix administrator pricing refresh test build errors: preserve defined meter rows during updates; both affected tests passed and preview build OK.
 
 - [x] Administrator pricing table: added WHO PAYS COMMISSION beside commission/VAT; all three explicitly show Not configured because no owner configuration exists, without substituting shared settings or changing calculations.
 - [ ] Populate owner-specific commission/VAT/payer and verify distinct owners (blocked: identify the missing owner configuration source; existing form only saves shared system-wide settings).
