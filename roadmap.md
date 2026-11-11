@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Fix missing THE 46 RESIDENCY ANNEX in both vendor landlord assignment dialogs by reading complete authorized properties independently of capped unit lists.
+- [ ] Signed-in Annex assignment-list verification (blocked: no requester-linked auth account; vendor preview sign-in required).
+
 - [x] Hide Meter Suppliers menu and pages in vendor/landlord portals; direct supplier URLs redirect to the appropriate dashboard, administrator supplier management and meter supplier selections retained. 10 tests passed; preview build OK.
 - [ ] Signed-in vendor/landlord supplier redirect verification (blocked: no requester-linked session; portal sign-in required).
 

@@ -1,4 +1,4 @@
-import { assignPropertyLandlord } from "@/lib/property-landlords.functions";
+import { assignPropertyLandlord, listAssignableLandlordProperties } from "@/lib/property-landlords.functions";
 import { PropertyPicker } from "@/components/vendor/PropertyPicker";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -118,6 +118,7 @@ function VendorLandlordDetailPage() {
   const setStatus = useServerFn(setVendorLandlordStatus);
   const removeUnit = useServerFn(removeVendorLandlordUnit);
   const assignProperty = useServerFn(assignPropertyLandlord);
+  const fetchProperties = useServerFn(listAssignableLandlordProperties);
   const sendReset = useServerFn(sendVendorLandlordPasswordReset);
 
   const { data, isLoading, error } = useQuery({
@@ -137,6 +138,14 @@ function VendorLandlordDetailPage() {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedProps, setSelectedProps] = useState<string[]>([]);
   const [reason, setReason] = useState("");
+
+  const propertyQuery = useQuery({
+    queryKey: ["vendor-assignable-landlord-properties"],
+    queryFn: () => fetchProperties(),
+    enabled: dialog?.kind === "assign",
+    staleTime: 0,
+    refetchOnWindowFocus: "always",
+  });
 
   const landlord = data?.landlord;
   const units = unitData?.units ?? [];
@@ -735,7 +744,7 @@ function VendorLandlordDetailPage() {
             <p className="text-sm text-muted-foreground">
               The landlord will see reports for every unit and meter in the property. Only properties you manage are listed.
             </p>
-            <PropertyPicker units={units} value={selectedProps} onChange={setSelectedProps} />
+            <PropertyPicker properties={propertyQuery.data ?? []} value={selectedProps} onChange={setSelectedProps} loading={propertyQuery.isFetching} error={propertyQuery.error} />
             
             <div className="flex justify-end gap-2">
               <button type="button" className="btn-outline px-4 py-2" onClick={close}>
@@ -743,7 +752,7 @@ function VendorLandlordDetailPage() {
               </button>
               <button
                 type="button"
-                disabled={selectedProps.length === 0 || assignMutation.isPending}
+                disabled={selectedProps.length === 0 || assignMutation.isPending || propertyQuery.isFetching || Boolean(propertyQuery.error)}
                 onClick={() => assignMutation.mutate()}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
