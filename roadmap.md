@@ -187,3 +187,4 @@
 
 - [x] Publish resident PWA for phone install testing
 - [ ] Landlord portal: price change requests section (like vendor My price change requests)
+- [ ] Vendor price management: show assigned landlord per meter row
