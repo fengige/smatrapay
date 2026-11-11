@@ -4211,6 +4211,15 @@ export type Database = {
         Args: { _vendor: string; _zone: number }
         Returns: boolean
       }
+      vendor_price_commissions: {
+        Args: never
+        Returns: {
+          commission_payer: string
+          commission_percentage: number
+          meter_id: string
+          vat_on_commission_percentage: number
+        }[]
+      }
       vendor_resident_list_ids: {
         Args: never
         Returns: {

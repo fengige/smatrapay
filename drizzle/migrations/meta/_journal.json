@@ -372,6 +372,13 @@
       "when": 1794372268273,
       "tag": "0052_owner_commission_target_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794376396845,
+      "tag": "0053_vendor_effective_pricing_commission",
+      "breakpoints": true
     }
   ]
 }
