@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Verify kimanid49@gmail.com landlord My Properties, pricing and generated reports; submit meter 0293500112512 price KES 200 and approve as fengige@gmail.com, then read back landlord price/request status.
+- [x] Verified kimanid49@gmail.com My Properties (7 properties), pricing (1403 meters) and all three generated reports; fixed oversized scoped reads and capped meter lookup, 27 tests pass/build OK. Submitted meter 0293500112512 KES 250 → 200 and approved through the administrator account linked to fengige@gmail.com; landlord UI and persisted request/price confirm approval. Reports have no matching payment records for the checked period.
 
 - [x] Replace vendor landlord Assigned Units tab with My Account; scoped provider password updates, password-free audits/notifications, 49 tests pass; signed-in Jubilee → Samburu account form, confirmation rejection, cancel and desktop/mobile verified; build OK.
 - [ ] Real landlord password save/sign-in acceptance (blocked: no new password supplied or permission to replace an existing landlord password for testing; no live passwords changed).
