@@ -10,8 +10,8 @@ import { EmptyState, ErrorBlock, formatDate, LoadingBlock } from "@/components/v
 export function PropertyLandlordsTab({ propertyId, vendorName }: { propertyId: string; vendorName: string }) {
   const qc = useQueryClient();
   const key = ["property-landlords", propertyId];
-  const list = useQuery({ queryKey: key, queryFn: () => listFn({ data: { property_id: propertyId } }) });
   const listFn = useServerFn(listPropertyLandlords);
+  const list = useQuery({ queryKey: key, queryFn: () => listFn({ data: { property_id: propertyId } }) });
   const candidatesFn = useServerFn(listVendorLandlords);
   const candidates = useQuery({ queryKey: ["vendor-landlords"], queryFn: () => candidatesFn() });
   const assignFn = useServerFn(assignPropertyLandlord);
