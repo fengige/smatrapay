@@ -145,7 +145,6 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
         heading: "UNITS",
         items: [
           { label: "Meter Management", icon: Gauge, to: "/vendor/meters" },
-          { label: "Meter Suppliers", icon: Gauge, to: "/vendor/meter-suppliers" },
           { label: "Price Management", icon: BadgeDollarSign, to: "/vendor/price-management" },
           { label: "Zone Management", icon: MapPin, to: "/vendor/zones" },
           { label: "Meter Assignments", icon: ArrowLeftRight, to: "/vendor/assignments" },

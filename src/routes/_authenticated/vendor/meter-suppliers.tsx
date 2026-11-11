@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -16,6 +16,7 @@ import {
 } from "@/components/vendor/VendorUI";
 
 export const Route = createFileRoute("/_authenticated/vendor/meter-suppliers")({
+  beforeLoad: () => { throw redirect({ to: "/vendor/dashboard", replace: true }); },
   head: () => ({
     meta: [
       { title: "Meter Suppliers · Vendor · SmatraPay" },

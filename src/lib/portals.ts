@@ -73,6 +73,13 @@ export function dashboardForRoles(roles: string[]): DashboardPath {
   return RESIDENT_DASHBOARD;
 }
 
+/** Supplier management is hidden in vendor/landlord portals; retain administrator access. */
+export function supplierPageRedirect(roles: string[]): DashboardPath | null {
+  if (roles.includes("admin")) return null;
+  if (roles.includes("vendor") || roles.includes("landlord")) return dashboardForRoles(roles);
+  return null;
+}
+
 export function roleLabel(role: string): string {
   const portal = PORTALS.find((p) => p.role === role);
   if (portal) return portal.label;

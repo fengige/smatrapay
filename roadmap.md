@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Hide Meter Suppliers menu and pages in vendor/landlord portals; direct supplier URLs redirect to the appropriate dashboard, administrator supplier management and meter supplier selections retained. 10 tests passed; preview build OK.
+- [ ] Signed-in vendor/landlord supplier redirect verification (blocked: no requester-linked session; portal sign-in required).
+
 - [x] Vendor pricing: actual unit names and effective owner/property commission columns, caller-bound persisted reads, property precedence, save/refetch synchronization, and tested isolation; calculations and price actions unchanged.
 - [ ] Vendor pricing signed-in desktop/mobile table and administrator save → vendor readback acceptance (blocked: no requester-linked vendor session; preview sign-in required). No live configuration values changed.
 
