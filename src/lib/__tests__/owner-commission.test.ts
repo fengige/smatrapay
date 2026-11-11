@@ -59,10 +59,10 @@ describe("owner commission persisted pricing source", () => {
   });
 
   it.each([[-1, 16], [101, 16], [5, -1], [5, 101]])("rejects out-of-range rates %s / %s", (commission_percentage, vat_on_commission_percentage) => {
-    expect(ownerCommissionInput.safeParse({ owner_id: first, commission_payer: "owner", commission_percentage, vat_on_commission_percentage }).success).toBe(false);
+    expect(ownerCommissionInput.safeParse({ owner_type: "landlord", property_scope: "all", owner_id: first, commission_payer: "owner", commission_percentage, vat_on_commission_percentage }).success).toBe(false);
   });
   it("requires an Owner or Resident payer", () => {
-    expect(ownerCommissionInput.safeParse({ owner_id: first, commission_payer: "", commission_percentage: 5, vat_on_commission_percentage: 16 }).success).toBe(false);
+    expect(ownerCommissionInput.safeParse({ owner_type: "landlord", property_scope: "all", owner_id: first, commission_payer: "", commission_percentage: 5, vat_on_commission_percentage: 16 }).success).toBe(false);
   });
   it("accepts zero and one hundred percent", () => {
     expect(ownerCommissionInput.parse({ owner_type: "landlord", property_scope: "all", owner_id: first, property_id: null, commission_payer: "resident", commission_percentage: 0, vat_on_commission_percentage: 100 })).toMatchObject({ commission_percentage: 0, vat_on_commission_percentage: 100 });
