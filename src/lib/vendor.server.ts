@@ -149,64 +149,53 @@ export async function loadVendorScope(
   const supplierIds = [...new Set(meterList.map((m) => m.supplier_id).filter(Boolean))] as string[];
   const vsIds = [...new Set(meterList.map((m) => m.vending_software_id).filter(Boolean))] as string[];
 
-  const [unitsRes, suppliersRes, vsRes] = await Promise.all([
-    unitIds.length
-      ? supabase.from("units").select("id, unit_number, floor, property_id").in("id", unitIds)
-      : Promise.resolve({ data: [] as any[] }),
-    supplierIds.length
-      ? supabase.from("meter_suppliers").select("id, company_name").in("id", supplierIds)
-      : Promise.resolve({ data: [] as any[] }),
-    vsIds.length
-      ? supabase.from("vending_software").select("vending_software_id, name").in("vending_software_id", vsIds)
-      : Promise.resolve({ data: [] as any[] }),
+  const [units, supplierRows, vsRows] = await Promise.all([
+    selectIn(supabase, "units", "id, unit_number, floor, property_id", "id", unitIds),
+    selectIn(supabase, "meter_suppliers", "id, company_name", "id", supplierIds),
+    selectIn(supabase, "vending_software", "vending_software_id, name", "vending_software_id", vsIds),
   ]);
 
-  const units = (unitsRes.data ?? []) as any[];
-  const suppliers = byId((suppliersRes.data ?? []) as any[], "id");
-  const vendingSoftware = byId((vsRes.data ?? []) as any[], "vending_software_id");
+  const suppliers = byId(supplierRows, "id");
+  const vendingSoftware = byId(vsRows, "vending_software_id");
   const propertyIds = [...new Set(units.map((u) => u.property_id).filter(Boolean))] as string[];
 
-  const [propsRes, assignRes] = await Promise.all([
-    propertyIds.length
-      ? supabase
-          .from("properties")
-          .select("id, name, city, state, zone_id")
-          .in("id", propertyIds)
-      : Promise.resolve({ data: [] as any[] }),
-    unitIds.length
-      ? supabase
-          .from("unit_assignments")
-          .select("id, unit_id, user_id, role, start_date, end_date")
-          .in("unit_id", unitIds)
-          .eq("role", "resident")
-          .order("start_date", { ascending: false })
-      : Promise.resolve({ data: [] as any[] }),
+  const [properties, assignmentRows] = await Promise.all([
+    selectIn(supabase, "properties", "id, name, city, state, zone_id", "id", propertyIds),
+    selectIn(
+      supabase,
+      "unit_assignments",
+      "id, unit_id, user_id, role, start_date, end_date",
+      "unit_id",
+      unitIds,
+      { column: "start_date", ascending: false },
+    ),
   ]);
 
-  const properties = (propsRes.data ?? []) as any[];
-  const assignments = ((assignRes.data ?? []) as any[]).filter((a) => !a.end_date);
+  const assignments = assignmentRows.filter((a) => a.role === "resident" && !a.end_date);
   const zoneIds = [...new Set(properties.map((p) => p.zone_id).filter((z) => z != null))] as number[];
   const residentIds = [...new Set(assignments.map((a) => a.user_id))] as string[];
 
-  const [zonesRes, usersRes] = await Promise.all([
-    zoneIds.length
-      ? supabase
-          .from("zones")
-          .select("zone_id, zone_name, description, status, created_at, updated_at")
-          .in("zone_id", zoneIds)
-      : Promise.resolve({ data: [] as any[] }),
-    residentIds.length
-      ? supabase
-          .from("users")
-          .select("id, name, email, phone, status, profile_image, created_at")
-          .in("id", residentIds)
-      : Promise.resolve({ data: [] as any[] }),
+  const [zoneRows, userRows] = await Promise.all([
+    selectIn(
+      supabase,
+      "zones",
+      "zone_id, zone_name, description, status, created_at, updated_at",
+      "zone_id",
+      zoneIds,
+    ),
+    selectIn(
+      supabase,
+      "users",
+      "id, name, email, phone, status, profile_image, created_at",
+      "id",
+      residentIds,
+    ),
   ]);
 
   const unitMap = byId(units, "id");
   const propertyMap = byId(properties, "id");
-  const zoneMap = byId((zonesRes.data ?? []) as any[], "zone_id");
-  const userMap = byId((usersRes.data ?? []) as any[], "id");
+  const zoneMap = byId(zoneRows, "zone_id");
+  const userMap = byId(userRows, "id");
 
   const residentByUnit = new Map<string, any>();
   for (const a of assignments) if (!residentByUnit.has(a.unit_id)) residentByUnit.set(a.unit_id, a);
