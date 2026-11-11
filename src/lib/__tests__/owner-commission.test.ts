@@ -65,7 +65,7 @@ describe("owner commission persisted pricing source", () => {
     expect(ownerCommissionInput.safeParse({ owner_id: first, commission_payer: "", commission_percentage: 5, vat_on_commission_percentage: 16 }).success).toBe(false);
   });
   it("accepts zero and one hundred percent", () => {
-    expect(ownerCommissionInput.parse({ owner_id: first, commission_payer: "resident", commission_percentage: 0, vat_on_commission_percentage: 100 })).toMatchObject({ commission_percentage: 0, vat_on_commission_percentage: 100 });
+    expect(ownerCommissionInput.parse({ owner_type: "landlord", property_scope: "all", owner_id: first, property_id: null, commission_payer: "resident", commission_percentage: 0, vat_on_commission_percentage: 100 })).toMatchObject({ commission_percentage: 0, vat_on_commission_percentage: 100 });
   });
 });
 describe("owner commission property scope", () => {
