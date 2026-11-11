@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Administrator commission targeting: required owner type/account and property scope, persisted validated targets, override precedence, immediate refresh, regression and browser checks.
+- [x] Administrator commission targeting: required searchable role-matched owner/account and property scope, persisted targets validated by server and database guard, retained per-property precedence/audits and immediate refresh; 55 tests passed, preview build OK, anonymous target reads denied. Calculations unchanged.
+- [ ] Administrator targeting signed-in save/readback and desktop/mobile controls (blocked: no requester-linked administrator session; signed-out desktop/mobile redirect to auth without errors). No real configurations changed during verification.
 
 - [x] Administrator owner commission save/readback: owner-scoped persisted configuration, actual-owner table mapping, successful-save query refresh, periodic/focus/realtime synchronization, and atomic history; 47 regression tests passed, preview build OK, vending calculations unchanged.
 - [ ] Signed-in owner commission save/table readback and mobile acceptance (blocked: requester has no mintable administrator account; administrator preview sign-in required). No real owner configurations were fabricated or changed during checks.
