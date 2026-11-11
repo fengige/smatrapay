@@ -7,5 +7,5 @@ export const landlordAccountPasswordInput = landlordAccountTarget.extend({
 }).refine(value => value.password === value.confirmation, { path: ["confirmation"], message: "Passwords do not match." });
 
 export function eligibleLandlordAccountRoles(roles: string[]) {
-  return roles.includes("landlord") && roles.every(role => role === "landlord" || role === "user");
+  return roles.includes("landlord") && roles.every(role => role === "landlord" || role === "resident" || role === "user");
 }

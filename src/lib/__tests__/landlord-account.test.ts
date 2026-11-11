@@ -22,7 +22,9 @@ describe("Landlord password validation", () => {
   it.each(["abc12", "A".repeat(73)])("rejects invalid length", password => expect(landlordAccountPasswordInput.safeParse({ ...valid, password, confirmation: password }).success).toBe(false));
   it("accepts a valid password", () => expect(landlordAccountPasswordInput.safeParse(valid).success).toBe(true));
   it("accepts landlord-only identities", () => expect(eligibleLandlordAccountRoles(["landlord", "user"])).toBe(true));
-  it.each(["admin", "vendor", "agent", "resident", "service_provider", "moderator"])("rejects mixed privileged role %s", role => expect(eligibleLandlordAccountRoles(["landlord", role])).toBe(false));
+  it("supports existing landlord/resident accounts", () => expect(eligibleLandlordAccountRoles(["landlord", "resident"])).toBe(true));
+  it("rejects resident accounts without landlord access", () => expect(eligibleLandlordAccountRoles(["resident"])).toBe(false));
+  it.each(["admin", "vendor", "agent", "service_provider", "moderator"])("rejects mixed privileged role %s", role => expect(eligibleLandlordAccountRoles(["landlord", role])).toBe(false));
 });
 describe("Vendor landlord account authorization", () => {
   it("denies non-vendors before any profile reads", async () => {
