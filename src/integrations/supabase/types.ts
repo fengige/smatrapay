@@ -4178,6 +4178,7 @@ export type Database = {
         }
         Returns: Json
       }
+      is_landlord_account: { Args: { p_user: string }; Returns: boolean }
       landlord_managing_vendors: {
         Args: never
         Returns: {
