@@ -1411,6 +1411,8 @@ export type Database = {
           commission_payer: string
           commission_percentage: number
           owner_id: string
+          owner_type: string | null
+          property_scope: string
           updated_at: string
           updated_by: string | null
           vat_on_commission_percentage: number
@@ -1419,6 +1421,8 @@ export type Database = {
           commission_payer: string
           commission_percentage: number
           owner_id: string
+          owner_type?: string | null
+          property_scope?: string
           updated_at?: string
           updated_by?: string | null
           vat_on_commission_percentage: number
@@ -1427,6 +1431,8 @@ export type Database = {
           commission_payer?: string
           commission_percentage?: number
           owner_id?: string
+          owner_type?: string | null
+          property_scope?: string
           updated_at?: string
           updated_by?: string | null
           vat_on_commission_percentage?: number
@@ -1484,7 +1490,9 @@ export type Database = {
           commission_payer: string
           commission_percentage: number
           owner_id: string
+          owner_type: string | null
           property_id: string
+          property_scope: string
           updated_at: string
           updated_by: string | null
           vat_on_commission_percentage: number
@@ -1493,7 +1501,9 @@ export type Database = {
           commission_payer: string
           commission_percentage: number
           owner_id: string
+          owner_type?: string | null
           property_id: string
+          property_scope?: string
           updated_at?: string
           updated_by?: string | null
           vat_on_commission_percentage: number
@@ -1502,7 +1512,9 @@ export type Database = {
           commission_payer?: string
           commission_percentage?: number
           owner_id?: string
+          owner_type?: string | null
           property_id?: string
+          property_scope?: string
           updated_at?: string
           updated_by?: string | null
           vat_on_commission_percentage?: number
@@ -4143,6 +4155,45 @@ export type Database = {
       meter_assignment_csv_references: {
         Args: { p_portal: string }
         Returns: Json
+      }
+      owner_commission_linked_properties: {
+        Args: { p_owner: string; p_type: string }
+        Returns: {
+          address_line1: string | null
+          address_line2: string | null
+          building_category: string | null
+          building_number: string | null
+          city: string | null
+          code: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estate: string | null
+          id: string
+          landlord_id: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          number_of_units: number | null
+          owner_type: string
+          postal_code: string | null
+          property_type: string
+          route_id: number | null
+          state: string | null
+          status: Database["public"]["Enums"]["property_status"]
+          street_id: number | null
+          subtype: string | null
+          updated_at: string
+          updated_by: string | null
+          zone_id: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "properties"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       resident_can_read_payg_summary: {
         Args: { p_vendor: string }

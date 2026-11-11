@@ -1,47 +1,87 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Save } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { commissionForScope, ownerCommissionInput, ownerCommissionKey, type OwnerCommission } from "@/lib/owner-commission";
-import { getOwnerCommissionHistory, listOwnerCommissionSettings, saveOwnerCommissionSettings } from "@/lib/owner-commission.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { changeCommissionTarget, commissionForScope, ownerCommissionInput, ownerCommissionKey, ownerCommissionTargetsKey, type CommissionOption, type CommissionOwnerType, type OwnerCommission } from "@/lib/owner-commission";
+import { getOwnerCommissionHistory, listCommissionOwners, listCommissionProperties, listOwnerCommissionSettings, saveOwnerCommissionSettings } from "@/lib/owner-commission.functions";
 import { commissionRefreshInterval, refreshOwnerCommission } from "@/lib/admin-pricing-refresh";
 
-type Option = { id: string; name: string };
+const ownerLabels = { landlord: "Landlord", vendor: "Vendor", agent: "Agent" };
 
-export function OwnerCommissionSettingsCard({ owners, ownerProperties }: { owners: Option[]; ownerProperties: Record<string, Option[]> }) {
-  const [ownerId, setOwnerId] = useState("");
-  const [propertyId, setPropertyId] = useState("all");
-  const properties = ownerId ? ownerProperties[ownerId] ?? [] : [];
-  const scopedProperty = propertyId === "all" ? null : propertyId;
+export function OwnerCommissionSettingsCard() {
+  const [target, setTarget] = useState<{ owner_type: CommissionOwnerType | ""; owner_id: string; property_scope: "all" | "specific" | ""; property_id: string }>({ owner_type: "", owner_id: "", property_scope: "", property_id: "" });
   const [saving, setSaving] = useState(false);
   const load = useServerFn(listOwnerCommissionSettings);
+  const loadOwners = useServerFn(listCommissionOwners);
+  const loadProperties = useServerFn(listCommissionProperties);
   const query = useQuery({ queryKey: ownerCommissionKey, queryFn: () => load(), refetchInterval: commissionRefreshInterval, refetchOnWindowFocus: "always" });
+  const owners = useQuery({ queryKey: [...ownerCommissionTargetsKey, target.owner_type], enabled: !!target.owner_type, queryFn: () => {
+    if (!target.owner_type) return Promise.resolve([]);
+    return loadOwners({ data: { owner_type: target.owner_type } });
+  }, refetchOnWindowFocus: "always", refetchInterval: commissionRefreshInterval });
+  const properties = useQuery({ queryKey: [...ownerCommissionTargetsKey, target.owner_type, target.owner_id], enabled: !!target.owner_type && !!target.owner_id, queryFn: () => {
+    if (!target.owner_type || !target.owner_id) return Promise.resolve([]);
+    return loadProperties({ data: { owner_type: target.owner_type, owner_id: target.owner_id } });
+  }, refetchOnWindowFocus: "always", refetchInterval: commissionRefreshInterval });
+  const ownerValid = owners.data?.some(owner => owner.id === target.owner_id) ?? false;
+  const propertyId = target.property_scope === "specific" ? target.property_id : null;
+  const targetValid = !!target.owner_type && ownerValid && !!target.property_scope && !!properties.data?.length && !owners.isError && !properties.isError && (target.property_scope === "all" || properties.data.some(property => property.id === propertyId));
+  const label = target.owner_type ? `Select ${ownerLabels[target.owner_type]}` : "Owner account";
   return (
     <section className="my-4 border-y border-border py-5">
       <h2 className="text-sm font-bold">Owner Commission Configuration</h2>
-      <label htmlFor="commission-owner" className="mt-4 block text-sm font-medium">Owner account</label>
-      <select id="commission-owner" value={ownerId} disabled={saving} onChange={event => { setOwnerId(event.target.value); setPropertyId("all"); }} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
-        <option value="">Select owner</option>
-        {owners.map(owner => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
-      </select>
-      {ownerId && <>
-        <label htmlFor="commission-property" className="mt-4 block text-sm font-medium">Property</label>
-        <select id="commission-property" value={propertyId} disabled={saving} onChange={event => setPropertyId(event.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
-          <option value="all">All properties</option>
-          {properties.map(property => <option key={property.id} value={property.id}>{property.name}</option>)}
-        </select>
-        <p className="mt-1 text-xs text-muted-foreground">{scopedProperty ? "Applies only to this owner's meters in the selected property, overriding the All properties setting." : "Applies to all of this owner's meters unless a property has its own setting."}</p>
-      </>}
+      <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="min-w-0">
+          <label htmlFor="commission-owner-type" className="block text-sm font-medium">Select Owner</label>
+          <select id="commission-owner-type" required value={target.owner_type} disabled={saving} onChange={event => setTarget(current => changeCommissionTarget(current, { owner_type: event.target.value as CommissionOwnerType | "" }))} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
+            <option value="" disabled>Select Owner</option>
+            <option value="landlord">Landlord</option><option value="vendor">Vendor</option><option value="agent">Agent</option>
+          </select>
+        </div>
+        {target.owner_type && <div className="min-w-0">
+          <label htmlFor="commission-owner" className="block text-sm font-medium">{label}</label>
+          <TargetSelect id="commission-owner" label={label} value={target.owner_id} options={owners.data ?? []} disabled={saving || owners.isPending || owners.isError} onChange={owner_id => setTarget(current => changeCommissionTarget(current, { owner_id }))} />
+        </div>}
+        {target.owner_id && <div className="min-w-0">
+          <label htmlFor="commission-property-scope" className="block text-sm font-medium">Select Property</label>
+          <select id="commission-property-scope" required value={target.property_scope} disabled={saving || properties.isPending || properties.isError || !properties.data?.length} onChange={event => setTarget(current => changeCommissionTarget(current, { property_scope: event.target.value as "all" | "specific" | "" }))} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
+            <option value="" disabled>Select Property</option><option value="all">All Properties</option><option value="specific">Specific Property</option>
+          </select>
+        </div>}
+        {target.property_scope === "specific" && <div className="min-w-0">
+          <label htmlFor="commission-property" className="block text-sm font-medium">Select Property</label>
+          <TargetSelect key={`${target.owner_type}:${target.owner_id}`} id="commission-property" label="Select Property" value={target.property_id} options={properties.data ?? []} disabled={saving || properties.isPending || properties.isError} onChange={property_id => setTarget(current => ({ ...current, property_id }))} />
+        </div>}
+      </div>
+      {(owners.isError || properties.isError) && <p role="alert" className="mt-3 text-sm text-destructive">Could not load eligible owners or properties. Please try Refresh.</p>}
+      {target.owner_id && properties.isPending && <Loader2 aria-label="Loading properties" className="mt-3 size-5 animate-spin" />}
+      {target.owner_id && properties.isSuccess && !properties.data.length && <p role="alert" className="mt-3 text-sm text-destructive">This owner has no linked properties. Commission configuration cannot be saved.</p>}
       {query.isError && <p role="alert" className="mt-3 text-sm text-destructive">Could not refresh owner settings. Please try Refresh.</p>}
-      {ownerId && (query.isPending ? <Loader2 className="mt-4 size-5 animate-spin" /> : query.data &&
-        <OwnerCommissionForm key={`${ownerId}:${propertyId}`} ownerId={ownerId} propertyId={scopedProperty} configuration={commissionForScope(ownerId, scopedProperty, query.data)} onSaving={setSaving} />)}
+      {targetValid && target.owner_type && target.property_scope && (query.isPending ? <Loader2 className="mt-4 size-5 animate-spin" /> : query.data &&
+        <OwnerCommissionForm key={`${target.owner_type}:${target.owner_id}:${target.property_scope}:${target.property_id}`} ownerType={target.owner_type} ownerId={target.owner_id} propertyScope={target.property_scope} propertyId={propertyId} configuration={commissionForScope(target.owner_id, propertyId, query.data)} onSaving={setSaving} unavailable={query.isError} />)}
     </section>
   );
 }
 
-function OwnerCommissionForm({ ownerId, propertyId, configuration, onSaving }: { ownerId: string; propertyId: string | null; configuration: OwnerCommission | null; onSaving: (saving: boolean) => void }) {
+function TargetSelect({ id, label, value, options, disabled, onChange }: { id: string; label: string; value: string; options: CommissionOption[]; disabled: boolean; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild><Button id={id} type="button" role="combobox" aria-label={label} aria-required="true" aria-expanded={open} variant="outline" disabled={disabled} className="mt-1.5 h-11 w-full min-w-0 justify-between font-normal">
+      <span className="truncate">{options.find(option => option.id === value)?.name ?? label}</span><ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+    </Button></PopoverTrigger>
+    <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0">
+      <Command><CommandInput placeholder={`Search ${label.replace("Select ", "").toLowerCase()}…`} /><CommandList><CommandEmpty>No matching options.</CommandEmpty><CommandGroup>
+        {options.map(option => <CommandItem key={option.id} value={option.id} keywords={[option.name]} onSelect={() => { onChange(option.id); setOpen(false); }}><span className="min-w-0 flex-1 break-words">{option.name}</span>{value === option.id && <Check className="size-4" />}</CommandItem>)}
+      </CommandGroup></CommandList></Command>
+    </PopoverContent>
+  </Popover>;
+}
+
+function OwnerCommissionForm({ ownerType, ownerId, propertyScope, propertyId, configuration, onSaving, unavailable }: { ownerType: CommissionOwnerType; ownerId: string; propertyScope: "all" | "specific"; propertyId: string | null; configuration: OwnerCommission | null; onSaving: (saving: boolean) => void; unavailable: boolean }) {
   const qc = useQueryClient();
   const save = useServerFn(saveOwnerCommissionSettings);
   const loadHistory = useServerFn(getOwnerCommissionHistory);
@@ -58,8 +98,8 @@ function OwnerCommissionForm({ ownerId, propertyId, configuration, onSaving }: {
   };
   useEffect(() => { if (!editing) reset(); }, [configuration, editing]);
   const history = useQuery({ queryKey: [...ownerCommissionKey, "history", ownerId, propertyId], queryFn: () => loadHistory({ data: { owner_id: ownerId, property_id: propertyId } }), refetchInterval: commissionRefreshInterval, refetchOnWindowFocus: "always" });
-  const input = { owner_id: ownerId, property_id: propertyId, commission_payer: payer, commission_percentage: Number(commission), vat_on_commission_percentage: Number(vat) };
-  const valid = payer !== "" && commission.trim() !== "" && vat.trim() !== "" && ownerCommissionInput.safeParse(input).success;
+  const input = { owner_type: ownerType, property_scope: propertyScope, owner_id: ownerId, property_id: propertyId, commission_payer: payer, commission_percentage: Number(commission), vat_on_commission_percentage: Number(vat) };
+  const valid = !unavailable && payer !== "" && commission.trim() !== "" && vat.trim() !== "" && ownerCommissionInput.safeParse(input).success;
   const dirty = !configuration || payer !== configuration.commission_payer || Number(commission) !== configuration.commission_percentage || Number(vat) !== configuration.vat_on_commission_percentage;
   const mutation = useMutation({
     mutationFn: async () => {
@@ -101,7 +141,7 @@ function OwnerCommissionForm({ ownerId, propertyId, configuration, onSaving }: {
         <p className="text-xs text-muted-foreground">{configuration && `Last updated ${new Date(configuration.updated_at).toLocaleString()}`}</p>
         <div className="flex gap-2">
           <Button type="button" variant="outline" disabled={mutation.isPending || !editing} onClick={reset}>Cancel</Button>
-          <Button type="submit" disabled={mutation.isPending || !dirty}>{mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{mutation.isPending ? "Saving…" : "Save"}</Button>
+          <Button type="submit" disabled={mutation.isPending || !dirty || unavailable}>{mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{mutation.isPending ? "Saving…" : "Save"}</Button>
         </div>
       </div>
       {history.isError && <p role="alert" className="mt-3 text-sm text-destructive">Could not load change history.</p>}
