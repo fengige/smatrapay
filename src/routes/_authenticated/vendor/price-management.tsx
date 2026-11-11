@@ -259,6 +259,8 @@ function VendorPriceManagement() {
                 )}
               </tbody>
             </table>
+            </div>
+            )}
           </div>
 
 
