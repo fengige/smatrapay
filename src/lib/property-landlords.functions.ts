@@ -5,6 +5,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const input = z.object({ property_id: z.string().uuid() });
 const pair = input.extend({ landlord_id: z.string().uuid() });
 
+export const listAssignableLandlordProperties = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertVendor } = await import("@/lib/vendor.server");
+    await assertVendor(context as never);
+    const { readVendorAssignableProperties } = await import("@/lib/vendor-assignable-properties.server");
+    return readVendorAssignableProperties(context.supabase);
+  });
+
 async function assertManage(supabase: any, propertyId: string) {
   const { data, error } = await supabase.rpc("can_manage_property_landlords", { p_property: propertyId });
   if (error || !data) throw new Error("You can't manage owners for this property");
