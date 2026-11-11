@@ -7,7 +7,8 @@ function query(rows: any[], error: { message: string } | null = null) {
     eq: () => q,
     in: () => q,
     order: () => q,
-    range: async (from: number, to: number) => ({ data: rows.slice(from, to + 1), error }),
+    range: async (from: number, to: number) =>
+      error ? { data: null, error } : { data: rows.slice(from, to + 1), error: null },
   };
   return q;
 }
