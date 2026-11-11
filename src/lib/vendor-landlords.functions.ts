@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertVendor, logVendorAction } from "@/lib/vendor.server";
+import { readAll } from "@/lib/landlord-scope.server";
 
 /**
  * Vendor-scoped landlord management.
@@ -34,12 +35,11 @@ export type VendorLandlordRow = {
 };
 
 async function scopeGeography(supabase: Client) {
-  const { data: props, error } = await supabase
+  const props = await readAll(() => supabase
     .from("properties")
     .select(
       "id, name, code, property_type, status, address_line1, address_line2, city, zone_id, landlord_id, owner_type, number_of_units, created_at",
-    );
-  if (error) throw new Error(error.message);
+    ).order("id"));
   const propertyRows = (props ?? []) as any[];
 
   const zoneIds = [...new Set(propertyRows.map((p) => p.zone_id).filter((z) => z != null))];
@@ -61,15 +61,17 @@ async function scopeGeography(supabase: Client) {
     ]),
   );
 
-  const { data: units } = await supabase
+  const units = await readAll(() => supabase
     .from("units")
-    .select("id, unit_number, unit_type, status, property_id, created_at");
+    .select("id, unit_number, unit_type, status, property_id, created_at").order("id"));
   const unitRows = (units ?? []) as any[];
   const unitMap = new Map<string, any>(
     unitRows.map((u): [string, any] => [u.id, { ...u, property: propertyMap.get(u.property_id) ?? null }]),
   );
 
-  return { propertyMap, unitMap };
+  const links = await readAll(() => supabase.from("property_landlords")
+    .select("property_id, landlord_id").order("id"));
+  return { propertyMap, unitMap, links };
 }
 
 async function assertLandlordInScope(supabase: Client, landlordId: string) {
@@ -125,7 +127,7 @@ export const listVendorLandlords = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const userRows = (users ?? []) as any[];
 
-    const { propertyMap, unitMap } = await scopeGeography(supabase as never);
+    const { propertyMap, unitMap, links } = await scopeGeography(supabase as never);
 
     const { data: assignments } = await supabase
       .from("unit_assignments")
@@ -138,7 +140,8 @@ export const listVendorLandlords = createServerFn({ method: "GET" })
     const rows: VendorLandlordRow[] = userRows
       .filter((u) => roleIds.has(u.id))
       .map((u) => {
-        const owned = [...propertyMap.values()].filter((p: any) => p.landlord_id === u.id);
+        const linkedIds = new Set(links.filter((link) => link.landlord_id === u.id).map((link) => link.property_id));
+        const owned = [...propertyMap.values()].filter((p: any) => p.landlord_id === u.id || linkedIds.has(p.id));
         const ownedIds = new Set(owned.map((p: any) => p.id));
         const unitsInProperties = [...unitMap.values()].filter((unit: any) =>
           ownedIds.has(unit.property_id),
@@ -293,10 +296,11 @@ export const getVendorLandlord = createServerFn({ method: "GET" })
     const roleIds = await landlordRoleIds([data.id]);
     if (!roleIds.has(data.id)) throw new Error("Access denied");
 
-    const { propertyMap, unitMap } = await scopeGeography(supabase as never);
+    const { propertyMap, unitMap, links } = await scopeGeography(supabase as never);
+    const linkedIds = new Set(links.filter((link) => link.landlord_id === data.id).map((link) => link.property_id));
 
     const properties = [...propertyMap.values()]
-      .filter((p: any) => p.landlord_id === data.id)
+      .filter((p: any) => p.landlord_id === data.id || linkedIds.has(p.id))
       .map((p: any) => ({
         id: p.id as string,
         name: p.name as string,
