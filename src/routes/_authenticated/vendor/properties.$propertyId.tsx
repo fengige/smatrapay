@@ -20,6 +20,7 @@ import { AddPropertyUnitDialog } from "@/components/vendor/AddPropertyUnitDialog
 import { BulkPropertyUnitsDialog } from "@/components/vendor/BulkPropertyUnitsDialog";
 import { Download, Rows3, Upload } from "lucide-react";
 import { unitCsvTemplate } from "@/lib/unit-bulk";
+import { PropertyLandlordsTab } from "@/components/vendor/PropertyLandlordsTab";
 
 function downloadUnitTemplate() {
   const blob = new Blob([unitCsvTemplate()], { type: "text/csv;charset=utf-8" });
@@ -83,6 +84,7 @@ const TABS = [
   { id: "timeline", label: "Unit Timeline", icon: History },
   { id: "residents", label: "Residents", icon: UsersIcon },
   { id: "owner", label: "Owner Details", icon: Building2 },
+  { id: "landlords", label: "Assigned Landlords", icon: UsersIcon },
   { id: "photos", label: "My Photos", icon: Images },
 ] as const;
 
@@ -556,6 +558,8 @@ function VendorPropertyDetails() {
                 </table>
               </div>
             ))}
+
+          {tab === "landlords" && <PropertyLandlordsTab propertyId={propertyId} vendorName="Your vendor account" />}
 
           {tab === "owner" &&
             (!owner ? (
