@@ -80,6 +80,39 @@ export type VendorScope = {
 
 type Client = { from: (t: string) => any; rpc: (n: string, a?: any) => any };
 
+const IN_CHUNK = 200;
+
+/**
+ * Reads every row matching an `in` filter, chunking the id list and paging
+ * each chunk so large vendor scopes are not truncated by request limits.
+ * Related lookups are best-effort: on error the rows gathered so far are kept.
+ */
+async function selectIn(
+  supabase: Client,
+  table: string,
+  select: string,
+  column: string,
+  ids: (string | number)[],
+  order?: { column: string; ascending?: boolean },
+): Promise<any[]> {
+  const { readAll } = await import("./landlord-scope.server");
+  const rows: any[] = [];
+  for (let i = 0; i < ids.length; i += IN_CHUNK) {
+    const chunk = ids.slice(i, i + IN_CHUNK);
+    try {
+      const part = await readAll(() => {
+        let q = supabase.from(table).select(select).in(column, chunk);
+        if (order) q = q.order(order.column, { ascending: order.ascending ?? true });
+        return q;
+      });
+      rows.push(...part);
+    } catch {
+      return rows;
+    }
+  }
+  return rows;
+}
+
 export async function assertVendor(context: { supabase: Client; userId: string }) {
   const { data: isVendor } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
