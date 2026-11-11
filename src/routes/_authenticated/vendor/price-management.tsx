@@ -72,6 +72,7 @@ function VendorPriceManagement() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  const [requestsOpen, setRequestsOpen] = useState(false);
 
   const meters = data?.meters ?? [];
   const properties = useMemo(() => pricePropertyOptions(meters), [meters]);
