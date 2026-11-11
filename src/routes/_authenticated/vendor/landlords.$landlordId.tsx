@@ -1,3 +1,5 @@
+import { assignPropertyLandlord } from "@/lib/property-landlords.functions";
+import { PropertyPicker } from "@/components/vendor/PropertyPicker";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,13 +30,11 @@ import { EmptyState, ErrorBlock, formatDate, titleCase } from "@/components/vend
 import { VendorModal } from "@/components/vendor/VendorModal";
 import {
   ResidentFormFields,
-  UnitPicker,
   emptyResidentForm,
   splitName,
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
 import {
-  assignVendorLandlordUnit,
   getVendorLandlord,
   listVendorLandlordUnits,
   removeVendorLandlordUnit,
@@ -116,8 +116,8 @@ function VendorLandlordDetailPage() {
   const fetchUnits = useServerFn(listVendorLandlordUnits);
   const saveLandlord = useServerFn(updateVendorLandlord);
   const setStatus = useServerFn(setVendorLandlordStatus);
-  const assignUnit = useServerFn(assignVendorLandlordUnit);
   const removeUnit = useServerFn(removeVendorLandlordUnit);
+  const assignProperty = useServerFn(assignPropertyLandlord);
   const sendReset = useServerFn(sendVendorLandlordPasswordReset);
 
   const { data, isLoading, error } = useQuery({
@@ -191,15 +191,9 @@ function VendorLandlordDetailPage() {
 
   const assignMutation = useMutation({
     mutationFn: () =>
-      assignUnit({
-        data: {
-          landlord_id: landlordId,
-          unit_id: selectedUnit,
-          ...(reason ? { notes: reason } : {}),
-        },
-      }),
+      assignProperty({ data: { landlord_id: landlordId, property_id: selectedUnit } }),
     onSuccess: async () => {
-      toast.success("Unit assigned");
+      toast.success("Property assigned");
       await invalidate();
       close();
     },
@@ -359,7 +353,7 @@ function VendorLandlordDetailPage() {
                     }}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
                   >
-                    <DoorOpen className="size-4" /> Assign Unit
+                    <DoorOpen className="size-4" /> Assign Property
                   </button>
                 </div>
               </div>
@@ -734,21 +728,13 @@ function VendorLandlordDetailPage() {
       )}
 
       {dialog?.kind === "assign" && (
-        <VendorModal title="Assign Unit" onClose={close} wide>
+        <VendorModal title="Assign Property" onClose={close} wide>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Only properties and units inside your vendor scope are listed.
+              The landlord will see reports for every unit and meter in the property. Only properties you manage are listed.
             </p>
-            <UnitPicker units={units} value={selectedUnit} onChange={setSelectedUnit} required />
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-muted-foreground">Notes (optional)</span>
-              <textarea
-                rows={2}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </label>
+            <PropertyPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />
+            
             <div className="flex justify-end gap-2">
               <button type="button" className="btn-outline px-4 py-2" onClick={close}>
                 Cancel
@@ -759,7 +745,7 @@ function VendorLandlordDetailPage() {
                 onClick={() => assignMutation.mutate()}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
-                {assignMutation.isPending && <Loader2 className="size-4 animate-spin" />} Assign unit
+                {assignMutation.isPending && <Loader2 className="size-4 animate-spin" />} Assign property
               </button>
             </div>
           </div>
