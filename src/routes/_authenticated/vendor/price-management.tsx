@@ -83,7 +83,7 @@ function VendorPriceManagement() {
       if (!matchesPriceProperty(m, property)) return false;
       if (type !== "all" && m.type.toLowerCase() !== type) return false;
       if (!needle) return true;
-      return [m.meter_number, m.serial_number, m.unit_name, m.resident_name, m.zone_name, m.property_name].some((v) =>
+      return [m.meter_number, m.serial_number, m.unit_name, m.landlord_name, m.resident_name, m.zone_name, m.property_name].some((v) =>
         (v ?? "").toLowerCase().includes(needle),
       );
     });
@@ -305,7 +305,7 @@ function VendorPriceManagement() {
 
           <p className="text-sm text-muted-foreground">{rows.length} of {meters.length} meters</p>
           <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full min-w-[1100px] text-left text-sm">
+            <table className="w-full min-w-[1200px] text-left text-sm">
               <thead className="text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2">
@@ -323,6 +323,7 @@ function VendorPriceManagement() {
                   <th className="px-4 py-2">Type</th>
                   <th className="px-4 py-2">Zone</th>
                   <th className="px-4 py-2">Unit Name</th>
+                  <th className="px-4 py-2">Landlord</th>
                   <th className="px-4 py-2">Price / unit</th>
                   <th className="px-4 py-2">Who Pays Commission</th>
                   <th className="px-4 py-2">Commission (%)</th>
@@ -353,6 +354,7 @@ function VendorPriceManagement() {
                     <td className="px-4 py-2">{titleCase(m.type)}</td>
                     <td className="px-4 py-2">{m.zone_name ?? "—"}</td>
                     <td className="px-4 py-2">{m.unit_name ?? "—"}</td>
+                    <td className="px-4 py-2">{m.landlord_name ?? "Not assigned"}</td>
                     <td className="whitespace-nowrap px-4 py-2 font-semibold">KES {m.price_per_unit.toFixed(2)}</td>
                     <td className="whitespace-nowrap px-4 py-2">{m.owner_commission ? titleCase(m.owner_commission.commission_payer) : "Not configured"}</td>
                     <td className="whitespace-nowrap px-4 py-2">{m.owner_commission ? `${m.owner_commission.commission_percentage.toFixed(2)}%` : "Not configured"}</td>
@@ -364,7 +366,7 @@ function VendorPriceManagement() {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
                       No meters match these filters.
                     </td>
                   </tr>

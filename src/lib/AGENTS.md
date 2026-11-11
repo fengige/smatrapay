@@ -4,7 +4,7 @@
 - Vendor resident lists use caller-bound eligible-ID RPCs and paged RLS profile reads; list visibility does not grant additional account management authority, and privileged history is actor-scoped.
 - Vendor resident CSV import resolves scoped references before provider account creation, then uses a service-only locked completion transaction for profile/role/assignment/audit; retries skip matching vendor-created accounts and failed completions compensate new accounts.
 - Admin/vendor property lists and details count actual RLS-visible unit records through complete, stably ordered paginated reads, never planned totals or a capped single request.
-- Portal pricing lists and totals share complete caller-authorized meter reads (vendor ownership or landlord meter helpers); landlord pricing is read-only so existing pricing-write permissions remain unchanged.
+- Portal pricing lists and totals share complete caller-authorized meter reads (vendor ownership or landlord meter helpers); landlords never write prices directly; they submit admin-reviewed requests on caller-bound linked meters.
 - Administrator pricing and approval lists use stable complete RLS reads and bounded relationship queries; large actions use authorized batches so totals and decisions are not capped by individual request limits.
 - Vending uses immutable server-prepared commission terms per purchase; token insertion atomically posts one owner liability, keeping retries and reports independent of later settings or owner assignments. Revocation is not a refund.
 - Persist confirmed provider results before token insertion and reuse them on retries; reject changed purchase amounts or units under the same terms key to prevent duplicate vending and mismatched charges.

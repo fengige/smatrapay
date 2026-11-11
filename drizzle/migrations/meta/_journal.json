@@ -386,6 +386,20 @@
       "when": 1794379534311,
       "tag": "0054_property_landlords",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1794380955589,
+      "tag": "0055_vendor_scope_property_landlords",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1794380997069,
+      "tag": "0056_landlord_price_change_requests",
+      "breakpoints": true
     }
   ]
 }

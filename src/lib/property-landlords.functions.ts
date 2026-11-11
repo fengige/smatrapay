@@ -40,7 +40,10 @@ export const assignPropertyLandlord = createServerFn({ method: "POST" })
     const { data: visible } = await supabase.from("users").select("id").eq("id", data.landlord_id).maybeSingle();
     if (!visible) throw new Error("Landlord not found in your account");
     const { error } = await supabase.from("property_landlords").insert({ ...data, assigned_by: userId });
-    if (error) throw new Error(error.code === "23505" ? "This landlord is already assigned" : "Could not assign landlord");
+    if (error && error.code !== "23505") {
+      console.error("assignPropertyLandlord", error.code, error.message);
+      throw new Error(error.code === "42501" ? "You can only assign landlords to properties you manage" : "Could not assign landlord");
+    }
     return { ok: true };
   });
 
