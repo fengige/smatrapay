@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import {landlordFilterSchema,decimalInteger,monthRange,groupLandlordRows,landlordTotals,type LandlordRow} from '../landlord-reporting';
-import {landlordScope,readAll} from '../landlord-scope.server';
+import {landlordScope,readAll,readScopedIds} from '../landlord-scope.server';
 const row=(patch:Partial<LandlordRow>={}):LandlordRow=>({record_id:'a',property_id:'p',property_name:'Property',unit_name:'1',meter_number:'01',meter_type:'Electricity',trans_id:'tx',txn_at:'2026-11-05',amount_paid:1000,tokenizable_amount:942,commission_amount:50,vat_on_commission_amount:8,units:12.3,token_status:'generated',payment_status:'completed',token:'token',bank:'NCBA',vending_software:'Software',error_message:null,quantity_label:'kWh',...patch});
 describe('landlord reporting rules',()=>{
  it('uses the persisted commission and VAT deduction values without changing payment precision',()=>expect(landlordTotals([row()])).toEqual({amount_paid:1000,tokenizable_amount:942,commission_amount:50,vat_on_commission_amount:8}));
@@ -16,6 +16,8 @@ describe('landlord reporting rules',()=>{
  it('preserves 1 decimal truncation for quantities',()=>expect(decimalInteger('12.39',1)).toBe(123n));
 });
 describe('caller-bound landlord scope',()=>{
+ it('reads 1403 authorized IDs in bounded requests without including foreign rows',async()=>{const ids=Array.from({length:1403},(_,i)=>String(i));const batches:string[][]=[];const result=await readScopedIds(ids,batch=>{batches.push(batch);return{range:async(start:number,end:number)=>({data:batch.slice(start,end+1).map(id=>({id}))})};});expect(result.map(r=>r.id)).toEqual(ids);expect(batches).toHaveLength(8);expect(Math.max(...batches.map(b=>b.length))).toBe(200);});
+ it('does not query unscoped records when no linked IDs exist',async()=>{const build=vi.fn();expect(await readScopedIds([],build)).toEqual([]);expect(build).not.toHaveBeenCalled();});
  it('denies a vendor session before reading any property data',async()=>{const db={rpc:vi.fn().mockResolvedValue({data:false}),from:vi.fn()};await expect(landlordScope({supabase:db,userId:'vendor'})).rejects.toThrow('Landlord access required');expect(db.from).not.toHaveBeenCalled();});
  it('uses caller-bound helpers, retaining cross-vendor meters but excluding unrelated rows',async()=>{
  const tableData:any={properties:[{id:'p',name:'Owned',created_by:'vendor-a'}],units:[{id:'u',property_id:'p',unit_number:'001'}],meters:[{id:'a',unit_id:'u',meter_number:'01',vendor_id:'vendor-a'},{id:'b',unit_id:'u',meter_number:'02',vendor_id:'vendor-b'},{id:'foreign',unit_id:'u',meter_number:'03',vendor_id:'vendor-c'}]};
