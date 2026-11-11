@@ -80,6 +80,39 @@ export type VendorScope = {
 
 type Client = { from: (t: string) => any; rpc: (n: string, a?: any) => any };
 
+const IN_CHUNK = 200;
+
+/**
+ * Reads every row matching an `in` filter, chunking the id list and paging
+ * each chunk so large vendor scopes are not truncated by request limits.
+ * Related lookups are best-effort: on error the rows gathered so far are kept.
+ */
+async function selectIn(
+  supabase: Client,
+  table: string,
+  select: string,
+  column: string,
+  ids: (string | number)[],
+  order?: { column: string; ascending?: boolean },
+): Promise<any[]> {
+  const { readAll } = await import("./landlord-scope.server");
+  const rows: any[] = [];
+  for (let i = 0; i < ids.length; i += IN_CHUNK) {
+    const chunk = ids.slice(i, i + IN_CHUNK);
+    try {
+      const part = await readAll(() => {
+        let q = supabase.from(table).select(select).in(column, chunk);
+        if (order) q = q.order(order.column, { ascending: order.ascending ?? true });
+        return q;
+      });
+      rows.push(...part);
+    } catch {
+      return rows;
+    }
+  }
+  return rows;
+}
+
 export async function assertVendor(context: { supabase: Client; userId: string }) {
   const { data: isVendor } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
@@ -100,78 +133,69 @@ export async function loadVendorScope(
   supabase: Client,
   vendorId: string,
 ): Promise<VendorScope> {
-  const { data: meterRows, error } = await supabase
-    .from("meters")
-    .select(
-      "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, commission_percentage, vat_on_commission_percentage, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
-    )
-    .eq("vendor_id", vendorId)
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-
-  const meterList = (meterRows ?? []) as any[];
+  const { readAll } = await import("./landlord-scope.server");
+  // Page through every meter so totals are not capped by the default row limit.
+  const meterList = (await readAll(() =>
+    supabase
+      .from("meters")
+      .select(
+        "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, commission_percentage, vat_on_commission_percentage, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
+      )
+      .eq("vendor_id", vendorId)
+      .order("created_at", { ascending: false })
+      .order("id"),
+  )) as any[];
   const unitIds = [...new Set(meterList.map((m) => m.unit_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(meterList.map((m) => m.supplier_id).filter(Boolean))] as string[];
   const vsIds = [...new Set(meterList.map((m) => m.vending_software_id).filter(Boolean))] as string[];
 
-  const [unitsRes, suppliersRes, vsRes] = await Promise.all([
-    unitIds.length
-      ? supabase.from("units").select("id, unit_number, floor, property_id").in("id", unitIds)
-      : Promise.resolve({ data: [] as any[] }),
-    supplierIds.length
-      ? supabase.from("meter_suppliers").select("id, company_name").in("id", supplierIds)
-      : Promise.resolve({ data: [] as any[] }),
-    vsIds.length
-      ? supabase.from("vending_software").select("vending_software_id, name").in("vending_software_id", vsIds)
-      : Promise.resolve({ data: [] as any[] }),
+  const [units, supplierRows, vsRows] = await Promise.all([
+    selectIn(supabase, "units", "id, unit_number, floor, property_id", "id", unitIds),
+    selectIn(supabase, "meter_suppliers", "id, company_name", "id", supplierIds),
+    selectIn(supabase, "vending_software", "vending_software_id, name", "vending_software_id", vsIds),
   ]);
 
-  const units = (unitsRes.data ?? []) as any[];
-  const suppliers = byId((suppliersRes.data ?? []) as any[], "id");
-  const vendingSoftware = byId((vsRes.data ?? []) as any[], "vending_software_id");
+  const suppliers = byId(supplierRows, "id");
+  const vendingSoftware = byId(vsRows, "vending_software_id");
   const propertyIds = [...new Set(units.map((u) => u.property_id).filter(Boolean))] as string[];
 
-  const [propsRes, assignRes] = await Promise.all([
-    propertyIds.length
-      ? supabase
-          .from("properties")
-          .select("id, name, city, state, zone_id")
-          .in("id", propertyIds)
-      : Promise.resolve({ data: [] as any[] }),
-    unitIds.length
-      ? supabase
-          .from("unit_assignments")
-          .select("id, unit_id, user_id, role, start_date, end_date")
-          .in("unit_id", unitIds)
-          .eq("role", "resident")
-          .order("start_date", { ascending: false })
-      : Promise.resolve({ data: [] as any[] }),
+  const [properties, assignmentRows] = await Promise.all([
+    selectIn(supabase, "properties", "id, name, city, state, zone_id", "id", propertyIds),
+    selectIn(
+      supabase,
+      "unit_assignments",
+      "id, unit_id, user_id, role, start_date, end_date",
+      "unit_id",
+      unitIds,
+      { column: "start_date", ascending: false },
+    ),
   ]);
 
-  const properties = (propsRes.data ?? []) as any[];
-  const assignments = ((assignRes.data ?? []) as any[]).filter((a) => !a.end_date);
+  const assignments = assignmentRows.filter((a) => a.role === "resident" && !a.end_date);
   const zoneIds = [...new Set(properties.map((p) => p.zone_id).filter((z) => z != null))] as number[];
   const residentIds = [...new Set(assignments.map((a) => a.user_id))] as string[];
 
-  const [zonesRes, usersRes] = await Promise.all([
-    zoneIds.length
-      ? supabase
-          .from("zones")
-          .select("zone_id, zone_name, description, status, created_at, updated_at")
-          .in("zone_id", zoneIds)
-      : Promise.resolve({ data: [] as any[] }),
-    residentIds.length
-      ? supabase
-          .from("users")
-          .select("id, name, email, phone, status, profile_image, created_at")
-          .in("id", residentIds)
-      : Promise.resolve({ data: [] as any[] }),
+  const [zoneRows, userRows] = await Promise.all([
+    selectIn(
+      supabase,
+      "zones",
+      "zone_id, zone_name, description, status, created_at, updated_at",
+      "zone_id",
+      zoneIds,
+    ),
+    selectIn(
+      supabase,
+      "users",
+      "id, name, email, phone, status, profile_image, created_at",
+      "id",
+      residentIds,
+    ),
   ]);
 
   const unitMap = byId(units, "id");
   const propertyMap = byId(properties, "id");
-  const zoneMap = byId((zonesRes.data ?? []) as any[], "zone_id");
-  const userMap = byId((usersRes.data ?? []) as any[], "id");
+  const zoneMap = byId(zoneRows, "zone_id");
+  const userMap = byId(userRows, "id");
 
   const residentByUnit = new Map<string, any>();
   for (const a of assignments) if (!residentByUnit.has(a.unit_id)) residentByUnit.set(a.unit_id, a);
