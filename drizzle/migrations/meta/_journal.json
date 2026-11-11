@@ -407,6 +407,13 @@
       "when": 1794381593120,
       "tag": "0057_fix_property_landlord_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1794383241463,
+      "tag": "0058_fix_scoped_landlord_assignment_eligibility",
+      "breakpoints": true
     }
   ]
 }
