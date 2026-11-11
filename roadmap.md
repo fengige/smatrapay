@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Vendor pricing: actual unit names and effective owner/property commission columns, scoped persisted reads, save/refetch synchronization, and focused isolation/precedence tests.
+- [x] Vendor pricing: actual unit names and effective owner/property commission columns, caller-bound persisted reads, property precedence, save/refetch synchronization, and tested isolation; calculations and price actions unchanged.
+- [ ] Vendor pricing signed-in desktop/mobile table and administrator save → vendor readback acceptance (blocked: no requester-linked vendor session; preview sign-in required). No live configuration values changed.
 
 - [x] Administrator commission targeting: required searchable role-matched owner/account and property scope, persisted targets validated by server and database guard, retained per-property precedence/audits and immediate refresh; 55 tests passed, preview build OK, anonymous target reads denied. Calculations unchanged.
 - [ ] Administrator targeting signed-in save/readback and desktop/mobile controls (blocked: no requester-linked administrator session; signed-out desktop/mobile redirect to auth without errors). No real configurations changed during verification.
