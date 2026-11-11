@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Hide Meter Suppliers menu and pages in vendor/landlord portals; retain administrator supplier management and existing meter supplier selections.
+
 - [x] Vendor pricing: actual unit names and effective owner/property commission columns, caller-bound persisted reads, property precedence, save/refetch synchronization, and tested isolation; calculations and price actions unchanged.
 - [ ] Vendor pricing signed-in desktop/mobile table and administrator save → vendor readback acceptance (blocked: no requester-linked vendor session; preview sign-in required). No live configuration values changed.
 

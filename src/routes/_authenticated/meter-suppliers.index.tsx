@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { getMyAccess } from "@/lib/auth.functions";
+import { supplierPageRedirect } from "@/lib/portals";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -24,6 +26,11 @@ import { PortalLayout } from "@/components/PortalLayout";
 import { SupplierDialog } from "@/components/SupplierDialog";
 
 export const Route = createFileRoute("/_authenticated/meter-suppliers/")({
+  beforeLoad: async () => {
+    const access = await getMyAccess();
+    const destination = supplierPageRedirect(access.roles);
+    if (destination) throw redirect({ to: destination, replace: true });
+  },
   head: () => ({
     meta: [
       { title: "Meter Suppliers · SmatraPay" },
