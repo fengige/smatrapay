@@ -140,26 +140,6 @@ function PriceManagementPage() {
   });
 
   const meters = data?.meters ?? [];
-  const commissionOwners = useMemo(() => {
-    const owners = new Map<string, string>();
-    for (const group of [data?.landlords, data?.agents, data?.vendors]) {
-      for (const owner of group ?? []) owners.set(owner.id, owner.name);
-    }
-    for (const meter of meters) {
-      if (meter.owner_id) owners.set(meter.owner_id, meter.owner_name ?? owners.get(meter.owner_id) ?? "Unnamed owner");
-    }
-    return [...owners].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [data]);
-  const commissionOwnerProperties = useMemo(() => {
-    const byOwner = new Map<string, Map<string, string>>();
-    for (const meter of meters) {
-      if (!meter.owner_id || !meter.property_id) continue;
-      const list = byOwner.get(meter.owner_id) ?? new Map<string, string>();
-      list.set(meter.property_id, meter.property_name ?? "Unnamed property");
-      byOwner.set(meter.owner_id, list);
-    }
-    return Object.fromEntries([...byOwner].map(([owner, list]) => [owner, [...list].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))]));
-  }, [meters]);
   const ownerMeters = useMemo(() => priceOwnerMeters(meters, userType, userFilter).filter(m => matchesPriceVendor(m, vendorFilter)), [meters, userType, userFilter, vendorFilter]);
   const suppliers = data?.suppliers ?? [];
   const properties = useMemo(() => {
@@ -641,7 +621,7 @@ function PriceManagementPage() {
         </div>
       </div>
 
-      <OwnerCommissionSettingsCard owners={commissionOwners} ownerProperties={commissionOwnerProperties} />
+      <OwnerCommissionSettingsCard />
       <details className="my-4"><summary className="cursor-pointer text-sm font-medium text-muted-foreground">System-wide Commission Configuration</summary><CommissionSettingsCard /></details>
       {ownerCommissionQuery.isError && <p role="alert" className="mt-3 text-sm text-destructive">Could not refresh owner commission values. Please try Refresh.</p>}
 
