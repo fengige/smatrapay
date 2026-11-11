@@ -207,11 +207,26 @@ function VendorPriceManagement() {
             {failure && <p className="mt-3 text-sm text-destructive">{failure}</p>}
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-            <div className="p-4 pb-0">
-              <h2 className="text-sm font-bold text-foreground">My price change requests</h2>
-            </div>
-            <table className="mt-3 w-full text-left text-sm">
+          <div className="rounded-2xl border border-border bg-card">
+            <button
+              type="button"
+              onClick={() => setRequestsOpen((open) => !open)}
+              aria-expanded={requestsOpen}
+              className="flex w-full items-center justify-between gap-3 p-4 text-left"
+            >
+              <h2 className="text-sm font-bold text-foreground">
+                My price change requests
+                <span className="ml-2 text-xs font-semibold text-muted-foreground">
+                  ({requests.length})
+                </span>
+              </h2>
+              <ChevronDown
+                className={`size-4 shrink-0 text-muted-foreground transition-transform ${requestsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {requestsOpen && (
+            <div className="overflow-x-auto">
+            <table className="mt-1 w-full text-left text-sm">
               <thead className="text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2">Requested</th>
