@@ -135,6 +135,7 @@ function VendorLandlordDetailPage() {
   >(null);
   const [form, setForm] = useState<ResidentForm>(emptyResidentForm);
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedProps, setSelectedProps] = useState<string[]>([]);
   const [reason, setReason] = useState("");
 
   const landlord = data?.landlord;
@@ -191,9 +192,10 @@ function VendorLandlordDetailPage() {
 
   const assignMutation = useMutation({
     mutationFn: () =>
-      assignProperty({ data: { landlord_id: landlordId, property_id: selectedUnit } }),
+      Promise.all(selectedProps.map((property_id) => assignProperty({ data: { landlord_id: landlordId, property_id } }))),
     onSuccess: async () => {
-      toast.success("Property assigned");
+      toast.success(selectedProps.length > 1 ? `${selectedProps.length} properties assigned` : "Property assigned");
+      setSelectedProps([]);
       await invalidate();
       close();
     },
@@ -733,7 +735,7 @@ function VendorLandlordDetailPage() {
             <p className="text-sm text-muted-foreground">
               The landlord will see reports for every unit and meter in the property. Only properties you manage are listed.
             </p>
-            <PropertyPicker units={units} value={selectedUnit} onChange={setSelectedUnit} />
+            <PropertyPicker units={units} value={selectedProps} onChange={setSelectedProps} />
             
             <div className="flex justify-end gap-2">
               <button type="button" className="btn-outline px-4 py-2" onClick={close}>
@@ -741,11 +743,11 @@ function VendorLandlordDetailPage() {
               </button>
               <button
                 type="button"
-                disabled={!selectedUnit || assignMutation.isPending}
+                disabled={selectedProps.length === 0 || assignMutation.isPending}
                 onClick={() => assignMutation.mutate()}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
-                {assignMutation.isPending && <Loader2 className="size-4 animate-spin" />} Assign property
+                {assignMutation.isPending && <Loader2 className="size-4 animate-spin" />} Assign {selectedProps.length > 1 ? `${selectedProps.length} properties` : "property"}
               </button>
             </div>
           </div>
