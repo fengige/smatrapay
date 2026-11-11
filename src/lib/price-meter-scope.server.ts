@@ -28,9 +28,8 @@ export async function readPriceMeters(db: any, portal: "vendor" | "landlord", us
   if (portal === "vendor") {
     meters = await readAll(() => db.from("meters").select(columns).eq("vendor_id", userId).order("id"));
   } else {
-    const { data: ids, error: idsError } = await db.rpc("landlord_meter_ids");
-    if (idsError) throw new Error(idsError.message);
-    meters = await related(db, "meters", columns, (ids ?? []) as string[]);
+    const ids = await readAll(() => db.rpc("landlord_meter_ids"));
+    meters = await related(db, "meters", columns, ids as string[]);
   }
   meters = [...new Map(meters.map(m => [m.id, m])).values()];
   const units = await related(db, "units", "id,unit_number,property_id", meters.map(m => m.unit_id));

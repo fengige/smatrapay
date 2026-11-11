@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { applyPriceMode, type PriceMode } from "@/lib/prices.functions";
+import { readAll } from "./landlord-scope.server";
 
 const uuid = z.string().uuid();
 const priceInput = z.object({
@@ -24,8 +25,7 @@ export const submitLandlordPriceRequests = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const landlordId = await assertLandlord(context);
     const supabase = context.supabase as any;
-    const { data: linked, error: lErr } = await supabase.rpc("landlord_meter_ids");
-    if (lErr) throw new Error("Could not check your meters");
+    const linked = await readAll(() => supabase.rpc("landlord_meter_ids"));
     const allowed = new Set(((linked ?? []) as any[]).map((r) => (typeof r === "string" ? r : r.landlord_meter_ids)));
     if (data.ids.some((id) => !allowed.has(id))) throw new Error("Access denied");
     const { data: rows, error } = await supabase.from("meters").select("id, meter_number, price_per_unit, vendor_id").in("id", data.ids);
