@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
   Bot,
-  Building2,
   Check,
   Eye,
   EyeOff,
@@ -15,9 +14,7 @@ import {
   Phone,
   ShieldCheck,
   ShieldHalf,
-  Sparkles,
   UserRound,
-  Wrench,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,10 +26,8 @@ import { ResidentPasswordLogin } from "@/components/resident/ResidentPasswordLog
 import {
   RESIDENT_DASHBOARD,
   dashboardForRoles,
-  portalById,
-  visiblePortals,
+  PORTALS,
   type DashboardPath,
-  type PortalId,
 } from "@/lib/portals";
 import {
   RESIDENT_RETURN_KEY,
@@ -60,14 +55,6 @@ const COUNTRIES = [
   { code: "+44", label: "UK" },
   { code: "+1", label: "US" },
 ];
-
-const PORTAL_ICONS: Record<PortalId, typeof Building2> = {
-  admin: ShieldCheck,
-  landlord: Building2,
-  vendor: Sparkles,
-  agent: UserRound,
-  "service-provider": Wrench,
-};
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -164,8 +151,13 @@ function useAfterLogin() {
   const navigate = useNavigate();
   const loadAccess = useServerFn(getMyAccess);
 
-  return async function afterLogin(expectedRole?: string) {
+  return async function afterLogin(expectedRole?: string, staffOnly = false) {
     const access = await loadAccess();
+
+    if (staffOnly && !access.roles.some((r) => PORTALS.some((p) => p.role === r))) {
+      await supabase.auth.signOut();
+      throw new Error("This account does not have staff access. Residents should use the Resident tab.");
+    }
 
     if (expectedRole && !access.roles.includes(expectedRole)) {
       await supabase.auth.signOut();
@@ -620,7 +612,6 @@ function OtpVerification({
 
 function StaffAuth() {
   const afterLogin = useAfterLogin();
-  const [portal, setPortal] = useState<PortalId | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -631,14 +622,8 @@ function StaffAuth() {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
 
-  const selected = portal ? portalById(portal) : undefined;
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selected) {
-      toast.error("Please select a portal first");
-      return;
-    }
     const nextErrors: { email?: string; password?: string } = {};
     if (!email.trim()) nextErrors.email = "Email address is required";
     else if (!EMAIL_RE.test(email.trim())) nextErrors.email = "Enter a valid email address";
@@ -662,7 +647,7 @@ function StaffAuth() {
             : error.message,
         );
       }
-      await afterLogin(selected.role);
+      await afterLogin(undefined, true);
     } catch (err) {
       toast.error(errorMessage(err, "Sign in failed"));
     } finally {
@@ -670,56 +655,8 @@ function StaffAuth() {
     }
   }
 
-  if (!selected) {
-    return (
-      <div className="fade-swap">
-        <p className="field-label">
-          Select Portal <span className="text-destructive">*</span>
-        </p>
-        <div className="grid gap-2">
-          {visiblePortals().map((p) => {
-            const Icon = PORTAL_ICONS[p.id];
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPortal(p.id)}
-                className="portal-card"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-primary">
-                  <Icon className="size-4" />
-                </span>
-                <span className="min-w-0 text-left">
-                  <span className="block text-sm font-semibold text-foreground">{p.label}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{p.blurb}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Choose your portal to continue to sign in.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="fade-swap">
-      <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-muted/50 px-3 py-2">
-        <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <ShieldCheck className="size-4 text-primary" />
-          {selected.label} portal
-        </span>
-        <button
-          type="button"
-          onClick={() => setPortal(null)}
-          className="text-xs font-medium text-primary hover:underline"
-        >
-          Change
-        </button>
-      </div>
-
       <form className="space-y-4" onSubmit={handleSubmit} noValidate>
         <div>
           <label htmlFor="staff-email" className="field-label">
