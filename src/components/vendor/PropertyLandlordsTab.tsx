@@ -11,7 +11,7 @@ export function PropertyLandlordsTab({ propertyId, vendorName }: { propertyId: s
   const qc = useQueryClient();
   const key = ["property-landlords", propertyId];
   const listFn = useServerFn(listPropertyLandlords);
-  const list = useQuery({ queryKey: key, queryFn: () => listFn({ data: { property_id: propertyId } }) });
+  const list = useQuery({ queryKey: key, queryFn: (): Promise<{ id: string; name: string | null; email: string | null; phone: string | null; assigned_at: string }[]> => listFn({ data: { property_id: propertyId } }) });
   const candidatesFn = useServerFn(listVendorLandlords);
   const candidates = useQuery({ queryKey: ["vendor-landlords"], queryFn: () => candidatesFn() });
   const assignFn = useServerFn(assignPropertyLandlord);
