@@ -1,5 +1,6 @@
 import { assignPropertyLandlord, listAssignableLandlordProperties } from "@/lib/property-landlords.functions";
 import { PropertyPicker } from "@/components/vendor/PropertyPicker";
+import { LandlordAccountTab } from "@/components/vendor/LandlordAccountTab";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,6 @@ import {
 import {
   getVendorLandlord,
   listVendorLandlordUnits,
-  removeVendorLandlordUnit,
   sendVendorLandlordPasswordReset,
   setVendorLandlordStatus,
   updateVendorLandlord,
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/_authenticated/vendor/landlords/$landlord
 
 const TABS = [
   { key: "properties", label: "My Properties", icon: Building2 },
-  { key: "units", label: "Assigned Units", icon: DoorOpen },
+  { key: "account", label: "My Account", icon: KeyRound },
   { key: "invoices", label: "Invoices", icon: FileText },
   { key: "payments", label: "Payment History", icon: Receipt },
   { key: "methods", label: "Payment Methods", icon: Wallet },
@@ -116,7 +116,6 @@ function VendorLandlordDetailPage() {
   const fetchUnits = useServerFn(listVendorLandlordUnits);
   const saveLandlord = useServerFn(updateVendorLandlord);
   const setStatus = useServerFn(setVendorLandlordStatus);
-  const removeUnit = useServerFn(removeVendorLandlordUnit);
   const assignProperty = useServerFn(assignPropertyLandlord);
   const fetchProperties = useServerFn(listAssignableLandlordProperties);
   const sendReset = useServerFn(sendVendorLandlordPasswordReset);
@@ -207,16 +206,6 @@ function VendorLandlordDetailPage() {
       setSelectedProps([]);
       await invalidate();
       close();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: (assignmentId: string) =>
-      removeUnit({ data: { landlord_id: landlordId, assignment_id: assignmentId } }),
-    onSuccess: async () => {
-      toast.success("Assignment ended");
-      await invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -432,69 +421,7 @@ function VendorLandlordDetailPage() {
               </Panel>
             )}
 
-            {tab === "units" && (
-              <Panel>
-                <table className="w-full min-w-[900px] text-left text-sm">
-                  <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold">Property</th>
-                      <th className="px-4 py-3 font-semibold">Unit</th>
-                      <th className="px-4 py-3 font-semibold">Type</th>
-                      <th className="px-4 py-3 font-semibold">Zone</th>
-                      <th className="px-4 py-3 font-semibold">Unit status</th>
-                      <th className="px-4 py-3 font-semibold">Assigned</th>
-                      <th className="px-4 py-3 font-semibold">Ended</th>
-                      <th className="px-4 py-3 font-semibold">Assignment</th>
-                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assignments.length ? (
-                      assignments.map((a) => (
-                        <tr key={a.id} className="border-t border-border/70">
-                          <td className="px-4 py-3 text-foreground">{a.property_name ?? "—"}</td>
-                          <td className="px-4 py-3 font-medium text-foreground">
-                            {a.unit_number ?? "—"}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {titleCase(a.unit_type) || "—"}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">{a.zone_name ?? "—"}</td>
-                          <td className="px-4 py-3">
-                            <Badge value={a.unit_status} />
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">{formatDate(a.start_date)}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {a.end_date ? formatDate(a.end_date) : "—"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge value={a.current ? "current" : "historical"} />
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {a.current && (
-                              <button
-                                type="button"
-                                disabled={removeMutation.isPending}
-                                onClick={() => removeMutation.mutate(a.id)}
-                                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
-                              >
-                                End assignment
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
-                          This landlord has no unit assignments yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </Panel>
-            )}
+            {tab === "account" && <LandlordAccountTab key={landlordId} id={landlordId} />}
 
             {tab === "invoices" && (
               <EmptyState
@@ -805,8 +732,7 @@ function VendorLandlordDetailPage() {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               A password reset link will be emailed to{" "}
-              <span className="font-medium text-foreground">{landlord?.email ?? "—"}</span>. You will
-              never see or set their password.
+              <span className="font-medium text-foreground">{landlord?.email ?? "—"}</span>. Existing passwords are never shown.
             </p>
             <div className="flex justify-end gap-2">
               <button type="button" className="btn-outline px-4 py-2" onClick={close}>
