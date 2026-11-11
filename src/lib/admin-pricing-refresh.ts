@@ -15,5 +15,6 @@ export async function refreshAdminPricing(client: QueryClient) {
     client.invalidateQueries({ queryKey: ownerCommissionTargetsKey }, { throwOnError: true }),
     client.invalidateQueries({ queryKey: commissionSettingsKey }, { throwOnError: true }),
     client.invalidateQueries({ queryKey: ["meters"] }, { throwOnError: true }),
+    client.invalidateQueries({ queryKey: ["vendor-price-meters"] }, { throwOnError: true }),
   ]);
 }
