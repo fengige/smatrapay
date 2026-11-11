@@ -186,5 +186,5 @@
 - [x] Signed-in resident verification: email/password login redirects to /resident/dashboard; /resident/jobs and /resident/meters load successfully.
 
 - [x] Publish resident PWA for phone install testing
-- [ ] Landlord portal: price change requests section (like vendor My price change requests)
-- [ ] Vendor price management: show assigned landlord per meter row
+- [x] Landlord portal: price change requests section (like vendor My price change requests)
+- [x] Vendor price management: show assigned landlord per meter row
