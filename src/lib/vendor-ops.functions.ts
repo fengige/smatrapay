@@ -201,40 +201,76 @@ export const getVendorOpsSummary = createServerFn({ method: "GET" })
     startOfDay.setHours(0, 0, 0, 0);
     const today = startOfDay.toISOString();
 
-    const [metersRes, tokensRes, paymentsRes, requestsRes, assignmentsRes] = await Promise.all([
-      supabase.from("meters").select("id, status, installation_status").eq("vendor_id", vendorId),
+    // Exact server-side counts so totals are never capped by row limits.
+    const countExact = async (build: () => any) => {
+      const { count, error } = await build();
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    };
+
+    const [
+      activeMeters,
+      pendingActivation,
+      openRequests,
+      pendingInstallations,
+      completedInstallations,
+      tokensRes,
+      paymentsRes,
+    ] = await Promise.all([
+      countExact(() =>
+        supabase
+          .from("meters")
+          .select("id", { count: "exact", head: true })
+          .eq("vendor_id", vendorId)
+          .eq("status", "active"),
+      ),
+      countExact(() =>
+        supabase
+          .from("meters")
+          .select("id", { count: "exact", head: true })
+          .eq("vendor_id", vendorId)
+          .neq("status", "active")
+          .eq("installation_status", "installed"),
+      ),
+      countExact(() =>
+        supabase
+          .from("service_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("vendor_id", vendorId)
+          .not("status", "in", "(closed,cancelled,resolved)"),
+      ),
+      countExact(() =>
+        supabase
+          .from("meter_installation_assignments")
+          .select("id", { count: "exact", head: true })
+          .eq("vendor_id", vendorId)
+          .not("status", "in", "(completed,cancelled,failed)"),
+      ),
+      countExact(() =>
+        supabase
+          .from("meter_installation_assignments")
+          .select("id", { count: "exact", head: true })
+          .eq("vendor_id", vendorId)
+          .eq("status", "completed"),
+      ),
       supabase.from("meter_tokens").select("id, amount, status, created_at").order("created_at", { ascending: false }).limit(500),
       supabase.from("payments").select("id, amount, status, created_at").gte("created_at", today).limit(500),
-      supabase.from("service_requests").select("id, status").eq("vendor_id", vendorId),
-      supabase
-        .from("meter_installation_assignments")
-        .select("id, status")
-        .eq("vendor_id", vendorId),
     ]);
 
-    const meters = (metersRes.data ?? []) as any[];
     const tokens = (tokensRes.data ?? []) as any[];
     const payments = (paymentsRes.data ?? []) as any[];
-    const requests = (requestsRes.data ?? []) as any[];
-    const assignments = (assignmentsRes.data ?? []) as any[];
 
     return {
-      active_meters: meters.filter((m) => m.status === "active").length,
-      pending_activation: meters.filter(
-        (m) => m.status !== "active" && m.installation_status === "installed",
-      ).length,
+      active_meters: activeMeters,
+      pending_activation: pendingActivation,
       recent_token_requests: tokens.filter((t) => t.created_at >= today).length,
       tokens_total: tokens.length,
       payments_today: payments
         .filter((p) => p.status === "completed")
         .reduce((sum, p) => sum + Number(p.amount ?? 0), 0),
-      open_service_requests: requests.filter(
-        (r) => !["closed", "cancelled", "resolved"].includes(r.status),
-      ).length,
-      pending_installations: assignments.filter(
-        (a) => !["completed", "cancelled", "failed"].includes(a.status),
-      ).length,
-      completed_installations: assignments.filter((a) => a.status === "completed").length,
+      open_service_requests: openRequests,
+      pending_installations: pendingInstallations,
+      completed_installations: completedInstallations,
     };
   });
 
