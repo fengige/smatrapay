@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Replace vendor landlord Assigned Units tab with My Account; add scoped provider password updates, password-free audits/notifications, and verify validation/security.
+
 - [x] Fix Jubilee Utilities → Samburu Heights eligibility; signed-in seven-property save and readback verified, repeated assignment retains exactly seven rows, 12 regression tests pass with vendor scope and anonymous denial unchanged.
 
 - [x] Fix missing THE 46 RESIDENCY ANNEX in both vendor landlord assignment dialogs by reading complete authorized properties independently of capped unit lists.
