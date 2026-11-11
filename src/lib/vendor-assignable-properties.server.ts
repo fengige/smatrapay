@@ -1,7 +1,7 @@
 import { readAll } from "@/lib/landlord-scope.server";
 
 type PropertyOption = { id: string; name: string };
-type Client = { from: (table: string) => any; rpc: (name: string, args: { p_property: string }) => PromiseLike<{ data: unknown; error: { message: string } | null }> };
+type Client = { from: (table: "properties") => any; rpc: (name: "can_manage_property_landlords", args: { p_property: string }) => PromiseLike<{ data: unknown; error: { message: string } | null }> };
 
 /** Read property records, not a capped or incomplete list of their units. */
 export async function readVendorAssignableProperties(db: Client): Promise<PropertyOption[]> {
