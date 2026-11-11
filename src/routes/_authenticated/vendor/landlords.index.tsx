@@ -37,7 +37,6 @@ import {
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
 import {
-  assignVendorLandlordUnit,
   deleteVendorLandlord,
   listVendorLandlordUnits,
   listVendorLandlords,

@@ -35,7 +35,6 @@ import {
   type ResidentForm,
 } from "@/components/vendor/ResidentForms";
 import {
-  assignVendorLandlordUnit,
   getVendorLandlord,
   listVendorLandlordUnits,
   removeVendorLandlordUnit,
@@ -117,7 +116,6 @@ function VendorLandlordDetailPage() {
   const fetchUnits = useServerFn(listVendorLandlordUnits);
   const saveLandlord = useServerFn(updateVendorLandlord);
   const setStatus = useServerFn(setVendorLandlordStatus);
-  const assignUnit = useServerFn(assignVendorLandlordUnit);
   const removeUnit = useServerFn(removeVendorLandlordUnit);
   const assignProperty = useServerFn(assignPropertyLandlord);
   const sendReset = useServerFn(sendVendorLandlordPasswordReset);
