@@ -133,16 +133,18 @@ export async function loadVendorScope(
   supabase: Client,
   vendorId: string,
 ): Promise<VendorScope> {
-  const { data: meterRows, error } = await supabase
-    .from("meters")
-    .select(
-      "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, commission_percentage, vat_on_commission_percentage, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
-    )
-    .eq("vendor_id", vendorId)
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-
-  const meterList = (meterRows ?? []) as any[];
+  const { readAll } = await import("./landlord-scope.server");
+  // Page through every meter so totals are not capped by the default row limit.
+  const meterList = (await readAll(() =>
+    supabase
+      .from("meters")
+      .select(
+        "id, meter_number, serial_number, type, status, installation_status, installation_date, installer, installation_location, installation_notes, supplier_id, vending_software_id, unit_id, price_per_unit, commission_percentage, vat_on_commission_percentage, initial_reading, sgc, krn, ti, ea, ken, created_at, updated_at",
+      )
+      .eq("vendor_id", vendorId)
+      .order("created_at", { ascending: false })
+      .order("id"),
+  )) as any[];
   const unitIds = [...new Set(meterList.map((m) => m.unit_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(meterList.map((m) => m.supplier_id).filter(Boolean))] as string[];
   const vsIds = [...new Set(meterList.map((m) => m.vending_software_id).filter(Boolean))] as string[];
