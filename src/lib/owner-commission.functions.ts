@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { readAll } from "./landlord-scope.server";
-import { ownerCommissionInput, type OwnerCommission } from "./owner-commission";
+import { assertCommissionTarget, commissionOwnerType, ownerCommissionInput, type CommissionOption, type CommissionOwnerType, type OwnerCommission } from "./owner-commission";
+import { readPricingRelated } from "./price-management-read.server";
 
 async function authorize(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -16,6 +17,33 @@ const normalize = (row: any, property_id: string | null): OwnerCommission => ({
   vat_on_commission_percentage: Number(row.vat_on_commission_percentage),
 });
 const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+async function readOwners(db: any, ownerType: CommissionOwnerType): Promise<CommissionOption[]> {
+  const roles = await readAll(() => db.from("user_roles").select("user_id").eq("role", ownerType).order("id"));
+  const owners = await readPricingRelated(db, "users", "id,name", roles.map(role => role.user_id));
+  return owners.map(owner => ({ id: owner.id, name: owner.name || "Unnamed owner" })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function readProperties(db: any, ownerType: CommissionOwnerType, ownerId: string): Promise<CommissionOption[]> {
+  const properties = await readAll(() => db.rpc("owner_commission_linked_properties", { p_owner: ownerId, p_type: ownerType }).select("id,name").order("id"));
+  return properties.map(property => ({ id: property.id, name: property.name || "Unnamed property" })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export const listCommissionOwners = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ owner_type: commissionOwnerType }).parse(input))
+  .handler(async ({ data, context }) => {
+    await authorize(context);
+    return readOwners(context.supabase, data.owner_type);
+  });
+
+export const listCommissionProperties = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ owner_type: commissionOwnerType, owner_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await authorize(context);
+    return readProperties(context.supabase, data.owner_type, data.owner_id);
+  });
 
 export const listOwnerCommissionSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -33,17 +61,20 @@ export const saveOwnerCommissionSettings = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ownerCommissionInput.parse(input))
   .handler(async ({ data, context }): Promise<OwnerCommission> => {
     await authorize(context);
-    const { data: owner, error: ownerError } = await context.supabase.from("users").select("id").eq("id", data.owner_id).maybeSingle();
-    if (ownerError || !owner) throw new Error("Owner account not found");
+    const [owners, properties] = await Promise.all([
+      readOwners(context.supabase, data.owner_type),
+      readProperties(context.supabase, data.owner_type, data.owner_id),
+    ]);
+    assertCommissionTarget(data, owners, properties);
     const values = {
       owner_id: data.owner_id,
+      owner_type: data.owner_type,
+      property_scope: data.property_scope,
       commission_payer: data.commission_payer,
       commission_percentage: round(data.commission_percentage),
       vat_on_commission_percentage: round(data.vat_on_commission_percentage),
     };
     if (data.property_id) {
-      const { data: property, error: propertyError } = await context.supabase.from("properties").select("id").eq("id", data.property_id).maybeSingle();
-      if (propertyError || !property) throw new Error("Property not found");
       const { data: saved, error } = await context.supabase.from("owner_property_commission_settings")
         .upsert({ ...values, property_id: data.property_id }).select("*").single();
       if (error || !saved) throw new Error("Could not save owner commission settings");
