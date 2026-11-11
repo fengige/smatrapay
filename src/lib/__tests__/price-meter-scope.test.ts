@@ -17,7 +17,9 @@ function database(meters: any[], linked: string[] = [], allowed = true, tables: 
   }
   return { requests, db: {
     from: (table: string) => query(table, table === "meters" ? meters : tables[table] ?? []),
-    rpc: (name: string) => name === "has_role" ? Promise.resolve({ data: allowed, error: null }) : query(name, name === "vendor_price_commissions" ? commissions : linked),
+    rpc: (name: string) => name === "has_role" ? Promise.resolve({ data: allowed, error: null })
+      : name === "landlord_meter_ids" ? Promise.resolve({ data: linked, error: null })
+      : query(name, name === "vendor_price_commissions" ? commissions : linked),
   } };
 }
 
