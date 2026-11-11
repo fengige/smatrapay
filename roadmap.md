@@ -1,9 +1,9 @@
 # Roadmap
 
-- [ ] Fix Jubilee Utilities → Samburu Heights property assignment eligibility and verify seven-property save/readback, retries, and denied unrelated access.
+- [x] Fix Jubilee Utilities → Samburu Heights eligibility; signed-in seven-property save and readback verified, repeated assignment retains exactly seven rows, 12 regression tests pass with vendor scope and anonymous denial unchanged.
 
 - [x] Fix missing THE 46 RESIDENCY ANNEX in both vendor landlord assignment dialogs by reading complete authorized properties independently of capped unit lists.
-- [ ] Signed-in Annex assignment-list verification (blocked: no requester-linked auth account; vendor preview sign-in required).
+- [x] Signed-in Annex assignment-list verification completed as the user-named Jubilee Utilities vendor; Annex saved and visible in Samburu Heights property details.
 
 - [x] Hide Meter Suppliers menu and pages in vendor/landlord portals; direct supplier URLs redirect to the appropriate dashboard, administrator supplier management and meter supplier selections retained. 10 tests passed; preview build OK.
 - [ ] Signed-in vendor/landlord supplier redirect verification (blocked: no requester-linked session; portal sign-in required).
