@@ -57,7 +57,7 @@ describe("complete portal price meter scope", () => {
     const { db } = database([{ id: "m", vendor_id: "own", unit_id: "u" }], [], true, {
       units: [{ id: "u", unit_number: "Apartment A7", property_id: "p" }],
       properties: [{ id: "p", name: "Court" }],
-      unit_assignments: [{ id: "a", unit_id: "u", user_id: "r" }],
+      unit_assignments: [{ id: "a", unit_id: "u", user_id: "r", role: "resident" }],
       users: [{ id: "r", name: "Resident Person" }],
     });
     expect((await readPriceMeters(db, "vendor", "own"))[0]).toMatchObject({ unit_name: "Apartment A7", resident_name: "Resident Person" });
