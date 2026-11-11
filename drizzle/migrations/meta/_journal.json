@@ -379,6 +379,13 @@
       "when": 1794376396845,
       "tag": "0053_vendor_effective_pricing_commission",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1794379534311,
+      "tag": "0054_property_landlords",
+      "breakpoints": true
     }
   ]
 }

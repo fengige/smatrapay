@@ -2435,6 +2435,38 @@ export type Database = {
         }
         Relationships: []
       }
+      property_landlords: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          landlord_id: string
+          property_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          landlord_id: string
+          property_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          landlord_id?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_landlords_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_photos: {
         Row: {
           caption: string | null
@@ -4077,6 +4109,10 @@ export type Database = {
         Returns: Json
       }
       bulk_add_meters: { Args: { p_payload: Json }; Returns: Json }
+      can_manage_property_landlords: {
+        Args: { p_property: string }
+        Returns: boolean
+      }
       complete_vendor_resident_import: {
         Args: {
           p_actor: string
