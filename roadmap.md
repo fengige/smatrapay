@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Fix Jubilee Utilities → Samburu Heights property assignment eligibility and verify seven-property save/readback, retries, and denied unrelated access.
+
 - [x] Fix missing THE 46 RESIDENCY ANNEX in both vendor landlord assignment dialogs by reading complete authorized properties independently of capped unit lists.
 - [ ] Signed-in Annex assignment-list verification (blocked: no requester-linked auth account; vendor preview sign-in required).
 
