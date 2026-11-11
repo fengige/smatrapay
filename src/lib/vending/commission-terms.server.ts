@@ -41,7 +41,12 @@ export async function prepareCommissionTerms(db: any, meter: any, key: string, a
   };
   const { data: existing, error: readError } = await db.from("vending_commission_terms").select("*").eq("request_key", key).maybeSingle();
   if (readError) throw new Error("Could not load purchase commission terms");
-  if (existing) return validate(existing);
+  if (existing && isStalePricelessFailure(existing)) {
+    // A failed attempt made before the meter had a price never vended; let retries use the current price.
+    const { error: delError } = await db.from("vending_commission_terms").delete()
+      .eq("id", existing.id).eq("vend_state", "failed").is("confirmed_vend_result", null);
+    if (delError) throw new Error("Could not refresh purchase terms");
+  } else if (existing) return validate(existing);
   const terms = await currentCommissionTerms(db, meter, amount, byUnits, units);
   const { data, error } = await db.from("vending_commission_terms").insert({ ...terms, request_key: key }).select("*").single();
   if (!error && data) return data;
@@ -50,4 +55,8 @@ export async function prepareCommissionTerms(db: any, meter: any, key: string, a
     if (first) return validate(first);
   }
   throw new Error("Could not preserve purchase commission terms");
+}
+/** Only failed, never-confirmed snapshots taken without a unit price may be refreshed. */
+export function isStalePricelessFailure(s: any) {
+  return !(Number(s?.price_per_unit ?? 0) > 0) && s?.vend_state === "failed" && s?.confirmed_vend_result == null;
 }
