@@ -36,6 +36,12 @@ describe('landlord live query refresh', () => {
     state.cleanup?.();
     expect(state.remove).toHaveBeenCalledTimes(1);
   });
+  it.each(['bank_notifications', 'meters', 'properties', 'units', 'unit_assignments', 'property_landlords'])('refreshes dashboard collections and reports after %s changes', table => {
+    const dashboardKeys = [['landlord-dashboard'], ['landlord-report']];
+    useRealtimeRefresh('landlord-dashboard', ['bank_notifications', 'meters', 'properties', 'units', 'unit_assignments', 'property_landlords'], dashboardKeys);
+    state.callbacks.get(table)?.();
+    expect(state.invalidate.mock.calls).toEqual(dashboardKeys.map(queryKey => [{ queryKey }]));
+  });
   it('does not subscribe when landlord mode is disabled', () => {
     useRealtimeRefresh('landlord', ['units'], keys, false);
     expect(state.subscribe).not.toHaveBeenCalled();

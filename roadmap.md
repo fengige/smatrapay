@@ -1,5 +1,10 @@
 # Roadmap
 
+- [x] Landlord dashboard: confirmed-only Daily/Weekly/Monthly/Annually property collections, Nairobi calendar boundaries (Monday–Sunday week), meter-type breakdown, deduplication, cross-vendor authorized scope, and automatic/manual refresh.
+- [x] Landlord dashboard: latest five successful tokens across all dates, responsive table/mobile list, existing /landlord/recent-tokens action, empty/loading/error states, and display-only fields without supplier configuration.
+- [x] Collection totals, status exclusions, 1403-meter/1206-payment completeness, lowercase meter types, ordering and five-row limit verified with focused tests; persisted sample reconciles KES 0 daily, KES 2330 weekly and KES 8781 monthly/annually, with five newest token IDs matching.
+- [ ] Landlord dashboard signed-in desktop/mobile acceptance (blocked: requester has no matching Auth account; explicit kimanid49@gmail.com session mint requires approval unavailable in this context). Signed-out desktop/mobile routes correctly return to sign-in without page errors; no live payment or assignment records changed.
+
 - [x] Verified kimanid49@gmail.com My Properties (7 properties), pricing (1403 meters) and all three generated reports; fixed oversized scoped reads and capped meter lookup, 27 tests pass/build OK. Submitted meter 0293500112512 KES 250 → 200 and approved through the administrator account linked to fengige@gmail.com; landlord UI and persisted request/price confirm approval. Reports have no matching payment records for the checked period.
 
 - [x] Replace vendor landlord Assigned Units tab with My Account; scoped provider password updates, password-free audits/notifications, 49 tests pass; signed-in Jubilee → Samburu account form, confirmation rejection, cancel and desktop/mobile verified; build OK.
