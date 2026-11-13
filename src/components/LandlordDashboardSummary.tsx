@@ -16,7 +16,8 @@ const time = (value: string) => new Date(value).toLocaleTimeString('en-KE', {
   timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit',
 });
 
-export function LandlordDashboardSummary({ data, refreshing, onRefresh, refreshError }: {
+export function LandlordDashboardSummary({ data, refreshing, onRefresh, refreshError, viewAllTo = '/landlord/recent-tokens', scopeLabel = 'linked' }: {
+  viewAllTo?: '/landlord/recent-tokens' | '/vendor/tokens'; scopeLabel?: string;
   data: DashboardData; refreshing: boolean; onRefresh: () => void; refreshError: boolean;
 }) {
   return <div className="min-w-0 space-y-8 pb-6">
@@ -25,7 +26,7 @@ export function LandlordDashboardSummary({ data, refreshing, onRefresh, refreshE
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="collection-heading" className="text-lg font-bold text-foreground">Properties Payment Collection Summary</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{data.propertyCount} linked {data.propertyCount === 1 ? 'property' : 'properties'} · Confirmed payments · Africa/Nairobi (EAT)</p>
+          <p className="mt-1 text-sm text-muted-foreground">{data.propertyCount} {scopeLabel} {data.propertyCount === 1 ? 'property' : 'properties'} · Confirmed payments · Africa/Nairobi (EAT)</p>
         </div>
         <Button variant="outline" onClick={onRefresh} disabled={refreshing}>
           <RefreshCw className={refreshing ? 'motion-safe:animate-spin' : ''} />Refresh
@@ -56,10 +57,10 @@ export function LandlordDashboardSummary({ data, refreshing, onRefresh, refreshE
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 id="recent-tokens-heading" className="text-lg font-bold text-foreground">Recent Token Transactions</h2>
         <Button asChild variant="outline" className="h-auto min-h-9 max-w-full whitespace-normal text-left">
-          <Link to="/landlord/recent-tokens">View All Token Transactions<ArrowRight /></Link>
+          <Link to={viewAllTo}>View All Token Transactions<ArrowRight /></Link>
         </Button>
       </header>
-      {data.recent.length === 0 ? <div className="border-y border-border py-10 text-center text-sm text-muted-foreground">No successful token transactions for your linked properties.</div> : <>
+      {data.recent.length === 0 ? <div className="border-y border-border py-10 text-center text-sm text-muted-foreground">No successful token transactions for these properties.</div> : <>
         <div className="hidden overflow-x-auto border-y border-border md:block">
           <table aria-label="Recent Token Transactions" className="w-full text-left text-sm">
             <thead className="bg-secondary text-xs text-muted-foreground"><tr>

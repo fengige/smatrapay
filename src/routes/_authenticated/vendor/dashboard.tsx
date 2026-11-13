@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getVendorOpsSummary } from "@/lib/vendor-ops.functions";
+import { getVendorCollections } from "@/lib/vendor-dashboard.functions";
+import { LandlordDashboardSummary } from "@/components/LandlordDashboardSummary";
 import { checkRoleAccess } from "@/lib/auth.functions";
 
 import { DashboardShell } from "@/components/DashboardShell";
@@ -45,6 +47,13 @@ function VendorDashboard() {
   const { data, isLoading, error } = useVendorScope();
   const fetchOps = useServerFn(getVendorOpsSummary);
   const opsSummary = useQuery({ queryKey: ["vendor-ops-summary"], queryFn: () => fetchOps() });
+  const fetchCollections = useServerFn(getVendorCollections);
+  const collections = useQuery({
+    queryKey: ["vendor-collections"],
+    queryFn: () => fetchCollections(),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
 
 
   const meters = data?.meters ?? [];
@@ -82,6 +91,20 @@ function VendorDashboard() {
         <LoadingBlock />
       ) : (
         <div className="space-y-5 pb-6">
+          {collections.data ? (
+            <LandlordDashboardSummary
+              data={collections.data}
+              refreshing={collections.isFetching}
+              onRefresh={() => collections.refetch()}
+              refreshError={collections.isError}
+              viewAllTo="/vendor/tokens"
+              scopeLabel="assigned"
+            />
+          ) : collections.isError ? (
+            <ErrorBlock message={(collections.error as Error).message} />
+          ) : (
+            <LoadingBlock />
+          )}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((s) => (
               <StatCard key={s.label} label={s.label} value={s.value} />

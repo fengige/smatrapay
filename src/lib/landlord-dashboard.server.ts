@@ -43,7 +43,13 @@ async function readRecentTokens(db: any, ids: string[], meters: DashboardMeter[]
 
 export async function readLandlordDashboard(context: { supabase: any; userId: string }, now = new Date()) {
   const scope = await landlordScope(context);
-  const meters: DashboardMeter[] = scope.meters.filter(m => m.property_id);
+  return readCollectionDashboard(context.supabase, scope.meters, scope.properties.length, now);
+}
+
+/** Shared collection summary for any caller-authorized meter list. */
+export async function readCollectionDashboard(db: any, scopeMeters: DashboardMeter[], propertyCount: number, now = new Date()) {
+  const context = { supabase: db };
+  const meters: DashboardMeter[] = scopeMeters.filter(m => m.property_id);
   const ids = [...new Set(meters.map(m => m.id))];
   const periods = landlordCollectionPeriods(now);
   // Early January's current week can begin in the preceding calendar year.
@@ -58,6 +64,6 @@ export async function readLandlordDashboard(context: { supabase: any; userId: st
   const payments = await confirmRows(context.supabase, raw, meters);
   return {
     collections: summarizeLandlordCollections(payments, now), recent,
-    propertyCount: scope.properties.length, updatedAt: now.toISOString(),
+    propertyCount, updatedAt: now.toISOString(),
   };
 }
