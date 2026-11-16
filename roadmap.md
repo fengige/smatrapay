@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Secure resident Google sign-in: provider enabled, unique active same-account verified email check, no automatic Google resident creation, restrictive database/API authorization, safe denial/sign-out, unchanged password/phone methods; 52 tests pass and desktop/mobile cancellation/protected-route checks pass.
+- [ ] Actual resident Google consent → dashboard acceptance (blocked: requires the resident to complete their own Google sign-in; managed test sessions do not reproduce Google OAuth). Foreign Auth IDs are denied for management assistance rather than silently merging accounts; no resident or role records created.
+
 - [x] Landlord dashboard: confirmed-only Daily/Weekly/Monthly/Annually property collections, Nairobi calendar boundaries (Monday–Sunday week), meter-type breakdown, deduplication, cross-vendor authorized scope, and automatic/manual refresh.
 - [x] Landlord dashboard: latest five successful tokens across all dates, responsive table/mobile list, existing /landlord/recent-tokens action, empty/loading/error states, and display-only fields without supplier configuration.
 - [x] Collection totals, status exclusions, 1403-meter/1206-payment completeness, lowercase meter types, ordering and five-row limit verified with focused tests; persisted sample reconciles KES 0 daily, KES 2330 weekly and KES 8781 monthly/annually, with five newest token IDs matching.

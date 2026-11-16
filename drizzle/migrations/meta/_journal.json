@@ -414,6 +414,20 @@
       "when": 1794383241463,
       "tag": "0058_fix_scoped_landlord_assignment_eligibility",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1794826162019,
+      "tag": "0059_resident_google_registered_email_gate",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1794826328793,
+      "tag": "0060_resident_google_role_policy_guard",
+      "breakpoints": true
     }
   ]
 }

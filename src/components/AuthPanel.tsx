@@ -22,6 +22,10 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { getMyAccess } from "@/lib/auth.functions";
+import { verifyResidentGoogle } from "@/lib/resident-google.functions";
+import { isGoogleSession } from "@/lib/resident-google";
+import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
 import { ResidentPasswordLogin } from "@/components/resident/ResidentPasswordLogin";
 import {
   RESIDENT_DASHBOARD,
@@ -184,6 +188,8 @@ function useAfterLogin() {
 
 function ResidentAuth() {
   const afterLogin = useAfterLogin();
+  const verifyGoogle = useServerFn(verifyResidentGoogle);
+  const queryClient = useQueryClient();
   const [dialCode, setDialCode] = useState("+254");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -242,6 +248,7 @@ function ResidentAuth() {
   async function finishResidentSignIn(fromGoogle: boolean): Promise<boolean> {
     if (finishing.current) return false;
     finishing.current = true;
+    let googleAttempt = fromGoogle;
     try {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) {
@@ -255,11 +262,14 @@ function ResidentAuth() {
         throw new Error("We couldn't verify your resident account. Please try again.");
       }
       const decision = residentDecision(access);
+      if (!fromGoogle && !decision.ok && decision.reason === "staff") return false;
+      const verifiedClaims = await supabase.auth.getClaims();
+      googleAttempt ||= isGoogleSession(data.user, verifiedClaims.data?.claims ?? {});
+      if (googleAttempt) await verifyGoogle();
       if (!decision.ok) {
         // Only act on accounts that just came through resident Google sign-in;
         // existing staff sessions are left untouched.
-        if (!fromGoogle) return false;
-        if (decision.reason !== "staff") await supabase.auth.signOut();
+        if (!googleAttempt) return false;
         throw new Error(decision.message);
       }
       const target = safeResidentReturn(sessionStorage.getItem(RESIDENT_RETURN_KEY));
@@ -267,6 +277,13 @@ function ResidentAuth() {
       if (fromGoogle) toast.success("Signed in successfully");
       await navigate({ to: target, replace: true });
       return true;
+    } catch (err) {
+      if (googleAttempt) {
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        await supabase.auth.signOut();
+      }
+      throw err;
     } finally {
       finishing.current = false;
     }
@@ -355,17 +372,18 @@ function ResidentAuth() {
 
   return (
     <div className="fade-swap">
-      <ResidentPasswordLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(true)} />
+      <ResidentPasswordLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(false)} />
       <div className="divider">or</div>
-      <button
+      <Button
         type="button"
         onClick={handleGoogle}
         disabled={googleLoading || checking}
-        className="btn-primary w-full"
+        variant="google"
+        className="h-11 w-full gap-2.5 px-3 [&_svg]:size-[18px]"
       >
         {googleLoading || checking ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
         Continue with Google
-      </button>
+      </Button>
       {accessError && (
         <p role="alert" className="mt-3 text-sm text-destructive">
           {accessError}
@@ -854,19 +872,19 @@ function ForgotPasswordDialog({ onClose }: { onClose: () => void }) {
 
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-[18px]" aria-hidden="true">
       <path
         fill="#4285F4"
-        d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9z"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
       />
       <path
         fill="#34A853"
-        d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
       />
-      <path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1z" />
+      <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
       <path
         fill="#EA4335"
-        d="M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
       />
     </svg>
   );

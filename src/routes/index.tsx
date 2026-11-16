@@ -4,13 +4,13 @@ import { AuthPanel } from "@/components/AuthPanel";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sign in to SmatraPay" },
+      { title: "SmatraPay Resident and Staff Portal" },
       {
         name: "description",
         content:
           "Sign in to your SmatraPay dashboard to manage users, payments, payouts and real-time transaction insights.",
       },
-      { property: "og:title", content: "Sign in to SmatraPay" },
+      { property: "og:title", content: "SmatraPay Resident and Staff Portal" },
       {
         property: "og:description",
         content:

@@ -4240,6 +4240,7 @@ export type Database = {
         Args: { p_path: string }
         Returns: boolean
       }
+      resident_google_access: { Args: never; Returns: string }
       review_payg_application: {
         Args: { p_id: string; p_note: string; p_status: string }
         Returns: undefined

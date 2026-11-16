@@ -26,6 +26,9 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
+  --color-google-background: var(--google-background);
+  --color-google-foreground: var(--google-foreground);
+  --color-google-border: var(--google-border);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -49,6 +52,9 @@
 }
 
 :root {
+  --google-background: #FFFFFF;
+  --google-foreground: #1F1F1F;
+  --google-border: #747775;
   --radius: 0.75rem;
   --background: oklch(0.985 0.004 90);
   --foreground: oklch(0.24 0.03 240);
@@ -83,6 +89,11 @@
 }
 
 @layer base {
+  .dark {
+    --google-background: #131314;
+    --google-foreground: #E3E3E3;
+    --google-border: #8E918F;
+  }
   * {
     border-color: var(--color-border);
   }
