@@ -61,4 +61,16 @@ describe("registered resident phone OTP", () => {
     expect(JSON.stringify(insert.mock.calls)).not.toContain("876543");
     expect(JSON.stringify(update.mock.calls)).not.toContain("876543");
   });
+  it("selects TIARACONNECT and sends resident login SMS as REZICOM independently of other SMS senders", async () => {
+    const insert = vi.fn().mockReturnValue({ select: () => ({ single: async () => ({ data: { id: "log" } }) }) });
+    const query: any = { select: () => query, eq: vi.fn(() => query), maybeSingle: async () => ({ data: { id: "tiara-config", provider_code: "tiara", api_key: "test-key", sender_id: "OTHER", api_url: "https://sms.example.test" } }), insert, update: () => ({ eq: async () => ({}) }) };
+    const send = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ status: "SUCCESS", statusCode: "0" })));
+    expect(await deliverResidentPhoneCode({ from: () => query }, "+254712345678", "123456", "test-challenge", send)).toBe(true);
+    expect(query.eq).toHaveBeenCalledWith("provider_code", "tiara");
+    expect(query.eq).not.toHaveBeenCalledWith("is_default", true);
+    const body = JSON.parse(String(send.mock.calls[0]?.[1]?.body));
+    expect(body.from).toBe("REZICOM");
+    expect(insert.mock.calls[0]?.[0].sender_id).toBe("REZICOM");
+    expect(body.to).toBe("254712345678");
+  });
 });

@@ -3,6 +3,8 @@ import { PHONE_LOGIN_ERROR, phoneHash, randomPhoneCode } from "./resident-phone"
 import { residentDecision } from "./resident-signin";
 
 type Db = any;
+const RESIDENT_SMS_PROVIDER = "tiara";
+const RESIDENT_SMS_SENDER = "REZICOM";
 
 export async function limitResidentPhone(db: Db, action: "send" | "verify", identifier: string, ip: string) {
   const limits = action === "send"
@@ -15,16 +17,16 @@ export async function limitResidentPhone(db: Db, action: "send" | "verify", iden
   }
 }
 
-/** Uses the platform's existing default Tiara configuration, with redacted SMS history. */
+/** Uses TIARACONNECT credentials with the resident-only REZICOM sender. */
 export async function deliverResidentPhoneCode(db: Db, phone: string, code: string, challenge: string, send: typeof fetch = fetch): Promise<boolean> {
-  const { data: config, error } = await db.from("sms_configurations").select("id,provider_code,api_key,api_url,sender_id").eq("is_active", true).eq("is_default", true).maybeSingle();
-  if (error || !config || config.provider_code !== "tiara" || !config.api_key || !config.sender_id || !config.api_url) return false;
+  const { data: config, error } = await db.from("sms_configurations").select("id,provider_code,api_key,api_url").eq("is_active", true).eq("provider_code", RESIDENT_SMS_PROVIDER).maybeSingle();
+  if (error || !config || config.provider_code !== RESIDENT_SMS_PROVIDER || !config.api_key || !config.api_url) return false;
   const ref = `resident-otp-${challenge}`;
-  const { data: log, error: logError } = await db.from("sms_messages").insert({ configuration_id: config.id, recipient_phone: phone.slice(1), message: "[Resident sign-in code: redacted]", sender_id: config.sender_id, ref_id: ref, status: "pending" }).select("id").single();
+  const { data: log, error: logError } = await db.from("sms_messages").insert({ configuration_id: config.id, recipient_phone: phone.slice(1), message: "[Resident sign-in code: redacted]", sender_id: RESIDENT_SMS_SENDER, ref_id: ref, status: "pending" }).select("id").single();
   if (logError || !log) return false;
   let ok = false;
   try {
-    const response = await send(config.api_url, { method: "POST", redirect: "error", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.api_key}` }, body: JSON.stringify({ from: config.sender_id, to: phone.slice(1), message: `SmatraPay sign-in code: ${code}. Expires in 5 minutes. Do not share this code.`, refId: ref }) });
+    const response = await send(config.api_url, { method: "POST", redirect: "error", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.api_key}` }, body: JSON.stringify({ from: RESIDENT_SMS_SENDER, to: phone.slice(1), message: `SmatraPay sign-in code: ${code}. Expires in 5 minutes. Do not share this code.`, refId: ref }) });
     if (response.ok) {
       const result = await response.json();
       ok = String(result.status).toUpperCase() === "SUCCESS" && String(result.statusCode) === "0";
