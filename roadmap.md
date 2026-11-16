@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Resident registered-phone SMS OTP: reuse existing resident identities/SMS settings, server-only verification, private account matching, expiry/single-use protection, resend/attempt limits and desktop/mobile acceptance. Blocked pending confirmation to reuse custom database-backed abuse limits because no standard backend rate-limiting service exists.
+
 - [x] Secure resident Google sign-in: provider enabled, unique active same-account verified email check, no automatic Google resident creation, restrictive database/API authorization, safe denial/sign-out, unchanged password/phone methods; 52 tests pass and desktop/mobile cancellation/protected-route checks pass.
 - [ ] Actual resident Google consent → dashboard acceptance (blocked: requires the resident to complete their own Google sign-in; managed test sessions do not reproduce Google OAuth). Foreign Auth IDs are denied for management assistance rather than silently merging accounts; no resident or role records created.
 
