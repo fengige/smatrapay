@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
   Bot,
-  Check,
   Eye,
   EyeOff,
   Loader2,
@@ -27,6 +26,7 @@ import { isGoogleSession } from "@/lib/resident-google";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { ResidentPasswordLogin } from "@/components/resident/ResidentPasswordLogin";
+import { ResidentPhoneLogin } from "@/components/resident/ResidentPhoneLogin";
 import {
   RESIDENT_DASHBOARD,
   dashboardForRoles,
@@ -46,18 +46,6 @@ const features = [
   { icon: Bot, text: "Cards, mobile money, bank transfers & wallets" },
   { icon: ShieldHalf, text: "PCI-grade security — 2FA, API keys, SSO ready" },
   { icon: Zap, text: "Instant settlements · Real-time reconciliation" },
-];
-
-const COUNTRIES = [
-  { code: "+254", label: "KE" },
-  { code: "+256", label: "UG" },
-  { code: "+255", label: "TZ" },
-  { code: "+250", label: "RW" },
-  { code: "+234", label: "NG" },
-  { code: "+233", label: "GH" },
-  { code: "+27", label: "ZA" },
-  { code: "+44", label: "UK" },
-  { code: "+1", label: "US" },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -187,56 +175,9 @@ function useAfterLogin() {
 /* ------------------------------------------------------------------ */
 
 function ResidentAuth() {
-  const afterLogin = useAfterLogin();
   const verifyGoogle = useServerFn(verifyResidentGoogle);
   const queryClient = useQueryClient();
-  const [dialCode, setDialCode] = useState("+254");
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-
-  const fullPhone = useMemo(() => `${dialCode}${phone.replace(/\D/g, "")}`, [dialCode, phone]);
-
-  function validate() {
-    const digits = phone.replace(/\D/g, "").replace(/^0+/, "");
-    if (!digits) return "Phone number is required";
-    if (digits.length < 6 || digits.length > 14) return "Enter a valid phone number";
-    return null;
-  }
-
-  async function sendOtp(e?: React.FormEvent) {
-    e?.preventDefault();
-    const error = validate();
-    setPhoneError(error);
-    if (error || sending) return;
-
-    setSending(true);
-    try {
-      const digits = phone.replace(/\D/g, "").replace(/^0+/, "");
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: `${dialCode}${digits}`,
-      });
-      if (otpError) throw otpError;
-      setOtpSent(true);
-      toast.success(`Verification code sent to ${dialCode}${digits}`);
-    } catch (err) {
-      const raw = errorMessage(err, "Could not send the verification code");
-      const notEnabled =
-        /phone provider|unsupported phone/i.test(raw) ||
-        (typeof err === "object" &&
-          err !== null &&
-          (err as { code?: string }).code === "phone_provider_disabled");
-      toast.error(
-        notEnabled
-          ? "SMS sign-in is not switched on yet. Please use Google sign-in for now."
-          : raw,
-      );
-    } finally {
-      setSending(false);
-    }
-  }
 
   const navigate = useNavigate();
   const loadAccess = useServerFn(getMyAccess);
@@ -357,19 +298,6 @@ function ResidentAuth() {
     }
   }
 
-  if (otpSent) {
-    return (
-      <OtpVerification
-        phone={fullPhone}
-        onBack={() => setOtpSent(false)}
-        onResend={sendOtp}
-        onVerified={async () => {
-          await afterLogin();
-        }}
-      />
-    );
-  }
-
   return (
     <div className="fade-swap">
       <ResidentPasswordLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(false)} />
@@ -392,235 +320,12 @@ function ResidentAuth() {
 
       <div className="divider">or</div>
 
-      <form className="space-y-4" onSubmit={sendOtp} noValidate>
-        <div>
-          <label htmlFor="phone" className="field-label">
-            Phone Number <span className="text-destructive">*</span>
-          </label>
-          <div className="flex gap-2">
-            <select
-              aria-label="Country code"
-              value={dialCode}
-              onChange={(e) => setDialCode(e.target.value)}
-              className="input-shell w-[104px] shrink-0 bg-transparent px-3 text-sm text-foreground"
-            >
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.label} {c.code}
-                </option>
-              ))}
-            </select>
-            <div
-              className={`input-shell flex-1 ${phoneError ? "border-destructive" : ""}`}
-              aria-live="polite"
-            >
-              <span className="input-addon">
-                <Phone className="size-4" />
-              </span>
-              <input
-                id="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value);
-                  if (phoneError) setPhoneError(null);
-                }}
-                aria-invalid={Boolean(phoneError)}
-                aria-describedby={phoneError ? "phone-error" : undefined}
-                placeholder="Enter your phone number"
-                maxLength={20}
-                className="input-field"
-              />
-            </div>
-          </div>
-          {phoneError && (
-            <p id="phone-error" className="mt-1 text-xs font-medium text-destructive">
-              {phoneError}
-            </p>
-          )}
-        </div>
-
-        <button type="submit" disabled={sending} className="btn-outline w-full">
-          {sending ? <Loader2 className="size-4 animate-spin" /> : <Phone className="size-4" />}
-          {sending ? "Sending code…" : "Send OTP"}
-        </button>
-      </form>
-
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        Phone (SMS) sign-in is coming soon.
-      </p>
+      <ResidentPhoneLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(false)} />
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
         By continuing you agree to our terms and privacy policy.
       </p>
     </div>
-  );
-}
-
-function OtpVerification({
-  phone,
-  onBack,
-  onResend,
-  onVerified,
-}: {
-  phone: string;
-  onBack: () => void;
-  onResend: () => Promise<void>;
-  onVerified: () => Promise<void>;
-}) {
-  const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
-  const [verifying, setVerifying] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [seconds, setSeconds] = useState(45);
-  const inputs = useRef<Array<HTMLInputElement | null>>([]);
-
-  useEffect(() => {
-    inputs.current[0]?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (seconds <= 0) return;
-    const timer = setTimeout(() => setSeconds((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [seconds]);
-
-  const code = digits.join("");
-
-  function setDigit(index: number, value: string) {
-    const clean = value.replace(/\D/g, "");
-    setError(null);
-    if (!clean) {
-      setDigits((prev) => prev.map((d, i) => (i === index ? "" : d)));
-      return;
-    }
-    setDigits((prev) => {
-      const next = [...prev];
-      for (let i = 0; i < clean.length && index + i < 6; i += 1) {
-        next[index + i] = clean[i]!;
-      }
-      return next;
-    });
-    const nextIndex = Math.min(index + clean.length, 5);
-    inputs.current[nextIndex]?.focus();
-  }
-
-  async function verify(e?: React.FormEvent) {
-    e?.preventDefault();
-    if (verifying) return;
-    if (code.length !== 6) {
-      setError("Enter the full 6-digit code");
-      return;
-    }
-    setVerifying(true);
-    try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone,
-        token: code,
-        type: "sms",
-      });
-      if (verifyError) {
-        const message = /expired/i.test(verifyError.message)
-          ? "That code has expired. Request a new one."
-          : "That code is incorrect. Please try again.";
-        setError(message);
-        return;
-      }
-      await onVerified();
-    } catch (err) {
-      setError(errorMessage(err, "Verification failed"));
-    } finally {
-      setVerifying(false);
-    }
-  }
-
-  async function resend() {
-    if (resending || seconds > 0) return;
-    setResending(true);
-    try {
-      await onResend();
-      setDigits(Array(6).fill(""));
-      setSeconds(45);
-      inputs.current[0]?.focus();
-    } finally {
-      setResending(false);
-    }
-  }
-
-  return (
-    <form className="fade-swap space-y-5" onSubmit={verify} noValidate>
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" /> Change number
-      </button>
-
-      <div>
-        <h3 className="text-base font-bold text-foreground">Verify your number</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          We sent a 6-digit code to <span className="font-semibold text-foreground">{phone}</span>
-        </p>
-      </div>
-
-      <div className="flex justify-between gap-2" role="group" aria-label="Verification code">
-        {digits.map((digit, index) => (
-          <input
-            key={index}
-            ref={(el) => {
-              inputs.current[index] = el;
-            }}
-            value={digit}
-            onChange={(e) => setDigit(index, e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Backspace" && !digits[index] && index > 0) {
-                inputs.current[index - 1]?.focus();
-              }
-              if (e.key === "ArrowLeft" && index > 0) inputs.current[index - 1]?.focus();
-              if (e.key === "ArrowRight" && index < 5) inputs.current[index + 1]?.focus();
-            }}
-            onPaste={(e) => {
-              e.preventDefault();
-              setDigit(0, e.clipboardData.getData("text"));
-            }}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            aria-label={`Digit ${index + 1}`}
-            maxLength={1}
-            className="otp-box"
-          />
-        ))}
-      </div>
-
-      {error && (
-        <p role="alert" className="text-xs font-medium text-destructive">
-          {error}
-        </p>
-      )}
-
-      <button type="submit" disabled={verifying} className="btn-primary w-full">
-        {verifying ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-        {verifying ? "Verifying…" : "Verify & continue"}
-      </button>
-
-      <p className="text-center text-xs text-muted-foreground">
-        {seconds > 0 ? (
-          <>Resend code in {seconds}s</>
-        ) : (
-          <button
-            type="button"
-            onClick={resend}
-            disabled={resending}
-            className="font-semibold text-primary hover:underline"
-          >
-            {resending ? "Sending…" : "Resend code"}
-          </button>
-        )}
-      </p>
-    </form>
   );
 }
 

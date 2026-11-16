@@ -2604,6 +2604,50 @@ export type Database = {
         }
         Relationships: []
       }
+      resident_phone_challenges: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          delivered: boolean
+          expires_at: string
+          id: string
+          phone: string
+          resident_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          delivered?: boolean
+          expires_at: string
+          id: string
+          phone: string
+          resident_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          delivered?: boolean
+          expires_at?: string
+          id?: string
+          phone?: string
+          resident_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_phone_challenges_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resident_token_purchases: {
         Row: {
           amount: number
@@ -4137,6 +4181,10 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window: number }
         Returns: boolean
       }
+      consume_resident_phone_challenge: {
+        Args: { p_hash: string; p_id: string }
+        Returns: string
+      }
       correct_bank_payment_meter_for_retry: {
         Args: {
           p_id: string
@@ -4145,6 +4193,15 @@ export type Database = {
           p_updated_at: string
         }
         Returns: Json
+      }
+      create_resident_phone_challenge: {
+        Args: {
+          p_hash: string
+          p_id: string
+          p_phone: string
+          p_resident: string
+        }
+        Returns: undefined
       }
       create_resident_service_request: {
         Args: {
@@ -4160,6 +4217,13 @@ export type Database = {
         Returns: Json
       }
       create_vendor_property_unit: { Args: { p_input: Json }; Returns: string }
+      find_resident_phone_account: {
+        Args: { p_phone: string }
+        Returns: {
+          id: string
+          phone: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4193,6 +4257,7 @@ export type Database = {
         Args: { p_portal: string }
         Returns: Json
       }
+      normalize_resident_phone: { Args: { p_phone: string }; Returns: string }
       owner_commission_linked_properties: {
         Args: { p_owner: string; p_type: string }
         Returns: {

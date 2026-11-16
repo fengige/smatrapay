@@ -1,0 +1,1 @@
+CREATE POLICY resident_google_registered_guard ON public.resident_phone_challenges AS RESTRICTIVE FOR ALL TO authenticated USING (private.resident_google_session_allowed()) WITH CHECK (private.resident_google_session_allowed());

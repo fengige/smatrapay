@@ -428,6 +428,20 @@
       "when": 1794826328793,
       "tag": "0060_resident_google_role_policy_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1794834177622,
+      "tag": "0061_resident_registered_phone_otp",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1794834295847,
+      "tag": "0062_resident_phone_google_guard",
+      "breakpoints": true
     }
   ]
 }
