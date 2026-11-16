@@ -355,6 +355,8 @@ function ResidentAuth() {
 
   return (
     <div className="fade-swap">
+      <ResidentPasswordLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(true)} />
+      <div className="divider">or</div>
       <button
         type="button"
         onClick={handleGoogle}
@@ -370,8 +372,6 @@ function ResidentAuth() {
         </p>
       )}
 
-      <div className="divider">or</div>
-      <ResidentPasswordLogin disabled={checking || googleLoading} onSignedIn={() => finishResidentSignIn(true)} />
       <div className="divider">or</div>
 
       <form className="space-y-4" onSubmit={sendOtp} noValidate>
