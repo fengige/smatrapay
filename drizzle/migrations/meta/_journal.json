@@ -442,6 +442,13 @@
       "when": 1794834295847,
       "tag": "0062_resident_phone_google_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1794899654314,
+      "tag": "0063_resident_only_list_scope",
+      "breakpoints": true
     }
   ]
 }

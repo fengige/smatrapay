@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createUserSchema, residentCreateSchema } from "@/lib/user-schema";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizeUsername, residentUsername, trustedRecoveryUrl } from "./resident-password";
+import { residentOnlyIds } from "./resident-roles";
 import { getRequestHeader } from "@tanstack/react-start/server";
 
 const statusEnum = z.enum(["active", "inactive", "suspended", "pending"]);
@@ -277,7 +278,22 @@ export const listUsersByRole = createServerFn({ method: "GET" })
       .eq("role", data.role);
     if (rolesError) throw new Error(rolesError.message);
 
-    const ids = (roleRows ?? []).map((r) => r.user_id);
+    let ids = (roleRows ?? []).map((r) => r.user_id);
+    if (data.role === "resident" && ids.length) {
+      // Resident Management shows only accounts whose roles are exclusively
+      // "resident"; accounts that also hold staff roles stay in their portals.
+      const extraRoleHolders = new Set<string>();
+      for (let start = 0; start < ids.length; start += 500) {
+        const { data: extra, error: eErr } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("user_id", ids.slice(start, start + 500))
+          .neq("role", "resident");
+        if (eErr) throw new Error(eErr.message);
+        for (const r of extra ?? []) extraRoleHolders.add(r.user_id);
+      }
+      ids = residentOnlyIds(ids, extraRoleHolders);
+    }
     if (ids.length === 0) {
       return {
         users: [],
