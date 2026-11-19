@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Zap, Smartphone, History, Building2, Store, ShieldCheck, CreditCard, Droplets, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoAsset from "@/assets/smartshop-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,11 +36,13 @@ function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Zap className="h-5 w-5" /></span>
-            SmatraPay
+          <Link to="/" className="flex items-center" aria-label="SmartShop home">
+            <img src={logoAsset.url} alt="SmartShop" className="h-6 w-auto sm:h-8" />
           </Link>
-          <Button asChild variant="outline"><Link to="/login">Log in</Link></Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><a href="mailto:info@smatrapay.com?subject=Become%20a%20vendor">Become a Vendor</a></Button>
+            <Button asChild variant="outline" className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button>
+          </div>
         </div>
       </header>
 

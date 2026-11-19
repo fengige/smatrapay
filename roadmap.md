@@ -211,3 +211,9 @@
 - [x] Publish resident PWA for phone install testing
 - [x] Landlord portal: price change requests section (like vendor My price change requests)
 - [x] Vendor price management: show assigned landlord per meter row
+
+## Homepage brand + vendor CTA (Nov 19)
+- [x] Install new logo in site header, sign-in panel, tab icon and app icons
+- [x] Add "Become a Vendor" button next to Log in
+- [ ] Point "Become a Vendor" at the target the user picks (currently emails info@smatrapay.com)
+- [ ] Confirm site name: logo artwork reads SmartShop, wording elsewhere still says SmatraPay

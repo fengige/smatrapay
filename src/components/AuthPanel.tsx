@@ -17,7 +17,7 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/smartshop-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { getMyAccess } from "@/lib/auth.functions";
@@ -67,7 +67,7 @@ export function AuthPanel() {
 
         <div className="relative z-10 w-full max-w-xl">
           <div className="flex min-w-0 flex-col">
-            <img src={logo} alt="SmatraPay" className="h-7 w-auto self-start" />
+            <img src={logo.url} alt="SmartShop" className="h-7 w-auto self-start" />
             <p className="mt-2 truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-panel-muted">
               Secure Portal
             </p>
