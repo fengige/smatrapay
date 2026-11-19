@@ -26,6 +26,8 @@ import { toast } from "sonner";
 
 import { deleteUser, listUsersByRole, updateUser } from "@/lib/users.functions";
 import { PortalLayout } from "@/components/PortalLayout";
+import { VendorApplicationsTab } from "@/components/VendorApplicationsTab";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DEFAULT_LIMIT = 10;
 const LIMIT_OPTIONS = [10, 25, 50, 100];
@@ -106,6 +108,7 @@ function initials(row: Row) {
 }
 
 function VendorsPage() {
+  const [tab, setTab] = useState("vendors");
   const fetchVendors = useServerFn(listUsersByRole);
   const saveVendor = useServerFn(updateUser);
   const removeVendor = useServerFn(deleteUser);
@@ -411,7 +414,8 @@ function VendorsPage() {
         </div>
       }
     >
-      <div className="space-y-5">
+      <Tabs value={tab} onValueChange={setTab} className="mb-6"><TabsList><TabsTrigger value="vendors">Vendors</TabsTrigger><TabsTrigger value="applications">Vendor Applications</TabsTrigger></TabsList></Tabs>
+      {tab === "applications" ? <VendorApplicationsTab /> : <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Total Vendors" value={stats.total} icon={UsersIcon} />
           <StatCard label="Active" value={stats.active} icon={UserCheck} tone="text-emerald-600" />
@@ -592,7 +596,7 @@ function VendorsPage() {
             </div>
           </div>
         </section>
-      </div>
+      </div>}
 
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

@@ -41,7 +41,7 @@ function HomePage() {
           </Link>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button>
-            <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><a href="mailto:info@smatrapay.com?subject=Become%20a%20vendor">Become a Vendor</a></Button>
+            <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button>
             <Button asChild variant="outline" className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button>
           </div>
         </div>

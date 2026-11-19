@@ -3864,6 +3864,152 @@ export type Database = {
           },
         ]
       }
+      vendor_application_events: {
+        Row: {
+          actor_id: string | null
+          application_id: string
+          created_at: string
+          detail: string
+          event_type: string
+          id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          application_id: string
+          created_at?: string
+          detail?: string
+          event_type: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string | null
+          application_id?: string
+          created_at?: string
+          detail?: string
+          event_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_application_events_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_application_limits: {
+        Row: {
+          attempts: number
+          key: string
+          started_at: string
+        }
+        Insert: {
+          attempts?: number
+          key: string
+          started_at?: string
+        }
+        Update: {
+          attempts?: number
+          key?: string
+          started_at?: string
+        }
+        Relationships: []
+      }
+      vendor_applications: {
+        Row: {
+          business_name: string
+          business_type: string
+          consent: boolean
+          contact_name: string
+          contact_preference: string
+          description: string
+          email: string
+          email_attempt: number
+          email_attempted_at: string | null
+          email_status: string
+          id: string
+          location: string
+          phone: string
+          processing_at: string | null
+          processing_by: string | null
+          reference: string
+          registration_number: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          services: string[]
+          sms_attempt: number
+          sms_attempted_at: string | null
+          sms_status: string
+          status: string
+          submission_key: string
+          submitted_at: string
+          vendor_user_id: string | null
+        }
+        Insert: {
+          business_name: string
+          business_type: string
+          consent: boolean
+          contact_name: string
+          contact_preference: string
+          description?: string
+          email: string
+          email_attempt?: number
+          email_attempted_at?: string | null
+          email_status?: string
+          id?: string
+          location: string
+          phone: string
+          processing_at?: string | null
+          processing_by?: string | null
+          reference?: string
+          registration_number?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          services: string[]
+          sms_attempt?: number
+          sms_attempted_at?: string | null
+          sms_status?: string
+          status?: string
+          submission_key: string
+          submitted_at?: string
+          vendor_user_id?: string | null
+        }
+        Update: {
+          business_name?: string
+          business_type?: string
+          consent?: boolean
+          contact_name?: string
+          contact_preference?: string
+          description?: string
+          email?: string
+          email_attempt?: number
+          email_attempted_at?: string | null
+          email_status?: string
+          id?: string
+          location?: string
+          phone?: string
+          processing_at?: string | null
+          processing_by?: string | null
+          reference?: string
+          registration_number?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          services?: string[]
+          sms_attempt?: number
+          sms_attempted_at?: string | null
+          sms_status?: string
+          status?: string
+          submission_key?: string
+          submitted_at?: string
+          vendor_user_id?: string | null
+        }
+        Relationships: []
+      }
       vendor_audit_logs: {
         Row: {
           action: string
@@ -4157,6 +4303,54 @@ export type Database = {
         Args: { p_property: string }
         Returns: boolean
       }
+      claim_vendor_application_review: {
+        Args: {
+          p_actor: string
+          p_decision: string
+          p_id: string
+          p_reason?: string
+        }
+        Returns: {
+          business_name: string
+          business_type: string
+          consent: boolean
+          contact_name: string
+          contact_preference: string
+          description: string
+          email: string
+          email_attempt: number
+          email_attempted_at: string | null
+          email_status: string
+          id: string
+          location: string
+          phone: string
+          processing_at: string | null
+          processing_by: string | null
+          reference: string
+          registration_number: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          services: string[]
+          sms_attempt: number
+          sms_attempted_at: string | null
+          sms_status: string
+          status: string
+          submission_key: string
+          submitted_at: string
+          vendor_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendor_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_vendor_application: {
+        Args: { p_actor: string; p_id: string }
+        Returns: undefined
+      }
       complete_vendor_resident_import: {
         Args: {
           p_actor: string
@@ -4184,6 +4378,10 @@ export type Database = {
       consume_resident_phone_challenge: {
         Args: { p_hash: string; p_id: string }
         Returns: string
+      }
+      consume_vendor_application_limit: {
+        Args: { p_key: string }
+        Returns: boolean
       }
       correct_bank_payment_meter_for_retry: {
         Args: {

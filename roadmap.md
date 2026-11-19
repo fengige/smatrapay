@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Vendor applications: public four-step wizard, private rate-limited intake, administrator tab/details/confirmation, reserved-ID provisioning and atomic vendor profile/role completion, independent email/SMS claims and outcome audits. 56 focused tests passed; real public submission/admin readback, search/filter, rejection confirmation and mobile verified. Temporary application removed without notifications.
+- [ ] Vendor application real email delivery (blocked: existing notify.smatrapay.com verification timed out).
+- [ ] Vendor application live account acceptance/setup and SMS receipt (blocked: no real applicant/recipient supplied; do not send test messages to an unrelated phone. Installed completion and provisioning/notification retries verified with isolated fixtures; no live vendor account created).
+
 - [x] Token Checker: homepage CTA preserves vendor destination; public exact meter confirmation, authenticated resident-scoped latest-five tokens, configured support contacts only, 18 tests and desktop/mobile valid/invalid/anonymous-denial acceptance passed.
 - [ ] Token Checker real resident history acceptance (blocked: injected session is not a resident and temporary resident creation approval is unavailable). Signed-in nonresident history denial verified; no resident identities, assignments or financial records changed. Standard rate limiting is unavailable; no custom limiter added without approval.
 
@@ -218,5 +222,5 @@
 ## Homepage brand + vendor CTA (Nov 19)
 - [x] Install new logo in site header, sign-in panel, tab icon and app icons
 - [x] Add "Become a Vendor" button next to Log in
-- [ ] Point "Become a Vendor" at the target the user picks (currently emails info@smatrapay.com)
-- [ ] Confirm site name: logo artwork reads SmartShop, wording elsewhere still says SmatraPay
+- [x] Point "Become a Vendor" at /vendor-register as requested; Token Checker and login retained.
+- [x] Use the supplied SmatraPay logo artwork; registration branding matches SmatraPay.
