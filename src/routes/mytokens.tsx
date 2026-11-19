@@ -1,0 +1,101 @@
+import { useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Search, ShieldCheck, Loader2, History, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { verifyPublicMeter, recentCheckedTokens } from "@/lib/token-checker.functions";
+import { publicMeterSchema, type CheckedMeter, type SafeToken } from "@/lib/meter-search";
+import logoAsset from "@/assets/smatrapay-logo.png.asset.json";
+
+export const Route = createFileRoute("/mytokens")({
+  head: () => ({ meta: [
+    { title: "Token Checker · SmatraPay" },
+    { name: "description", content: "Verify your SmatraPay meter and securely check your five most recent prepaid tokens." },
+    { property: "og:title", content: "Token Checker · SmatraPay" },
+    { property: "og:description", content: "Check your meter and recent prepaid tokens with SmatraPay." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
+  component: TokenChecker,
+});
+
+function TokenChecker() {
+  const verify = useServerFn(verifyPublicMeter);
+  const readTokens = useServerFn(recentCheckedTokens);
+  const [number, setNumber] = useState("");
+  const [meter, setMeter] = useState<CheckedMeter | null>(null);
+  const [support, setSupport] = useState<{ email: string | null; phone: string | null } | null>(null);
+  const [tokens, setTokens] = useState<SafeToken[] | null>(null);
+  const [busy, setBusy] = useState<"search" | "history" | null>(null);
+  const [error, setError] = useState("");
+  const [historyError, setHistoryError] = useState("");
+  const [missing, setMissing] = useState(false);
+  const generation = useRef(0);
+  function reset() {
+    generation.current += 1; setMeter(null); setTokens(null); setMissing(false);
+    setError(""); setHistoryError(""); setBusy(null);
+  }
+  async function search(event: React.FormEvent) {
+    event.preventDefault(); reset();
+    const parsed = publicMeterSchema.safeParse({ meter_number: number });
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Enter your meter number."); return; }
+    const request = generation.current; setBusy("search");
+    try {
+      const result = await verify({ data: parsed.data });
+      if (request !== generation.current) return;
+      setMeter(result.meter); setSupport(result.support); setMissing(!result.meter);
+    } catch { if (request === generation.current) setError("Meter verification is unavailable. Please try again."); }
+    finally { if (request === generation.current) setBusy(null); }
+  }
+  async function history() {
+    if (!meter) return;
+    const request = generation.current; setBusy("history"); setHistoryError(""); setTokens(null);
+    try {
+      const rows = await readTokens({ data: { meter_number: meter.meter_number } });
+      if (request === generation.current) setTokens(rows);
+    } catch (e) {
+      if (request === generation.current) setHistoryError(e instanceof Error && /linked|resident account|active resident/.test(e.message)
+        ? e.message : "Sign in to your resident account to view tokens. If already signed in, try again or contact the administrator.");
+    } finally { if (request === generation.current) setBusy(null); }
+  }
+  return <div className="min-h-screen bg-background text-foreground">
+    <header className="border-b border-border"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <Link to="/" aria-label="SmatraPay home"><img src={logoAsset.url} alt="SmatraPay" className="h-8 w-auto" /></Link>
+      <Button variant="outline" asChild><Link to="/login">Log in</Link></Button>
+    </div></header>
+    <main className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
+      <Button variant="ghost" asChild className="mb-6"><Link to="/"><ArrowLeft className="h-4 w-4" /> Home</Link></Button>
+      <Search className="mb-4 h-9 w-9 text-primary" />
+      <h1 className="text-3xl font-bold">Token Checker</h1>
+      <form onSubmit={search} className="mt-8 space-y-3">
+        <Label htmlFor="meter-number">Meter number</Label>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Input id="meter-number" value={number} maxLength={64} autoComplete="off" placeholder="Enter your full meter number" className="h-12" onChange={e => { reset(); setNumber(e.target.value); }} />
+          <Button type="submit" disabled={busy === "search"} className="h-12"><Search className="h-4 w-4" />{busy === "search" ? "Verifying…" : "Verify Meter"}</Button>
+        </div>
+      </form>
+      <div aria-live="polite" className="mt-6">
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {missing && <div className="border-l-2 border-destructive pl-4"><h2 className="font-semibold">Meter could not be verified</h2><p className="mt-2 text-sm text-muted-foreground">Please consult the SmatraPay administrator for assistance.</p></div>}
+        {meter && <section className="border-y border-border py-6">
+          <h2 className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-5 w-5 text-primary" />Meter verified</h2>
+          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted-foreground">Meter number</dt><dd className="mt-1 break-all font-semibold">{meter.meter_number}</dd></div><div><dt className="text-muted-foreground">Meter type</dt><dd className="mt-1 capitalize">{meter.type}</dd></div></dl>
+          <Button onClick={history} disabled={busy === "history"} className="mt-6"><History className="h-4 w-4" />View Recent Tokens{busy === "history" && <Loader2 className="h-4 w-4 animate-spin" />}</Button>
+        </section>}
+        {meter && historyError && <div className="mt-5 space-y-3"><p role="alert" className="text-sm text-destructive">{historyError}</p><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/login">Resident sign-in</Link></Button><Button variant="ghost" onClick={history}>Try again</Button></div></div>}
+        {(missing || historyError) && <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+          {support?.email && <p><a className="text-primary underline" href={`mailto:${encodeURIComponent(support.email)}`}>{support.email}</a></p>}
+          {support?.phone && <p><a className="text-primary underline" href={`tel:${support.phone.replace(/[^+\d]/g, "")}`}>{support.phone}</a></p>}
+        </div>}
+        {meter && tokens && <section className="mt-8"><h2 className="text-xl font-semibold">Recent tokens</h2>
+          {!tokens.length ? <p className="mt-4 text-muted-foreground">No recent token purchases were found for your meter.</p> : <div className="mt-4 divide-y divide-border">{tokens.map((t, i) => <article key={`${t.date}-${i}`} className="py-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><time>{new Date(t.date).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}</time><span className="capitalize text-muted-foreground">{t.status}</span></div>
+            <div className="mt-3 flex flex-wrap gap-5 font-semibold"><span>KES {t.amount.toLocaleString("en-KE", { minimumFractionDigits: 2 })}</span><span>{t.units.toLocaleString("en-KE", { maximumFractionDigits: 3 })} units</span></div>
+            {t.token && <p className="mt-3 break-all font-mono text-lg text-primary">{t.token}</p>}
+          </article>)}</div>}
+        </section>}
+      </div>
+    </main>
+  </div>;
+}

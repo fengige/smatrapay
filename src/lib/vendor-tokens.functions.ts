@@ -3,6 +3,7 @@ import { commissionFromRow, type CommissionInfo } from "@/lib/commission";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizeMeterSearch } from "./meter-search";
 
 export type VendorTokenAction =
   | "credit"
@@ -123,7 +124,7 @@ export const searchVendorTokenMeters = createServerFn({ method: "POST" })
     const { assertVendor, loadVendorScope } = await import("@/lib/vendor.server");
     const vendorId = await assertVendor(context as never);
     const scope = await loadVendorScope(context.supabase as never, vendorId);
-    const q = data.q.trim().toLowerCase();
+    const q = normalizeMeterSearch(data.q);
     const residentById = new Map(scope.residents.map((r) => [r.id, r]));
     const { data: pricingDefaults } = await (context.supabase as any)
       .from("pricing_settings")

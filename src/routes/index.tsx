@@ -35,11 +35,12 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <Link to="/" className="flex items-center" aria-label="SmartShop home">
             <img src={logoAsset.url} alt="SmartShop" className="h-6 w-auto sm:h-8" />
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button>
             <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><a href="mailto:info@smatrapay.com?subject=Become%20a%20vendor">Become a Vendor</a></Button>
             <Button asChild variant="outline" className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button>
           </div>

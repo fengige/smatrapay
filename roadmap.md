@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Token Checker: homepage CTA preserves vendor destination; public exact meter confirmation, authenticated resident-scoped latest-five tokens, configured support contacts only, 18 tests and desktop/mobile valid/invalid/anonymous-denial acceptance passed.
+- [ ] Token Checker real resident history acceptance (blocked: injected session is not a resident and temporary resident creation approval is unavailable). Signed-in nonresident history denial verified; no resident identities, assignments or financial records changed. Standard rate limiting is unavailable; no custom limiter added without approval.
+
 - [x] Resident login SMS explicitly targets the existing active TIARACONNECT credentials and REZICOM sender, independently of other SMS defaults/senders. Existing configuration confirmed; provider/sender request and redacted-history regression test added. Real SMS delivery remains pending resident acceptance below.
 
 - [x] Resident registered-phone SMS OTP: existing identities/default SMS settings, private unique active resident-only matching, server verification, five-minute single-use challenge-bound hashes, 60-second cooldown, five guesses, account/IP limits and redacted SMS history; 63 focused resident tests pass, installed database verification tested, desktop/mobile unknown-number/incorrect-code denial and protected-route rejection verified without browser errors. Password, Google and staff flows retained.
