@@ -17,7 +17,7 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/smartshop-logo.png.asset.json";
+import logo from "@/assets/smatrapay-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { getMyAccess } from "@/lib/auth.functions";

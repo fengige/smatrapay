@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Zap, Smartphone, History, Building2, Store, ShieldCheck, CreditCard, Droplets, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoAsset from "@/assets/smartshop-logo.png.asset.json";
+import logoAsset from "@/assets/smatrapay-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
