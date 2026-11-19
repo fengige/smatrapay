@@ -1,6 +1,7 @@
 # Roadmap
 
 - [x] Vendor applications: public four-step wizard, private rate-limited intake, administrator tab/details/confirmation, reserved-ID provisioning and atomic vendor profile/role completion, independent email/SMS claims and outcome audits. 56 focused tests passed; real public submission/admin readback, search/filter, rejection confirmation and mobile verified. Temporary application removed without notifications.
+- [x] Vendor application final browser matrix: all four steps, all service options, Back persistence, consent validation, administrator tabs and existing vendor list tested at 390/1280px under both color-scheme preferences; fixed mobile header overflow and centered application empty state. Current theme colors remain the existing shared palette; 24 workflow tests passed again.
 - [ ] Vendor application real email delivery (blocked: existing notify.smatrapay.com verification timed out).
 - [ ] Vendor application live account acceptance/setup and SMS receipt (blocked: no real applicant/recipient supplied; do not send test messages to an unrelated phone. Installed completion and provisioning/notification retries verified with isolated fixtures; no live vendor account created).
 

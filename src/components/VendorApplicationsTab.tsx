@@ -65,7 +65,7 @@ export function VendorApplicationsTab() {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {!query.data.rows.length ? <p className="py-8 text-center text-sm text-muted-foreground">No applications found.</p> : <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-left text-sm">
               <thead className="border-b border-border bg-muted">
                 <tr>
@@ -130,7 +130,7 @@ export function VendorApplicationsTab() {
                 )}
               </tbody>
             </table>
-          </div>
+          </div>}
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <div className="flex items-center gap-2">
               <label htmlFor="application-limit">Rows per page</label>

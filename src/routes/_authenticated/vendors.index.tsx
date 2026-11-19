@@ -393,7 +393,7 @@ function VendorsPage() {
             search={{ page: 1, limit: 10 }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
-            <Plus className="size-4" /> Add Vendor
+            <Plus className="size-4" /><span className="hidden sm:inline">Add Vendor</span><span className="sr-only sm:hidden">Add Vendor</span>
           </Link>
           <button
             type="button"
@@ -401,7 +401,7 @@ function VendorsPage() {
             disabled={!total}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10 disabled:opacity-60"
           >
-            <Download className="size-4" /> Export CSV ({total})
+            <Download className="size-4" /><span className="hidden sm:inline">Export CSV ({total})</span><span className="sr-only sm:hidden">Export CSV ({total})</span>
           </button>
           <button
             type="button"
@@ -409,7 +409,7 @@ function VendorsPage() {
             aria-label="Refresh vendors"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground hover:bg-accent/10"
           >
-            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
       }
