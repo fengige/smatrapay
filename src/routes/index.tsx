@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Zap, Smartphone, History, Building2, Store, ShieldCheck, CreditCard, Droplets, Flame } from "lucide-react";
+import { Zap, Smartphone, History, Building2, Store, ShieldCheck, CreditCard, Droplets, Flame, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+const field = "h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+function sendEnquiry(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  const d = new FormData(e.currentTarget);
+  const v = (k: string) => String(d.get(k) ?? "");
+  const body = [`Name: ${v("first")} ${v("last")}`, `Email: ${v("email")}`, `Phone: ${v("phone")}`, `City/town: ${v("city")}`, `Premises: ${v("premises")}`, `Property type: ${v("propertyType")}`, `Current main meter: ${v("mainMeter")}`, `Meters needed: ${d.getAll("meters").join(", ")}`, "", v("message")].join("\n");
+  window.location.href = `mailto:info@smatrapay.com?subject=${encodeURIComponent("Smart meter enquiry")}&body=${encodeURIComponent(body)}`;
+}
+
 import logoAsset from "@/assets/smatrapay-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -47,20 +57,23 @@ function HomePage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 py-20 text-center md:py-28">
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">Prepaid power, <span className="text-primary">in seconds</span></h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-          Pay with M-Pesa using <strong className="text-foreground">your meter number</strong> as the account. Your token arrives by SMS before you've put your phone down.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button asChild size="lg"><Link to="/login">Buy tokens</Link></Button>
-          <Button asChild size="lg" variant="outline"><Link to="/login">Log in to the dashboard</Link></Button>
-        </div>
-        <div className="mt-10 flex justify-center gap-6 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><Zap className="h-4 w-4 text-primary" />Electricity</span>
-          <span className="flex items-center gap-1"><Droplets className="h-4 w-4 text-accent" />Water</span>
-          <span className="flex items-center gap-1"><Flame className="h-4 w-4 text-primary" />Gas</span>
-        </div>
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <h1 className="text-4xl font-normal tracking-tight md:text-6xl">Smart meters <span className="font-bold">for your property.</span></h1>
+        <p className="mt-3 max-w-xl text-muted-foreground">Tell us about your building and our team will get back to you within one business day.</p>
+        <form onSubmit={sendEnquiry} className="mt-8 grid gap-4 rounded-3xl bg-muted p-5 md:p-7">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="grid gap-1.5 text-xs font-medium">First name<input name="first" type="text" required className={field} /></label><label className="grid gap-1.5 text-xs font-medium">Last name<input name="last" type="text" required className={field} /></label><label className="grid gap-1.5 text-xs font-medium">Email<input name="email" type="email" required className={field} /></label><label className="grid gap-1.5 text-xs font-medium">Phone<input name="phone" type="tel" required className={field} /></label>
+            <label className="grid gap-1.5 text-xs font-medium">City / town<input name="city" type="text" required className={field} /></label>
+            <label className="grid gap-1.5 text-xs font-medium">Premises<select name="premises" className={field} defaultValue=""><option value="" disabled>Select...</option><option>Residential</option><option>Commercial</option><option>Mixed use</option><option>Industrial</option></select></label>
+            <label className="grid gap-1.5 text-xs font-medium">Property type<select name="propertyType" className={field} defaultValue=""><option value="" disabled>Select...</option><option>Apartment block</option><option>Single house</option><option>Estate / gated community</option><option>Office / shops</option><option>Other</option></select></label>
+            <label className="grid gap-1.5 text-xs font-medium">Current main meter<select name="mainMeter" className={field} defaultValue=""><option value="" disabled>Select...</option><option>Prepaid</option><option>Postpaid</option><option>None</option><option>Not sure</option></select></label>
+          </div>
+          <fieldset className="grid gap-2"><legend className="mb-2 text-xs font-medium">Meters needed</legend>
+            <div className="flex flex-wrap gap-4 text-sm">{["Electricity","Water","Gas"].map(m => <label key={m} className="flex items-center gap-2"><input type="checkbox" name="meters" value={m} className="h-4 w-4 accent-primary" />{m}</label>)}</div>
+          </fieldset>
+          <label className="grid gap-1.5 text-xs font-medium">Message<textarea name="message" rows={4} placeholder="How many units? Any timelines?" className={field + " h-auto py-3"} /></label>
+          <div><Button type="submit" className="h-11 rounded-full px-6 font-semibold">Send enquiry <ArrowRight className="h-4 w-4" /></Button></div>
+        </form>
       </section>
 
       <section className="bg-muted/50 py-20">
