@@ -463,6 +463,13 @@
       "when": 1795122657512,
       "tag": "0065_vendor_application_explicit_privileges",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795205183008,
+      "tag": "0066_property_enquiries",
+      "breakpoints": true
     }
   ]
 }

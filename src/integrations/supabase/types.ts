@@ -2435,6 +2435,51 @@ export type Database = {
         }
         Relationships: []
       }
+      property_enquiries: {
+        Row: {
+          city: string
+          created_at: string
+          current_main_meter: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          message: string | null
+          meters_needed: string[]
+          phone: string
+          premises: string | null
+          property_type: string | null
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          current_main_meter?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          message?: string | null
+          meters_needed?: string[]
+          phone: string
+          premises?: string | null
+          property_type?: string | null
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          current_main_meter?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          message?: string | null
+          meters_needed?: string[]
+          phone?: string
+          premises?: string | null
+          property_type?: string | null
+        }
+        Relationships: []
+      }
       property_landlords: {
         Row: {
           assigned_by: string | null

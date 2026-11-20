@@ -86,6 +86,7 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
           { label: "Jobs Management", icon: Wrench, to: "/jobs" },
           { label: "Pay-as-you-go Management", icon: SunMedium, to: "/pay-as-you-go" },
           { label: "Resident Feedback & Enquiries", icon: MessageSquareHeart, to: "/resident-inbox" },
+          { label: "Smart Meter Enquiries", icon: MessageSquareHeart, to: "/property-enquiries" },
           { label: "User Management", to: "/users", icon: UserCircle },
         ],
       },
