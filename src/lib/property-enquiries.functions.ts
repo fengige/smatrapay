@@ -14,7 +14,7 @@ export const submitPropertyEnquiry = createServerFn({ method: "POST" })
       const { data: ok, error } = await supabaseAdmin.rpc("consume_vendor_application_limit", { p_key: await phoneHash(key) });
       if (error || !ok) throw new Error("Too many enquiries. Please try again in an hour.");
     }
-    const { error } = await supabaseAdmin.from("property_enquiries").insert({ ...data, email: data.email.toLowerCase() });
+    const { error } = await supabaseAdmin.from("property_enquiries").insert({ first_name: data.first_name, last_name: data.last_name, email: data.email.toLowerCase(), phone: data.phone, city: data.city, premises: data.premises ?? null, property_type: data.property_type ?? null, current_main_meter: data.current_main_meter ?? null, meters_needed: data.meters_needed, message: data.message ?? null });
     if (error) { console.error("enquiry insert failed", error.code); throw new Error("Could not send your enquiry. Please try again."); }
     return { ok: true };
   });

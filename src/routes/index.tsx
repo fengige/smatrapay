@@ -124,7 +124,7 @@ function EnquiryForm() {
     finally { setBusy(false); }
   }
   if (sent) return <div className="mt-8 rounded-3xl bg-muted p-7"><h2 className="text-xl font-semibold">Thank you — your enquiry was sent.</h2><p className="mt-2 text-muted-foreground">Our team will get back to you within one business day.</p><Button variant="outline" className="mt-4 rounded-full" onClick={() => setSent(false)}>Send another enquiry</Button></div>;
-  return <form className="mt-8 grid gap-4 rounded-3xl bg-muted p-5 md:p-7">
+  return <form onSubmit={send} className="mt-8 grid gap-4 rounded-3xl bg-muted p-5 md:p-7">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <label className="grid gap-1.5 text-xs font-medium">First name<input name="first" type="text" required className={field} /></label><label className="grid gap-1.5 text-xs font-medium">Last name<input name="last" type="text" required className={field} /></label><label className="grid gap-1.5 text-xs font-medium">Email<input name="email" type="email" required className={field} /></label><label className="grid gap-1.5 text-xs font-medium">Phone<input name="phone" type="tel" required className={field} /></label>
             <label className="grid gap-1.5 text-xs font-medium">City / town<input name="city" type="text" required className={field} /></label>
