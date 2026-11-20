@@ -64,17 +64,17 @@ function TokenChecker() {
       <Link to="/" aria-label="SmatraPay home"><img src={logoAsset.url} alt="SmatraPay" className="h-8 w-auto" /></Link>
       <Button variant="outline" asChild><Link to="/login">Log in</Link></Button>
     </div></header>
-    <main className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
-      <Button variant="ghost" asChild className="mb-6"><Link to="/"><ArrowLeft className="h-4 w-4" /> Home</Link></Button>
-      <Search className="mb-4 h-9 w-9 text-primary" />
-      <h1 className="text-3xl font-bold">Token Checker</h1>
-      <form onSubmit={search} className="mt-8 space-y-3">
-        <Label htmlFor="meter-number">Meter number</Label>
+    <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+      <h1 className="text-4xl font-normal tracking-tight sm:text-6xl">Lost your token? <span className="font-bold">Find it here.</span></h1>
+      <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">Your latest tokens, looked up with your meter number.</p>
+      <form onSubmit={search} className="mt-8 rounded-3xl bg-muted p-5 sm:p-9">
+        <Label htmlFor="meter-number" className="sr-only">Meter number</Label>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Input id="meter-number" value={number} maxLength={64} autoComplete="off" placeholder="Enter your full meter number" className="h-12" onChange={e => { reset(); setNumber(e.target.value); }} />
-          <Button type="submit" disabled={busy === "search"} className="h-12"><Search className="h-4 w-4" />{busy === "search" ? "Verifying…" : "Verify Meter"}</Button>
+          <Input id="meter-number" value={number} maxLength={64} autoComplete="off" placeholder="Meter number" className="h-12 rounded-xl bg-background" onChange={e => { reset(); setNumber(e.target.value); }} />
+          <Button type="submit" disabled={busy === "search"} className="h-12 rounded-full px-6 font-semibold"><Search className="h-4 w-4" />{busy === "search" ? "Searching…" : "Find my token"}</Button>
         </div>
       </form>
+      <div className="max-w-3xl">
       <div aria-live="polite" className="mt-6">
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {missing && <div className="border-l-2 border-destructive pl-4"><h2 className="font-semibold">Meter could not be verified</h2><p className="mt-2 text-sm text-muted-foreground">Please consult the SmatraPay administrator for assistance.</p></div>}
@@ -95,6 +95,7 @@ function TokenChecker() {
             {t.token && <p className="mt-3 break-all font-mono text-lg text-primary">{t.token}</p>}
           </article>)}</div>}
         </section>}
+      </div>
       </div>
     </main>
   </div>;
