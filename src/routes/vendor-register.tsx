@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { vendorRegistrationSchema } from "@/lib/vendor-registration";
 import { submitVendorRegistration } from "@/lib/vendor-registration.functions";
 import logo from "@/assets/smatrapay-logo.png.asset.json";
+import bgAsset from "@/assets/smatrapay-bg.webp.asset.json";
 
 export const Route = createFileRoute("/vendor-register")({
   head: () => ({
@@ -133,8 +134,11 @@ function VendorRegister() {
     </div>
   );
   return (
-    <div className="min-h-screen bg-muted/40 text-foreground">
-      <header className="border-b border-border bg-card">
+    <div className="relative flex min-h-screen flex-col bg-muted/40 text-foreground">
+      <div aria-hidden className="pointer-events-none fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgAsset.url})` }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 bg-background/60 dark:bg-background/88" />
+      <div aria-hidden className="brand-wash pointer-events-none fixed inset-0" />
+      <header className="relative border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
           <Link to="/" aria-label="SmatraPay home">
             <img src={logo.url} alt="SmatraPay" className="h-8 w-auto max-w-40" />
@@ -146,7 +150,7 @@ function VendorRegister() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+      <main className="relative mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:py-12">
         <div className="overflow-hidden rounded-lg border border-border bg-card">
         {result ? (
           <section aria-live="polite" className="space-y-5 px-6 py-10">
@@ -371,7 +375,7 @@ function VendorRegister() {
         )}
         </div>
       </main>
-      <footer className="bg-brand-panel text-panel-foreground">
+      <footer className="relative bg-brand-panel text-panel-foreground">
         <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:grid-cols-3">
           <div><Link to="/" aria-label="SmatraPay home"><img src={logo.url} alt="SmatraPay" className="h-8 w-auto max-w-48" /></Link><p className="mt-4 max-w-xs text-sm leading-relaxed text-panel-muted">Prepaid metering, digital payments and utility management for property owners, businesses and residents.</p></div>
           <div><h2 className="text-xs font-semibold uppercase text-accent">Quick links</h2><div className="mt-4 flex flex-col items-start gap-3 text-sm text-panel-muted"><Link to="/">Home</Link><Link to="/mytokens">Token Checker</Link></div></div>

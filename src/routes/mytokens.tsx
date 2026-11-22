@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { verifyPublicMeter, recentCheckedTokens } from "@/lib/token-checker.functions";
 import { publicMeterSchema, type CheckedMeter, type SafeToken } from "@/lib/meter-search";
 import logoAsset from "@/assets/smatrapay-logo.png.asset.json";
+import bgAsset from "@/assets/smatrapay-bg.webp.asset.json";
 
 export const Route = createFileRoute("/mytokens")({
   head: () => ({ meta: [
@@ -59,12 +60,15 @@ function TokenChecker() {
         ? e.message : "Sign in to your resident account to view tokens. If already signed in, try again or contact the administrator.");
     } finally { if (request === generation.current) setBusy(null); }
   }
-  return <div className="min-h-screen bg-background text-foreground">
-    <header className="border-b border-border"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+  return <div className="relative min-h-screen bg-background text-foreground">
+    <div aria-hidden className="pointer-events-none fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgAsset.url})` }} />
+    <div aria-hidden className="pointer-events-none fixed inset-0 bg-background/60 dark:bg-background/88" />
+    <div aria-hidden className="brand-wash pointer-events-none fixed inset-0" />
+    <header className="relative border-b border-border bg-card"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
       <Link to="/" aria-label="SmatraPay home"><img src={logoAsset.url} alt="SmatraPay" className="h-8 w-auto" /></Link>
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Home</Link><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button><Button variant="outline" asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button></div>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><Link to="/" className="hidden text-sm text-muted-foreground hover:text-foreground sm:block">Home</Link><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button><Button variant="outline" asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button></div>
     </div></header>
-    <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+    <main className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
       <h1 className="text-4xl font-normal tracking-tight sm:text-6xl">Lost your token? <span className="font-bold">Find it here.</span></h1>
       <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">Your latest tokens, looked up with your meter number.</p>
       <form onSubmit={search} className="mt-8 rounded-3xl bg-muted p-5 sm:p-9">

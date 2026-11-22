@@ -107,6 +107,11 @@
 }
 
 @layer components {
+  .brand-wash {
+    background-image:
+      radial-gradient(60rem 42rem at 88% 0%, color-mix(in oklch, var(--primary) 24%, transparent), transparent 70%),
+      radial-gradient(55rem 42rem at 0% 100%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 70%);
+  }
   .orb {
     position: absolute;
     border-radius: 9999px;
