@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Loader2, Store, Building2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vendorRegistrationSchema } from "@/lib/vendor-registration";
 import { submitVendorRegistration } from "@/lib/vendor-registration.functions";
@@ -29,8 +29,8 @@ export const Route = createFileRoute("/vendor-register")({
 });
 const steps = ["Business", "Contact", "Services", "Review"];
 const groups = [
-  ["business_name", "business_type", "registration_number"],
-  ["contact_name", "email", "phone", "location"],
+  ["business_name", "business_type", "registration_number", "location"],
+  ["contact_name", "email", "phone"],
   ["services", "description", "contact_preference"],
 ];
 const initial = {
@@ -133,20 +133,23 @@ function VendorRegister() {
     </div>
   );
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
+    <div className="min-h-screen bg-muted/40 text-foreground">
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
           <Link to="/" aria-label="SmatraPay home">
             <img src={logo.url} alt="SmatraPay" className="h-8 w-auto max-w-40" />
           </Link>
-          <Button asChild variant="outline">
-            <Link to="/login">Log in</Link>
-          </Button>
+          <nav aria-label="Main navigation" className="flex items-center gap-3 text-sm">
+            <Link to="/" className="hidden text-muted-foreground hover:text-foreground sm:block">Home</Link>
+            <Link to="/mytokens" className="hidden text-muted-foreground hover:text-foreground sm:block">Token Checker</Link>
+            <Button asChild variant="outline" size="sm"><Link to="/login">Sign In</Link></Button>
+          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-5 py-10 sm:py-14">
+      <main className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
         {result ? (
-          <section aria-live="polite" className="space-y-5 py-10">
+          <section aria-live="polite" className="space-y-5 px-6 py-10">
             <CheckCircle2 className="size-12 text-accent" />
             <h1 className="text-3xl font-bold">Application received</h1>
             <p className="text-lg font-semibold">{result.reference}</p>
@@ -164,26 +167,33 @@ function VendorRegister() {
           </section>
         ) : (
           <>
-            <p className="mb-3 text-sm font-semibold text-accent">SmatraPay partners</p>
-            <h1 className="text-3xl font-bold sm:text-4xl">Become a Vendor</h1>
-            <p className="mt-3 max-w-xl text-muted-foreground">
-              Tell us about your business. Applications are reviewed before any vendor account is
-              opened.
-            </p>
-            <ol className="my-9 grid grid-cols-4 gap-2" aria-label="Registration progress">
-              {steps.map((s, i) => (
-                <li key={s} aria-current={step === i ? "step" : undefined} className="min-w-0">
-                  <div
-                    className={`mb-2 h-1 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`}
-                  />
-                  <span
-                    className={`flex items-center gap-1 text-xs sm:text-sm ${step === i ? "font-semibold text-primary" : "text-muted-foreground"}`}
-                  >
-                    {i < step ? <Check className="size-3 shrink-0" /> : `${i + 1}.`} {s}
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <div className="border-b border-border px-5 py-6 sm:px-7">
+              <div className="flex items-start gap-3">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Store className="size-6" /></div>
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-bold">Become a SmatraPay Vendor</h1>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Apply to offer prepaid metering services with SmatraPay. Fields marked <span className="text-destructive">*</span> are required.</p>
+                </div>
+              </div>
+              <ol className="mt-7 grid grid-cols-4 gap-2" aria-label="Registration progress">
+                {steps.map((s, i) => (
+                  <li key={s} aria-current={step === i ? "step" : undefined} className={`min-w-0 border-b-2 pb-3 ${step === i ? "border-primary" : "border-transparent"}`}>
+                    <span className={`flex flex-col items-center gap-2 text-xs sm:flex-row ${step === i ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                      <span className={`flex size-6 shrink-0 items-center justify-center rounded-full ${i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                        {i < step ? <Check className="size-3" /> : i + 1}
+                      </span>
+                      {s}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-4 flex items-center gap-3">
+                <div role="progressbar" aria-label="Completed registration steps" aria-valuenow={step} aria-valuemin={0} aria-valuemax={4} className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div className={`h-full bg-primary transition-all motion-reduce:transition-none ${["w-0", "w-1/4", "w-1/2", "w-3/4"][step]}`} />
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">{step} of 4 complete</span>
+              </div>
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -191,9 +201,10 @@ function VendorRegister() {
                 else void send();
               }}
               noValidate
-              className="border-t border-border pt-7"
+              className="pt-6"
             >
-              <h2 className="mb-6 text-xl font-semibold">
+              <h2 className="mb-6 flex items-center gap-2 px-5 text-base font-semibold sm:px-7">
+                <Building2 className="size-4 text-primary" />
                 {
                   [
                     "Business information",
@@ -203,28 +214,25 @@ function VendorRegister() {
                   ][step]
                 }
               </h2>
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-5 px-5 sm:grid-cols-2 sm:px-7">
                 {step === 0 && (
                   <>
-                    {input("business_name", "Business / company name", 120)}
-                    <div className="space-y-2">
-                      <label htmlFor="business_type" className="text-sm font-medium">
-                        Business type *
-                      </label>
-                      <select
-                        id="business_type"
-                        value={form.business_type}
-                        onChange={(e) => field("business_type", e.target.value)}
-                        className="h-11 w-full rounded-md border border-input bg-background px-3"
-                      >
-                        <option value="">Select business type</option>
-                        {["Company", "Sole proprietor", "Partnership", "Other"].map((v) => (
-                          <option key={v}>{v}</option>
+                    <fieldset className="space-y-2 sm:col-span-2">
+                      <legend className="mb-2 text-sm font-medium">I am registering as <span className="text-destructive">*</span></legend>
+                      <div className="flex flex-wrap gap-2">
+                        {[{ value: "Sole proprietor", label: "An individual", icon: UserRound }, { value: "Company", label: "A company", icon: Building2 }, { value: "Partnership", label: "A partnership", icon: Building2 }, { value: "Other", label: "Other", icon: Store }].map((option) => (
+                          <Button key={option.value} type="button" size="sm" variant={form.business_type === option.value ? "default" : "outline"} aria-pressed={form.business_type === option.value} onClick={() => field("business_type", option.value)}>
+                            <option.icon className="size-4" />{option.label}
+                          </Button>
                         ))}
-                      </select>
-                      {errors.business_type && (
-                        <p className="text-sm text-destructive">Select a business type</p>
-                      )}
+                      </div>
+                      {errors.business_type && <p role="alert" className="text-sm text-destructive">Select a business type</p>}
+                    </fieldset>
+                    <div className="sm:col-span-2">{input("business_name", "Business / trading name", 120)}</div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <label htmlFor="location" className="text-sm font-medium">Physical address <span className="text-destructive">*</span></label>
+                      <textarea id="location" rows={3} maxLength={500} value={form.location} onChange={(e) => field("location", e.target.value)} aria-invalid={Boolean(errors.location)} aria-describedby={errors.location ? "location-error" : undefined} className="w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                      {errors.location && <p id="location-error" className="text-sm text-destructive">{errors.location}</p>}
                     </div>
                     {input(
                       "registration_number",
@@ -240,7 +248,6 @@ function VendorRegister() {
                     {input("contact_name", "Contact person", 120)}
                     {input("email", "Registered email", 254, "email")}
                     {input("phone", "Registered Kenyan mobile number", 30, "tel")}
-                    {input("location", "Business location / address", 500)}
                   </>
                 )}
                 {step === 2 && (
@@ -335,23 +342,18 @@ function VendorRegister() {
                 )}
               </div>
               {error && (
-                <p role="alert" className="mt-5 text-sm text-destructive">
+                <p role="alert" className="mt-5 px-5 text-sm text-destructive sm:px-7">
                   {error}
                 </p>
               )}
-              <div className="mt-8 flex justify-between border-t border-border pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={step === 0 || busy}
-                  onClick={() => {
-                    setStep((s) => s - 1);
-                    setErrors({});
-                  }}
-                >
-                  <ArrowLeft className="size-4" />
-                  Back
-                </Button>
+              <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-border bg-muted/20 px-5 py-5 sm:px-7">
+                <p className="text-xs text-muted-foreground">Already registered? <Link to="/login" className="font-medium text-primary underline underline-offset-2">Sign In</Link></p>
+                <div className="ml-auto flex gap-2">
+                {step === 0 ? (
+                  <Button asChild variant="outline"><Link to="/">Cancel</Link></Button>
+                ) : (
+                  <Button type="button" variant="outline" disabled={busy} onClick={() => { setStep((s) => s - 1); setErrors({}); }}><ArrowLeft className="size-4" />Back</Button>
+                )}
                 <Button type="submit" disabled={busy}>
                   {busy ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -362,11 +364,20 @@ function VendorRegister() {
                   )}
                   {step === 3 ? (busy ? "Submitting…" : "Submit application") : "Continue"}
                 </Button>
+                </div>
               </div>
             </form>
           </>
         )}
+        </div>
       </main>
+      <footer className="bg-brand-panel text-panel-foreground">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:grid-cols-3">
+          <div><Link to="/" aria-label="SmatraPay home"><img src={logo.url} alt="SmatraPay" className="h-8 w-auto max-w-48" /></Link><p className="mt-4 max-w-xs text-sm leading-relaxed text-panel-muted">Prepaid metering, digital payments and utility management for property owners, businesses and residents.</p></div>
+          <div><h2 className="text-xs font-semibold uppercase text-accent">Quick links</h2><div className="mt-4 flex flex-col items-start gap-3 text-sm text-panel-muted"><Link to="/">Home</Link><Link to="/mytokens">Token Checker</Link></div></div>
+          <div><h2 className="text-xs font-semibold uppercase text-accent">Your account</h2><div className="mt-4 flex flex-col items-start gap-3 text-sm text-panel-muted"><Link to="/login">Sign In</Link><Link to="/vendor-register">Become a Vendor</Link></div></div>
+        </div>
+      </footer>
     </div>
   );
 }
