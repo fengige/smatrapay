@@ -18,7 +18,7 @@ const dashboardQuery = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/landlord/dashboard")({
-  head: () => ({ meta: [{ title: "Landlord Dashboard · SmatraPay" }, { name: "description", content: "Confirmed property payment collections and recent token transactions across your linked SmatraPay properties." }, { property: "og:title", content: "Landlord Dashboard · SmatraPay" }, { property: "og:description", content: "Daily, weekly, monthly and annual landlord collections with your latest five token transactions." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Landlord Portal · SmatraPay" }, { name: "description", content: "Confirmed property payment collections and recent token transactions across your linked SmatraPay properties." }, { property: "og:title", content: "Landlord Portal · SmatraPay" }, { property: "og:description", content: "Daily, weekly, monthly and annual landlord collections with your latest five token transactions." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   loader: async ({ context }) => {
     const access = await checkRoleAccess({ data: { role: "landlord" } });
     if (access.allowed) await context.queryClient.ensureQueryData(dashboardQuery);
@@ -45,8 +45,8 @@ function LandlordDashboard() {
   return (
     <DashboardShell
       access={access}
-      title="Landlord dashboard"
-      description="Track properties, residents, rent collection and payouts."
+      title="Landlord Portal"
+      description="Confirmed payment collections and recent token transactions across your linked properties."
     >
       {access.allowed && <LandlordDashboardContent />}
     </DashboardShell>
