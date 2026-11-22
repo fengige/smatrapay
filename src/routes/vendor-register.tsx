@@ -139,9 +139,9 @@ function VendorRegister() {
           <Link to="/" aria-label="SmatraPay home">
             <img src={logo.url} alt="SmatraPay" className="h-8 w-auto max-w-40" />
           </Link>
-          <nav aria-label="Main navigation" className="flex items-center gap-3 text-sm">
+          <nav aria-label="Main navigation" className="flex flex-wrap items-center gap-2 text-sm sm:gap-3">
             <Link to="/" className="hidden text-muted-foreground hover:text-foreground sm:block">Home</Link>
-            <Link to="/mytokens" className="hidden text-muted-foreground hover:text-foreground sm:block">Token Checker</Link>
+            <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button>
             <Button asChild variant="outline" size="sm"><Link to="/login">Sign In</Link></Button>
           </nav>
         </div>

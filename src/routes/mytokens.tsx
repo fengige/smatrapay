@@ -62,7 +62,7 @@ function TokenChecker() {
   return <div className="min-h-screen bg-background text-foreground">
     <header className="border-b border-border"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
       <Link to="/" aria-label="SmatraPay home"><img src={logoAsset.url} alt="SmatraPay" className="h-8 w-auto" /></Link>
-      <Button variant="outline" asChild><Link to="/login">Log in</Link></Button>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button><Button variant="outline" asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button></div>
     </div></header>
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
       <h1 className="text-4xl font-normal tracking-tight sm:text-6xl">Lost your token? <span className="font-bold">Find it here.</span></h1>
