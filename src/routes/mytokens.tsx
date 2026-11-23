@@ -83,7 +83,7 @@ function TokenChecker() {
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {missing && <div className="border-l-2 border-destructive pl-4"><h2 className="font-semibold">Meter could not be verified</h2><p className="mt-2 text-sm text-muted-foreground">Please consult the SmatraPay administrator for assistance.</p></div>}
         {meter && <section className="border-y border-border py-6">
-          <h2 className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-5 w-5 text-primary" />Meter verified</h2>
+          <h2 className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-5 w-5 text-success" />Meter verified</h2>
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted-foreground">Meter number</dt><dd className="mt-1 break-all font-semibold">{meter.meter_number}</dd></div><div><dt className="text-muted-foreground">Meter type</dt><dd className="mt-1 capitalize">{meter.type}</dd></div></dl>
           <Button onClick={history} disabled={busy === "history"} className="mt-6"><History className="h-4 w-4" />View Recent Tokens{busy === "history" && <Loader2 className="h-4 w-4 animate-spin" />}</Button>
         </section>}

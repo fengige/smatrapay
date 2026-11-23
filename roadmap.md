@@ -7,6 +7,8 @@
 
 - [x] Token Checker: homepage CTA preserves vendor destination; public exact meter confirmation, authenticated resident-scoped latest-five tokens, configured support contacts only, 18 tests and desktop/mobile valid/invalid/anonymous-denial acceptance passed.
 - [ ] Token Checker real resident history acceptance (blocked: injected session is not a resident and temporary resident creation approval is unavailable). Signed-in nonresident history denial verified; no resident identities, assignments or financial records changed. Standard rate limiting is unavailable; no custom limiter added without approval.
+- [x] Token Checker history: latest three credit tokens shown as a table with Date/Time (EAT), Property, Unit Name, Meter, Token, Units, Amount, Reference; unit/property names resolved server-side from the verified meter's unit, lookup failures never block history. 10 tests passed; build OK.
+- [x] Token Checker "Meter verified" icon now uses a new semantic green `success` theme token (light and dark).
 
 - [x] Resident login SMS explicitly targets the existing active TIARACONNECT credentials and REZICOM sender, independently of other SMS defaults/senders. Existing configuration confirmed; provider/sender request and redacted-history regression test added. Real SMS delivery remains pending resident acceptance below.
 
