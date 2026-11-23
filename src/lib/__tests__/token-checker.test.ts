@@ -4,7 +4,7 @@ import { checkPublicMeter, readCheckedTokens } from "../token-checker.server";
 
 function database(options: { foreign?: boolean; missing?: boolean; empty?: boolean; fail?: boolean; inactive?: boolean; future?: boolean } = {}) {
   const calls: string[] = [];
-  const tokens = Array.from({ length: 8 }, (_, i) => ({ id: `${i}`, meter_id: i === 7 ? "foreign-meter" : "canonical-meter", action: "credit", created_at: `2026-11-${String(10 + i).padStart(2, "0")}T10:00:00Z`, amount: 200 + i, units: 7, token: `token-${i}`, status: "issued", expires_at: "2099-01-01", customer_phone: "private" }));
+  const tokens = Array.from({ length: 8 }, (_, i) => ({ id: `${i}`, meter_id: i === 7 ? "foreign-meter" : "canonical-meter", action: "credit", created_at: `2026-11-${String(10 + i).padStart(2, "0")}T10:00:00Z`, amount: 200 + i, units: 7, token: `token-${i}`, status: "issued", expires_at: "2099-01-01", reference: `REF-${i}`, provider_reference: null, customer_phone: "private" }));
   const db = { from(table: string) {
     calls.push(table);
     const filters: ((r: any) => boolean)[] = [];
@@ -15,6 +15,8 @@ function database(options: { foreign?: boolean; missing?: boolean; empty?: boole
       : table === "users" ? [{ id: "resident-a", status: options.inactive ? "inactive" : "active" }]
       : table === "user_roles" ? [{ user_id: "resident-a", role: "resident" }]
       : table === "unit_assignments" ? [{ user_id: options.foreign ? "resident-b" : "resident-a", unit_id: "unit-a", role: "resident", start_date: options.future ? "2099-01-01" : "2026-11-01", end_date: null }]
+      : table === "units" ? [{ id: "unit-a", unit_number: "A1", property_id: "prop-a" }]
+      : table === "properties" ? [{ id: "prop-a", name: "Test Property" }]
       : options.empty ? [] : tokens;
     const result = () => {
       let filtered = rows.filter(r => filters.every(f => f(r)));
@@ -52,11 +54,15 @@ describe("Token Checker", () => {
   it("returns an unverified meter for no match", async () => {
     expect((await checkPublicMeter(database({ missing: true }).db, { meter_number: "AB1234" })).meter).toBeNull();
   });
-  it("uses canonical meter ID and returns only five newest safe records", async () => {
+  it("uses canonical meter ID and returns only three newest safe records", async () => {
     const rows = await readCheckedTokens(database().db, "resident-a", { meter_number: " AB1234 " });
-    expect(rows).toHaveLength(5);
-    expect(rows.map(r => r.amount)).toEqual([206, 205, 204, 203, 202]);
-    expect(Object.keys(rows[0] ?? {}).sort()).toEqual(["amount", "date", "status", "token", "units"]);
+    expect(rows).toHaveLength(3);
+    expect(rows.map(r => r.amount)).toEqual([206, 205, 204]);
+    expect(Object.keys(rows[0] ?? {}).sort()).toEqual(["amount", "date", "meter", "property", "reference", "status", "token", "unit", "units"]);
+  });
+  it("includes the meter, unit, property and reference on each transaction", async () => {
+    const rows = await readCheckedTokens(database().db, "resident-a", { meter_number: "AB1234" });
+    expect(rows[0]).toMatchObject({ meter: "Ab1234", unit: "A1", property: "Test Property", reference: "REF-6" });
   });
   it("returns empty history for an authorized meter with no tokens", async () => {
     expect(await readCheckedTokens(database({ empty: true }).db, "resident-a", { meter_number: "AB1234" })).toEqual([]);

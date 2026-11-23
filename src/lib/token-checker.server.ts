@@ -38,15 +38,29 @@ export async function readCheckedTokens(db: any, userId: string, input: unknown)
   const assignment = assignments?.find((a: any) => !a.end_date || a.end_date >= today);
   if (!assignment) throw new Error("This meter is not linked to your resident account. Contact the administrator.");
   // Canonical ID and occupancy dates are resolved by the server, never provided by the browser.
-  let query = db.from("meter_tokens").select("created_at, amount, units, token, status, expires_at")
+  let query = db.from("meter_tokens").select("created_at, amount, units, token, status, expires_at, reference, provider_reference")
     .eq("meter_id", meter.id).eq("action", "credit")
     .gte("created_at", `${assignment.start_date}T00:00:00+03:00`);
   if (assignment.end_date) query = query.lt("created_at", `${assignment.end_date}T23:59:59.999+03:00`);
-  const result = await query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(5);
+  const [result, unitResult] = await Promise.all([
+    query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(3),
+    db.from("units").select("unit_number, property_id").eq("id", meter.unit_id).maybeSingle(),
+  ]);
   if (result.error) throw new Error("Could not load recent tokens. Please try again.");
+  // Unit/property names are display-only; a failed lookup never blocks the token history.
+  let unit: string | null = null; let property: string | null = null;
+  const unitRow = unitResult.error ? null : unitResult.data;
+  if (unitRow) {
+    unit = unitRow.unit_number ?? null;
+    if (unitRow.property_id) {
+      const { data: propertyRow } = await db.from("properties").select("name").eq("id", unitRow.property_id).maybeSingle();
+      property = propertyRow?.name ?? null;
+    }
+  }
   return (result.data ?? []).map((r: any) => {
     const status = r.status === "issued" && new Date(r.expires_at).getTime() < Date.now() ? "expired" : r.status;
-    return { date: r.created_at, amount: Number(r.amount ?? 0), units: Number(r.units ?? 0),
-      token: status === "issued" ? r.token : null, status };
+    return { date: r.created_at, property, unit, meter: meter.meter_number,
+      token: status === "issued" ? r.token : null, units: Number(r.units ?? 0), amount: Number(r.amount ?? 0),
+      reference: r.reference ?? r.provider_reference ?? null, status };
   });
 }

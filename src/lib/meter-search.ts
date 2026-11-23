@@ -9,4 +9,5 @@ export const publicMeterSchema = z.object({
     .transform(normalizeMeterSearch),
 });
 export type CheckedMeter = { meter_number: string; type: string };
-export type SafeToken = { date: string; amount: number; units: number; token: string | null; status: string };
+export type SafeToken = { date: string; property: string | null; unit: string | null; meter: string;
+  token: string | null; units: number; amount: number; reference: string | null; status: string };
