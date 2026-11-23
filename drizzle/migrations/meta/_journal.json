@@ -477,6 +477,13 @@
       "when": 1795385179151,
       "tag": "0067_restrict_service_catalog_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795410846946,
+      "tag": "0068_public_exact_meter_token_checker",
+      "breakpoints": true
     }
   ]
 }

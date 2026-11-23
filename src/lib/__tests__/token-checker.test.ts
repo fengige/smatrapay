@@ -1,86 +1,58 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { publicMeterSchema, normalizeMeterSearch } from "../meter-search";
-import { checkPublicMeter, readCheckedTokens } from "../token-checker.server";
+import { checkPublicMeter, readCheckedTokens, type createCheckerClient } from "../token-checker.server";
 
-function database(options: { foreign?: boolean; missing?: boolean; empty?: boolean; fail?: boolean; inactive?: boolean; future?: boolean } = {}) {
-  const calls: string[] = [];
-  const tokens = Array.from({ length: 8 }, (_, i) => ({ id: `${i}`, meter_id: i === 7 ? "foreign-meter" : "canonical-meter", action: "credit", created_at: `2026-11-${String(10 + i).padStart(2, "0")}T10:00:00Z`, amount: 200 + i, units: 7, token: `token-${i}`, status: "issued", expires_at: "2099-01-01", reference: `REF-${i}`, provider_reference: null, customer_phone: "private" }));
-  const db = { from(table: string) {
-    calls.push(table);
-    const filters: ((r: any) => boolean)[] = [];
-    const orders: { key: string; ascending: boolean }[] = [];
-    let limit = Infinity;
-    let rows: any[] = table === "meters" ? (options.missing ? [] : [{ id: "canonical-meter", meter_number: "Ab1234", type: "electricity", unit_id: "unit-a", vendor_id: "secret" }])
-      : table === "app_settings" ? [{ key: "app_support_email", value: "help@example.test" }, { key: "app_support_phone", value: "+254700000000" }]
-      : table === "users" ? [{ id: "resident-a", status: options.inactive ? "inactive" : "active" }]
-      : table === "user_roles" ? [{ user_id: "resident-a", role: "resident" }]
-      : table === "unit_assignments" ? [{ user_id: options.foreign ? "resident-b" : "resident-a", unit_id: "unit-a", role: "resident", start_date: options.future ? "2099-01-01" : "2026-11-01", end_date: null }]
-      : table === "units" ? [{ id: "unit-a", unit_number: "A1", property_id: "prop-a" }]
-      : table === "properties" ? [{ id: "prop-a", name: "Test Property" }]
-      : options.empty ? [] : tokens;
-    const result = () => {
-      let filtered = rows.filter(r => filters.every(f => f(r)));
-      filtered = [...filtered].sort((a, b) => { for (const o of orders) { const diff = String(a[o.key]).localeCompare(String(b[o.key])); if (diff) return o.ascending ? diff : -diff; } return 0; });
-      return { data: filtered.slice(0, limit), error: options.fail && table === "meter_tokens" ? new Error("private failure") : null };
-    };
-    const builder: any = {
-      select: () => builder, ilike: (k: string, v: string) => { filters.push(r => r[k].toLowerCase() === v); return builder; },
-      eq: (k: string, v: unknown) => { filters.push(r => r[k] === v); return builder; },
-      in: (k: string, v: string[]) => { filters.push(r => v.includes(r[k])); return builder; },
-      gte: (k: string, v: string) => { filters.push(r => Date.parse(r[k]) >= Date.parse(v)); return builder; },
-      lte: (k: string, v: string) => { filters.push(r => r[k] <= v); return builder; },
-      lt: (k: string, v: string) => { filters.push(r => Date.parse(r[k]) < Date.parse(v)); return builder; },
-      order: (key: string, order: { ascending: boolean }) => { orders.push({ key, ascending: order.ascending }); return builder; },
-      limit: (n: number) => { limit = n; return builder; },
-      maybeSingle: async () => ({ ...result(), data: result().data[0] ?? null }),
-      then: (resolve: (v: unknown) => unknown) => Promise.resolve(result()).then(resolve),
-    };
-    return builder;
-  } };
-  return { db, calls };
+const requestKey = "a".repeat(64);
+function database(options: { missing?: boolean; empty?: boolean; fail?: boolean; limited?: boolean } = {}) {
+  const tokens = Array.from({ length: 3 }, (_, i) => ({ date: `2026-11-${17-i}T10:00:00Z`, property: "Test Property", unit: "A1", meter: "Ab1234", amount: 206-i, units: 7, token: `token-${6-i}`, status: "issued", reference: `REF-${6-i}`, customer_phone: "private", resident_id: "private" }));
+  const rpc = vi.fn(async (_name: string, params: { p_meter_number: string; p_history: boolean }) => ({
+    data: options.limited ? { error: "Too many lookups. Please try again in a minute." } : {
+      meter: options.missing || params.p_meter_number !== "ab1234" ? null : { meter_number: "Ab1234", type: "electricity", vendor_id: "private" },
+      support: { email: "help@example.test", phone: "+254700000000" }, tokens: params.p_history && !options.empty ? tokens : [],
+    }, error: options.fail ? new Error("private database failure") : null,
+  }));
+  return { db: { rpc } as unknown as ReturnType<typeof createCheckerClient>, rpc };
 }
 
-describe("Token Checker", () => {
-  it("shares vendor trimming/case matching and disallows public partial/wildcard input", () => {
+describe("Public Token Checker", () => {
+  it("normalizes exact meter numbers and rejects wildcards", () => {
     expect(publicMeterSchema.parse({ meter_number: " AB1234 " }).meter_number).toBe(normalizeMeterSearch(" AB1234 "));
     for (const meter_number of ["%123", "ab_123", "ab,123", "a".repeat(65)]) expect(publicMeterSchema.safeParse({ meter_number }).success).toBe(false);
   });
-  it("verifies a real exact number without leaking identifiers or fetching history", async () => {
-    const { db, calls } = database();
-    expect((await checkPublicMeter(db, { meter_number: "AB1234" })).meter).toEqual({ meter_number: "Ab1234", type: "electricity" });
-    expect(calls).not.toContain("meter_tokens");
-    expect((await checkPublicMeter(db, { meter_number: "1234" })).meter).toBeNull();
+  it("verifies the meter without fetching history or private identifiers", async () => {
+    const { db, rpc } = database();
+    expect((await checkPublicMeter(db, { meter_number: "AB1234" }, requestKey)).meter).toEqual({ meter_number: "Ab1234", type: "electricity" });
+    expect(rpc).toHaveBeenCalledWith("public_token_checker", { p_meter_number: "ab1234", p_request_key: requestKey, p_history: false });
   });
-  it("returns an unverified meter for no match", async () => {
-    expect((await checkPublicMeter(database({ missing: true }).db, { meter_number: "AB1234" })).meter).toBeNull();
-  });
-  it("uses canonical meter ID and returns only three newest safe records", async () => {
-    const rows = await readCheckedTokens(database().db, "resident-a", { meter_number: " AB1234 " });
+  it("loads three transactions without any resident identity or login", async () => {
+    const { db, rpc } = database();
+    const rows = await readCheckedTokens(db, { meter_number: " AB1234 " }, requestKey);
     expect(rows).toHaveLength(3);
     expect(rows.map(r => r.amount)).toEqual([206, 205, 204]);
+    expect(rpc).toHaveBeenCalledWith("public_token_checker", { p_meter_number: "ab1234", p_request_key: requestKey, p_history: true });
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(["amount", "date", "meter", "property", "reference", "status", "token", "unit", "units"]);
   });
-  it("includes the meter, unit, property and reference on each transaction", async () => {
-    const rows = await readCheckedTokens(database().db, "resident-a", { meter_number: "AB1234" });
+  it("returns unit, property, meter and reference", async () => {
+    const rows = await readCheckedTokens(database().db, { meter_number: "AB1234" }, requestKey);
     expect(rows[0]).toMatchObject({ meter: "Ab1234", unit: "A1", property: "Test Property", reference: "REF-6" });
   });
-  it("returns empty history for an authorized meter with no tokens", async () => {
-    expect(await readCheckedTokens(database({ empty: true }).db, "resident-a", { meter_number: "AB1234" })).toEqual([]);
+  it("handles a verified meter with no transactions", async () => {
+    expect(await readCheckedTokens(database({ empty: true }).db, { meter_number: "AB1234" }, requestKey)).toEqual([]);
   });
-  it("denies another resident before token queries", async () => {
-    const { db, calls } = database({ foreign: true });
-    await expect(readCheckedTokens(db, "resident-a", { meter_number: "AB1234" })).rejects.toThrow("not linked");
-    expect(calls).not.toContain("meter_tokens");
+  it("rejects unverified meters instead of returning transactions", async () => {
+    await expect(readCheckedTokens(database({ missing: true }).db, { meter_number: "AB1234" }, requestKey)).rejects.toThrow("could not be verified");
   });
-  it("denies inactive residents", async () => {
-    await expect(readCheckedTokens(database({ inactive: true }).db, "resident-a", { meter_number: "AB1234" })).rejects.toThrow("active resident");
+  it("keeps database failure details private", async () => {
+    await expect(readCheckedTokens(database({ fail: true }).db, { meter_number: "AB1234" }, requestKey)).rejects.toThrow("Could not load meter information");
   });
-  it("denies future occupancy and never exposes previous occupants' tokens", async () => {
-    const { db, calls } = database({ future: true });
-    await expect(readCheckedTokens(db, "resident-a", { meter_number: "AB1234" })).rejects.toThrow("not linked");
-    expect(calls).not.toContain("meter_tokens");
+  it("reports lookup throttling without requesting login", async () => {
+    await expect(readCheckedTokens(database({ limited: true }).db, { meter_number: "AB1234" }, requestKey)).rejects.toThrow("Too many lookups");
   });
-  it("returns safe retryable history errors", async () => {
-    await expect(readCheckedTokens(database({ fail: true }).db, "resident-a", { meter_number: "AB1234" })).rejects.toThrow("Could not load recent tokens");
+  it("database lookup is canonical-meter scoped and limited to three in timestamp/id order", () => {
+    const sql = readFileSync("drizzle/migrations/0068_public_exact_meter_token_checker.sql", "utf8");
+    expect(sql).toContain("WHERE mt.meter_id = v_meter.id AND mt.action::text = 'credit'");
+    expect(sql).toContain("ORDER BY mt.created_at DESC, mt.id DESC LIMIT 3");
+    expect(sql).not.toContain("GRANT SELECT ON public.meter_tokens TO anon");
   });
 });

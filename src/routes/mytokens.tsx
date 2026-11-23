@@ -56,8 +56,7 @@ function TokenChecker() {
       const rows = await readTokens({ data: { meter_number: meter.meter_number } });
       if (request === generation.current) setTokens(rows);
     } catch (e) {
-      if (request === generation.current) setHistoryError(e instanceof Error && /linked|resident account|active resident/.test(e.message)
-        ? e.message : "Sign in to your resident account to view tokens. If already signed in, try again or contact the administrator.");
+      if (request === generation.current) setHistoryError(e instanceof Error ? e.message : "Could not load recent tokens. Please try again or contact the administrator.");
     } finally { if (request === generation.current) setBusy(null); }
   }
   return <div className="relative min-h-screen bg-background text-foreground">
@@ -87,7 +86,7 @@ function TokenChecker() {
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted-foreground">Meter number</dt><dd className="mt-1 break-all font-semibold">{meter.meter_number}</dd></div><div><dt className="text-muted-foreground">Meter type</dt><dd className="mt-1 capitalize">{meter.type}</dd></div></dl>
           <Button onClick={history} disabled={busy === "history"} className="mt-6"><History className="h-4 w-4" />View Recent Tokens{busy === "history" && <Loader2 className="h-4 w-4 animate-spin" />}</Button>
         </section>}
-        {meter && historyError && <div className="mt-5 space-y-3"><p role="alert" className="text-sm text-destructive">{historyError}</p><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/login">Resident sign-in</Link></Button><Button variant="ghost" onClick={history}>Try again</Button></div></div>}
+        {meter && historyError && <div className="mt-5 space-y-3"><p role="alert" className="text-sm text-destructive">{historyError}</p><div className="flex flex-wrap gap-2"><Button variant="ghost" onClick={history}>Try again</Button></div></div>}
         {(missing || historyError) && <div className="mt-4 space-y-2 text-sm text-muted-foreground">
           {support?.email && <p><a className="text-primary underline" href={`mailto:${encodeURIComponent(support.email)}`}>{support.email}</a></p>}
           {support?.phone && <p><a className="text-primary underline" href={`tel:${support.phone.replace(/[^+\d]/g, "")}`}>{support.phone}</a></p>}

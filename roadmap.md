@@ -1,12 +1,14 @@
 # Roadmap
 
+- [x] Public Token Checker: exact-meter public RPC returns three safe credit transactions without login; private table access unchanged, hashed atomic visitor/meter/global limits added. Nine tests pass, signed-out desktop/mobile readback verified with three real transactions, no errors or page overflow.
+
 - [x] Vendor applications: public four-step wizard, private rate-limited intake, administrator tab/details/confirmation, reserved-ID provisioning and atomic vendor profile/role completion, independent email/SMS claims and outcome audits. 56 focused tests passed; real public submission/admin readback, search/filter, rejection confirmation and mobile verified. Temporary application removed without notifications.
 - [x] Vendor application final browser matrix: all four steps, all service options, Back persistence, consent validation, administrator tabs and existing vendor list tested at 390/1280px under both color-scheme preferences; fixed mobile header overflow and centered application empty state. Current theme colors remain the existing shared palette; 24 workflow tests passed again.
 - [ ] Vendor application real email delivery (blocked: existing notify.smatrapay.com verification timed out).
 - [ ] Vendor application live account acceptance/setup and SMS receipt (blocked: no real applicant/recipient supplied; do not send test messages to an unrelated phone. Installed completion and provisioning/notification retries verified with isolated fixtures; no live vendor account created).
 
 - [x] Token Checker: homepage CTA preserves vendor destination; public exact meter confirmation, authenticated resident-scoped latest-five tokens, configured support contacts only, 18 tests and desktop/mobile valid/invalid/anonymous-denial acceptance passed.
-- [ ] Token Checker real resident history acceptance (blocked: injected session is not a resident and temporary resident creation approval is unavailable). Signed-in nonresident history denial verified; no resident identities, assignments or financial records changed. Standard rate limiting is unavailable; no custom limiter added without approval.
+- [x] Token Checker public history acceptance supersedes the former resident-login requirement; signed-out real three-transaction readback verified without changing accounts or payments.
 - [x] Token Checker history: latest three credit tokens shown as a table with Date/Time (EAT), Property, Unit Name, Meter, Token, Units, Amount, Reference; unit/property names resolved server-side from the verified meter's unit, lookup failures never block history. 10 tests passed; build OK.
 - [x] Token Checker "Meter verified" icon now uses a new semantic green `success` theme token (light and dark).
 

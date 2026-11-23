@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
 
 const steps = [
   { icon: Smartphone, title: "Buy. Straight from M-Pesa.", text: "Enter your meter number, approve the prompt on your phone, and your token arrives by SMS in seconds." },
-  { icon: History, title: "Track. Never lose a token.", text: "Deleted the SMS? Look up your latest tokens any time from your resident account." },
+  { icon: History, title: "Track. Never lose a token.", text: "Deleted the SMS? Look up your latest tokens any time using your meter number." },
   { icon: Building2, title: "Manage. For vendors and landlords.", text: "Set tariffs, onboard customers, map properties to meters and see every sale as it happens." },
 ];
 
@@ -94,8 +94,8 @@ function HomePage() {
       <section className="bg-primary py-16 text-primary-foreground">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <h2 className="text-3xl font-bold">Lost your token? Find it here.</h2>
-          <p className="mt-3 opacity-90">Sign in to your resident account to see your latest tokens.</p>
-          <Button asChild size="lg" variant="secondary" className="mt-6"><Link to="/login">Find my token</Link></Button>
+          <p className="mt-3 opacity-90">Enter your meter number to see your three latest token transactions.</p>
+          <Button asChild size="lg" variant="secondary" className="mt-6"><Link to="/mytokens">Find my token</Link></Button>
         </div>
       </section>
 

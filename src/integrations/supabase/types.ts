@@ -3254,6 +3254,24 @@ export type Database = {
           },
         ]
       }
+      token_checker_limits: {
+        Row: {
+          attempts: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          attempts: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          attempts?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       token_sms_logs: {
         Row: {
           actor_id: string | null
@@ -4539,6 +4557,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      public_token_checker: {
+        Args: {
+          p_history?: boolean
+          p_meter_number: string
+          p_request_key: string
+        }
+        Returns: Json
       }
       resident_can_read_payg_summary: {
         Args: { p_vendor: string }
