@@ -94,11 +94,10 @@ function TokenChecker() {
         {meter && tokens && <section className="mt-8"><h2 className="text-xl font-semibold">Recent Token Transactions</h2>
           {!tokens.length ? <p className="mt-4 text-muted-foreground">No recent token purchases were found for your meter.</p> : <div className="mt-4 overflow-x-auto rounded-2xl border border-border bg-card"><table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-left text-muted-foreground">
-              <th className="px-4 py-3 font-medium">Date / Time (EAT)</th><th className="px-4 py-3 font-medium">Property</th><th className="px-4 py-3 font-medium">Unit Name</th><th className="px-4 py-3 font-medium">Meter</th><th className="px-4 py-3 font-medium">Token</th><th className="px-4 py-3 text-right font-medium">Units</th><th className="px-4 py-3 text-right font-medium">Amount</th><th className="px-4 py-3 font-medium">Reference</th>
+              <th className="px-4 py-3 font-medium">Date / Time (EAT)</th><th className="px-4 py-3 font-medium">Unit Name</th><th className="px-4 py-3 font-medium">Meter</th><th className="px-4 py-3 font-medium">Token</th><th className="px-4 py-3 text-right font-medium">Units</th><th className="px-4 py-3 text-right font-medium">Amount</th><th className="px-4 py-3 font-medium">Reference</th>
             </tr></thead>
             <tbody className="divide-y divide-border">{tokens.map((t, i) => <tr key={`${t.date}-${i}`}>
               <td className="whitespace-nowrap px-4 py-3"><time>{new Date(t.date).toLocaleString("en-KE", { timeZone: "Africa/Nairobi", dateStyle: "medium", timeStyle: "short" })}</time></td>
-              <td className="px-4 py-3">{t.property ?? "—"}</td>
               <td className="px-4 py-3">{t.unit ?? "—"}</td>
               <td className="whitespace-nowrap px-4 py-3">{t.meter}</td>
               <td className="px-4 py-3">{t.token ? <span className="break-all font-mono text-primary">{t.token}</span> : <span className="capitalize text-muted-foreground">{t.status}</span>}</td>
