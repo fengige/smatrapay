@@ -16,14 +16,21 @@ async function prepare(username: string, action: "login" | "reset") {
     if (!data) throw new Error("Too many attempts. Please try again in 15 minutes.");
   }
   const lookup = residentIdentifierLookup(username);
-  const { data: profile, error } = await supabaseAdmin.from("users").select("id, status, username").ilike(lookup.column, lookup.value).maybeSingle();
+  const { data: candidates, error } = await supabaseAdmin.from("users").select("id, status, username").ilike(lookup.column, lookup.value).limit(10);
   if (error) throw new Error("Authentication service unavailable. Please try again later.");
-  if (!profile) return { supabaseAdmin, profile: null, email: null, roles: [] as string[] };
-  const [auth, roles] = await Promise.all([
-    supabaseAdmin.auth.admin.getUserById(profile.id),
-    supabaseAdmin.from("user_roles").select("role").eq("user_id", profile.id),
-  ]);
-  if (auth.error || roles.error) throw new Error("Authentication service unavailable. Please try again later.");
+  // Several profiles may share a contact email; only the one whose Auth email matches can sign in.
+  const matches: { profile: { id: string; status: string | null; username: string | null }; email: string | null }[] = [];
+  for (const candidate of candidates ?? []) {
+    const auth = await supabaseAdmin.auth.admin.getUserById(candidate.id);
+    if (auth.error) throw new Error("Authentication service unavailable. Please try again later.");
+    const email = auth.data.user?.email ?? null;
+    if (lookup.column !== "email" || normalizeUsername(email ?? "") === username) matches.push({ profile: candidate, email });
+  }
+  if (matches.length !== 1) return { supabaseAdmin, profile: null, email: null, roles: [] as string[] };
+  const { profile, email } = matches[0]!;
+  const roles = await supabaseAdmin.from("user_roles").select("role").eq("user_id", profile.id);
+  if (roles.error) throw new Error("Authentication service unavailable. Please try again later.");
+  const auth = { data: { user: { email } } };
   // A stale profile email must never become an alias for a different Auth email.
   if (lookup.column === "email" && normalizeUsername(auth.data.user?.email ?? "") !== username) {
     return { supabaseAdmin, profile: null, email: null, roles: [] as string[] };
