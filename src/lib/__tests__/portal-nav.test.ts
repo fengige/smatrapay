@@ -9,6 +9,9 @@ describe("admin sidebar", () => {
   it("does not show Agent Management", () => {
     expect(adminLabels).not.toContain("Agent Management");
   });
+  it("does not show Account Settings", () => {
+    expect(adminLabels).not.toContain("Account Settings");
+  });
   it("still shows the other management modules", () => {
     for (const label of [
       "Resident Management",

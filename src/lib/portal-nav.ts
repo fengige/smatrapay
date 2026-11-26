@@ -110,7 +110,6 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
       {
         heading: "SETTINGS",
         items: [
-          { label: "Account Settings", icon: Settings },
           { label: "Configurations", icon: Cog, to: "/configurations/app-settings" },
           { label: "Payment Methods", icon: CreditCard, to: "/payment-methods" },
           { label: "Payment History", icon: Receipt, to: "/payment-history" },
