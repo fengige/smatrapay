@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, ShieldCheck, Loader2, History, ArrowLeft } from "lucide-react";
+import { Search, ShieldCheck, Loader2, History, ArrowLeft, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,7 +65,7 @@ function TokenChecker() {
     <div aria-hidden className="brand-wash pointer-events-none fixed inset-0" />
     <header className="relative border-b border-border bg-card"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
       <Link to="/" aria-label="SmatraPay home"><img src={logoAsset.url} alt="SmatraPay" className="h-8 w-auto" /></Link>
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><Link to="/" className="hidden text-sm text-muted-foreground hover:text-foreground sm:block">Home</Link><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button><Button variant="outline" asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button></div>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><Link to="/" className="hidden text-sm text-muted-foreground hover:text-foreground sm:block">Home</Link><Button asChild variant="ghost" className="px-3 text-xs sm:px-5 sm:text-sm"><a href="https://smatrapay.com/" target="_blank" rel="noopener noreferrer"><Globe className="h-4 w-4" /><span className="hidden lg:inline">smatrapay.com</span><span className="lg:hidden">Main site</span></a></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button><Button variant="outline" asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button></div>
     </div></header>
     <main className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
       <h1 className="text-4xl font-normal tracking-tight sm:text-6xl">Lost your token? <span className="font-bold">Find it here.</span></h1>

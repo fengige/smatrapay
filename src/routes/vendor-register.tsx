@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Loader2, Store, Building2, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Loader2, Store, Building2, UserRound, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vendorRegistrationSchema } from "@/lib/vendor-registration";
 import { submitVendorRegistration } from "@/lib/vendor-registration.functions";
@@ -145,6 +145,7 @@ function VendorRegister() {
           </Link>
           <nav aria-label="Main navigation" className="flex flex-wrap items-center gap-2 text-sm sm:gap-3">
             <Link to="/" className="hidden text-muted-foreground hover:text-foreground sm:block">Home</Link>
+            <Button asChild variant="ghost" className="px-3 text-xs sm:px-5 sm:text-sm"><a href="https://smatrapay.com/" target="_blank" rel="noopener noreferrer"><Globe className="h-4 w-4" /><span className="hidden lg:inline">smatrapay.com</span><span className="lg:hidden">Main site</span></a></Button>
             <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button><Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button>
             <Button asChild variant="outline" size="sm"><Link to="/login">Sign In</Link></Button>
           </nav>

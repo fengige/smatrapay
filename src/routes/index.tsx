@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Zap, Smartphone, History, Building2, Store, ShieldCheck, CreditCard, Droplets, Flame, ArrowRight } from "lucide-react";
+import { Zap, Smartphone, History, Building2, Store, ShieldCheck, CreditCard, Droplets, Flame, ArrowRight, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const field = "h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -48,6 +48,7 @@ function HomePage() {
             <img src={logoAsset.url} alt="SmartShop" className="h-6 w-auto sm:h-8" />
           </Link>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button asChild variant="ghost" className="px-3 text-xs sm:px-5 sm:text-sm"><a href="https://smatrapay.com/" target="_blank" rel="noopener noreferrer"><Globe className="h-4 w-4" /><span className="hidden lg:inline">smatrapay.com</span><span className="lg:hidden">Main site</span></a></Button>
             <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/mytokens">Token Checker</Link></Button>
             <Button asChild className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/vendor-register">Become a Vendor</Link></Button>
             <Button asChild variant="outline" className="px-3 text-xs sm:px-5 sm:text-sm"><Link to="/login">Log in</Link></Button>
