@@ -115,6 +115,12 @@
       radial-gradient(60rem 42rem at 88% 0%, color-mix(in oklch, var(--primary) 24%, transparent), transparent 70%),
       radial-gradient(55rem 42rem at 0% 100%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 70%);
   }
+  .notif-wash {
+    background-color: var(--popover);
+    background-image:
+      radial-gradient(18rem 12rem at 100% 0%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 75%),
+      radial-gradient(18rem 14rem at 0% 100%, color-mix(in oklch, var(--accent) 18%, transparent), transparent 75%);
+  }
   .orb {
     position: absolute;
     border-radius: 9999px;

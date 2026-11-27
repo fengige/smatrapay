@@ -84,7 +84,7 @@ export function NotificationsMenu({
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="w-[min(24rem,calc(100vw-1rem))] p-0"
+        className="notif-wash w-[min(24rem,calc(100vw-1rem))] overflow-hidden border-primary/20 p-0"
       >
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div>
@@ -130,7 +130,7 @@ export function NotificationsMenu({
             {recent.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className="block cursor-pointer whitespace-normal px-4 py-3"
+                className="block cursor-pointer whitespace-normal px-4 py-3 focus:bg-primary/10"
                 onSelect={() => {
                   if (!notification.read_at) readOne.mutate(notification.id);
                 }}
