@@ -217,6 +217,349 @@ export type Database = {
           },
         ]
       }
+      chat_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          conversation_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          message_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          message_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          message_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      chat_conversations: {
+        Row: {
+          conversation_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          group_photo: string | null
+          id: string
+          is_archived: boolean
+          last_message_at: string
+          private_key: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          conversation_type: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          group_photo?: string | null
+          id?: string
+          is_archived?: boolean
+          last_message_at?: string
+          private_key?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conversation_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          group_photo?: string | null
+          id?: string
+          is_archived?: boolean
+          last_message_at?: string
+          private_key?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_message_receipts: {
+        Row: {
+          delivered_at: string | null
+          message_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          delivered_at?: string | null
+          message_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          delivered_at?: string | null
+          message_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_path: string | null
+          attachment_size: number | null
+          attachment_type: string | null
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          forwarded_from_message_id: string | null
+          id: string
+          is_deleted: boolean
+          is_edited: boolean
+          message: string | null
+          message_type: string
+          reply_to_message_id: string | null
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          forwarded_from_message_id?: string | null
+          id?: string
+          is_deleted?: boolean
+          is_edited?: boolean
+          message?: string | null
+          message_type?: string
+          reply_to_message_id?: string | null
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          forwarded_from_message_id?: string | null
+          id?: string
+          is_deleted?: boolean
+          is_edited?: boolean
+          message?: string | null
+          message_type?: string
+          reply_to_message_id?: string | null
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_forwarded_from_message_id_fkey"
+            columns: ["forwarded_from_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_participants: {
+        Row: {
+          cleared_at: string | null
+          conversation_id: string
+          id: string
+          is_active: boolean
+          is_archived: boolean
+          is_muted: boolean
+          is_pinned: boolean
+          joined_at: string
+          last_read_at: string
+          manual_unread: boolean
+          role: string
+          user_id: string
+        }
+        Insert: {
+          cleared_at?: string | null
+          conversation_id: string
+          id?: string
+          is_active?: boolean
+          is_archived?: boolean
+          is_muted?: boolean
+          is_pinned?: boolean
+          joined_at?: string
+          last_read_at?: string
+          manual_unread?: boolean
+          role?: string
+          user_id: string
+        }
+        Update: {
+          cleared_at?: string | null
+          conversation_id?: string
+          id?: string
+          is_active?: boolean
+          is_archived?: boolean
+          is_muted?: boolean
+          is_pinned?: boolean
+          joined_at?: string
+          last_read_at?: string
+          manual_unread?: boolean
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_reports: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reason: string
+          reported_by: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reason: string
+          reported_by: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reason?: string
+          reported_by?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_suspensions: {
+        Row: {
+          created_at: string
+          reason: string
+          suspended_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          reason: string
+          suspended_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          reason?: string
+          suspended_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_user_settings: {
+        Row: {
+          browser_enabled: boolean
+          email_delay_minutes: number
+          email_enabled: boolean
+          last_seen_at: string | null
+          notifications_enabled: boolean
+          quiet_end: string | null
+          quiet_start: string | null
+          sound_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          browser_enabled?: boolean
+          email_delay_minutes?: number
+          email_enabled?: boolean
+          last_seen_at?: string | null
+          notifications_enabled?: boolean
+          quiet_end?: string | null
+          quiet_start?: string | null
+          sound_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          browser_enabled?: boolean
+          email_delay_minutes?: number
+          email_enabled?: boolean
+          last_seen_at?: string | null
+          notifications_enabled?: boolean
+          quiet_end?: string | null
+          quiet_start?: string | null
+          sound_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cron_settings: {
         Row: {
           key: string
@@ -4366,6 +4709,82 @@ export type Database = {
         Args: { p_property: string }
         Returns: boolean
       }
+      chat_admin_conversations: {
+        Args: {
+          p_from?: string
+          p_status?: string
+          p_to?: string
+          p_type?: string
+        }
+        Returns: {
+          conversation_type: string
+          created_at: string
+          id: string
+          last_message_at: string
+          member_roles: string[]
+          members: string
+          message_count: number
+          title: string
+        }[]
+      }
+      chat_admin_stats: { Args: never; Returns: Json }
+      chat_conversation_list: {
+        Args: never
+        Returns: {
+          conversation_type: string
+          description: string
+          group_photo: string
+          id: string
+          is_active: boolean
+          is_archived: boolean
+          is_muted: boolean
+          is_pinned: boolean
+          last_is_deleted: boolean
+          last_message: string
+          last_message_at: string
+          last_message_type: string
+          last_sender_id: string
+          manual_unread: boolean
+          member_count: number
+          my_role: string
+          other_last_seen: string
+          other_name: string
+          other_photo: string
+          other_role: string
+          other_user_id: string
+          title: string
+          unread_count: number
+        }[]
+      }
+      chat_directory: {
+        Args: { p_search?: string }
+        Returns: {
+          chat_role: string
+          email: string
+          id: string
+          name: string
+          profile_image: string
+        }[]
+      }
+      chat_member_directory: {
+        Args: { p_conversation: string }
+        Returns: {
+          chat_role: string
+          is_active: boolean
+          last_seen_at: string
+          member_role: string
+          name: string
+          profile_image: string
+          user_id: string
+        }[]
+      }
+      chat_require_sender: { Args: never; Returns: string }
+      chat_ring: {
+        Args: { p_conversation: string; p_event: string }
+        Returns: undefined
+      }
+      chat_role: { Args: { p_user: string }; Returns: string }
+      chat_unread_total: { Args: never; Returns: number }
       claim_vendor_application_review: {
         Args: {
           p_actor: string
@@ -4455,6 +4874,10 @@ export type Database = {
         }
         Returns: Json
       }
+      create_group_chat: {
+        Args: { p_description: string; p_members: string[]; p_title: string }
+        Returns: string
+      }
       create_resident_phone_challenge: {
         Args: {
           p_hash: string
@@ -4478,6 +4901,11 @@ export type Database = {
         Returns: Json
       }
       create_vendor_property_unit: { Args: { p_input: Json }; Returns: string }
+      delete_chat_message: { Args: { p_message: string }; Returns: undefined }
+      edit_chat_message: {
+        Args: { p_message: string; p_text: string }
+        Returns: undefined
+      }
       find_resident_phone_account: {
         Args: { p_phone: string }
         Returns: {
@@ -4503,6 +4931,7 @@ export type Database = {
         }
         Returns: Json
       }
+      is_chat_member: { Args: { p_conversation: string }; Returns: boolean }
       is_landlord_account: { Args: { p_user: string }; Returns: boolean }
       landlord_managing_vendors: {
         Args: never
@@ -4514,6 +4943,12 @@ export type Database = {
       landlord_meter_ids: { Args: never; Returns: string[] }
       landlord_property_ids: { Args: never; Returns: string[] }
       landlord_unit_ids: { Args: never; Returns: string[] }
+      manage_group_member: {
+        Args: { p_action: string; p_conversation: string; p_user: string }
+        Returns: undefined
+      }
+      mark_chat_delivered: { Args: never; Returns: undefined }
+      mark_chat_read: { Args: { p_conversation: string }; Returns: undefined }
       meter_assignment_csv_references: {
         Args: { p_portal: string }
         Returns: Json
@@ -4566,6 +5001,10 @@ export type Database = {
         }
         Returns: Json
       }
+      report_chat_message: {
+        Args: { p_message: string; p_reason: string }
+        Returns: undefined
+      }
       resident_can_read_payg_summary: {
         Args: { p_vendor: string }
         Returns: boolean
@@ -4575,8 +5014,48 @@ export type Database = {
         Returns: boolean
       }
       resident_google_access: { Args: never; Returns: string }
+      resolve_chat_report: {
+        Args: {
+          p_note: string
+          p_remove: boolean
+          p_report: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       review_payg_application: {
         Args: { p_id: string; p_note: string; p_status: string }
+        Returns: undefined
+      }
+      send_chat_message: {
+        Args: {
+          p_attachment_name?: string
+          p_attachment_path?: string
+          p_attachment_size?: number
+          p_attachment_type?: string
+          p_conversation: string
+          p_forward_from?: string
+          p_message: string
+          p_reply_to?: string
+        }
+        Returns: string
+      }
+      set_chat_flags: {
+        Args: { p_conversation: string; p_flag: string; p_value: boolean }
+        Returns: undefined
+      }
+      set_chat_suspension: {
+        Args: { p_reason: string; p_suspend: boolean; p_user: string }
+        Returns: undefined
+      }
+      start_private_chat: { Args: { p_other: string }; Returns: string }
+      update_group_chat: {
+        Args: {
+          p_conversation: string
+          p_description: string
+          p_photo: string
+          p_title: string
+        }
         Returns: undefined
       }
       vendor_can_access_zone: {
@@ -4610,6 +5089,7 @@ export type Database = {
           zone_id: number
         }[]
       }
+      was_chat_member: { Args: { p_conversation: string }; Returns: boolean }
     }
     Enums: {
       app_role:
