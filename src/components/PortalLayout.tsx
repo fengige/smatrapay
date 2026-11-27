@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listNotifications } from "@/lib/notifications.functions";
 import { Bell, ChevronDown, LogOut, Menu, MessageSquare, Search, X } from "lucide-react";
+import { NotificationsMenu } from "@/components/NotificationsMenu";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,15 +87,14 @@ export function PortalLayout({
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const isVendor = roles.includes("vendor") && !roles.includes("admin");
   const isResident = roles.includes("resident") && !isVendor && !roles.includes("admin");
+  const hasNotificationInbox = roles.some((role) => ["admin", "vendor", "landlord", "resident"].includes(role));
   const profilePath = isVendor ? "/vendor/profile" : isResident ? "/resident/profile" : null;
-  const fetchNotifications = useServerFn(listNotifications);
-  const { data: notificationData } = useQuery({
-    queryKey: [isResident ? "resident-notifications" : "notifications"],
-    queryFn: () => fetchNotifications(),
-    enabled: isVendor || isResident,
-    refetchInterval: 60_000,
-  });
-  const unread = notificationData?.unread ?? 0;
+  const notificationQueryKey = [isResident ? "resident-notifications" : "notifications"];
+  const notificationsPath = isResident
+    ? "/resident/notifications" as const
+    : isVendor
+      ? "/vendor/notifications" as const
+      : undefined;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const groups = navGroupsForRoles(roles);
   const portalName = roles[0] ? roleLabel(roles[0]) : "Portal";
@@ -247,7 +246,7 @@ export function PortalLayout({
       )}
 
       <div className="min-w-0 flex-1">
-        {isResident && <><ResidentMobileHeader title={title} name={identity.name} photo={identity.profile_image} unread={unread} actions={actions} /><ResidentConnectionBanner /></>}
+        {isResident && <><ResidentMobileHeader title={title} name={identity.name} photo={identity.profile_image} actions={actions} /><ResidentConnectionBanner /></>}
         <header className={`${isResident ? "hidden lg:flex" : "flex"} sticky top-0 z-30 items-center gap-2 border-b border-border bg-background/85 px-3 py-2.5 backdrop-blur sm:gap-3 sm:px-5 sm:py-3`}>
           <button
             className="shrink-0 rounded-lg border border-border p-2 lg:hidden"
@@ -284,19 +283,8 @@ export function PortalLayout({
               <MessageSquare className="size-4" />
             </button>
 
-            {isVendor || isResident ? (
-              <Link
-                to={isResident ? "/resident/notifications" : "/vendor/notifications"}
-                aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
-                className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
-              >
-                <Bell className="size-4" />
-                {unread > 0 && (
-                  <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[0.6rem] font-bold leading-4 text-white">
-                    {unread > 99 ? "99+" : unread}
-                  </span>
-                )}
-              </Link>
+            {hasNotificationInbox ? (
+              <NotificationsMenu queryKey={notificationQueryKey} notificationsPath={notificationsPath} />
             ) : (
               <button
                 className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
