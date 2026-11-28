@@ -44,3 +44,6 @@
 - Vendors/admins review PAYG via audited review_payg_application. Resident details prove own application access before safe history reads; both portals reuse PAYG progress/schedules from approval date and link by application ID.
 
 - Token history: bounded ranges/counts, timestamp/id order, session-owned vendor joins prevent foreign reads.
+
+- Instant Chat reuses existing identities and role records; checked database RPCs own conversation/message mutations, participant-bound RLS owns reads, and private per-user doorbells invalidate shared chat queries without exposing message payloads.
+- Chat attachments use a private conversation/user storage namespace and short-lived signed downloads; audit records retain moderation history while removed members lose live access.

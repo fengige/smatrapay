@@ -229,3 +229,9 @@
 - [x] Add "Become a Vendor" button next to Log in
 - [x] Point "Become a Vendor" at /vendor-register as requested; Token Checker and login retained.
 - [x] Use the supplied SmatraPay logo artwork; registration branding matches SmatraPay.
+
+## Instant Chat
+- [ ] Private chat, groups, messages, receipts, attachments, search, notifications and mobile interface.
+- [ ] Chat sidebar/top bar, profile entry points and administrator oversight/moderation.
+- [ ] Database security hardening, regression tests and signed-in live acceptance.
+- [ ] Offline email reminders and true background push (verify delivery prerequisites before enabling).

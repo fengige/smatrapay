@@ -246,6 +246,12 @@ export function navGroupsForRoles(roles: string[]): NavGroup[] {
     });
   }
 
+  if (roles.some(role => ["admin", "vendor", "landlord"].includes(role))) {
+    groups.push({ heading: "COMMUNICATIONS", expandable: true, items: [
+      { label: "Instant Chat", to: "/chat", icon: MessageSquareHeart },
+      ...(roles.includes("admin") ? [{ label: "Chat Administration", to: "/admin/chat", icon: ShieldCheck }] : []),
+    ] });
+  }
   return groups;
 }
 

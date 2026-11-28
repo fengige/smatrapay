@@ -21,6 +21,7 @@ import { Route as VendorRegisterRouteImport } from './routes/vendor-register'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as AuthenticatedAssignmentsRouteImport } from './routes/_authenticated/assignments'
 import { Route as AuthenticatedBankPaymentsRouteImport } from './routes/_authenticated/bank-payments'
+import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedConfigurationsRouteImport } from './routes/_authenticated/configurations'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
@@ -40,6 +41,7 @@ import { Route as AuthenticatedTransactionRecordsRouteImport } from './routes/_a
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedVendingDashboardRouteImport } from './routes/_authenticated/vending-dashboard'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
+import { Route as AuthenticatedAdminChatRouteImport } from './routes/_authenticated/admin/chat'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAgentDashboardRouteImport } from './routes/_authenticated/agent/dashboard'
@@ -236,6 +238,11 @@ const AuthenticatedBankPaymentsRoute =
     path: '/bank-payments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedConfigurationsRoute =
   AuthenticatedConfigurationsRouteImport.update({
     id: '/configurations',
@@ -340,6 +347,11 @@ const AuthenticatedVendingDashboardRoute =
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminChatRoute = AuthenticatedAdminChatRouteImport.update({
+  id: '/admin/chat',
+  path: '/admin/chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminDashboardRoute =
@@ -1148,6 +1160,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AuthenticatedAgentsRouteWithChildren
   '/assignments': typeof AuthenticatedAssignmentsRoute
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
+  '/chat': typeof AuthenticatedChatRoute
   '/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/jobs': typeof AuthenticatedJobsRoute
   '/landlords': typeof AuthenticatedLandlordsRouteWithChildren
@@ -1167,6 +1180,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRouteWithChildren
   '/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
+  '/admin/chat': typeof AuthenticatedAdminChatRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -1313,6 +1327,7 @@ export interface FileRoutesByTo {
   '/vendor-register': typeof VendorRegisterRoute
   '/assignments': typeof AuthenticatedAssignmentsRoute
   '/bank-payments': typeof AuthenticatedBankPaymentsRoute
+  '/chat': typeof AuthenticatedChatRoute
   '/jobs': typeof AuthenticatedJobsRoute
   '/meter-dashboard': typeof AuthenticatedMeterDashboardRoute
   '/pay-as-you-go': typeof AuthenticatedPayAsYouGoRoute
@@ -1326,6 +1341,7 @@ export interface FileRoutesByTo {
   '/token-management': typeof AuthenticatedTokenManagementRoute
   '/transaction-records': typeof AuthenticatedTransactionRecordsRoute
   '/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
+  '/admin/chat': typeof AuthenticatedAdminChatRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -1474,6 +1490,7 @@ export interface FileRoutesById {
   '/_authenticated/agents': typeof AuthenticatedAgentsRouteWithChildren
   '/_authenticated/assignments': typeof AuthenticatedAssignmentsRoute
   '/_authenticated/bank-payments': typeof AuthenticatedBankPaymentsRoute
+  '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/configurations': typeof AuthenticatedConfigurationsRouteWithChildren
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRouteWithChildren
@@ -1493,6 +1510,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRouteWithChildren
   '/_authenticated/vending-dashboard': typeof AuthenticatedVendingDashboardRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
+  '/_authenticated/admin/chat': typeof AuthenticatedAdminChatRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/agent/dashboard': typeof AuthenticatedAgentDashboardRoute
@@ -1642,6 +1660,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/assignments'
     | '/bank-payments'
+    | '/chat'
     | '/configurations'
     | '/jobs'
     | '/landlords'
@@ -1661,6 +1680,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/vending-dashboard'
     | '/vendors'
+    | '/admin/chat'
     | '/admin/dashboard'
     | '/admin/settings'
     | '/agent/dashboard'
@@ -1807,6 +1827,7 @@ export interface FileRouteTypes {
     | '/vendor-register'
     | '/assignments'
     | '/bank-payments'
+    | '/chat'
     | '/jobs'
     | '/meter-dashboard'
     | '/pay-as-you-go'
@@ -1820,6 +1841,7 @@ export interface FileRouteTypes {
     | '/token-management'
     | '/transaction-records'
     | '/vending-dashboard'
+    | '/admin/chat'
     | '/admin/dashboard'
     | '/admin/settings'
     | '/agent/dashboard'
@@ -1967,6 +1989,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents'
     | '/_authenticated/assignments'
     | '/_authenticated/bank-payments'
+    | '/_authenticated/chat'
     | '/_authenticated/configurations'
     | '/_authenticated/jobs'
     | '/_authenticated/landlords'
@@ -1986,6 +2009,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/vending-dashboard'
     | '/_authenticated/vendors'
+    | '/_authenticated/admin/chat'
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/settings'
     | '/_authenticated/agent/dashboard'
@@ -2232,6 +2256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBankPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/chat': {
+      id: '/_authenticated/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthenticatedChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configurations': {
       id: '/_authenticated/configurations'
       path: '/configurations'
@@ -2363,6 +2394,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof AuthenticatedVendorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/chat': {
+      id: '/_authenticated/admin/chat'
+      path: '/admin/chat'
+      fullPath: '/admin/chat'
+      preLoaderRoute: typeof AuthenticatedAdminChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/dashboard': {
@@ -3466,6 +3504,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRouteWithChildren
   AuthenticatedAssignmentsRoute: typeof AuthenticatedAssignmentsRoute
   AuthenticatedBankPaymentsRoute: typeof AuthenticatedBankPaymentsRoute
+  AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRouteWithChildren
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRouteWithChildren
@@ -3485,6 +3524,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRouteWithChildren
   AuthenticatedVendingDashboardRoute: typeof AuthenticatedVendingDashboardRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
+  AuthenticatedAdminChatRoute: typeof AuthenticatedAdminChatRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAgentDashboardRoute: typeof AuthenticatedAgentDashboardRoute
@@ -3580,6 +3620,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRouteWithChildren,
   AuthenticatedAssignmentsRoute: AuthenticatedAssignmentsRoute,
   AuthenticatedBankPaymentsRoute: AuthenticatedBankPaymentsRoute,
+  AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedConfigurationsRoute:
     AuthenticatedConfigurationsRouteWithChildren,
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
@@ -3600,6 +3641,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRouteWithChildren,
   AuthenticatedVendingDashboardRoute: AuthenticatedVendingDashboardRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
+  AuthenticatedAdminChatRoute: AuthenticatedAdminChatRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAgentDashboardRoute: AuthenticatedAgentDashboardRoute,

@@ -43,7 +43,7 @@ export function ChatMenu() {
   useChatRealtime(userId);
 
   const list = useQuery({ queryKey: chatKeys.list, queryFn: listConversations, enabled: !!userId, refetchInterval: 90_000 });
-  const settings = useQuery({ queryKey: chatKeys.settings, queryFn: () => getSettings(userId!), enabled: !!userId });
+  const settings = useQuery({ queryKey: chatKeys.settings, queryFn: () => userId ? getSettings(userId) : Promise.resolve(null), enabled: !!userId });
   const conversations = list.data ?? [];
   const unread = conversations.filter((c) => c.is_active && !c.is_archived).reduce((n, c) => n + c.unread_count + (c.manual_unread ? 1 : 0), 0);
 
@@ -76,14 +76,14 @@ export function ChatMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="relative inline-flex rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground" aria-label={unread ? `Messages, ${unread} unread` : "Messages"}>
+        <Button variant="ghost" size="icon" className="relative inline-flex rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground" aria-label={unread ? `Messages, ${unread} unread` : "Messages"}>
           <MessageSquare className="size-4" />
           {unread > 0 && (
             <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-bold leading-4 text-primary-foreground">
               {unread > 99 ? "99+" : unread}
             </span>
           )}
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="notif-wash w-[min(22rem,calc(100vw-1rem))] overflow-hidden border-primary/20 p-0">
         <div className="flex items-center justify-between px-4 py-3">

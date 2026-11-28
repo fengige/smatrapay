@@ -420,3 +420,10 @@
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+
+/* Chat colours inherit the existing orange/teal brand roles. */
+:root { --chat-sent: color-mix(in oklch, var(--primary) 14%, var(--card)); --chat-received: color-mix(in oklch, var(--accent) 10%, var(--card)); }
+@theme inline { --color-chat-sent: var(--chat-sent); --color-chat-received: var(--chat-received); }
+.chat-workspace { height: calc(100dvh - 9rem); min-height: 360px; }
+.chat-wash { background: color-mix(in oklch, var(--accent) 4%, var(--background)); }
+@media (max-width: 767px) { .chat-workspace { height: calc(100dvh - 8rem); min-height: 280px; } }

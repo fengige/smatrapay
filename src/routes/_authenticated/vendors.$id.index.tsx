@@ -1,4 +1,5 @@
 import { VendorSmsConfigPanel } from "@/components/VendorSmsConfigPanel";
+import { Button } from "@/components/ui/button";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -309,6 +310,7 @@ function VendorDetailPage() {
       description="Vendor details"
       actions={
         <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline"><Link to="/chat" search={{ u: id }}>Send Message</Link></Button>
           <button
             type="button"
             onClick={() => setConfirm("reset")}

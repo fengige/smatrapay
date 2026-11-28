@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
@@ -34,6 +34,7 @@ export function NotificationsMenu({
   mobile?: boolean;
 }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const fetchNotifications = useServerFn(listNotifications);
   const markOne = useServerFn(markNotificationRead);
   const markAll = useServerFn(markAllNotificationsRead);
@@ -133,6 +134,9 @@ export function NotificationsMenu({
                 className="block cursor-pointer whitespace-normal px-4 py-3 focus:bg-primary/10"
                 onSelect={() => {
                   if (!notification.read_at) readOne.mutate(notification.id);
+                  if (notification.resource_type === "chat_conversation" && notification.resource_id && /^[0-9a-f-]{36}$/i.test(notification.resource_id)) {
+                    void navigate({ to: "/chat", search: { c: notification.resource_id } });
+                  }
                 }}
               >
                 <span className="flex items-start gap-3">

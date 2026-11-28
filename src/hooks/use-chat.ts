@@ -45,10 +45,10 @@ export function useChatRealtime(userId: string | null, onRing?: (event: string, 
     let subscribedOnce = false;
     const doorbell = supabase.channel(`chat:user:${userId}`, { config: { private: true } })
       .on("broadcast", { event: "*" }, (payload) => {
-        const conversationId = (payload.payload as { conversation_id?: string } | undefined)?.conversation_id ?? null;
+        const conversationId = (payload['payload'] as { conversation_id?: string } | undefined)?.conversation_id ?? null;
         refresh();
-        if (payload.event === "message") void markDelivered().catch(() => undefined);
-        onRingRef.current?.(payload.event, conversationId);
+        if (payload['event'] === "message") void markDelivered().catch(() => undefined);
+        onRingRef.current?.(payload['event'], conversationId);
       })
       .subscribe((status) => {
         if (status !== "SUBSCRIBED") return;

@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, ChevronDown, LogOut, Menu, MessageSquare, Search, X } from "lucide-react";
+import { ChatMenu, ChatNavBadge } from "@/components/chat/ChatMenu";
 import { NotificationsMenu } from "@/components/NotificationsMenu";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
@@ -175,6 +176,7 @@ export function PortalLayout({
                 >
                   <item.icon className="size-4 shrink-0" />
                   {item.label}
+                  {item.to === "/chat" && <ChatNavBadge />}
                 </Link>
               );
             })}
@@ -276,12 +278,7 @@ export function PortalLayout({
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             {actions}
 
-            <button
-              className="relative hidden rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
-              aria-label="Messages"
-            >
-              <MessageSquare className="size-4" />
-            </button>
+            {roles.some(role => ["admin", "vendor", "landlord"].includes(role)) && <ChatMenu />}
 
             {hasNotificationInbox ? (
               <NotificationsMenu queryKey={notificationQueryKey} notificationsPath={notificationsPath} />

@@ -143,7 +143,7 @@ export function GroupDetailsSheet({ open, onOpenChange, conversation, members, u
   const photoInput = useRef<HTMLInputElement>(null);
   useEffect(() => { setTitle(conversation?.title ?? ""); setDescription(conversation?.description ?? ""); }, [conversation?.title, conversation?.description]);
   const files = useQuery({ queryKey: chatKeys.files(id), queryFn: () => sharedFiles(id), enabled: open && !!id });
-  const photo = useQuery({ queryKey: ["chat", "photo", conversation?.group_photo], queryFn: () => attachmentUrl(conversation!.group_photo!), enabled: !!conversation?.group_photo });
+  const photo = useQuery({ queryKey: ["chat", "photo", conversation?.group_photo], queryFn: () => conversation?.group_photo ? attachmentUrl(conversation.group_photo) : Promise.resolve(null), enabled: !!conversation?.group_photo });
   const refresh = () => qc.invalidateQueries({ queryKey: chatKeys.all });
   const save = useMutation({ mutationFn: (p: string | null) => updateGroup(id, title, description, p), onSuccess: () => { toast.success("Group updated"); void refresh(); }, onError: (e) => toast.error(friendlyChatError(e)) });
   const member = useMutation({ mutationFn: (v: { user: string; action: "add" | "remove" | "leave" | "moderator" | "member" }) => manageMember(id, v.user, v.action),
@@ -221,7 +221,7 @@ export function GroupDetailsSheet({ open, onOpenChange, conversation, members, u
             </TabsContent>
           )}
           <TabsContent value="files" className="space-y-2">
-            {files.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading files…</p> : !files.data?.length ? <p className="py-6 text-center text-sm text-muted-foreground">No shared files yet.</p> : files.data.map((f) => <FileLink key={f.id} path={f.attachment_path!} name={f.attachment_name} size={f.attachment_size} />)}
+            {files.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading files…</p> : !files.data?.length ? <p className="py-6 text-center text-sm text-muted-foreground">No shared files yet.</p> : files.data.map((f) => <FileLink key={f.id} path={f.attachment_path ?? ""} name={f.attachment_name} size={f.attachment_size} />)}
           </TabsContent>
         </Tabs>
       </SheetContent>
@@ -270,7 +270,7 @@ export function ForwardDialog({ message, conversations, onOpenChange }: { messag
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const targets = useMemo(() => conversations.filter((c) => c.is_active && conversationName(c).toLowerCase().includes(search.toLowerCase())), [conversations, search]);
-  const forward = useMutation({ mutationFn: (id: string) => sendMessage({ conversationId: id, text: "", forwardFrom: message!.id }), onSuccess: () => { toast.success("Message forwarded"); void qc.invalidateQueries({ queryKey: chatKeys.all }); onOpenChange(false); }, onError: (e) => toast.error(friendlyChatError(e)) });
+  const forward = useMutation({ mutationFn: (id: string) => sendMessage({ conversationId: id, text: "", forwardFrom: message?.id ?? null }), onSuccess: () => { toast.success("Message forwarded"); void qc.invalidateQueries({ queryKey: chatKeys.all }); onOpenChange(false); }, onError: (e) => toast.error(friendlyChatError(e)) });
   return (
     <Dialog open={!!message} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -291,7 +291,7 @@ export function ForwardDialog({ message, conversations, onOpenChange }: { messag
 
 export function ReportDialog({ message, onOpenChange }: { message: ChatMessage | null; onOpenChange: (v: boolean) => void }) {
   const [reason, setReason] = useState("");
-  const report = useMutation({ mutationFn: () => reportMessage(message!.id, reason), onSuccess: () => { toast.success("Thanks — the administrator will review this message."); setReason(""); onOpenChange(false); }, onError: (e) => toast.error(friendlyChatError(e)) });
+  const report = useMutation({ mutationFn: () => message ? reportMessage(message.id, reason) : Promise.reject(new Error("No message selected")), onSuccess: () => { toast.success("Thanks — the administrator will review this message."); setReason(""); onOpenChange(false); }, onError: (e) => toast.error(friendlyChatError(e)) });
   return (
     <Dialog open={!!message} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -326,4 +326,4 @@ export function MessageInfoDialog({ message, members, onOpenChange }: { message:
   );
 }
 
-void listMembers;
+

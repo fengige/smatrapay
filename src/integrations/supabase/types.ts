@@ -417,6 +417,7 @@ export type Database = {
           manual_unread: boolean
           role: string
           user_id: string
+          viewing_until: string | null
         }
         Insert: {
           cleared_at?: string | null
@@ -431,6 +432,7 @@ export type Database = {
           manual_unread?: boolean
           role?: string
           user_id: string
+          viewing_until?: string | null
         }
         Update: {
           cleared_at?: string | null
@@ -445,6 +447,7 @@ export type Database = {
           manual_unread?: boolean
           role?: string
           user_id?: string
+          viewing_until?: string | null
         }
         Relationships: [
           {
@@ -4728,6 +4731,7 @@ export type Database = {
         }[]
       }
       chat_admin_stats: { Args: never; Returns: Json }
+      chat_attachment_allowed: { Args: { p_path: string }; Returns: boolean }
       chat_conversation_list: {
         Args: never
         Returns: {
@@ -4766,6 +4770,7 @@ export type Database = {
           profile_image: string
         }[]
       }
+      chat_enabled: { Args: never; Returns: boolean }
       chat_member_directory: {
         Args: { p_conversation: string }
         Returns: {
@@ -4785,6 +4790,10 @@ export type Database = {
       }
       chat_role: { Args: { p_user: string }; Returns: string }
       chat_unread_total: { Args: never; Returns: number }
+      chat_viewing: {
+        Args: { p_conversation: string; p_visible: boolean }
+        Returns: undefined
+      }
       claim_vendor_application_review: {
         Args: {
           p_actor: string

@@ -4,7 +4,7 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?";
 }
 
-export function ChatAvatar({ name, photo, online, group, size = "md" }: { name: string; photo?: string | null; online?: boolean; group?: boolean; size?: "sm" | "md" | "lg" }) {
+export function ChatAvatar({ name, photo, online, group, size = "md" }: { name: string; photo?: string | null | undefined; online?: boolean | undefined; group?: boolean; size?: "sm" | "md" | "lg" }) {
   const dim = size === "sm" ? "size-8 text-[0.65rem]" : size === "lg" ? "size-14 text-base" : "size-10 text-xs";
   const src = photo && /^https?:\/\//.test(photo) ? photo : null;
   return (
