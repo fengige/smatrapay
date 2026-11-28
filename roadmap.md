@@ -231,7 +231,8 @@
 - [x] Use the supplied SmatraPay logo artwork; registration branding matches SmatraPay.
 
 ## Instant Chat
-- [ ] Private chat, groups, messages, receipts, attachments, search, notifications and mobile interface.
-- [ ] Chat sidebar/top bar, profile entry points and administrator oversight/moderation.
-- [ ] Database security hardening, regression tests and signed-in live acceptance.
-- [ ] Offline email reminders and true background push (verify delivery prerequisites before enabling).
+- [x] Private/group chats, persisted messages, receipts, secure attachments, search, in-app/browser-tab alerts and mobile interface.
+- [x] Expandable Communications sidebar, top-bar unread/recent-chat dropdown, vendor/landlord profile entry points and administrator reporting/moderation.
+- [x] Installed permission/integrity regression tests and real administrator/vendor/landlord session acceptance: private bidirectional messaging, groups, typing, recipient receipts, file upload/readback, foreign edit/send/history denials, moderation, suspension/restore, removed-member download denial and mobile controls; 34 tests pass and preview builds cleanly.
+- [ ] Email reminders (blocked: notify.smatrapay.com sender verification expired; delivery integration is not connected, and the email switch stays disabled).
+- [ ] Notifications after all browser tabs close (blocked: background push delivery is not implemented; current pop-ups work only while a portal tab is running).

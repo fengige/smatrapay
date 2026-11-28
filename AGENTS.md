@@ -47,3 +47,4 @@
 
 - Instant Chat reuses existing identities and role records; checked database RPCs own conversation/message mutations, participant-bound RLS owns reads, and private per-user doorbells invalidate shared chat queries without exposing message payloads.
 - Chat attachments use a private conversation/user storage namespace and short-lived signed downloads; audit records retain moderation history while removed members lose live access.
+- Chat history uses timestamp/ID cursors and caller-private clear-history state; staff roles retain staff mobile chrome even when also residents, preventing skipped messages and covered composers.
