@@ -4783,6 +4783,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      chat_private_context: { Args: { p_conversation: string }; Returns: Json }
       chat_require_sender: { Args: never; Returns: string }
       chat_ring: {
         Args: { p_conversation: string; p_event: string }
@@ -4793,6 +4794,10 @@ export type Database = {
       chat_viewing: {
         Args: { p_conversation: string; p_visible: boolean }
         Returns: undefined
+      }
+      chat_visible_message: {
+        Args: { p_conversation: string; p_created: string }
+        Returns: boolean
       }
       claim_vendor_application_review: {
         Args: {

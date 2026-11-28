@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTimeline, canUseChat, filterConversations, inQuietHours, messageStatus, validateChatFile } from "../chat";
+import { buildTimeline, canUseChat, filterConversations, inQuietHours, messageStatus, nextChatHistoryCursor, validateChatFile } from "../chat";
 
 const conv = (o: Partial<Parameters<typeof filterConversations>[0][number]>) => ({
   conversation_type: "private", title: null, other_name: "A", other_role: "vendor", unread_count: 0,
@@ -7,6 +7,11 @@ const conv = (o: Partial<Parameters<typeof filterConversations>[0][number]>) => 
 });
 
 describe("chat rules", () => {
+  it("paginates by timestamp and ID so simultaneous messages are not skipped", () => {
+    const page = [{ created_at: "2026-01-01T10:00:00Z", id: "b" }, { created_at: "2026-01-01T10:00:00Z", id: "a" }];
+    expect(nextChatHistoryCursor(page, 2)).toEqual({ created_at: "2026-01-01T10:00:00Z", id: "a" });
+    expect(nextChatHistoryCursor(page, 3)).toBeUndefined();
+  });
   it("only administrators, vendors and landlords can use chat", () => {
     expect(canUseChat(["vendor"])).toBe(true);
     expect(canUseChat(["landlord"])).toBe(true);

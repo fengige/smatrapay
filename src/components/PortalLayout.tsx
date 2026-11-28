@@ -10,6 +10,7 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { navGroupsForRoles } from "@/lib/portal-nav";
 import { roleLabel } from "@/lib/portals";
+import { isResidentOnlyPortal } from "@/lib/resident-mobile";
 import { useFooterSettings } from "@/lib/use-footer-settings";
 import { ResidentAvatar } from "@/components/resident/ResidentAvatar";
 import { getResidentProfile } from "@/lib/resident-profile.functions";
@@ -87,7 +88,7 @@ export function PortalLayout({
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const isVendor = roles.includes("vendor") && !roles.includes("admin");
-  const isResident = roles.includes("resident") && !isVendor && !roles.includes("admin");
+  const isResident = isResidentOnlyPortal(roles);
   const hasNotificationInbox = roles.some((role) => ["admin", "vendor", "landlord", "resident"].includes(role));
   const profilePath = isVendor ? "/vendor/profile" : isResident ? "/resident/profile" : null;
   const notificationQueryKey = [isResident ? "resident-notifications" : "notifications"];

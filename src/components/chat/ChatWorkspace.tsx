@@ -14,8 +14,8 @@ import { DashboardShell } from '@/components/DashboardShell';
 import { ChatAvatar } from './ChatAvatar';
 import { ChatSettingsDialog, FileLink, ForwardDialog, GroupDetailsSheet, MessageInfoDialog, NewChatDialog, NewGroupDialog, ReportDialog } from './ChatDialogs';
 import { useOnlineUsers } from '@/hooks/use-chat';
-import { attachmentUrl, chatKeys, deleteMessage, editMessage, fetchMessages, getConversation, listConversations, listMembers, markRead, MESSAGE_PAGE, mySuspension, searchMessages, sendMessage, setFlag, startPrivateChat, uploadAttachment, type ChatMessage, type ChatConversation } from '@/lib/chat-client';
-import { buildTimeline, CHAT_ACCEPT, CHAT_MAX_MESSAGE_LENGTH, chatRoleLabel, conversationName, filterConversations, formatBytes, friendlyChatError, messageStatus, QUICK_EMOJIS, shortTime, validateChatFile, type ChatFilter } from '@/lib/chat';
+import { attachmentUrl, chatKeys, deleteMessage, editMessage, fetchMessages, getConversation, listConversations, listMembers, markRead, MESSAGE_PAGE, mySuspension, privateChatContext, searchMessages, sendMessage, setFlag, startPrivateChat, uploadAttachment, type ChatMessage, type ChatConversation } from '@/lib/chat-client';
+import { buildTimeline, CHAT_ACCEPT, CHAT_MAX_MESSAGE_LENGTH, chatRoleLabel, conversationName, filterConversations, formatBytes, friendlyChatError, messageStatus, nextChatHistoryCursor, QUICK_EMOJIS, shortTime, validateChatFile, type ChatFilter, type ChatHistoryCursor } from '@/lib/chat';
 
 const api = getRouteApi('/_authenticated/chat');
 
@@ -77,12 +77,13 @@ function ChatContent({ userId, isAdmin }: { userId: string; isAdmin: boolean }) 
   const ownParticipant = members.find(m => m.user_id === userId);
   const writable = !!current?.is_active && !suspension.data;
   const title = current ? conversationName(current) : conversationQuery.data?.title ?? 'Conversation';
+  const privateContext = useQuery({ queryKey: ['chat', 'private-context', id], queryFn: () => privateChatContext(id), enabled: !!id });
   const timelineQuery = useInfiniteQuery({
-    queryKey: chatKeys.messages(id),
-    queryFn: ({ pageParam }) => fetchMessages(id, pageParam, null),
-    initialPageParam: null as string | null,
-    getNextPageParam: page => page.length === MESSAGE_PAGE ? page.at(-1)?.created_at : undefined,
-    enabled: !!id,
+    queryKey: [...chatKeys.messages(id), privateContext.data?.cleared_at ?? null],
+    queryFn: ({ pageParam }) => fetchMessages(id, pageParam, privateContext.data?.cleared_at ?? null),
+    initialPageParam: null as ChatHistoryCursor | null,
+    getNextPageParam: page => nextChatHistoryCursor(page, MESSAGE_PAGE),
+    enabled: !!id && privateContext.isSuccess,
     refetchInterval: 60_000,
   });
   const messages = (timelineQuery.data?.pages.flat() ?? []).slice().reverse();

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { refuseAppWorker, residentMobileTab, residentNotificationTarget } from "../resident-mobile";
+import { isResidentOnlyPortal, refuseAppWorker, residentMobileTab, residentNotificationTarget } from "../resident-mobile";
 describe("resident mobile boundaries", () => {
+  it("keeps dual-role staff out of the resident-only mobile shell", () => {
+    expect(isResidentOnlyPortal(["resident"])).toBe(true);
+    for (const role of ["admin", "vendor", "landlord", "agent", "service_provider", "moderator"]) {
+      expect(isResidentOnlyPortal(["resident", role])).toBe(false);
+    }
+  });
   it("uses exactly the five requested tabs", () => {
     expect(["dashboard", "payments", "meters", "jobs", "profile"].map((p) => residentMobileTab(`/resident/${p}`))).toEqual(["Home", "Payments", "Utilities", "Requests", "Account"]);
     expect(residentMobileTab("/resident/buy-tokens")).toBe("Utilities");

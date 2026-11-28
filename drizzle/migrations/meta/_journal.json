@@ -498,6 +498,13 @@
       "when": 1795840064069,
       "tag": "0070_chat_access_and_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1795840524172,
+      "tag": "0071_chat_explicit_privileges_and_member_history",
+      "breakpoints": true
     }
   ]
 }

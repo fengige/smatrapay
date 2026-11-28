@@ -16,6 +16,12 @@ export const CHAT_ALLOWED_TYPES = [
 export const CHAT_ACCEPT = "image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip";
 export const CHAT_ROLES = ["admin", "vendor", "landlord"] as const;
 
+export type ChatHistoryCursor = { created_at: string; id: string };
+export function nextChatHistoryCursor(page: ChatHistoryCursor[], pageSize: number): ChatHistoryCursor | undefined {
+  const last = page.at(-1);
+  return page.length === pageSize && last ? { created_at: last.created_at, id: last.id } : undefined;
+}
+
 export function canUseChat(roles: string[]) {
   return roles.some((role) => (CHAT_ROLES as readonly string[]).includes(role));
 }

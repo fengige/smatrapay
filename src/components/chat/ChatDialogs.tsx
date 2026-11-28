@@ -237,7 +237,7 @@ export function ChatSettingsDialog({ open, onOpenChange, userId }: { open: boole
   const row = (id: string, label: string, hint: string, checked: boolean, onChange: (v: boolean) => void) => (
     <div className="flex items-start justify-between gap-4 py-2">
       <div><Label htmlFor={id}>{label}</Label><p className="text-xs text-muted-foreground">{hint}</p></div>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+      <Switch id={id} checked={checked} disabled={id === "n-email"} onCheckedChange={onChange} />
     </div>
   );
   return (
@@ -254,7 +254,7 @@ export function ChatSettingsDialog({ open, onOpenChange, userId }: { open: boole
             }
             save.mutate({ browser_enabled: v });
           })}
-          {row("n-email", "Email reminders", "Email me about messages I haven't read (sending starts once the email sender is verified).", s.email_enabled, (v) => save.mutate({ email_enabled: v }))}
+          {row("n-email", "Email reminders", "Unavailable until the email sender is verified and reminder delivery is connected.", false, () => undefined)}
           <div className="grid grid-cols-2 gap-3 py-3">
             <div className="col-span-2"><p className="text-sm font-medium">Quiet hours</p><p className="text-xs text-muted-foreground">No sounds or pop-ups during these hours.</p></div>
             <div className="space-y-1"><Label htmlFor="q-start">From</Label><Input id="q-start" type="time" value={s.quiet_start?.slice(0, 5) ?? ""} onChange={(e) => save.mutate({ quiet_start: e.target.value || null })} /></div>

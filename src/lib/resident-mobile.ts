@@ -1,3 +1,8 @@
+/** Staff identities keep their staff shell even when also linked as residents. */
+export function isResidentOnlyPortal(roles: string[]) {
+  return roles.includes("resident") && !roles.some(role => ["admin", "vendor", "landlord", "agent", "service_provider", "moderator"].includes(role));
+}
+
 /** Exact tab membership keeps financial enquiries out of payment history. */
 export function residentMobileTab(path: string) {
   if (["/resident/payments", "/resident/bills", "/resident/transactions", "/resident/statements"].includes(path)) return "Payments";

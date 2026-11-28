@@ -1,6 +1,6 @@
 /** Browser-side chat data access. Every read and write is enforced by database policies and checked actions. */
 import { supabase } from "@/integrations/supabase/client";
-import { safeFileName } from "./chat";
+import { safeFileName, type ChatHistoryCursor } from "./chat";
 
 export const chatKeys = {
   all: ["chat"] as const,
@@ -52,10 +52,10 @@ export type ChatMessage = {
 };
 
 /** Newest page first (descending); callers reverse for display. */
-export async function fetchMessages(id: string, before: string | null, clearedAt: string | null) {
+export async function fetchMessages(id: string, before: ChatHistoryCursor | null, clearedAt: string | null) {
   let query = supabase.from("chat_messages").select(MESSAGE_FIELDS).eq("conversation_id", id)
     .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(MESSAGE_PAGE);
-  if (before) query = query.lt("created_at", before);
+  if (before) query = query.or(`created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`);
   if (clearedAt) query = query.gt("created_at", clearedAt);
   return (unwrap(await query) ?? []) as unknown as ChatMessage[];
 }
@@ -63,15 +63,27 @@ export async function fetchMessages(id: string, before: string | null, clearedAt
 export async function searchMessages(opts: { conversationIds: string[]; q: string; from?: string; to?: string; attachmentsOnly?: boolean; conversationId?: string }) {
   const ids = opts.conversationId ? [opts.conversationId] : opts.conversationIds;
   if (ids.length === 0) return [];
-  let query = supabase.from("chat_messages").select("id, conversation_id, sender_id, message, attachment_name, created_at, message_type")
-    .in("conversation_id", ids.slice(0, 200)).eq("is_deleted", false).neq("message_type", "system")
-    .order("created_at", { ascending: false }).limit(50);
   const q = opts.q.trim().replace(/[%_,()]/g, " ");
-  if (q) query = query.or(`message.ilike.%${q}%,attachment_name.ilike.%${q}%`);
-  if (opts.from) query = query.gte("created_at", opts.from);
-  if (opts.to) query = query.lt("created_at", opts.to);
-  if (opts.attachmentsOnly) query = query.not("attachment_path", "is", null);
-  return unwrap(await query) ?? [];
+  const results = [];
+  for (let start = 0; start < ids.length; start += 100) {
+    let query = supabase.from("chat_messages").select("id, conversation_id, sender_id, message, attachment_name, created_at, message_type")
+      .in("conversation_id", ids.slice(start, start + 100)).eq("is_deleted", false).neq("message_type", "system")
+      .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(50);
+    if (q) query = query.or(`message.ilike.%${q}%,attachment_name.ilike.%${q}%`);
+    if (opts.from) query = query.gte("created_at", opts.from);
+    if (opts.to) query = query.lt("created_at", opts.to);
+    if (opts.attachmentsOnly) query = query.not("attachment_path", "is", null);
+    results.push(...(unwrap(await query) ?? []));
+  }
+  return results.sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)).slice(0, 50);
+}
+
+export async function privateChatContext(id: string) {
+  const result = unwrap(await supabase.rpc("chat_private_context", { p_conversation: id }));
+  if (result && typeof result === "object" && !Array.isArray(result)) {
+    return { cleared_at: typeof result['cleared_at'] === "string" ? result['cleared_at'] : null };
+  }
+  return { cleared_at: null };
 }
 
 export async function sharedFiles(id: string) {
